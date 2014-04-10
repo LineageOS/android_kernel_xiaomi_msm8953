@@ -1352,6 +1352,20 @@ int32_t qpnp_vadc_read(struct qpnp_vadc_chip *dev,
 int32_t qpnp_vadc_hc_read(struct qpnp_vadc_chip *dev,
 				enum qpnp_vadc_channels channel,
 				struct qpnp_vadc_result *result);
+/**
+ * Same as qpnp_vadc_read() while can be called in suspend op
+ */
+int32_t qpnp_vadc_read_pmsafe(struct qpnp_vadc_chip *vadc,
+				enum qpnp_vadc_channels channel,
+				struct qpnp_vadc_result *result);
+
+/**
+ * Same as qpnp_vadc_read() while can be called in suspend op if pmsafe is 1
+ */
+int32_t qpnp_vadc_read_base(struct qpnp_vadc_chip *vadc,
+				enum qpnp_vadc_channels channel,
+				struct qpnp_vadc_result *result,
+				int pmsafe);
 
 /**
  * qpnp_vadc_conv_seq_request() - Performs ADC read on the conversion
@@ -2151,6 +2165,10 @@ static inline int32_t qpnp_vadc_hc_read(struct qpnp_vadc_chip *dev,
 				uint32_t channel,
 				struct qpnp_vadc_result *result)
 { return -ENXIO; }
+static inline int32_t qpnp_vadc_read_pmsafe(struct qpnp_vadc_chip *dev,
+				uint32_t channel,
+				struct qpnp_vadc_result *result)
+{ return -ENXIO; }
 static inline int32_t qpnp_vadc_conv_seq_request(struct qpnp_vadc_chip *dev,
 			enum qpnp_vadc_trigger trigger_channel,
 			enum qpnp_vadc_channels channel,
@@ -2447,6 +2465,12 @@ int32_t qpnp_iadc_get_rsense(struct qpnp_iadc_chip *dev, int32_t *rsense);
 int32_t qpnp_iadc_get_gain_and_offset(struct qpnp_iadc_chip *dev,
 					struct qpnp_iadc_calib *result);
 /**
+ * Same as qpnp_iadc_get_gain_and_offset() while can be called in suspend op
+ */
+int32_t qpnp_iadc_get_gain_and_offset_pmsafe(struct qpnp_iadc_chip *dev,
+					struct qpnp_iadc_calib *result);
+
+/**
  * qpnp_get_iadc() - Clients need to register with the iadc with the
  *		corresponding device instance it wants to read the channels.
  *		Read the bindings document on how to pass the phandle for
@@ -2519,6 +2543,9 @@ static inline int32_t qpnp_iadc_get_rsense(struct qpnp_iadc_chip *iadc,
 { return -ENXIO; }
 static inline int32_t qpnp_iadc_get_gain_and_offset(struct qpnp_iadc_chip *iadc,
 				struct qpnp_iadc_calib *result)
+{ return -ENXIO; }
+static inline int32_t qpnp_iadc_get_gain_and_offset_pmsafe(
+	struct qpnp_iadc_chip *iadc, struct qpnp_iadc_calib *result)
 { return -ENXIO; }
 static inline struct qpnp_iadc_chip *qpnp_get_iadc(struct device *dev,
 							const char *name)
