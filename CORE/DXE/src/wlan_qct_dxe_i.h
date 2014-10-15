@@ -100,6 +100,7 @@ when           who        what, where, why
 #endif
 
 #define WLANDXE_BMU_AVAILABLE_BD_PDU      0x80084
+#define WLANDXE_BMU_ERROR_INTR_STATUS     0x80004
 
 #define WLANDXE_REGISTER_BASE_ADDRESS     0x202000
 
@@ -175,6 +176,9 @@ when           who        what, where, why
 #define WLANDXE_DMA_CSR_RESERVED_OFFSET       0x10
 #define WLANDXE_DMA_CSR_RESERVED_DEFAULT      0x0
 
+#define WLANDXE_DMA_CSR_FW_BMU_RECOVERY       0x400000
+#define WLANDXE_DMA_CSR_RECOVERY_DONE         0x200000
+#define WLANDXE_DMA_CSR_HOST_RECOVERY_DONE    0x800000
 
 #define WLANDXE_DMA_CSR_H2H_SYNC_EN_MASK      0x8000
 #define WLANDXE_DMA_CSR_H2H_SYNC_EN_OFFSET    0x0F

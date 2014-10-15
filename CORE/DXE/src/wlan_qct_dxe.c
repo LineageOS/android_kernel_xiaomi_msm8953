@@ -138,6 +138,11 @@ static void dxeStartSSRTimer
   WLANDXE_CtrlBlkType     *dxeCtxt
 );
 
+static wpt_status dxeTXCleanup
+(
+   WLANDXE_CtrlBlkType     *hostCtxt
+);
+
 /*-------------------------------------------------------------------------
   *  Local Function
   *-------------------------------------------------------------------------*/
@@ -471,19 +476,22 @@ void dxeChannelAllDescDump
 
 /*==========================================================================
   @  Function Name
-      dxeErrChannelDebug
+      dxeErrHandler
 
   @  Description
-      Dump channel information for which Error interrupt has occured
+      Dump channel information for which Error interrupt has occured and
+      try to recover from the Error
 
   @  Parameters
       WLANDXE_ChannelCBType  *channelCb
 
   @  Return
-      NONE
-
+      wpt_status: eWLAN_PAL_STATUS_SUCCESS if recovery is possible and
+                  successful
+                  eWLAN_PAL_STATUS_E_FAILURE if recovery is not possible
+                  or recovery fails
 ===========================================================================*/
-void dxeErrChannelDebug
+wpt_status dxeErrHandler
 (
     WLANDXE_ChannelCBType    *channelCb,
     wpt_uint32                chStatusReg
@@ -555,7 +563,78 @@ void dxeErrChannelDebug
             }
             targetCtrlBlk = (WLANDXE_DescCtrlBlkType *)targetCtrlBlk->nextCtrlBlk;
          }
+         wpalFwDumpReq(17, 0, 0, 0, 0, 1);
          break;
+      }
+      case WLANDXE_ERROR_ABORT:
+      {
+          wpt_uint32 regValue, regValueLocal;
+          wpt_uint32 count = 0;
+          HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_FATAL,
+                   "%s: DXE Abort Error from S/W", __func__);
+
+          wpalReadRegister(WALNDEX_DMA_CSR_ADDRESS, &regValue);
+          HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_FATAL,
+                   "%s: DXE CSR Value: %08x", __func__,regValue);
+
+          //Execute the BMU recovery only if firmware triggered the ABORT
+          if (regValue & WLANDXE_DMA_CSR_FW_BMU_RECOVERY)
+          {
+              HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_FATAL,
+                       "%s: Firmware BMU recovery On %08x", __func__,regValue);
+
+              // Clean up the descriptors
+              if (eWLAN_PAL_STATUS_SUCCESS !=
+                        dxeTXCleanup(tempDxeCtrlBlk))
+              {
+              HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_FATAL,
+                       "%s: Host DXE Cleanup Failed!!!!", __func__);
+              }
+
+              // Debug DXE channel after cleanup
+              dxeChannelMonitor("INT_ERR", channelCb, &channelLog);
+              dxeDescriptorDump(channelCb, channelCb->headCtrlBlk->linkedDesc, 0);
+              dxeChannelRegisterDump(channelCb, "INT_ERR", &channelLog);
+              dxeChannelAllDescDump(channelCb, channelCb->channelType, &channelLog);
+
+              // Unblock the firmware
+              regValue |= WLANDXE_DMA_CSR_HOST_RECOVERY_DONE;
+              HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_FATAL,
+                       "%s: Host DXE Cleanup done %08x", __func__,regValue);
+              wpalWriteRegister(WALNDEX_DMA_CSR_ADDRESS, regValue);
+
+              // Wait for firmware to complete the cleanup
+              do
+              {
+                  wpalReadRegister(WALNDEX_DMA_CSR_ADDRESS, &regValue);
+                  wpalBusyWait(5000);
+                  count++;
+                  //count is 60 because wait is for 5 ms and 60*5=300ms
+                  //which is the time WD bark happens in firmware
+              } while(count < 60 && !(regValue & WLANDXE_DMA_CSR_RECOVERY_DONE));
+              HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_FATAL,
+                       "%s: FW Cleanup done %08x", __func__,regValue);
+
+              //clear all spare bits in CSR
+              wpalWriteRegister(WALNDEX_DMA_CSR_ADDRESS,regValue &
+                                ~(WLANDXE_DMA_CSR_RECOVERY_DONE |
+                                  WLANDXE_DMA_CSR_FW_BMU_RECOVERY |
+                                  WLANDXE_DMA_CSR_HOST_RECOVERY_DONE));
+
+              //check if the h/w resources have recovered
+              wpalReadRegister(WLANDXE_BMU_AVAILABLE_BD_PDU, &regValue);
+              wpalReadRegister(WLANDXE_BMU_AVAILABLE_BD_PDU_LOCAL, &regValueLocal);
+              HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_FATAL,
+                       "===== count %d ABD %d, ABD LOCAL %d =====", count,
+                       regValue, regValueLocal);
+              if(regValue == 0 || regValueLocal == 0)
+              {
+                  return eWLAN_PAL_STATUS_E_FAILURE;
+              }
+
+              return eWLAN_PAL_STATUS_SUCCESS;
+          }
+          break;
       }
       default:
       {
@@ -565,7 +644,7 @@ void dxeErrChannelDebug
       }
 
    }
-   wpalFwDumpReq(17, 0, 0, 0, 0, 0);
+   return eWLAN_PAL_STATUS_E_FAILURE;
 }
 /*==========================================================================
   @  Function Name
@@ -2621,11 +2700,12 @@ pull_frames:
                   "%11s : 0x%x Error Reported, Reload Driver",
                   channelType[channelCb->channelType], chHighStat);
 
-         dxeErrChannelDebug(channelCb, chHighStat);
-
-         dxeCtxt->driverReloadInProcessing = eWLAN_PAL_TRUE;
-         wpalWlanReload();
-         dxeStartSSRTimer(dxeCtxt);
+         if (eWLAN_PAL_STATUS_SUCCESS != dxeErrHandler(channelCb, chHighStat))
+         {
+            dxeCtxt->driverReloadInProcessing = eWLAN_PAL_TRUE;
+            wpalWlanReload();
+            dxeStartSSRTimer(dxeCtxt);
+         }
       }
       else if((WLANDXE_CH_STAT_INT_DONE_MASK & chHighStat) ||
               (WLANDXE_CH_STAT_INT_ED_MASK & chHighStat))
@@ -2674,11 +2754,13 @@ pull_frames:
                   "%11s : 0x%x Error Reported, Reload Driver",
                   channelType[channelCb->channelType], chLowStat);
 
-         dxeErrChannelDebug(channelCb, chLowStat);
-
-         dxeCtxt->driverReloadInProcessing = eWLAN_PAL_TRUE;
-         wpalWlanReload();
-         dxeStartSSRTimer(dxeCtxt);
+         if (eWLAN_PAL_STATUS_SUCCESS !=
+                         dxeErrHandler(channelCb, chLowStat))
+         {
+            dxeCtxt->driverReloadInProcessing = eWLAN_PAL_TRUE;
+            wpalWlanReload();
+            dxeStartSSRTimer(dxeCtxt);
+         }
       }
       else if((WLANDXE_CH_STAT_INT_ED_MASK & chLowStat) ||
                (WLANDXE_CH_STAT_INT_DONE_MASK & chLowStat))
@@ -2724,11 +2806,14 @@ pull_frames:
                      "%11s : 0x%x Error Reported, Reload Driver",
                      channelType[channelCb->channelType], chLogRxStat);
 
-            dxeErrChannelDebug(channelCb, chLogRxStat);
+            if (eWLAN_PAL_STATUS_SUCCESS !=
+                            dxeErrHandler(channelCb, chLogRxStat))
+            {
+               dxeCtxt->driverReloadInProcessing = eWLAN_PAL_TRUE;
+               wpalWlanReload();
+               dxeStartSSRTimer(dxeCtxt);
+            }
 
-            dxeCtxt->driverReloadInProcessing = eWLAN_PAL_TRUE;
-            wpalWlanReload();
-            dxeStartSSRTimer(dxeCtxt);
          }
          else if((WLANDXE_CH_STAT_INT_ED_MASK & chLogRxStat) ||
                   (WLANDXE_CH_STAT_INT_DONE_MASK & chLogRxStat))
@@ -2775,11 +2860,14 @@ pull_frames:
                      "%11s : 0x%x Error Reported, Reload Driver",
                      channelType[channelCb->channelType], chLogRxFwStat);
 
-            dxeErrChannelDebug(channelCb, chLogRxFwStat);
+            if (eWLAN_PAL_STATUS_SUCCESS !=
+                            dxeErrHandler(channelCb, chLogRxFwStat))
+            {
+               dxeCtxt->driverReloadInProcessing = eWLAN_PAL_TRUE;
+               wpalWlanReload();
+               dxeStartSSRTimer(dxeCtxt);
+            }
 
-            dxeCtxt->driverReloadInProcessing = eWLAN_PAL_TRUE;
-            wpalWlanReload();
-            dxeStartSSRTimer(dxeCtxt);
          }
          else if((WLANDXE_CH_STAT_INT_ED_MASK & chLogRxFwStat) ||
                  (WLANDXE_CH_STAT_INT_DONE_MASK & chLogRxFwStat))
@@ -3588,6 +3676,204 @@ static wpt_status dxeTXCompFrame
 }
 
 /*==========================================================================
+  @  Function Name
+      dxeTXCleanup
+
+  @  Description
+      Cleanup the TX channels after DXE Error
+
+  @  Parameters
+      WLANDXE_CtrlBlkType     *dxeCtrlBlk,
+                               DXE host driver main control block
+
+  @  Return
+      PAL_STATUS_T
+===========================================================================*/
+static wpt_status dxeTXCleanup
+(
+   WLANDXE_CtrlBlkType     *hostCtxt
+)
+{
+   wpt_status                status = eWLAN_PAL_STATUS_SUCCESS;
+   WLANDXE_DescCtrlBlkType  *currentCtrlBlk = NULL;
+   WLANDXE_DescType         *currentDesc    = NULL;
+   wpt_uint32                descCtrlValue  = 0;
+   unsigned int             *lowThreshold   = NULL;
+   unsigned int              idx;
+   WLANDXE_ChannelCBType    *channelEntry;
+
+   HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO_LOW,
+            "%s Enter", __func__);
+
+   /* Sanity */
+   if((NULL == hostCtxt))
+   {
+      HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_FATAL,
+               "%s: Invalid ARG", __func__);
+      return eWLAN_PAL_STATUS_E_INVAL;
+   }
+
+   if(NULL == hostCtxt->txCompCB)
+   {
+      HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_FATAL,
+               "%s: TXCompCB is not registered",__func__);
+      return eWLAN_PAL_STATUS_SUCCESS;
+   }
+
+   for(idx = 0; idx < WDTS_CHANNEL_MAX; idx++)
+   {
+      channelEntry = &tempDxeCtrlBlk->dxeChannel[idx];
+      if(idx != WDTS_CHANNEL_TX_LOW_PRI && idx != WDTS_CHANNEL_TX_HIGH_PRI)
+      {
+         HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_FATAL,
+                  "%s: %11s continue",__func__,
+                  channelType[channelEntry->channelType]);
+          continue;
+      }
+
+      status = wpalMutexAcquire(&channelEntry->dxeChannelLock);
+      if(eWLAN_PAL_STATUS_SUCCESS != status)
+      {
+         HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                  "%s: %11s Mutex Acquire fail",__func__,
+                  channelType[channelEntry->channelType]);
+         return status;
+      }
+
+      currentCtrlBlk = channelEntry->tailCtrlBlk;
+      currentDesc    = currentCtrlBlk->linkedDesc;
+
+      if( currentCtrlBlk == channelEntry->headCtrlBlk )
+      {
+         HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_FATAL,
+                  "%s: %11s Head and Tail are Same",__func__,
+                  channelType[channelEntry->channelType]);
+
+         status = wpalMutexRelease(&channelEntry->dxeChannelLock);
+         if(eWLAN_PAL_STATUS_SUCCESS != status)
+         {
+            HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                     "%s: %11s Mutex Release fail",__func__,
+                     channelType[channelEntry->channelType]);
+            return status;
+         }
+         continue;
+      }
+
+      while(1)
+      {
+         descCtrlValue = currentDesc->descCtrl.ctrl;
+         if((descCtrlValue & WLANDXE_DESC_CTRL_VALID))
+         {
+             /* invalidate... */
+             currentDesc->descCtrl.ctrl &= ~WLANDXE_DESC_CTRL_VALID;
+         }
+
+         if(currentCtrlBlk->xfrFrame == NULL)
+         {
+             HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_FATAL,
+                     "%s: %11s Invalid transfer frame",__func__,
+                     channelType[channelEntry->channelType]);
+             HDXE_ASSERT(0);
+             break;
+         }
+         channelEntry->numFreeDesc++;
+         channelEntry->numRsvdDesc--;
+
+         /* Send Frame TX Complete notification with frame start fragment location */
+         if(WLANDXE_U32_SWAP_ENDIAN(descCtrlValue) & WLANDXE_DESC_CTRL_EOP)
+         {
+            hostCtxt->txCompletedFrames--;
+            status = wpalUnlockPacket(currentCtrlBlk->xfrFrame);
+            if (eWLAN_PAL_STATUS_SUCCESS != status)
+            {
+               HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                        "%s: unable to unlock packet",__func__);
+               status = wpalMutexRelease(&channelEntry->dxeChannelLock);
+               if(eWLAN_PAL_STATUS_SUCCESS != status)
+               {
+                  HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                           "%s: Mutex Release fail",__func__);
+               }
+               return status;
+            }
+            hostCtxt->txCompCB(hostCtxt->clientCtxt,
+                               currentCtrlBlk->xfrFrame,
+                               eWLAN_PAL_STATUS_SUCCESS); //mir: SUCCESS or FAILURE?
+            channelEntry->numFragmentCurrentChain = 0;
+         }
+         currentCtrlBlk = currentCtrlBlk->nextCtrlBlk;
+         currentDesc    = currentCtrlBlk->linkedDesc;
+
+         /* Break condition
+          * Head control block is the control block must be programed for the next TX
+          * so, head control block is not programmed control block yet
+          * if loop encounte head control block, stop to complete
+          * in theory, COMP CB must be called already ??? */
+         if(currentCtrlBlk == channelEntry->headCtrlBlk)
+         {
+            HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_FATAL,
+                     "%s: %11s caught up with head ptr",__func__,
+                     channelType[channelEntry->channelType]);
+            break;
+         }
+         /* VALID Bit check ???? */
+      }
+
+      /* Tail and Head Control block must be same */
+      channelEntry->tailCtrlBlk = currentCtrlBlk;
+      /* Re-Sync Head and CDR */
+      status = wpalWriteRegister(channelEntry->channelRegister.chDXEDesclRegAddr,
+                                      channelEntry->headCtrlBlk->linkedDescPhyAddr);
+      if(eWLAN_PAL_STATUS_SUCCESS != status)
+      {
+         HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                  "dxeChannelInitProgram Write DESC Address register fail");
+         status = wpalMutexRelease(&channelEntry->dxeChannelLock);
+         if(eWLAN_PAL_STATUS_SUCCESS != status)
+         {
+            HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                     "%s: %11s Mutex Release fail", __func__,
+                     channelType[channelEntry->channelType]);
+         }
+         return status;
+      }
+
+      lowThreshold = channelEntry->channelType == WDTS_CHANNEL_TX_LOW_PRI?
+         &(hostCtxt->txCompInt.txLowResourceThreshold_LoPriCh):
+         &(hostCtxt->txCompInt.txLowResourceThreshold_HiPriCh);
+
+      /* If specific channel hit low resource condition send notification to upper layer */
+      if((eWLAN_PAL_TRUE == channelEntry->hitLowResource) &&
+         (channelEntry->numFreeDesc > *lowThreshold))
+      {
+         /* Change it back if we raised it for fetching a remaining packet from TL */
+         if(WLANDXE_TX_LOW_RES_THRESHOLD > *lowThreshold)
+         {
+            *lowThreshold = WLANDXE_TX_LOW_RES_THRESHOLD;
+         }
+
+         HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_WARN,
+                  "DXE TX %d channel recovered from low resource", channelEntry->channelType);
+         hostCtxt->lowResourceCB(hostCtxt->clientCtxt,
+                                 channelEntry->channelType,
+                                 eWLAN_PAL_TRUE);
+         channelEntry->hitLowResource = eWLAN_PAL_FALSE;
+      }
+      status = wpalMutexRelease(&channelEntry->dxeChannelLock);
+      if(eWLAN_PAL_STATUS_SUCCESS != status)
+      {
+         HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                  "%s: %11s Mutex Release fail", __func__,
+                  channelType[channelEntry->channelType]);
+      }
+   }
+
+   HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO_LOW,
+            "%s Exit", __func__);
+   return status;
+}
+/*==========================================================================
   @  Function Name 
       dxeTXEventHandler
 
@@ -3715,11 +4001,14 @@ void dxeTXEventHandler
                   "%11s : 0x%x Error Reported, Reload Driver",
                   channelType[channelCb->channelType], chStat);
 
-         dxeErrChannelDebug(channelCb, chStat);
-
-         dxeCtxt->driverReloadInProcessing = eWLAN_PAL_TRUE;
-         wpalWlanReload();
-         dxeStartSSRTimer(dxeCtxt);
+         if (eWLAN_PAL_STATUS_SUCCESS !=
+                         dxeErrHandler(channelCb, chStat))
+         {
+            dxeCtxt->driverReloadInProcessing = eWLAN_PAL_TRUE;
+            wpalWlanReload();
+            dxeStartSSRTimer(dxeCtxt);
+         }
+         bEnableISR = 1;
       }
       else if(WLANDXE_CH_STAT_INT_DONE_MASK & chStat)
       {
@@ -3769,11 +4058,14 @@ void dxeTXEventHandler
                   "%11s : 0x%x Error Reported, Reload Driver",
                   channelType[channelCb->channelType], chStat);
 
-         dxeErrChannelDebug(channelCb, chStat);
-
-         dxeCtxt->driverReloadInProcessing = eWLAN_PAL_TRUE;
-         wpalWlanReload();
-         dxeStartSSRTimer(dxeCtxt);
+         if (eWLAN_PAL_STATUS_SUCCESS !=
+                         dxeErrHandler(channelCb, chStat))
+         {
+             dxeCtxt->driverReloadInProcessing = eWLAN_PAL_TRUE;
+             wpalWlanReload();
+             dxeStartSSRTimer(dxeCtxt);
+         }
+         bEnableISR = 1;
       }
       else if(WLANDXE_CH_STAT_INT_DONE_MASK & chStat)
       {
