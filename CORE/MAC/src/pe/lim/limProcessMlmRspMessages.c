@@ -1674,6 +1674,8 @@ limProcessMlmSetKeysCnf(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
     // Prepare and send SME_SETCONTEXT_RSP message
     tLimMlmSetKeysCnf   *pMlmSetKeysCnf;
     tpPESession        psessionEntry;
+    tANI_U16 aid;
+    tpDphHashNode pStaDs;
 
     if(pMsgBuf == NULL)
     {
@@ -1686,9 +1688,23 @@ limProcessMlmSetKeysCnf(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
         PELOGE(limLog(pMac, LOGE,FL("session does not exist for given sessionId "));)
         return;
     }
+    psessionEntry->isKeyInstalled = 0;
     limLog( pMac, LOG1,
         FL("Received MLM_SETKEYS_CNF with resultCode = %d"),
         pMlmSetKeysCnf->resultCode );
+    /* if the status is success keys are installed in the
+     * Firmware so we can set the protection bit
+     */
+    if (eSIR_SME_SUCCESS == pMlmSetKeysCnf->resultCode) {
+        psessionEntry->isKeyInstalled = 1;
+        if ((psessionEntry->limSystemRole == eLIM_AP_ROLE) ||
+            (psessionEntry->limSystemRole == eLIM_BT_AMP_AP_ROLE)) {
+            pStaDs = dphLookupHashEntry(pMac, pMlmSetKeysCnf->peerMacAddr, &aid,
+                                     &psessionEntry->dph.dphHashTable);
+            if (pStaDs != NULL)
+                pStaDs->isKeyInstalled = 1;
+        }
+    }
     limSendSmeSetContextRsp(pMac,
                             pMlmSetKeysCnf->peerMacAddr,
                             1,
