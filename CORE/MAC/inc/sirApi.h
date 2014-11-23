@@ -677,6 +677,9 @@ typedef struct sSirSmeStartBssReq
     tANI_BOOLEAN            pmfRequired;
 #endif
 
+#ifdef WLAN_FEATURE_AP_HT40_24G
+    tANI_BOOLEAN            apHT40_24GEnabled;
+#endif
 } tSirSmeStartBssReq, *tpSirSmeStartBssReq;
 
 #define GET_IE_LEN_IN_BSS(lenInBss) ( lenInBss + sizeof(lenInBss) - \
@@ -1183,6 +1186,9 @@ typedef struct sSirSmeAssocInd
     tSirMacPowerCapInfo     powerCap;
     tSirSupChnl             supportedChannels;
     tAniBool             wmmEnabledSta; /* if present - STA is WMM enabled */
+#ifdef WLAN_FEATURE_AP_HT40_24G
+    tAniBool             HT40MHzIntoEnabledSta; /* if present - STA Enable 40 MHz Intolerant */
+#endif
     tAniBool             reassocReq;
     // Required for indicating the frames to upper layer
     tANI_U32             beaconLength;
@@ -3415,6 +3421,28 @@ typedef struct sSirChangeBIParams
     tSirMacAddr    bssId;
     tANI_U8        sessionId;      // Session ID
 } tSirChangeBIParams, *tpSirChangeBIParams;
+
+#ifdef WLAN_FEATURE_AP_HT40_24G
+typedef struct sSirSetHT2040Mode
+{
+    tANI_U16       messageType;
+    tANI_U16       length;
+    tANI_U8        cbMode;
+    tSirMacAddr    bssId;
+    tANI_U8        sessionId;      // Session ID
+} tSirSetHT2040Mode, *tpSirSetHT2040Mode;
+
+typedef struct sSirHT2040CoexInfoInd
+{
+    tANI_U16       messageType; //  eWNI_SME_2040_COEX_IND
+    tANI_U16       length;
+    tANI_U8        sessionId;
+    tANI_U8        HT40MHzIntolerant;
+    tANI_U8        HT20MHzBssWidthReq;
+    tANI_U8        channel_num;
+    tANI_U8        HT2040BssIntoChanReport [1]; //variable
+}tSirHT2040CoexInfoInd, *tpSirHT2040CoexInfoInd;
+#endif
 
 typedef struct sSirOBSSHT40Param
 {

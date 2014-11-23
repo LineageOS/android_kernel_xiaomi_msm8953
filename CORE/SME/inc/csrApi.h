@@ -198,6 +198,23 @@ typedef enum
     eCSR_SCAN_ABORT_DUE_TO_BAND_CHANGE, //Scan aborted due to band change
 }eCsrAbortReason;
 
+typedef enum
+{
+   eCSR_INI_SINGLE_CHANNEL_CENTERED = 0,
+   eCSR_INI_DOUBLE_CHANNEL_HIGH_PRIMARY,
+   eCSR_INI_DOUBLE_CHANNEL_LOW_PRIMARY,
+#ifdef WLAN_FEATURE_11AC
+   eCSR_INI_QUADRUPLE_CHANNEL_20MHZ_LOW_40MHZ_CENTERED,
+   eCSR_INI_QUADRUPLE_CHANNEL_20MHZ_CENTERED_40MHZ_CENTERED,
+   eCSR_INI_QUADRUPLE_CHANNEL_20MHZ_HIGH_40MHZ_CENTERED,
+   eCSR_INI_QUADRUPLE_CHANNEL_20MHZ_LOW_40MHZ_LOW,
+   eCSR_INI_QUADRUPLE_CHANNEL_20MHZ_HIGH_40MHZ_LOW,
+   eCSR_INI_QUADRUPLE_CHANNEL_20MHZ_LOW_40MHZ_HIGH,
+   eCSR_INI_QUADRUPLE_CHANNEL_20MHZ_HIGH_40MHZ_HIGH,
+#endif
+   eCSR_INI_CHANNEL_BONDING_STATE_MAX
+}eIniChanBondState;
+
 #define CSR_SCAN_TIME_DEFAULT       0
 #define CSR_VALUE_IGNORED           0xFFFFFFFF
 #define CSR_RSN_PMKID_SIZE          16
@@ -481,6 +498,10 @@ typedef enum
                                  // beacon interval
 #ifdef WLAN_FEATURE_11W
     eCSR_ROAM_UNPROT_MGMT_FRAME_IND,
+#endif
+
+#ifdef WLAN_FEATURE_AP_HT40_24G
+    eCSR_ROAM_2040_COEX_INFO_IND,
 #endif
 
 #if defined(FEATURE_WLAN_ESE) && defined(FEATURE_WLAN_ESE_UPLOAD)
@@ -1156,6 +1177,10 @@ typedef struct tagCsrConfigParam
     tANI_BOOLEAN sendDeauthBeforeCon;
 
     eCsrBand  scanBandPreference;
+#ifdef WLAN_FEATURE_AP_HT40_24G
+    tANI_BOOLEAN apHT40_24GEnabled;
+    tANI_U32 channelBondingAPMode24GHz; // Use for SAP/P2P GO 2.4GHz channel Bonding
+#endif
 }tCsrConfigParam;
 
 //Tush
@@ -1209,6 +1234,9 @@ typedef struct tagCsrRoamInfo
     } u;
 
     tANI_BOOLEAN wmmEnabledSta;   //set to true if WMM enabled STA
+#ifdef WLAN_FEATURE_AP_HT40_24G
+    tANI_BOOLEAN HT40MHzIntoEnabledSta; //set to true if 40 MHz Intolerant enabled STA
+#endif
     tANI_U32 dtimPeriod;
 
 #ifdef FEATURE_WLAN_ESE
@@ -1240,6 +1268,9 @@ typedef struct tagCsrRoamInfo
 
     tANI_S8 rxRssi;
     tANI_U32 maxRateFlags;
+#ifdef WLAN_FEATURE_AP_HT40_24G
+    tpSirHT2040CoexInfoInd pSmeHT2040CoexInfoInd;
+#endif
 }tCsrRoamInfo;
 
 typedef struct tagCsrFreqScanInfo
@@ -1265,6 +1296,9 @@ typedef struct sSirSmeAssocIndToUpperLayerCnf
     tSirRSNie            rsnIE;           // RSN IE received from peer
     tSirAddie            addIE;           // Additional IE received from peer, which can be WSC and/or P2P IE
     tANI_U8              reassocReq;      //set to true if reassoc
+#ifdef WLAN_FEATURE_AP_HT40_24G
+    tANI_U8              HT40MHzIntoEnabledSta; //set to true if 40 MHz Intolerant enabled STA
+#endif
 } tSirSmeAssocIndToUpperLayerCnf, *tpSirSmeAssocIndToUpperLayerCnf;
 
 typedef struct tagCsrSummaryStatsInfo
