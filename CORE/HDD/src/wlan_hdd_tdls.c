@@ -792,11 +792,19 @@ void wlan_hdd_tdls_exit(hdd_adapter_t *pAdapter)
      */
 
     pHddCtx = WLAN_HDD_GET_CTX( pAdapter );
-    if(0 != (wlan_hdd_validate_context(pHddCtx)))
+
+    if (NULL == pHddCtx || NULL == pHddCtx->cfg_ini)
     {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_WARN,
-                 FL("pHddCtx is not valid"));
-        return;
+        VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "%s: HDD context is Null", __func__);
+        return ;
+    }
+
+    if (pHddCtx->isLogpInProgress)
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  "%s: LOGP in Progress. Ignore!!!", __func__);
+        return ;
     }
 
     pHddTdlsCtx = WLAN_HDD_GET_TDLS_CTX_PTR(pAdapter);
@@ -2220,14 +2228,14 @@ static void __wlan_hdd_tdls_pre_setup(struct work_struct *work)
 
     wlan_hdd_tdls_check_power_save_prohibited(pHddTdlsCtx->pAdapter);
 
+    wlan_hdd_tdls_timer_restart(pHddTdlsCtx->pAdapter,
+                                &pHddTdlsCtx->peerDiscoveryTimeoutTimer,
+                                pHddTdlsCtx->threshold_config.tx_period_t - TDLS_DISCOVERY_TIMEOUT_BEFORE_UPDATE);
+
     mutex_unlock(&pHddCtx->tdls_lock);
     VOS_TRACE( VOS_MODULE_ID_HDD, TDLS_LOG_LEVEL, "%s: discovery count %u timeout %u msec",
                __func__, pHddTdlsCtx->discovery_sent_cnt,
                pHddTdlsCtx->threshold_config.tx_period_t - TDLS_DISCOVERY_TIMEOUT_BEFORE_UPDATE);
-
-    wlan_hdd_tdls_timer_restart(pHddTdlsCtx->pAdapter,
-                                &pHddTdlsCtx->peerDiscoveryTimeoutTimer,
-                                pHddTdlsCtx->threshold_config.tx_period_t - TDLS_DISCOVERY_TIMEOUT_BEFORE_UPDATE);
 
 done:
     pHddTdlsCtx->curr_candidate = NULL;
