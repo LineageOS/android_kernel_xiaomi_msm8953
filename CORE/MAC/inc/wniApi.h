@@ -388,6 +388,7 @@ enum eWniMsgTypes
     eWNI_SME_2040_COEX_IND, /* HT20/40 Coex indication in SAP case for 2.4GHz*/
 #endif
     eWNI_SME_MAC_SPOOF_ADDR_IND,
+    eWNI_SME_ENCRYPT_MSG_RSP,
     eWNI_SME_MSG_TYPES_END
 };
 
