@@ -194,7 +194,7 @@ static placeHolderInCapBitmap supportEnabledFeatures[] =
    ,FEATURE_NOT_SUPPORTED          //46
    ,FEATURE_NOT_SUPPORTED          //47
    ,WPS_PRBRSP_TMPL                //48
-
+   ,BCN_IE_FLT_DELTA               //49
 };
 
 /*-------------------------------------------------------------------------- 
@@ -1400,6 +1400,14 @@ void WDI_TraceHostFWCapabilities(tANI_U32 *capabilityBitmap)
                           break;
                      case WPS_PRBRSP_TMPL: snprintf(pCapStr, sizeof("WPS_PRBRSP_TMPL"), "%s", "WPS_PRBRSP_TMPL");
                           pCapStr += strlen("WPS_PRBRSP_TMPL");
+                          break;
+                     case BCN_IE_FLT_DELTA: snprintf(pCapStr, sizeof("BCN_IE_FLT_DELTA"), "%s", "BCN_IE_FLT_DELTA");
+                          pCapStr += strlen("BCN_IE_FLT_DELTA");
+                          break;
+
+
+                     case BMU_ERROR_GENERIC_RECOVERY: snprintf(pCapStr, sizeof("BMU_ERROR_GENERIC_RECOVERY"), "%s", "BMU_ERROR_GENERIC_RECOVERY");
+                          pCapStr += strlen("BMU_ERROR_GENERIC_RECOVERY");
                           break;
 
                  }
