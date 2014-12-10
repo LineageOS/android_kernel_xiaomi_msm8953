@@ -1742,7 +1742,7 @@ static eHalStatus hdd_AssociationCompletionHandler( hdd_adapter_t *pAdapter, tCs
                 hddLog(VOS_TRACE_LEVEL_INFO,"Restart Sap as SAP channel is %d "
                        "and STA channel is %d", pHostapdAdapter->sessionCtx.ap.operatingChannel,
                        (int)pRoamInfo->pBssDesc->channelId);
-                hdd_restart_softap(pHddCtx, pHostapdAdapter);
+                hdd_hostapd_stop(pHostapdAdapter->dev);
              }
         }
     }
