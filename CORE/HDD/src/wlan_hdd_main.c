@@ -9493,11 +9493,11 @@ int hdd_wlan_startup(struct device *dev )
        }
        //TODO: To Remove enableDhcpDebug and use gEnableDebugLog for
        //EAPOL and DHCP
-       pHddCtx->cfg_ini->enableDhcpDebug = CFG_DEBUG_DHCP_ENABLE;
-       pHddCtx->cfg_ini->gEnableDebugLog = VOS_PKT_PROTO_TYPE_EAPOL;
+       if (!pHddCtx->cfg_ini->gEnableDebugLog)
+           pHddCtx->cfg_ini->gEnableDebugLog =
+           VOS_PKT_PROTO_TYPE_EAPOL | VOS_PKT_PROTO_TYPE_DHCP;
    }
 #endif
-
    hdd_register_mcast_bcast_filter(pHddCtx);
    if (VOS_STA_SAP_MODE != hdd_get_conparam())
    {
