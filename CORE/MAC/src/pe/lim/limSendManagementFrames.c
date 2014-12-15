@@ -1306,8 +1306,8 @@ limSendAddtsReqActionFrame(tpAniSirGlobal    pMac,
         }
     }
 
-    PELOG3(limLog( pMac, LOG3, FL("Sending an Add TS Request frame to ") );
-    limPrintMacAddr( pMac, peerMacAddr, LOG3 );)
+    limLog( pMac, LOG1, FL("Sending an Add TS Request frame to ") );
+    limPrintMacAddr( pMac, peerMacAddr, LOG1 );
 
     if( ( SIR_BAND_5_GHZ == limGetRFBand(psessionEntry->currentOperChannel))
        || ( psessionEntry->pePersona == VOS_P2P_CLIENT_MODE ) ||

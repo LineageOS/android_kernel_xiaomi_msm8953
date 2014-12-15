@@ -3298,8 +3298,8 @@ void limSwitchPrimaryChannel(tpAniSirGlobal pMac, tANI_U8 newChannel,tpPESession
     tANI_U32 localPwrConstraint;
 #endif
     
-    PELOG3(limLog(pMac, LOG3, FL("limSwitchPrimaryChannel: old chnl %d --> new chnl %d "),
-           psessionEntry->currentOperChannel, newChannel);)
+    limLog(pMac, LOG1, FL(" old chnl %d --> new chnl %d "),
+           psessionEntry->currentOperChannel, newChannel);
     psessionEntry->currentReqChannel = newChannel;
     psessionEntry->limRFBand = limGetRFBand(newChannel);
 

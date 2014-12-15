@@ -2135,7 +2135,7 @@ __limProcessSmeReassocReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
     tANI_U16            nSize;
 
 
-    PELOG3(limLog(pMac, LOG3, FL("Received REASSOC_REQ"));)
+    limLog(pMac, LOG1, FL("Received SME_REASSOC_REQ"));
     
     nSize = __limGetSmeJoinReqSizeForAlloc((tANI_U8 *) pMsgBuf);
     pReassocReq = vos_mem_malloc(nSize);

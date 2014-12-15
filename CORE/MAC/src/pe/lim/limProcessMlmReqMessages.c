@@ -1992,8 +1992,8 @@ limProcessMlmScanReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
         /// Hold onto SCAN REQ criteria
         pMac->lim.gpLimMlmScanReq = (tLimMlmScanReq *) pMsgBuf;
 
-       PELOG3(limLog(pMac, LOG3, FL("Number of channels to scan are %d "),
-               pMac->lim.gpLimMlmScanReq->channelList.numChannels);)
+       limLog(pMac, LOG1, FL("Number of channels to scan are %d "),
+               pMac->lim.gpLimMlmScanReq->channelList.numChannels);
 
         pMac->lim.gLimPrevMlmState = pMac->lim.gLimMlmState;
 

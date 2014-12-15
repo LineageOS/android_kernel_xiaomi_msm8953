@@ -259,7 +259,7 @@ __limProcessChannelSwitchActionFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo
     pBody = WDA_GET_RX_MPDU_DATA(pRxPacketInfo);
     frameLen = WDA_GET_RX_PAYLOAD_LEN(pRxPacketInfo);
 
-    PELOG3(limLog(pMac, LOG3, FL("Received Channel switch action frame"));)
+    limLog(pMac, LOG1, FL("Received Channel switch action frame"));
     if (!psessionEntry->lim11hEnable)
         return;
 
@@ -323,8 +323,8 @@ __limProcessChannelSwitchActionFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo
         }
 #endif
 
-       PELOG3(limLog(pMac, LOG3, FL("Rcv Chnl Swtch Frame: Timeout in %d ticks"),
-                             psessionEntry->gLimChannelSwitch.switchTimeoutValue);)
+       limLog(pMac, LOG1, FL("Rcv Chnl Swtch Frame: Timeout in %d ticks"),
+                             psessionEntry->gLimChannelSwitch.switchTimeoutValue);
 
         /* Only primary channel switch element is present */
         psessionEntry->gLimChannelSwitch.state = eLIM_CHANNEL_SWITCH_PRIMARY_ONLY;
