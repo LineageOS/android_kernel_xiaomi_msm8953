@@ -1673,16 +1673,16 @@ limSendAssocRspMgmtFrame(tpAniSirGlobal pMac,
 
     if (subType == LIM_ASSOC)
     {
-        PELOG1(limLog(pMac, LOG1,
+        limLog(pMac, LOG1,
                FL("*** Sending Assoc Resp status %d aid %d to "),
-               statusCode, aid);)
+               statusCode, aid);
     }    
     else{
-        PELOG1(limLog(pMac, LOG1,
+        limLog(pMac, LOG1,
                FL("*** Sending ReAssoc Resp status %d aid %d to "),
-               statusCode, aid);)
+               statusCode, aid);
     }
-    PELOG1(limPrintMacAddr(pMac, pMacHdr->da, LOG1);)
+    limPrintMacAddr(pMac, pMacHdr->da, LOG1);
 
     if ( addnIEPresent )
     {
@@ -1975,9 +1975,9 @@ limSendAddtsRspActionFrame(tpAniSirGlobal     pMac,
         }
     }
 
-    PELOG1(limLog( pMac, LOG1, FL("Sending an Add TS Response (status %d) to "),
+    limLog( pMac, LOG1, FL("Sending an Add TS Response (status %d) to "),
             nStatusCode );
-    limPrintMacAddr( pMac, pMacHdr->da, LOG1 );)
+    limPrintMacAddr( pMac, pMacHdr->da, LOG1 );
 
     if( ( SIR_BAND_5_GHZ == limGetRFBand(psessionEntry->currentOperChannel))
        || ( psessionEntry->pePersona == VOS_P2P_CLIENT_MODE ) ||
@@ -2165,8 +2165,8 @@ limSendDeltsReqActionFrame(tpAniSirGlobal  pMac,
         }
     }
 
-    PELOG1(limLog(pMac, LOG1, FL("Sending DELTS REQ (size %d) to "), nBytes);
-    limPrintMacAddr(pMac, pMacHdr->da, LOG1);)
+    limLog(pMac, LOG1, FL("Sending DELTS REQ (size %d) to "), nBytes);
+    limPrintMacAddr(pMac, pMacHdr->da, LOG1);
 
     if( ( SIR_BAND_5_GHZ == limGetRFBand(psessionEntry->currentOperChannel))
        || ( psessionEntry->pePersona == VOS_P2P_CLIENT_MODE ) ||
@@ -3648,11 +3648,11 @@ limSendAuthMgmtFrame(tpAniSirGlobal pMac,
     {
         vos_mem_copy(pBody, (tANI_U8 *) pAuthFrameBody, bodyLen);
 
-        PELOG1(limLog(pMac, LOG1,
+        limLog(pMac, LOG1,
            FL("*** Sending Auth seq# 3 status %d (%d) to"MAC_ADDRESS_STR),
            pAuthFrameBody->authStatusCode,
            (pAuthFrameBody->authStatusCode == eSIR_MAC_SUCCESS_STATUS),
-           MAC_ADDR_ARRAY(pMacHdr->da));)
+           MAC_ADDR_ARRAY(pMacHdr->da));
 
     }
     else
@@ -3711,12 +3711,12 @@ limSendAuthMgmtFrame(tpAniSirGlobal pMac,
         }
 #endif
 
-        PELOG1(limLog(pMac, LOG1,
+        limLog(pMac, LOG1,
            FL("*** Sending Auth seq# %d status %d (%d) to "MAC_ADDRESS_STR),
            pAuthFrameBody->authTransactionSeqNumber,
            pAuthFrameBody->authStatusCode,
            (pAuthFrameBody->authStatusCode == eSIR_MAC_SUCCESS_STATUS),
-           MAC_ADDR_ARRAY(pMacHdr->da));)
+           MAC_ADDR_ARRAY(pMacHdr->da));
     }
     PELOG2(sirDumpBuf(pMac, SIR_LIM_MODULE_ID, LOG2, pFrame, frameLen);)
 

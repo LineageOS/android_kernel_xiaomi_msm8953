@@ -3264,7 +3264,7 @@ limCheckAndAnnounceJoinSuccess(tpAniSirGlobal pMac,
          * Received SSID does not match with the one we've.
          * Ignore received Beacon frame
          */
-        PELOG1(limLog(pMac, LOG1, FL("SSID received in Beacon does not match"));)
+        limLog(pMac, LOG1, FL("SSID received in Beacon does not match"));
 #ifdef WLAN_DEBUG            
         pMac->lim.gLimBcnSSIDMismatchCnt++;
 #endif

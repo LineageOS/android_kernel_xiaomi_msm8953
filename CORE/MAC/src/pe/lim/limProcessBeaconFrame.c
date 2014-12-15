@@ -212,9 +212,9 @@ limProcessBeaconFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,tpPESession ps
         }
         else
         {
-            PELOG1(limLog(pMac, LOG1, FL("Received Beacon in unexpected state %d"),
+            limLog(pMac, LOG1, FL("Received Beacon in unexpected state %d"),
                    psessionEntry->limMlmState);
-            limPrintMlmState(pMac, LOG1, psessionEntry->limMlmState);)
+            limPrintMlmState(pMac, LOG1, psessionEntry->limMlmState);
 #ifdef WLAN_DEBUG                    
             pMac->lim.gLimUnexpBcnCnt++;
 #endif

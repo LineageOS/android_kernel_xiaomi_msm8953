@@ -1449,7 +1449,8 @@ limProcessMessages(tpAniSirGlobal pMac, tpSirMsgQ  limMsg)
 
                 if ( deferMsg == true )
                 {
-                    PELOG1(limLog(pMac, LOG1, FL("Defer message type=%X "), limMsg->type);)
+                        limLog(pMac, LOG2, FL("Defer message type=%X "),
+                                                            limMsg->type);
                         if (limDeferMsg(pMac, limMsg) != TX_SUCCESS)
                         {
                             PELOGE(limLog(pMac, LOGE, FL("Unable to Defer message(0x%X) limSmeState %d (prev sme state %d) sysRole %d mlm state %d (prev mlm state %d)"),
@@ -2577,10 +2578,13 @@ void limLogSessionStates(tpAniSirGlobal pMac)
     {
         if(pMac->lim.gpSession[i].valid)
         {
-            PELOG1(limLog(pMac, LOG1, FL("Session[%d] sysRole(%d) limSmeState %d (prev sme state %d) mlm state %d (prev mlm state %d)"),
-                   i, pMac->lim.gpSession[i].limSystemRole,  pMac->lim.gpSession[i].limSmeState,  
-                   pMac->lim.gpSession[i].limPrevSmeState,   pMac->lim.gpSession[i].limMlmState,  
-                   pMac->lim.gpSession[i].limPrevMlmState);)
+            limLog(pMac, LOG1, FL("Session[%d] sysRole(%d) limSmeState %d "
+                    "(prev sme state %d) mlm state %d (prev mlm state %d)"),
+                   i, pMac->lim.gpSession[i].limSystemRole,
+                   pMac->lim.gpSession[i].limSmeState,
+                   pMac->lim.gpSession[i].limPrevSmeState,
+                   pMac->lim.gpSession[i].limMlmState,
+                   pMac->lim.gpSession[i].limPrevMlmState);
         }
     }
 #endif //ifdef WLAN_DEBUG

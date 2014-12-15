@@ -656,7 +656,7 @@ ibss_bss_add(
                  (tANI_U8 *) &psessionEntry->pLimStartBssReq->ssId,
                   psessionEntry->pLimStartBssReq->ssId.length + 1);
 
-    PELOG1(limLog(pMac, LOG1, FL("invoking ADD_BSS as part of coalescing!"));)
+    limLog(pMac, LOG1, FL("invoking ADD_BSS as part of coalescing!"));
     if (limMlmAddBss(pMac, &mlmStartReq,psessionEntry) != eSIR_SME_SUCCESS)
     {
         PELOGE(limLog(pMac, LOGE, FL("AddBss failure"));)
@@ -905,7 +905,7 @@ limIbssSetProtection(tpAniSirGlobal pMac, tANI_U8 enable, tpUpdateBeaconParams p
 
     if(!pMac->lim.cfgProtection.fromllb)
     {
-        PELOG1(limLog(pMac, LOG1, FL("protection from 11b is disabled"));)
+        limLog(pMac, LOG1, FL("protection from 11b is disabled"));
         return;
     }
 
@@ -946,21 +946,21 @@ limIbssUpdateProtectionParams(tpAniSirGlobal pMac,
 {
   tANI_U32 i;
 
-  PELOG1(limLog(pMac,LOG1, FL("A STA is associated:"));
+  limLog(pMac,LOG1, FL("A STA is associated:"));
   limLog(pMac,LOG1, FL("Addr : "));
-  limPrintMacAddr(pMac, peerMacAddr, LOG1);)
+  limPrintMacAddr(pMac, peerMacAddr, LOG1);
 
   for (i=0; i<LIM_PROT_STA_CACHE_SIZE; i++)
   {
       if (pMac->lim.protStaCache[i].active)
       {
-          PELOG1(limLog(pMac, LOG1, FL("Addr: "));)
-          PELOG1(limPrintMacAddr(pMac, pMac->lim.protStaCache[i].addr, LOG1);)
+          limLog(pMac, LOG1, FL("Addr: "));
+          limPrintMacAddr(pMac, pMac->lim.protStaCache[i].addr, LOG1);
 
           if (vos_mem_compare(pMac->lim.protStaCache[i].addr,
               peerMacAddr, sizeof(tSirMacAddr)))
           {
-              PELOG1(limLog(pMac, LOG1, FL("matching cache entry at %d already active."), i);)
+              limLog(pMac, LOG1, FL("matching cache entry at %d already active."), i);
               return;
           }
       }
@@ -1568,8 +1568,8 @@ limIbssCoalesce(
         if (pStaDs != NULL)
         {
             /// DPH node already exists for the peer
-            PELOGW(limLog(pMac, LOGW, FL("DPH Node present for just learned peer"));)
-            PELOG1(limPrintMacAddr(pMac, pPeerNode->peerMacAddr, LOG1);)
+            limLog(pMac, LOG1, FL("DPH Node present for just learned peer"));
+            limPrintMacAddr(pMac, pPeerNode->peerMacAddr, LOG1);
             ibss_sta_info_update(pMac, pStaDs, pPeerNode,psessionEntry);
             return eSIR_SUCCESS;
         }
