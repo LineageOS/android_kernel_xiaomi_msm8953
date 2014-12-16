@@ -1628,7 +1628,7 @@ qca_wlan_vendor_ll_set_policy[QCA_WLAN_VENDOR_ATTR_LL_STATS_SET_MAX +1] =
 
 static int wlan_hdd_cfg80211_ll_stats_set(struct wiphy *wiphy,
         struct wireless_dev *wdev,
-        void *data,
+        const void *data,
         int data_len)
 {
     int status;
@@ -1764,7 +1764,7 @@ qca_wlan_vendor_ll_get_policy[QCA_WLAN_VENDOR_ATTR_LL_STATS_GET_MAX +1] =
 
 static int wlan_hdd_cfg80211_ll_stats_get(struct wiphy *wiphy,
                                           struct wireless_dev *wdev,
-                                          void *data,
+                                          const void *data,
                                           int data_len)
 {
     hdd_context_t *pHddCtx = wiphy_priv(wiphy);
@@ -1869,7 +1869,7 @@ qca_wlan_vendor_ll_clr_policy[QCA_WLAN_VENDOR_ATTR_LL_STATS_CLR_MAX +1] =
 
 static int wlan_hdd_cfg80211_ll_stats_clear(struct wiphy *wiphy,
                                             struct wireless_dev *wdev,
-                                            void *data,
+                                            const void *data,
                                             int data_len)
 {
     hdd_context_t *pHddCtx = wiphy_priv(wiphy);
@@ -3045,7 +3045,7 @@ void wlan_hdd_cfg80211_extscan_callback(void *ctx, const tANI_U16 evType,
 
 static int wlan_hdd_cfg80211_extscan_get_capabilities(struct wiphy *wiphy,
                                         struct wireless_dev *wdev,
-                                        void *data, int dataLen)
+                                        const void *data, int dataLen)
 {
     tSirGetEXTScanCapabilitiesReqParams reqMsg;
     struct net_device *dev                     = wdev->netdev;
@@ -3106,7 +3106,7 @@ static int wlan_hdd_cfg80211_extscan_get_capabilities(struct wiphy *wiphy,
 
 static int wlan_hdd_cfg80211_extscan_get_cached_results(struct wiphy *wiphy,
                                         struct wireless_dev *wdev,
-                                        void *data, int dataLen)
+                                        const void *data, int dataLen)
 {
     tSirEXTScanGetCachedResultsReqParams reqMsg;
     struct net_device *dev                      = wdev->netdev;
@@ -3314,7 +3314,7 @@ fail:
 
 static int wlan_hdd_cfg80211_extscan_set_significant_change(struct wiphy *wiphy,
                                         struct wireless_dev *wdev,
-                                        void *data, int dataLen)
+                                        const void *data, int dataLen)
 {
     tpSirEXTScanSetSignificantChangeReqParams pReqMsg = NULL;
     struct net_device *dev                  = wdev->netdev;
@@ -3481,7 +3481,7 @@ fail:
 
 static int wlan_hdd_cfg80211_extscan_get_valid_channels(struct wiphy *wiphy,
                                         struct wireless_dev *wdev,
-                                        void *data, int dataLen)
+                                        const void *data, int dataLen)
 {
     hdd_context_t *pHddCtx                               = wiphy_priv(wiphy);
     tANI_U32 ChannelList[WNI_CFG_VALID_CHANNEL_LIST_LEN] = {0};
@@ -3573,7 +3573,7 @@ static int wlan_hdd_cfg80211_extscan_get_valid_channels(struct wiphy *wiphy,
 
 static int wlan_hdd_cfg80211_extscan_start(struct wiphy *wiphy,
                                         struct wireless_dev *wdev,
-                                        void *data, int dataLen)
+                                        const void *data, int dataLen)
 {
     tpSirEXTScanStartReqParams pReqMsg = NULL;
     struct net_device *dev                  = wdev->netdev;
@@ -3811,7 +3811,7 @@ fail:
 
 static int wlan_hdd_cfg80211_extscan_stop(struct wiphy *wiphy,
                                         struct wireless_dev *wdev,
-                                        void *data, int dataLen)
+                                        const void *data, int dataLen)
 {
     tSirEXTScanStopReqParams reqMsg;
     struct net_device *dev                  = wdev->netdev;
@@ -3868,7 +3868,7 @@ static int wlan_hdd_cfg80211_extscan_stop(struct wiphy *wiphy,
 
 static int wlan_hdd_cfg80211_extscan_reset_bssid_hotlist(struct wiphy *wiphy,
                                         struct wireless_dev *wdev,
-                                        void *data, int dataLen)
+                                        const void *data, int dataLen)
 {
     tSirEXTScanResetBssidHotlistReqParams reqMsg;
     struct net_device *dev                       = wdev->netdev;
@@ -3926,7 +3926,7 @@ static int wlan_hdd_cfg80211_extscan_reset_bssid_hotlist(struct wiphy *wiphy,
 static int wlan_hdd_cfg80211_extscan_reset_significant_change(
                                         struct wiphy *wiphy,
                                         struct wireless_dev *wdev,
-                                        void *data, int dataLen)
+                                        const void *data, int dataLen)
 {
     tSirEXTScanResetSignificantChangeReqParams reqMsg;
     struct net_device *dev                       = wdev->netdev;
@@ -4040,7 +4040,7 @@ wlan_hdd_mac_config[QCA_WLAN_VENDOR_ATTR_SET_SCANNING_MAC_OUI_MAX+1] =
 
 static int wlan_hdd_cfg80211_set_spoofed_mac_oui(struct wiphy *wiphy,
         struct wireless_dev *wdev,
-        void *data,
+        const void *data,
         int data_len)
 {
 
@@ -4101,7 +4101,7 @@ static int wlan_hdd_cfg80211_set_spoofed_mac_oui(struct wiphy *wiphy,
 
 static int wlan_hdd_cfg80211_exttdls_get_status(struct wiphy *wiphy,
                                                 struct wireless_dev *wdev,
-                                                void *data,
+                                                const void *data,
                                                 int data_len)
 {
     u8 peer[6]                                 = {0};
@@ -4259,7 +4259,7 @@ nla_put_failure:
 
 static int wlan_hdd_cfg80211_exttdls_enable(struct wiphy *wiphy,
                                             struct wireless_dev *wdev,
-                                            void *data,
+                                            const void *data,
                                             int data_len)
 {
     u8 peer[6]                                 = {0};
@@ -4345,7 +4345,7 @@ static int wlan_hdd_cfg80211_exttdls_enable(struct wiphy *wiphy,
 
 static int wlan_hdd_cfg80211_exttdls_disable(struct wiphy *wiphy,
                                              struct wireless_dev *wdev,
-                                             void *data,
+                                             const void *data,
                                              int data_len)
 {
     u8 peer[6]                                 = {0};
@@ -4388,7 +4388,7 @@ static int wlan_hdd_cfg80211_exttdls_disable(struct wiphy *wiphy,
 static int
 wlan_hdd_cfg80211_get_supported_features(struct wiphy *wiphy,
                                          struct wireless_dev *wdev,
-                                         void *data, int data_len)
+                                         const void *data, int data_len)
 {
     struct net_device *dev                     = wdev->netdev;
     hdd_adapter_t *pAdapter                    = WLAN_HDD_GET_PRIV_PTR(dev);
@@ -4498,7 +4498,7 @@ nla_put_failure:
 static int
 wlan_hdd_cfg80211_get_concurrency_matrix(struct wiphy *wiphy,
                                          struct wireless_dev *wdev,
-                                         void *data, int data_len)
+                                         const void *data, int data_len)
 {
     uint32_t feature_set_matrix[WLAN_HDD_MAX_FEATURE_SET] = {0};
     uint8_t i, feature_sets, max_feature_sets;
@@ -4585,7 +4585,7 @@ wlan_hdd_set_no_dfs_flag_config_policy[QCA_WLAN_VENDOR_ATTR_SET_NO_DFS_FLAG_MAX
 
 static int wlan_hdd_cfg80211_disable_dfs_channels(struct wiphy *wiphy,
                                             struct wireless_dev *wdev,
-                                            void *data,
+                                            const void *data,
                                             int data_len)
 {
     struct net_device *dev                     = wdev->netdev;
@@ -4635,7 +4635,7 @@ nla_policy qca_wlan_vendor_attr[QCA_WLAN_VENDOR_ATTR_MAX+1] =
 };
 
 static int wlan_hdd_cfg80211_firmware_roaming(struct wiphy *wiphy,
-            struct wireless_dev *wdev, void *data, int data_len)
+            struct wireless_dev *wdev, const void *data, int data_len)
 {
 
     u8 bssid[6]                                 = {0};
@@ -4694,7 +4694,7 @@ const struct wiphy_vendor_command hdd_wiphy_vendor_commands[] =
         .flags = WIPHY_VENDOR_CMD_NEED_WDEV |
                  WIPHY_VENDOR_CMD_NEED_NETDEV |
                  WIPHY_VENDOR_CMD_NEED_RUNNING,
-        .doit = wlan_hdd_cfg80211_firmware_roaming
+        .doit = (void *)wlan_hdd_cfg80211_firmware_roaming
     },
 #ifdef WLAN_FEATURE_LINK_LAYER_STATS
     {
@@ -4703,7 +4703,7 @@ const struct wiphy_vendor_command hdd_wiphy_vendor_commands[] =
         .flags = WIPHY_VENDOR_CMD_NEED_WDEV |
             WIPHY_VENDOR_CMD_NEED_NETDEV |
             WIPHY_VENDOR_CMD_NEED_RUNNING,
-        .doit = wlan_hdd_cfg80211_ll_stats_clear
+        .doit = (void *)wlan_hdd_cfg80211_ll_stats_clear
     },
 
     {
@@ -4712,7 +4712,7 @@ const struct wiphy_vendor_command hdd_wiphy_vendor_commands[] =
         .flags = WIPHY_VENDOR_CMD_NEED_WDEV |
             WIPHY_VENDOR_CMD_NEED_NETDEV |
             WIPHY_VENDOR_CMD_NEED_RUNNING,
-        .doit = wlan_hdd_cfg80211_ll_stats_set
+        .doit = (void *)wlan_hdd_cfg80211_ll_stats_set
     },
 
     {
@@ -4721,7 +4721,7 @@ const struct wiphy_vendor_command hdd_wiphy_vendor_commands[] =
         .flags = WIPHY_VENDOR_CMD_NEED_WDEV |
             WIPHY_VENDOR_CMD_NEED_NETDEV |
             WIPHY_VENDOR_CMD_NEED_RUNNING,
-        .doit = wlan_hdd_cfg80211_ll_stats_get
+        .doit = (void *)wlan_hdd_cfg80211_ll_stats_get
     },
 #endif /* WLAN_FEATURE_LINK_LAYER_STATS */
 #ifdef WLAN_FEATURE_EXTSCAN
@@ -4731,7 +4731,7 @@ const struct wiphy_vendor_command hdd_wiphy_vendor_commands[] =
         .flags = WIPHY_VENDOR_CMD_NEED_WDEV |
                  WIPHY_VENDOR_CMD_NEED_NETDEV |
                  WIPHY_VENDOR_CMD_NEED_RUNNING,
-        .doit = wlan_hdd_cfg80211_extscan_start
+        .doit = (void *)wlan_hdd_cfg80211_extscan_start
     },
     {
         .info.vendor_id = QCA_NL80211_VENDOR_ID,
@@ -4739,14 +4739,14 @@ const struct wiphy_vendor_command hdd_wiphy_vendor_commands[] =
         .flags = WIPHY_VENDOR_CMD_NEED_WDEV |
                  WIPHY_VENDOR_CMD_NEED_NETDEV |
                  WIPHY_VENDOR_CMD_NEED_RUNNING,
-        .doit = wlan_hdd_cfg80211_extscan_stop
+        .doit = (void *)wlan_hdd_cfg80211_extscan_stop
     },
     {
         .info.vendor_id = QCA_NL80211_VENDOR_ID,
         .info.subcmd = QCA_NL80211_VENDOR_SUBCMD_EXTSCAN_GET_VALID_CHANNELS,
         .flags = WIPHY_VENDOR_CMD_NEED_WDEV |
                  WIPHY_VENDOR_CMD_NEED_NETDEV,
-        .doit = wlan_hdd_cfg80211_extscan_get_valid_channels
+        .doit = (void *)wlan_hdd_cfg80211_extscan_get_valid_channels
     },
     {
         .info.vendor_id = QCA_NL80211_VENDOR_ID,
@@ -4754,7 +4754,7 @@ const struct wiphy_vendor_command hdd_wiphy_vendor_commands[] =
         .flags = WIPHY_VENDOR_CMD_NEED_WDEV |
                  WIPHY_VENDOR_CMD_NEED_NETDEV |
                  WIPHY_VENDOR_CMD_NEED_RUNNING,
-        .doit = wlan_hdd_cfg80211_extscan_get_capabilities
+        .doit = (void *)wlan_hdd_cfg80211_extscan_get_capabilities
     },
     {
         .info.vendor_id = QCA_NL80211_VENDOR_ID,
@@ -4762,7 +4762,7 @@ const struct wiphy_vendor_command hdd_wiphy_vendor_commands[] =
         .flags = WIPHY_VENDOR_CMD_NEED_WDEV |
                  WIPHY_VENDOR_CMD_NEED_NETDEV |
                  WIPHY_VENDOR_CMD_NEED_RUNNING,
-        .doit = wlan_hdd_cfg80211_extscan_get_cached_results
+        .doit = (void *)wlan_hdd_cfg80211_extscan_get_cached_results
     },
     {
         .info.vendor_id = QCA_NL80211_VENDOR_ID,
@@ -4770,7 +4770,7 @@ const struct wiphy_vendor_command hdd_wiphy_vendor_commands[] =
         .flags = WIPHY_VENDOR_CMD_NEED_WDEV |
                  WIPHY_VENDOR_CMD_NEED_NETDEV |
                  WIPHY_VENDOR_CMD_NEED_RUNNING,
-        .doit = wlan_hdd_cfg80211_extscan_set_bssid_hotlist
+        .doit = (void *)wlan_hdd_cfg80211_extscan_set_bssid_hotlist
     },
     {
         .info.vendor_id = QCA_NL80211_VENDOR_ID,
@@ -4778,7 +4778,7 @@ const struct wiphy_vendor_command hdd_wiphy_vendor_commands[] =
         .flags = WIPHY_VENDOR_CMD_NEED_WDEV |
                  WIPHY_VENDOR_CMD_NEED_NETDEV |
                  WIPHY_VENDOR_CMD_NEED_RUNNING,
-        .doit = wlan_hdd_cfg80211_extscan_reset_bssid_hotlist
+        .doit = (void *)wlan_hdd_cfg80211_extscan_reset_bssid_hotlist
     },
     {
         .info.vendor_id = QCA_NL80211_VENDOR_ID,
@@ -4786,7 +4786,7 @@ const struct wiphy_vendor_command hdd_wiphy_vendor_commands[] =
         .flags = WIPHY_VENDOR_CMD_NEED_WDEV |
                  WIPHY_VENDOR_CMD_NEED_NETDEV |
                  WIPHY_VENDOR_CMD_NEED_RUNNING,
-        .doit = wlan_hdd_cfg80211_extscan_set_significant_change
+        .doit = (void *)wlan_hdd_cfg80211_extscan_set_significant_change
     },
     {
         .info.vendor_id = QCA_NL80211_VENDOR_ID,
@@ -4794,7 +4794,7 @@ const struct wiphy_vendor_command hdd_wiphy_vendor_commands[] =
         .flags = WIPHY_VENDOR_CMD_NEED_WDEV |
                  WIPHY_VENDOR_CMD_NEED_NETDEV |
                  WIPHY_VENDOR_CMD_NEED_RUNNING,
-        .doit = wlan_hdd_cfg80211_extscan_reset_significant_change
+        .doit = (void *)wlan_hdd_cfg80211_extscan_reset_significant_change
     },
 #endif /* WLAN_FEATURE_EXTSCAN */
 /*EXT TDLS*/
@@ -4804,7 +4804,7 @@ const struct wiphy_vendor_command hdd_wiphy_vendor_commands[] =
         .flags = WIPHY_VENDOR_CMD_NEED_WDEV |
                  WIPHY_VENDOR_CMD_NEED_NETDEV |
                  WIPHY_VENDOR_CMD_NEED_RUNNING,
-        .doit = wlan_hdd_cfg80211_exttdls_enable
+        .doit = (void *)wlan_hdd_cfg80211_exttdls_enable
     },
     {
         .info.vendor_id = QCA_NL80211_VENDOR_ID,
@@ -4812,42 +4812,42 @@ const struct wiphy_vendor_command hdd_wiphy_vendor_commands[] =
         .flags = WIPHY_VENDOR_CMD_NEED_WDEV |
                  WIPHY_VENDOR_CMD_NEED_NETDEV |
                  WIPHY_VENDOR_CMD_NEED_RUNNING,
-        .doit = wlan_hdd_cfg80211_exttdls_disable
+        .doit = (void *)wlan_hdd_cfg80211_exttdls_disable
     },
     {
         .info.vendor_id = QCA_NL80211_VENDOR_ID,
         .info.subcmd = QCA_NL80211_VENDOR_SUBCMD_TDLS_GET_STATUS,
         .flags = WIPHY_VENDOR_CMD_NEED_WDEV |
                  WIPHY_VENDOR_CMD_NEED_NETDEV,
-        .doit = wlan_hdd_cfg80211_exttdls_get_status
+        .doit = (void *)wlan_hdd_cfg80211_exttdls_get_status
     },
     {
         .info.vendor_id = QCA_NL80211_VENDOR_ID,
         .info.subcmd = QCA_NL80211_VENDOR_SUBCMD_GET_SUPPORTED_FEATURES,
         .flags = WIPHY_VENDOR_CMD_NEED_WDEV |
                  WIPHY_VENDOR_CMD_NEED_NETDEV,
-        .doit = wlan_hdd_cfg80211_get_supported_features
+        .doit = (void *)wlan_hdd_cfg80211_get_supported_features
     },
     {
         .info.vendor_id = QCA_NL80211_VENDOR_ID,
         .info.subcmd = QCA_NL80211_VENDOR_SUBCMD_NO_DFS_FLAG,
         .flags = WIPHY_VENDOR_CMD_NEED_WDEV |
                  WIPHY_VENDOR_CMD_NEED_NETDEV,
-        .doit = wlan_hdd_cfg80211_disable_dfs_channels
+        .doit = (void *)wlan_hdd_cfg80211_disable_dfs_channels
     },
     {
         .info.vendor_id = QCA_NL80211_VENDOR_ID,
         .info.subcmd = QCA_NL80211_VENDOR_SUBCMD_MAC_OUI,
         .flags = WIPHY_VENDOR_CMD_NEED_WDEV |
                  WIPHY_VENDOR_CMD_NEED_NETDEV,
-        .doit = wlan_hdd_cfg80211_set_spoofed_mac_oui
+        .doit = (void *) wlan_hdd_cfg80211_set_spoofed_mac_oui
     },
     {
         .info.vendor_id = QCA_NL80211_VENDOR_ID,
         .info.subcmd = QCA_NL80211_VENDOR_SUBCMD_GET_CONCURRENCY_MATRIX,
         .flags = WIPHY_VENDOR_CMD_NEED_WDEV |
                  WIPHY_VENDOR_CMD_NEED_NETDEV,
-        .doit = wlan_hdd_cfg80211_get_concurrency_matrix
+        .doit = (void *)wlan_hdd_cfg80211_get_concurrency_matrix
     },
 };
 
