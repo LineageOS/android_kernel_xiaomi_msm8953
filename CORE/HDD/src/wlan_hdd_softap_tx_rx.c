@@ -397,7 +397,8 @@ int hdd_softap_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
    VOS_TRACE( VOS_MODULE_ID_HDD_SAP_DATA, VOS_TRACE_LEVEL_INFO,
               "%s: Classified as ac %d up %d", __func__, ac, up);
 
-   if ( ( NULL != pHddCtx ) && pHddCtx->cfg_ini->enableDhcpDebug )
+   if (( NULL != pHddCtx ) &&
+         (pHddCtx->cfg_ini->gEnableDebugLog & VOS_PKT_PROTO_TYPE_DHCP))
    {
        hdd_dump_dhcp_pkt(skb, TX_PATH);
    }
@@ -1337,7 +1338,8 @@ VOS_STATUS hdd_softap_tx_fetch_packet_cbk( v_VOID_t *vosContext,
       }
    }
  
-   if (pHddCtx->cfg_ini->gEnableDebugLog)
+   if ((NULL != pHddCtx) &&
+       (pHddCtx->cfg_ini->gEnableDebugLog))
    {
       proto_type = vos_pkt_get_proto_type(skb,
                                           pHddCtx->cfg_ini->gEnableDebugLog);
@@ -1635,7 +1637,8 @@ VOS_STATUS hdd_softap_rx_packet_cbk( v_VOID_t *vosContext,
       {
          VOS_TRACE( VOS_MODULE_ID_HDD_SAP_DATA, VOS_TRACE_LEVEL_INFO_LOW,
                           "%s: send one packet to kernel", __func__);
-         if ( pHddCtx->cfg_ini->enableDhcpDebug )
+         if ((NULL != pHddCtx) &&
+             (pHddCtx->cfg_ini->gEnableDebugLog & VOS_PKT_PROTO_TYPE_DHCP))
          {
              hdd_dump_dhcp_pkt(skb, RX_PATH);
          }
