@@ -2377,15 +2377,6 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_MAX_UAPSD_INACT_INTVL_MAX        (255)
 #define CFG_MAX_UAPSD_INACT_INTVL_DEFAULT    (10)
 
-/*
- * This will enable DHCP packet logging for debugging purpose
- * The log level is set as INFO.
- */
-#define CFG_DEBUG_DHCP                          "gEnableDhcpDebug"
-#define CFG_DEBUG_DHCP_DISABLE                  ( 0 )
-#define CFG_DEBUG_DHCP_ENABLE                   ( 1 )
-#define CFG_DEBUG_DHCP_DEFAULT                  ( CFG_DEBUG_DHCP_DISABLE )
-
 #define CFG_BURST_MODE_BE_TXOP_VALUE           "gBurstModeTXOPValue"
 #define CFG_BURST_MODE_BE_TXOP_VALUE_MIN       ( 0 )
 #define CFG_BURST_MODE_BE_TXOP_VALUE_MAX       ( 12288 )
@@ -2874,7 +2865,6 @@ typedef struct
    v_U32_t                     uapsdConsecTxCntMeasWindow;
    v_U32_t                     maxPsPollInWmmUapsdMode;
    v_U32_t                     maxUapsdInactivityIntervals;
-   v_U8_t                      enableDhcpDebug; /* Enable/Disable dhcp debug */
    v_U32_t                     burstModeTXOPValue;
    v_U8_t                      acsScanBandPreference;
    v_U16_t                     acsBandSwitchThreshold;
