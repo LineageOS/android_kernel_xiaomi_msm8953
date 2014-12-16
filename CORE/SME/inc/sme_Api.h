@@ -3478,8 +3478,8 @@ VOS_STATUS sme_SendTdlsChanSwitchReq(tHalHandle hHal,
                                      tANI_S32 tdlsOffCh,
                                      tANI_S32 tdlsOffChBwOffset,
                                      tANI_U8 tdlsSwMode);
-eHalStatus sme_GetFwStats(tHalHandle hHal, tANI_U32 stats, void *data,
-                                                void *callback);
+eHalStatus sme_GetFwStats(tHalHandle hHal, tANI_U32 stats,
+                 void *pContext, tSirFWStatsCallback callback);
 void sme_SetMiracastMode (tHalHandle hHal,tANI_U8 mode);
 
 void sme_resetCoexEevent(tHalHandle hHal);

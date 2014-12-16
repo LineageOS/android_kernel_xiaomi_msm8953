@@ -4811,8 +4811,8 @@ typedef struct sSirChAvoidIndType
 
 typedef void (*pGetBcnMissRateCB)( tANI_S32 bcnMissRate,
                                    VOS_STATUS status, void *data);
-typedef void (*tSirFWStatsCallback)(VOS_STATUS status, void *fwStatsRsp,
-                                                            void *data);
+typedef void (*tSirFWStatsCallback)(VOS_STATUS status,
+                    tSirFwStatsResult *fwStatsRsp, void *pContext);
 typedef PACKED_PRE struct PACKED_POST
 {
    tANI_U32   msgLen;

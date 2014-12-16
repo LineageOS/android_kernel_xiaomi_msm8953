@@ -184,4 +184,26 @@ typedef enum eSirRetStatus
 
 } tSirRetStatus;
 
+typedef enum
+{
+   FW_UBSP_STATS = 1,
+   FW_STATS_MAX,
+}tSirFwStatsType;
+
+
+typedef struct
+{
+   v_U32_t ubsp_enter_cnt;
+   v_U32_t ubsp_jump_ddr_cnt;
+}tSirUbspFwStats;
+
+typedef struct
+{
+   tSirFwStatsType type;
+   /*data*/
+   union{
+     tSirUbspFwStats ubspStats;
+   }fwStatsData;
+}tSirFwStatsResult;
+
 # endif // __SIR_TYPES_H
