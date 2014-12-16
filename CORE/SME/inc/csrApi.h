@@ -982,6 +982,14 @@ typedef struct tagCsrRoamConnectedProfile
     tANI_BOOLEAN    isESEAssoc;
 #endif
     tANI_U32 dot11Mode;
+
+#ifdef WLAN_FEATURE_11W
+    /* Management Frame Protection */
+    tANI_BOOLEAN MFPEnabled;
+    tANI_U8 MFPRequired;
+    tANI_U8 MFPCapable;
+#endif
+
 }tCsrRoamConnectedProfile;
 
 
