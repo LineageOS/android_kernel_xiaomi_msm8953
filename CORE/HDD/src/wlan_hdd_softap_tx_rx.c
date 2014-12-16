@@ -59,6 +59,7 @@
 #include <mach/subsystem_restart.h>
 #endif
 #include "sapInternal.h"
+#include  "wlan_hdd_trace.h"
 
 /*--------------------------------------------------------------------------- 
   Preprocessor definitions and constants
@@ -414,6 +415,8 @@ int hdd_softap_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
        pSapCtx->aStaInfo[STAId].txSuspended[ac] = VOS_TRUE;
        netif_stop_subqueue(dev, skb_get_queue_mapping(skb));
        txSuspended = VOS_TRUE;
+       MTRACE(vos_trace(VOS_MODULE_ID_HDD, TRACE_CODE_HDD_STOP_NETDEV,
+                        pAdapter->sessionId, ac));
     }
 
     /* If 3/4th of the max queue size is used then enable the flag.
@@ -1377,6 +1380,8 @@ VOS_STATUS hdd_softap_tx_fetch_packet_cbk( v_VOID_t *vosContext,
                  "%s: TX queue re-enabled", __func__);
       pSapCtx->aStaInfo[STAId].txSuspended[ac] = VOS_FALSE;
       netif_wake_subqueue(pAdapter->dev, skb_get_queue_mapping(skb));
+      MTRACE(vos_trace(VOS_MODULE_ID_HDD, TRACE_CODE_HDD_WAKE_NETDEV,
+                       pAdapter->sessionId, ac));
    }    
 
    // We're giving the packet to TL so consider it transmitted from
