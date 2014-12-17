@@ -5352,6 +5352,7 @@ int __hdd_open(struct net_device *dev)
        VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                  "%s: Enabling Tx Queues", __func__);
        /* Enable TX queues only when we are connected */
+       hddLog(VOS_TRACE_LEVEL_INFO, FL("Enabling queues"));
        netif_tx_start_all_queues(dev);
    }
 
@@ -5459,6 +5460,7 @@ int __hdd_stop (struct net_device *dev)
    /* Disable TX on the interface, after this hard_start_xmit() will not
     * be called on that interface
     */
+   hddLog(VOS_TRACE_LEVEL_INFO, FL("Disabling queues"));
    netif_tx_disable(pAdapter->dev);
 
    /* Mark the interface status as "down" for outside world */
@@ -6763,6 +6765,7 @@ hdd_adapter_t* hdd_open_adapter( hdd_context_t *pHddCtx, tANI_U8 session_type,
          }
 #endif
          //Stop the Interface TX queue.
+         hddLog(VOS_TRACE_LEVEL_INFO, FL("Disabling queues"));
          netif_tx_disable(pAdapter->dev);
          //netif_tx_disable(pWlanDev);
          netif_carrier_off(pAdapter->dev);
@@ -6805,7 +6808,7 @@ hdd_adapter_t* hdd_open_adapter( hdd_context_t *pHddCtx, tANI_U8 session_type,
             hdd_deinit_adapter(pHddCtx, pAdapter);
             goto err_free_netdev;
          }
-
+         hddLog(VOS_TRACE_LEVEL_INFO, FL("Disabling queues"));
          netif_tx_disable(pAdapter->dev);
          netif_carrier_off(pAdapter->dev);
 
@@ -6880,6 +6883,7 @@ hdd_adapter_t* hdd_open_adapter( hdd_context_t *pHddCtx, tANI_U8 session_type,
          hdd_init_tx_rx( pAdapter );
 
          //Stop the Interface TX queue.
+         hddLog(VOS_TRACE_LEVEL_INFO, FL("Disabling queues"));
          netif_tx_disable(pAdapter->dev);
          netif_carrier_off(pAdapter->dev);
       }
@@ -7385,6 +7389,7 @@ VOS_STATUS hdd_reset_all_adapters( hdd_context_t *pHddCtx )
    while ( NULL != pAdapterNode && VOS_STATUS_SUCCESS == status )
    {
       pAdapter = pAdapterNode->pAdapter;
+      hddLog(VOS_TRACE_LEVEL_INFO, FL("Disabling queues"));
       netif_tx_disable(pAdapter->dev);
       netif_carrier_off(pAdapter->dev);
 
@@ -8158,6 +8163,7 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
             /* Disable TX on the interface, after this hard_start_xmit() will
              * not be called on that interface
              */
+            hddLog(VOS_TRACE_LEVEL_INFO, FL("Disabling queues"));
             netif_tx_disable(pAdapter->dev);
 
             /* Mark the interface status as "down" for outside world */

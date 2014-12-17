@@ -759,6 +759,7 @@ static VOS_STATUS hdd_roamDeregisterSTA( hdd_adapter_t *pAdapter, tANI_U8 staId 
        // Need to cleanup all queues only if the last peer leaves
        if (eConnectionState_IbssDisconnected == pHddStaCtx->conn_info.connState)
        {
+          hddLog(VOS_TRACE_LEVEL_INFO, FL("Disabling queues"));
           netif_tx_disable(pAdapter->dev);
           netif_carrier_off(pAdapter->dev);
           hdd_disconnect_tx_rx(pAdapter);
@@ -803,6 +804,7 @@ static eHalStatus hdd_DisConnectHandler( hdd_adapter_t *pAdapter, tCsrRoamInfo *
     }
 
     // notify apps that we can't pass traffic anymore
+    hddLog(VOS_TRACE_LEVEL_INFO, FL("Disabling queues"));
     netif_tx_disable(dev);
     netif_carrier_off(dev);
     //TxTimeoutCount need to reset in case of disconnect handler
@@ -1608,9 +1610,13 @@ static eHalStatus hdd_AssociationCompletionHandler( hdd_adapter_t *pAdapter, tCs
         vos_mem_zero( &pAdapter->hdd_stats.hddPmfStats,
                       sizeof(pAdapter->hdd_stats.hddPmfStats) );
 #endif
+
         // Start the Queue
         if ( !hddDisconInProgress )
+        {
+            hddLog(VOS_TRACE_LEVEL_INFO, FL("Enabling queues"));
             netif_tx_wake_all_queues(dev);
+        }
 #ifdef DEBUG_ROAM_DELAY
         vos_record_roam_event(e_HDD_ENABLE_TX_QUEUE, NULL, 0);
 #endif
@@ -1750,6 +1756,7 @@ static eHalStatus hdd_AssociationCompletionHandler( hdd_adapter_t *pAdapter, tCs
             WLANTL_AssocFailed(pRoamInfo->staId);
         }
 
+        hddLog(VOS_TRACE_LEVEL_INFO, FL("Disabling queues"));
         netif_tx_disable(dev);
         netif_carrier_off(dev);
 
@@ -2329,6 +2336,7 @@ static eHalStatus roamRoamConnectStatusUpdateHandler( hdd_adapter_t *pAdapter, t
             }
          }
          netif_carrier_on(pAdapter->dev);
+         hddLog(VOS_TRACE_LEVEL_INFO, FL("Enabling queues"));
          netif_tx_start_all_queues(pAdapter->dev);
          break;
       }
@@ -2371,6 +2379,7 @@ static eHalStatus roamRoamConnectStatusUpdateHandler( hdd_adapter_t *pAdapter, t
           VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_MED,
                     "Received eCSR_ROAM_RESULT_IBSS_INACTIVE from SME");
          // Stop only when we are inactive
+         hddLog(VOS_TRACE_LEVEL_INFO, FL("Disabling queues"));
          netif_tx_disable(pAdapter->dev);
          netif_carrier_off(pAdapter->dev);
          VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
@@ -2816,6 +2825,7 @@ eHalStatus hdd_smeRoamCallback( void *pContext, tCsrRoamInfo *pRoamInfo, tANI_U3
             // after reassoc.
             {
                 struct net_device *dev = pAdapter->dev;
+                hddLog(VOS_TRACE_LEVEL_INFO, FL("Disabling queues"));
                 netif_tx_disable(dev);
 #ifdef DEBUG_ROAM_DELAY
                 vos_record_roam_event(e_HDD_DISABLE_TX_QUEUE, NULL, 0);
@@ -2852,6 +2862,7 @@ eHalStatus hdd_smeRoamCallback( void *pContext, tCsrRoamInfo *pRoamInfo, tANI_U3
                 struct net_device *dev = pAdapter->dev;
                 hdd_station_ctx_t *pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
                 // notify apps that we can't pass traffic anymore
+                hddLog(VOS_TRACE_LEVEL_INFO, FL("Disabling queues"));
                 netif_tx_disable(dev);
 #if  defined (WLAN_FEATURE_VOWIFI_11R) || defined (FEATURE_WLAN_ESE) || defined(FEATURE_WLAN_LFR)
                 if (pHddStaCtx->ft_carrier_on == FALSE)

@@ -1906,10 +1906,12 @@ VOS_STATUS hdd_softap_RegisterSTA( hdd_adapter_t *pAdapter,
                   "Turn on Monitor the carrier");
        netif_carrier_on(pmonAdapter->dev);
            //Enable Tx queue
+       hddLog(VOS_TRACE_LEVEL_INFO, FL("Enabling queues"));
        netif_tx_start_all_queues(pmonAdapter->dev);
     }
    netif_carrier_on(pAdapter->dev);
    //Enable Tx queue
+   hddLog(VOS_TRACE_LEVEL_INFO, FL("Enabling queues"));
    netif_tx_start_all_queues(pAdapter->dev);
 
    return( vosStatus );

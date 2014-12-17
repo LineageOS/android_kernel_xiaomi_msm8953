@@ -304,6 +304,7 @@ void hdd_flush_ibss_tx_queues( hdd_adapter_t *pAdapter, v_U8_t STAId)
           size <= HDD_TX_QUEUE_LOW_WATER_MARK &&
           netif_tx_queue_stopped(txq) )
       {
+         hddLog(VOS_TRACE_LEVEL_INFO, FL("Enabling queue for queue %d"),i);
          netif_tx_start_queue(txq);
          pAdapter->isTxSuspended[i] = VOS_FALSE;
          ++pAdapter->hdd_stats.hddTxRxStats.txDequeDePressured;
@@ -368,6 +369,7 @@ static struct sk_buff* hdd_mon_tx_fetch_pkt(hdd_adapter_t* pAdapter)
                  "%s: TX queue[%d] re-enabled", __func__, ac);
       pAdapter->isTxSuspended[ac] = VOS_FALSE;      
       /* Enable Queues which we have disabled earlier */
+      hddLog(VOS_TRACE_LEVEL_INFO, FL("Enabling queues"));
       netif_tx_start_all_queues( pAdapter->dev ); 
    }
 
@@ -588,6 +590,7 @@ int hdd_mon_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
       {
          /* We want to process one packet at a time, so lets disable all TX queues
            * and re-enable the queues once we get TX feedback for this packet */
+         hddLog(VOS_TRACE_LEVEL_INFO, FL("Disabling queues"));
          netif_tx_stop_all_queues(pAdapter->dev);
          pAdapter->isTxSuspended[ac] = VOS_TRUE;
          spin_unlock(&pAdapter->wmm_tx_queue[ac].lock);      
@@ -867,6 +870,7 @@ int hdd_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
    {
          ++pAdapter->hdd_stats.hddTxRxStats.txXmitBackPressured;
          ++pAdapter->hdd_stats.hddTxRxStats.txXmitBackPressuredAC[ac];
+         hddLog(VOS_TRACE_LEVEL_INFO, FL("Disabling queue for ac %d"),ac);
          netif_tx_stop_queue(netdev_get_tx_queue(dev, skb_get_queue_mapping(skb)));
          pAdapter->isTxSuspended[ac] = VOS_TRUE;
          txSuspended = VOS_TRUE;
@@ -1826,6 +1830,7 @@ VOS_STATUS hdd_tx_fetch_packet_cbk( v_VOID_t *vosContext,
          {
             /* During TX open duration, TX frame count is larger than threshold
              * Block TX during Sleep time */
+            hddLog(VOS_TRACE_LEVEL_INFO, FL("Disabling queues"));
             netif_tx_stop_all_queues(pAdapter->dev);
             pHddCtx->tmInfo.qBlocked = VOS_TRUE;
             pHddCtx->tmInfo.lastblockTs = timestamp;
