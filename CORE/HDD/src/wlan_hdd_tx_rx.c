@@ -67,6 +67,7 @@
 #include "vos_utils.h"
 #endif
 #include  "sapInternal.h"
+#include  "wlan_hdd_trace.h"
 /*--------------------------------------------------------------------------- 
   Preprocessor definitions and constants
   -------------------------------------------------------------------------*/ 
@@ -203,6 +204,9 @@ static VOS_STATUS hdd_flush_tx_queues( hdd_adapter_t *pAdapter )
    struct sk_buff *skb = NULL;
 
    pAdapter->isVosLowResource = VOS_FALSE;
+
+   MTRACE(vos_trace(VOS_MODULE_ID_HDD, TRACE_CODE_HDD_FLUSH_TX_QUEUES,
+                    pAdapter->sessionId, 0));
 
    while (++i != NUM_TX_QUEUES) 
    {
@@ -865,6 +869,8 @@ int hdd_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
          netif_tx_stop_queue(netdev_get_tx_queue(dev, skb_get_queue_mapping(skb)));
          pAdapter->isTxSuspended[ac] = VOS_TRUE;
          txSuspended = VOS_TRUE;
+         MTRACE(vos_trace(VOS_MODULE_ID_HDD, TRACE_CODE_HDD_STOP_NETDEV,
+                          pAdapter->sessionId, ac));
    }
 
    /* If 3/4th of the max queue size is used then enable the flag.
@@ -1764,6 +1770,8 @@ VOS_STATUS hdd_tx_fetch_packet_cbk( v_VOID_t *vosContext,
       pAdapter->isTxSuspended[ac] = VOS_FALSE;      
       netif_tx_wake_queue(netdev_get_tx_queue(pAdapter->dev, 
                                         skb_get_queue_mapping(skb) ));
+      MTRACE(vos_trace(VOS_MODULE_ID_HDD, TRACE_CODE_HDD_WAKE_NETDEV,
+                       pAdapter->sessionId, ac));
    }
 
 
