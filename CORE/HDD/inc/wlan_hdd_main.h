@@ -836,33 +836,12 @@ typedef enum
 
 #endif
 
-typedef enum
-{
-   FW_UBSP_STATS = 1,
-   FW_STATS_MAX,
-}hddFwStatsType;
-
 typedef struct
 {
    struct completion completion;
    tANI_U32 magic;
    hdd_adapter_t *pAdapter;
 }fwStatsContext_t;
-
-typedef struct
-{
-   tANI_U32 ubsp_enter_cnt;
-   tANI_U32 ubsp_jump_ddr_cnt;
-}hddUbspFwStats;
-
-typedef struct
-{
-   hddFwStatsType type;
-   /*data*/
-   union{
-     hddUbspFwStats ubspStats;
-   }hddFwStatsData;
-}fwStatsResult_t;
 
 #define WLAN_HDD_ADAPTER_MAGIC 0x574c414e //ASCII "WLAN"
 
@@ -1068,7 +1047,7 @@ struct hdd_adapter_s
    sme_QosWmmUpType hddWmmDscpToUpMap[WLAN_HDD_MAX_DSCP+1];
    /* Lock for active sessions while processing deauth/Disassoc */
    spinlock_t lock_for_active_session;
-   fwStatsResult_t  fwStatsRsp;
+   tSirFwStatsResult  fwStatsRsp;
 };
 
 #define WLAN_HDD_GET_STATION_CTX_PTR(pAdapter) (&(pAdapter)->sessionCtx.station)

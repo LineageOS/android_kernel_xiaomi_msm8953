@@ -1964,15 +1964,15 @@ static void getBcnMissRateCB(VOS_STATUS status, int bcnMissRate, void *data)
     return;
 }
 
-void hdd_FWStatisCB( VOS_STATUS status, void *fwStats, void *data )
+void hdd_FWStatisCB( VOS_STATUS status,
+     tSirFwStatsResult *fwStatsResult, void *pContext )
 {
     fwStatsContext_t *fwStatsCtx;
-    fwStatsResult_t  *fwStatsResult;
     hdd_adapter_t *pAdapter;
 
     hddLog(VOS_TRACE_LEVEL_INFO, FL(" with status = %d"),status);
 
-    if (NULL == data)
+    if (NULL == pContext)
     {
         hddLog(VOS_TRACE_LEVEL_ERROR, FL("argument data is NULL"));
         return;
@@ -1982,7 +1982,7 @@ void hdd_FWStatisCB( VOS_STATUS status, void *fwStats, void *data )
        before or while this code is executing.  we use a spinlock to
        serialize these actions */
     spin_lock(&hdd_context_lock);
-    fwStatsCtx = (fwStatsContext_t *) data;
+    fwStatsCtx = (fwStatsContext_t *) pContext;
     if (fwStatsCtx->magic != FW_STATS_CONTEXT_MAGIC)
     {
         hddLog(VOS_TRACE_LEVEL_ERROR,
@@ -1999,19 +1999,17 @@ void hdd_FWStatisCB( VOS_STATUS status, void *fwStats, void *data )
         return;
     }
     pAdapter->fwStatsRsp.type = 0;
-    if ((VOS_STATUS_SUCCESS == status) && (NULL != fwStats))
+    if ((VOS_STATUS_SUCCESS == status) && (NULL != fwStatsResult))
     {
-        fwStatsResult = (fwStatsResult_t *)fwStats;
         switch( fwStatsResult->type )
         {
             case FW_UBSP_STATS:
             {
-                 memcpy(&pAdapter->fwStatsRsp,fwStatsResult,sizeof(fwStatsResult_t));
-
+                 memcpy(&pAdapter->fwStatsRsp,fwStatsResult,sizeof(tSirFwStatsResult));
                  hddLog(VOS_TRACE_LEVEL_INFO,
                   FL("ubsp_enter_cnt = %d ubsp_jump_ddr_cnt = %d"),
-                  pAdapter->fwStatsRsp.hddFwStatsData.ubspStats.ubsp_enter_cnt,
-                  pAdapter->fwStatsRsp.hddFwStatsData.ubspStats.ubsp_jump_ddr_cnt);
+                  pAdapter->fwStatsRsp.fwStatsData.ubspStats.ubsp_enter_cnt,
+                  pAdapter->fwStatsRsp.fwStatsData.ubspStats.ubsp_jump_ddr_cnt);
             }
             break;
             default:
@@ -2282,6 +2280,13 @@ static int hdd_driver_command(hdd_adapter_t *pAdapter,
            tANI_U8 *ptr = command;
            ret = hdd_wmmps_helper(pAdapter, ptr);
        }
+
+       else if(strncmp(command, "TDLSSCAN", 8) == 0)
+       {
+           tANI_U8 *ptr  = command;
+           ret = hdd_set_tdls_scan_type(pAdapter, ptr);
+       }
+
        else if ( strncasecmp(command, "COUNTRY", 7) == 0 )
        {
            char *country_code;
@@ -4232,7 +4237,7 @@ static int hdd_driver_command(hdd_adapter_t *pAdapter,
            char len;
            long waitRet;
            fwStatsContext_t fwStatsCtx;
-           fwStatsResult_t *fwStatsRsp = &(pAdapter->fwStatsRsp);
+           tSirFwStatsResult *fwStatsRsp = &(pAdapter->fwStatsRsp);
            tANI_U8 *ptr = command;
            int stats = *(ptr + 11) - '0';
 
@@ -4258,7 +4263,7 @@ static int hdd_driver_command(hdd_adapter_t *pAdapter,
            fwStatsCtx.pAdapter = pAdapter;
            fwStatsRsp->type = 0;
            status = sme_GetFwStats( (tHalHandle)pHddCtx->hHal, stats,
-                                   (&fwStatsCtx), hdd_FWStatisCB);
+                                   &fwStatsCtx, hdd_FWStatisCB);
            if (eHAL_STATUS_SUCCESS != status)
            {
                hddLog(VOS_TRACE_LEVEL_ERROR,
@@ -4295,8 +4300,8 @@ static int hdd_driver_command(hdd_adapter_t *pAdapter,
                    {
                         len = snprintf(buf, FW_STATE_RSP_LEN,
                               "GETFWSTATS: ubsp_enter_cnt %d ubsp_jump_ddr_cnt %d",
-                              fwStatsRsp->hddFwStatsData.ubspStats.ubsp_enter_cnt,
-                              fwStatsRsp->hddFwStatsData.ubspStats.ubsp_jump_ddr_cnt);
+                              fwStatsRsp->fwStatsData.ubspStats.ubsp_enter_cnt,
+                              fwStatsRsp->fwStatsData.ubspStats.ubsp_jump_ddr_cnt);
                    }
                    break;
                    default:

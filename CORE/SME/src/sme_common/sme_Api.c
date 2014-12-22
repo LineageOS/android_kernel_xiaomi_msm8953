@@ -5008,8 +5008,8 @@ eHalStatus sme_GetStatistics(tHalHandle hHal, eCsrStatsRequesterType requesterId
 
 }
 
-eHalStatus sme_GetFwStats(tHalHandle hHal, tANI_U32 stats, void *data,
-                                                        void *callback)
+eHalStatus sme_GetFwStats(tHalHandle hHal, tANI_U32 stats,
+                            void *pContext, tSirFWStatsCallback callback)
 {
    tpAniSirGlobal pMac = PMAC_STRUCT( hHal );
    vos_msg_t msg;
@@ -5029,7 +5029,7 @@ eHalStatus sme_GetFwStats(tHalHandle hHal, tANI_U32 stats, void *data,
        }
        pGetFWStatsReq->stats = stats;
        pGetFWStatsReq->callback = (tSirFWStatsCallback)callback;
-       pGetFWStatsReq->data = data;
+       pGetFWStatsReq->data = pContext;
 
        msg.type = WDA_FW_STATS_GET_REQ;
        msg.reserved = 0;
