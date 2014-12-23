@@ -1556,6 +1556,45 @@ void sapPrintACL(v_MACADDR_t *macList, v_U8_t size)
 }
 
 /*==========================================================================
+  FUNCTION    sapGetStaId
+
+  DESCRIPTION
+    Get the STA ID from Mac address.
+
+  DEPENDENCIES
+    NA.
+
+  PARAMETERS
+
+    IN
+    sapContext   : Sap Context value
+    staId        : STA ID
+    pCsrRoamInfo : Pointer to CSR info
+
+  RETURN VALUE
+
+  SIDE EFFECTS
+============================================================================*/
+
+VOS_STATUS sapGetStaId(ptSapContext sapContext, v_U8_t *staId,
+                                         tCsrRoamInfo *pCsrRoamInfo)
+{
+    v_U8_t i;
+
+    for (i = 0; i < WLAN_MAX_STA_COUNT; i++)
+    {
+        if (vos_mem_compare(&sapContext->aStaInfo[i].macAddrSTA,
+                pCsrRoamInfo->peerMac, sizeof(v_MACADDR_t))
+           && sapContext->aStaInfo[i].isUsed)
+        {
+            *staId = i;
+            return VOS_STATUS_SUCCESS;
+        }
+    }
+    return VOS_STATUS_E_FAILURE;
+}
+
+/*==========================================================================
   FUNCTION    sapAddHT40IntolerantSta
 
   DESCRIPTION
@@ -1620,8 +1659,12 @@ void sapAddHT40IntolerantSta(ptSapContext sapContext,
         return;
     }
 
+    spin_lock_bh(&sapContext->staInfo_lock);
+
     sapContext->aStaInfo[staId].isHT40IntolerantSet = 1;
     sapContext->numHT40IntoSta++;
+
+    spin_unlock_bh(&sapContext->staInfo_lock);
 
     VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO,
               FL("Total No of HT40 Intolerant STA: %d"
@@ -1690,12 +1733,19 @@ void sapRemoveHT40IntolerantSta(ptSapContext sapContext,
     VOS_STATUS  vosStatus = VOS_STATUS_SUCCESS;
     unsigned int delay;
 
-    staId = pCsrRoamInfo->staId;
+    vosStatus = sapGetStaId(sapContext, &staId, pCsrRoamInfo);
+
+    if (!VOS_IS_STATUS_SUCCESS(vosStatus))
+    {
+        VOS_TRACE(VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
+                  FL("ERROR: SAP Failed to find sta id!!"));
+        return;
+    }
 
     VOS_TRACE(VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO,
               FL("Remove HT40 MHz Intolerant STA :"
-              MAC_ADDRESS_STR "STA ID: %d"
-              "HT40IntolerantSet:%d"),
+              MAC_ADDRESS_STR " STA ID: %d"
+              " HT40IntolerantSet:%d"),
               MAC_ADDR_ARRAY(pCsrRoamInfo->peerMac),
               staId, sapContext->aStaInfo[staId].isHT40IntolerantSet);
 
@@ -1707,10 +1757,13 @@ void sapRemoveHT40IntolerantSta(ptSapContext sapContext,
         return;
     }
 
-    sapContext->aStaInfo[pCsrRoamInfo->staId].isHT40IntolerantSet = 0;
+    spin_lock_bh(&sapContext->staInfo_lock);
+    sapContext->aStaInfo[staId].isHT40IntolerantSet = 0;
 
     if (sapContext->numHT40IntoSta > 0)
         sapContext->numHT40IntoSta--;
+
+    spin_unlock_bh(&sapContext->staInfo_lock);
 
     VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO,
                FL("Total No of HT40 Intolerant STA: %d"
