@@ -264,8 +264,8 @@ limProcessDeauthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession p
             MAC_ADDR_ARRAY(pHdr->sa));)
             if (limSearchPreAuthList(pMac, pHdr->sa))
             {
-                PELOG1(limLog(pMac, LOG1, FL("Preauth entry exist. "
-                "Deleting... "));)
+                limLog(pMac, LOG1, FL("Preauth entry exist. "
+                "Deleting... "));
                 limDeletePreAuthNode(pMac, pHdr->sa);
             }
             return;
@@ -289,11 +289,11 @@ limProcessDeauthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession p
                          */
 
                         // Log error
-                        PELOG1(limLog(pMac, LOG1,
+                        limLog(pMac, LOG1,
                            FL("received Deauth frame state %d with failure "
                            "code %d from "MAC_ADDRESS_STR),
                            psessionEntry->limMlmState, reasonCode,
-                           MAC_ADDR_ARRAY(pHdr->sa));)
+                           MAC_ADDR_ARRAY(pHdr->sa));
 
                         limRestoreFromAuthState(pMac, eSIR_SME_DEAUTH_WHILE_JOIN,
                                                 reasonCode,psessionEntry);

@@ -312,9 +312,9 @@ tpDphHashNode dphAddHashEntry(tpAniSirGlobal pMac, tSirMacAddr staAddr, tANI_U16
     tpDphHashNode ptr, node;
     tANI_U16 index = hashFunction(pMac, staAddr, pDphHashTable->size);
 
-    PELOG1(limLog(pMac, LOG1, FL("assocId %d index %d STA addr"),
+    limLog(pMac, LOG1, FL("assocId %d index %d STA addr"),
            assocId, index);
-    dphPrintMacAddr(pMac, staAddr, LOG1);)
+    dphPrintMacAddr(pMac, staAddr, LOG1);
 
     if (assocId >= pDphHashTable->size)
     {
@@ -389,9 +389,9 @@ tSirRetStatus dphDeleteHashEntry(tpAniSirGlobal pMac, tSirMacAddr staAddr, tANI_
   tANI_U16 index = hashFunction(pMac, staAddr, pDphHashTable->size);
 
 
-  PELOG1(limLog(pMac, LOG1, FL("assocId %d index %d STA addr"),
+  limLog(pMac, LOG1, FL("assocId %d index %d STA addr"),
                   assocId, index);
-  dphPrintMacAddr(pMac, staAddr, LOG1);)
+  dphPrintMacAddr(pMac, staAddr, LOG1);
 
   if (assocId >= pDphHashTable->size)
   {

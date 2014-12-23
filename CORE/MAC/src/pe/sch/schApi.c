@@ -243,7 +243,7 @@ schSendStartScanRsp(tpAniSirGlobal pMac)
     tSirMsgQ        msgQ;
     tANI_U32        retCode;
 
-    PELOG1(schLog(pMac, LOG1, FL("Sending LIM message to go into scan"));)
+    schLog(pMac, LOG1, FL("Sending SIR_SCH_START_SCAN_RSP to LIM"));
     msgQ.type = SIR_SCH_START_SCAN_RSP;
     if ((retCode = limPostMsgApi(pMac, &msgQ)) != eSIR_SUCCESS)
         schLog(pMac, LOGE,

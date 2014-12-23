@@ -2241,8 +2241,8 @@ limChannelSwitchTimerHandler(void *pMacGlobal, tANI_U32 param)
     tSirMsgQ    msg;
     tpAniSirGlobal pMac = (tpAniSirGlobal)pMacGlobal;
 
-    PELOG1(limLog(pMac, LOG1,
-        FL("ChannelSwitch Timer expired.  Posting msg to LIM "));)
+    limLog(pMac, LOG1,
+        FL("ChannelSwitch Timer expired.  Posting msg to LIM "));
 
     msg.type = SIR_LIM_CHANNEL_SWITCH_TIMEOUT;
     msg.bodyval = (tANI_U32)param;
@@ -2261,8 +2261,8 @@ limQuietTimerHandler(void *pMacGlobal, tANI_U32 param)
     msg.bodyval = (tANI_U32)param;
     msg.bodyptr = NULL;
 
-    PELOG1(limLog(pMac, LOG1,
-        FL("Post SIR_LIM_QUIET_TIMEOUT msg. "));)
+    limLog(pMac, LOG1,
+        FL("Post SIR_LIM_QUIET_TIMEOUT msg. "));
     limPostMsgApi(pMac, &msg);
 }
 
@@ -2275,8 +2275,8 @@ limQuietBssTimerHandler(void *pMacGlobal, tANI_U32 param)
     msg.type = SIR_LIM_QUIET_BSS_TIMEOUT;
     msg.bodyval = (tANI_U32)param;
     msg.bodyptr = NULL;
-    PELOG1(limLog(pMac, LOG1,
-        FL("Post SIR_LIM_QUIET_BSS_TIMEOUT msg. "));)
+    limLog(pMac, LOG1,
+        FL("Post SIR_LIM_QUIET_BSS_TIMEOUT msg. "));
     limPostMsgApi(pMac, &msg);
 }
 #if 0

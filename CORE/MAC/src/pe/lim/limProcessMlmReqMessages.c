@@ -207,7 +207,7 @@ limSetScanMode(tpAniSirGlobal pMac)
     else
         checkTraffic = eSIR_CHECK_ROAMING_SCAN;
 
-    PELOG1(limLog(pMac, LOG1, FL("Calling limSendHalInitScanReq"));)
+    limLog(pMac, LOG1, FL("Calling limSendHalInitScanReq"));
     limSendHalInitScanReq(pMac, eLIM_HAL_INIT_SCAN_WAIT_STATE, checkTraffic);
 
     return ;
@@ -430,7 +430,6 @@ void limContinuePostChannelScan(tpAniSirGlobal pMac)
         (limActiveScanAllowed(pMac, channelNum)))
     {
         TX_TIMER *periodicScanTimer;
-        PELOG2(limLog(pMac, LOG2, FL("ACTIVE Scan chan %d, sending probe"), channelNum);)
 
         pMac->lim.probeCounter++;
         do
@@ -444,11 +443,13 @@ void limContinuePostChannelScan(tpAniSirGlobal pMac)
             } else {
                 vos_mem_copy(gSelfMacAddr, pMac->lim.spoofMacAddr, VOS_MAC_ADDRESS_LEN);
             }
-            limLog( pMac, LOG1, FL("Mac Addr used in Probe Req is :"MAC_ADDRESS_STR),
-                                   MAC_ADDR_ARRAY(gSelfMacAddr));
+            limLog( pMac, LOG1,
+                 FL("Mac Addr used in Probe Req is: "MAC_ADDRESS_STR),
+                                          MAC_ADDR_ARRAY(gSelfMacAddr));
 
-            PELOGE(limLog(pMac, LOG1, FL("sending ProbeReq number %d, for SSID %s on channel: %d"),
-                                                i, pMac->lim.gpLimMlmScanReq->ssId[i].ssId, channelNum);)
+            limLog(pMac, LOG1,
+                 FL("sending ProbeReq number %d, for SSID %s on channel: %d"),
+                       i, pMac->lim.gpLimMlmScanReq->ssId[i].ssId, channelNum);
             // include additional IE if there is
             status = limSendProbeReqMgmtFrame( pMac, &pMac->lim.gpLimMlmScanReq->ssId[i],
                pMac->lim.gpLimMlmScanReq->bssId, channelNum, gSelfMacAddr,
@@ -534,7 +535,7 @@ void limContinuePostChannelScan(tpAniSirGlobal pMac)
     else
     {
         tANI_U32 val;
-        PELOG2(limLog(pMac, LOG2, FL("START PASSIVE Scan chan %d"), channelNum);)
+        limLog(pMac, LOG1, FL("START PASSIVE Scan chan %d"), channelNum);
 
         /// Passive Scanning. Activate maxChannelTimer
         MTRACE(macTrace(pMac, TRACE_CODE_TIMER_DEACTIVATE, NO_SESSION, eLIM_MAX_CHANNEL_TIMER));
@@ -677,15 +678,15 @@ void limCovertChannelScanType(tpAniSirGlobal pMac,tANI_U8 channelNum, tANI_BOOLE
         {
              if ((eSIR_PASSIVE_SCAN == channelPair[i+1]) && TRUE == passiveToActive)
              {
-                 PELOG1(limLog(pMac, LOG1, FL("Channel %d changed from Passive to Active"),
-                                 channelNum);)
+                 limLog(pMac, LOG1, FL("Channel %d changed from Passive to Active"),
+                                 channelNum);
                  channelPair[i+1] = eSIR_ACTIVE_SCAN;
                  break ;
              }
              if ((eSIR_ACTIVE_SCAN == channelPair[i+1]) && FALSE == passiveToActive)
              {
-                 PELOG1(limLog(pMac, LOG1, FL("Channel %d changed from Active to Passive"),
-                                 channelNum);)
+                 limLog(pMac, LOG1, FL("Channel %d changed from Active to Passive"),
+                                 channelNum);
                  channelPair[i+1] = eSIR_PASSIVE_SCAN;
                  break ;
              }
@@ -731,14 +732,14 @@ void limSetDFSChannelList(tpAniSirGlobal pMac,tANI_U8 channelNum, tSirDFSChannel
           if (dfsChannelList->timeStamp[channelNum] == 0)
           {
              //Received first beacon; Convert DFS channel to Active channel.
-             PELOG1(limLog(pMac, LOG1, FL("Received first beacon on DFS channel: %d"), channelNum);)
+             limLog(pMac, LOG1, FL("Received first beacon on DFS channel: %d"), channelNum);
              limCovertChannelScanType(pMac,channelNum, passiveToActive);
           }
           dfsChannelList->timeStamp[channelNum] = vos_timer_get_system_time();
        }
        else
        {
-          PELOG1(limLog(pMac, LOG1, FL("Channel %d is Active"), channelNum);)
+          limLog(pMac, LOG1, FL("Channel %d is Active"), channelNum);
           return;
        }
        if (!tx_timer_running(&pMac->lim.limTimers.gLimActiveToPassiveChannelTimer))
@@ -1250,9 +1251,9 @@ limContinueChannelScan(tpAniSirGlobal pMac)
 {
     tANI_U8                channelNum;
 
-    PELOG1(limLog(pMac, LOG1, FL("Continue SCAN : chan %d tot %d"),
+    limLog(pMac, LOG1, FL("Continue SCAN on chan %d, total chan %d"),
            pMac->lim.gLimCurrentScanChannelId,
-           pMac->lim.gpLimMlmScanReq->channelList.numChannels);)
+           pMac->lim.gpLimMlmScanReq->channelList.numChannels);
 
     if (pMac->lim.gLimCurrentScanChannelId >
         (tANI_U32) (pMac->lim.gpLimMlmScanReq->channelList.numChannels - 1) 
@@ -1308,8 +1309,8 @@ limContinueChannelScan(tpAniSirGlobal pMac)
     }
 
     channelNum = limGetCurrentScanChannel(pMac);
-    PELOG2(limLog(pMac, LOG2, FL("Current Channel to be scanned is %d"),
-           channelNum);)
+    limLog(pMac, LOG1, FL("Current Channel to be scanned is %d"),
+           channelNum);
 
     limSendHalStartScanReq(pMac, channelNum, eLIM_HAL_START_SCAN_WAIT_STATE);
     return;
@@ -1370,7 +1371,8 @@ limRestorePreScanState(tpAniSirGlobal pMac)
     //limCleanupMsgQ(pMac);
 
     pMac->lim.gLimSystemInScanLearnMode = 0;
-    PELOG1(limLog(pMac, LOG1, FL("Scan ended, took %d tu"), (tx_time_get() - pMac->lim.scanStartTime));)
+    limLog(pMac, LOG1, FL("Scan ended, took %ld tu"),
+              (tx_time_get() - pMac->lim.scanStartTime));
 } /*** limRestorePreScanState() ***/
 
 #ifdef FEATURE_OEM_DATA_SUPPORT
@@ -1990,8 +1992,8 @@ limProcessMlmScanReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
         /// Hold onto SCAN REQ criteria
         pMac->lim.gpLimMlmScanReq = (tLimMlmScanReq *) pMsgBuf;
 
-       PELOG3(limLog(pMac, LOG3, FL("Number of channels to scan are %d "),
-               pMac->lim.gpLimMlmScanReq->channelList.numChannels);)
+       limLog(pMac, LOG1, FL("Number of channels to scan are %d "),
+               pMac->lim.gpLimMlmScanReq->channelList.numChannels);
 
         pMac->lim.gLimPrevMlmState = pMac->lim.gLimMlmState;
 
@@ -3844,7 +3846,7 @@ limProcessMinChannelTimeout(tpAniSirGlobal pMac)
     if (pMac->lim.gLimMlmState == eLIM_MLM_WT_PROBE_RESP_STATE &&
         pMac->lim.gLimHalScanState != eLIM_HAL_FINISH_SCAN_WAIT_STATE)
     {
-        PELOG1(limLog(pMac, LOG1, FL("Scanning : min channel timeout occurred"));)
+        limLog(pMac, LOG1, FL("Scanning : min channel timeout occurred"));
 
         /// Min channel timer timed out
         pMac->lim.limTimers.gLimPeriodicProbeReqTimer.sessionId = 0xff;
@@ -3919,7 +3921,7 @@ limProcessMaxChannelTimeout(tpAniSirGlobal pMac)
         pMac->lim.gLimMlmState == eLIM_MLM_PASSIVE_SCAN_STATE) &&
         pMac->lim.gLimHalScanState != eLIM_HAL_FINISH_SCAN_WAIT_STATE)
     {
-        PELOG1(limLog(pMac, LOG1, FL("Scanning : Max channel timed out"));)
+        limLog(pMac, LOG1, FL("Scanning : Max channel timed out"));
         /**
          * MAX channel timer timed out
          * Continue channel scan.
@@ -3993,7 +3995,7 @@ limProcessPeriodicProbeReqTimer(tpAniSirGlobal pMac)
     if(vos_timer_getCurrentState(&pPeriodicProbeReqTimer->vosTimer)
          != VOS_TIMER_STATE_STOPPED)
     {
-       PELOG1(limLog(pMac, LOG1, FL("Invalid state of timer"));)
+       limLog(pMac, LOG1, FL("Invalid state of timer"));
        return;
     }
 
@@ -4001,7 +4003,7 @@ limProcessPeriodicProbeReqTimer(tpAniSirGlobal pMac)
         (pPeriodicProbeReqTimer->sessionId != 0xff) && (pMac->lim.probeCounter < pMac->lim.maxProbe))
     {
         tLimMlmScanReq *pLimMlmScanReq = pMac->lim.gpLimMlmScanReq;
-        PELOG1(limLog(pMac, LOG1, FL("Scanning : Periodic scanning"));)
+        limLog(pMac, LOG1, FL("Scanning : Periodic scanning"));
         pMac->lim.probeCounter++;
         /**
          * Periodic channel timer timed out
@@ -4366,9 +4368,9 @@ limProcessAuthRspTimeout(tpAniSirGlobal pMac, tANI_U32 authIndex)
             // timedout for an STA.
             pAuthNode->mlmState = eLIM_MLM_AUTH_RSP_TIMEOUT_STATE;
             pAuthNode->fTimerStarted = 0;
-            PELOG1( limLog(pMac, LOG1,
+            limLog(pMac, LOG1,
                         FL("AUTH rsp timedout for MAC address "MAC_ADDRESS_STR),
-                        MAC_ADDR_ARRAY(pAuthNode->peerMacAddr));)
+                        MAC_ADDR_ARRAY(pAuthNode->peerMacAddr));
 
             // Change timer to reactivate it in future
             limDeactivateAndChangePerStaIdTimer(pMac,
@@ -4448,8 +4450,8 @@ limProcessAssocFailureTimeout(tpAniSirGlobal pMac, tANI_U32 MsgType)
     WLANTL_AssocFailed (psessionEntry->staId);
 
     // Log error
-    PELOG1(limLog(pMac, LOG1,
-       FL("Re/Association Response not received before timeout "));)
+    limLog(pMac, LOG1,
+       FL("Re/Association Response not received before timeout "));
 
     if (( (psessionEntry->limSystemRole == eLIM_AP_ROLE) || (psessionEntry->limSystemRole == eLIM_BT_AMP_AP_ROLE) )||
         ( (psessionEntry->limMlmState != eLIM_MLM_WT_ASSOC_RSP_STATE) &&
@@ -4492,8 +4494,8 @@ limProcessAssocFailureTimeout(tpAniSirGlobal pMac, tANI_U32 MsgType)
             //To remove the preauth node in case of fail to associate
             if (limSearchPreAuthList(pMac, psessionEntry->bssId))
             {
-                PELOG1(limLog(pMac, LOG1, FL(" delete pre auth node for "
-                       MAC_ADDRESS_STR), MAC_ADDR_ARRAY(psessionEntry->bssId));)
+                limLog(pMac, LOG1, FL(" delete pre auth node for "
+                       MAC_ADDRESS_STR), MAC_ADDR_ARRAY(psessionEntry->bssId));
                 limDeletePreAuthNode(pMac, psessionEntry->bssId);
             }
 
