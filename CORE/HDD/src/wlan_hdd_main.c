@@ -6755,6 +6755,15 @@ hdd_adapter_t* hdd_open_adapter( hdd_context_t *pHddCtx, tANI_U8 session_type,
          //netif_tx_disable(pWlanDev);
          netif_carrier_off(pAdapter->dev);
 
+         if (WLAN_HDD_P2P_CLIENT == session_type ||
+                 WLAN_HDD_P2P_DEVICE == session_type)
+         {
+             /* Initialize the work queue to defer the
+              * back to back RoC request */
+             INIT_DELAYED_WORK(&pAdapter->roc_work,
+                     hdd_p2p_roc_work_queue);
+         }
+
          break;
       }
 
@@ -6789,6 +6798,14 @@ hdd_adapter_t* hdd_open_adapter( hdd_context_t *pHddCtx, tANI_U8 session_type,
          netif_carrier_off(pAdapter->dev);
 
          hdd_set_conparam( 1 );
+
+         if (WLAN_HDD_P2P_GO == session_type)
+         {
+             /* Initialize the work queue to
+              * defer the back to back RoC request */
+             INIT_DELAYED_WORK(&pAdapter->roc_work,
+                     hdd_p2p_roc_work_queue);
+         }
          break;
       }
       case WLAN_HDD_MONITOR:
@@ -7133,6 +7150,9 @@ VOS_STATUS hdd_stop_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter,
                   break;
                }
             }
+#ifdef WLAN_OPEN_SOURCE
+          cancel_delayed_work_sync(&pAdapter->roc_work);
+#endif
        }
 #ifdef WLAN_NS_OFFLOAD
 #ifdef WLAN_OPEN_SOURCE
@@ -7201,6 +7221,10 @@ VOS_STATUS hdd_stop_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter,
                   break;
                }
             }
+
+#ifdef WLAN_OPEN_SOURCE
+            cancel_delayed_work_sync(&pAdapter->roc_work);
+#endif
          }
          mutex_lock(&pHddCtx->sap_lock);
          if (test_bit(SOFTAP_BSS_STARTED, &pAdapter->event_flags)) 
