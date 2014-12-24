@@ -1298,6 +1298,8 @@ __limProcessAddBAReq( tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,tpPESession ps
     if (!(IS_HWSTA_IDX(pSta->staIndex)))
     {
         status = eSIR_MAC_REQ_DECLINED_STATUS;
+        limLog( pMac, LOGE,
+            FL( "Sta Id is not HW Sta Id, Status code is %d " ), status);
         goto returnAfterError;
     }
 #endif //WLAN_SOFTAP_VSTA_FEATURE
@@ -1326,7 +1328,11 @@ __limProcessAddBAReq( tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,tpPESession ps
                                               frmAddBAReq.AddBAParameterSet,
                                               0, //dialogue token is don't care in request validation.
                                               LIM_ADDBA_REQ, &delBAFlag)))
+    {
+        limLog( pMac, LOGE,
+            FL( "ADDBA parameters validation failed with status %d" ), status);
         goto returnAfterError;
+    }
 
     //BA already set, so we need to delete it before adding new one.
     if(delBAFlag)
@@ -1337,6 +1343,9 @@ __limProcessAddBAReq( tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,tpPESession ps
             eBA_RECIPIENT,psessionEntry))
         {
             status = eSIR_MAC_UNSPEC_FAILURE_STATUS;
+            limLog( pMac, LOGE,
+                FL( "Deletion of Existing BA session failed with status %d" ),
+                    status);
             goto returnAfterError;
         }
     }
@@ -1387,7 +1396,12 @@ __limProcessAddBAReq( tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,tpPESession ps
         frmAddBAReq.BATimeout.timeout,
         (tANI_U16) frmAddBAReq.BAStartingSequenceControl.ssn,
         eBA_RECIPIENT,psessionEntry))
-    status = eSIR_MAC_UNSPEC_FAILURE_STATUS;
+  {
+        status = eSIR_MAC_UNSPEC_FAILURE_STATUS;
+        limLog( pMac, LOGE,
+            FL( "Request to setup new BA session with peer "
+                " "MAC_ADDRESS_STR " failed" ), MAC_ADDR_ARRAY(pSta->staAddr));
+  }
   else
     return;
 
@@ -1455,6 +1469,7 @@ tANI_U8 *pBody;
   // Request, so we should never be processing a ADDBA Response
   if (!(IS_HWSTA_IDX(pSta->staIndex)))
   {
+    limLog( pMac, LOGE, FL( "Sta Id is not HW Sta Id " ));
     return;
   }
 #endif //WLAN_SOFTAP_VSTA_FEATURE
@@ -1522,7 +1537,11 @@ tANI_U8 *pBody;
                                        frmAddBARsp.AddBAParameterSet,
                                        (tANI_U8)frmAddBARsp.DialogToken.token,
                                        LIM_ADDBA_RSP, NULL))
-      goto returnAfterError;
+    {
+        limLog( pMac, LOGE,
+            FL( "ADDBA parameters validation failed" ));
+        goto returnAfterError;
+    }
   }
   else
     goto returnAfterError;
@@ -1545,7 +1564,12 @@ tANI_U8 *pBody;
         frmAddBARsp.BATimeout.timeout,
         0,
         eBA_INITIATOR,psessionEntry))
-    reasonCode = eSIR_MAC_UNSPEC_FAILURE_REASON;
+  {
+      reasonCode = eSIR_MAC_UNSPEC_FAILURE_REASON;
+      limLog( pMac, LOGE,
+          FL( "Request to setup new BA session with peer "
+              " "MAC_ADDRESS_STR " failed" ), MAC_ADDR_ARRAY(pSta->staAddr));
+  }
   else
     return;
 
@@ -1648,8 +1672,11 @@ tANI_U8 *pBody;
   if( eSIR_MAC_SUCCESS_STATUS != __limValidateDelBAParameterSet( pMac,
                                              frmDelBAInd.DelBAParameterSet,
                                              pSta ))
+  {
+      limLog( pMac, LOGE,
+          FL( "ADDBA parameters validation failed " ));
       return;
-
+  }
   //
   // Post WDA_DELBA_IND to HAL and delete the
   // existing BA session

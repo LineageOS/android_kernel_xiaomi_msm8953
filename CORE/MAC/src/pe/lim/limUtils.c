@@ -6255,6 +6255,8 @@ tSirMsgQ msgQ;
   if (!(IS_HWSTA_IDX(pSta->staIndex)))
   {
     retCode = eHAL_STATUS_FAILURE;
+    limLog( pMac, LOGE,
+        FL( "Sta Id is not HW Sta Id, return code is %d " ), retCode);
     goto returnFailure;
   }
 #endif //WLAN_SOFTAP_VSTA_FEATURE
