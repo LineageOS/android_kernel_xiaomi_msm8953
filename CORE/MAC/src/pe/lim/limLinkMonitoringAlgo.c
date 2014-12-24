@@ -144,8 +144,8 @@ limDeleteStaContext(tpAniSirGlobal pMac, tpSirMsgQ limMsg)
              if((eLIM_BT_AMP_AP_ROLE == psessionEntry->limSystemRole) ||
                      (eLIM_AP_ROLE == psessionEntry->limSystemRole))
              {
-                 PELOG1(limLog(pMac, LOG1, FL("SAP:lim Delete Station Context (staId: %d, assocId: %d) "),
-                             pMsg->staId, pMsg->assocId);)
+                 limLog(pMac, LOG1, FL("SAP:lim Delete Station Context (staId: %d, assocId: %d) "),
+                             pMsg->staId, pMsg->assocId);
                  /*
                   * Check if Deauth/Disassoc is triggered from Host.
                   * If mlmState is in some transient state then
@@ -567,8 +567,8 @@ void limHandleHeartBeatFailure(tpAniSirGlobal pMac,tpPESession psessionEntry)
             * or in states other than link-established state.
             * Log error.
             */
-        PELOG1(limLog(pMac, LOG1, FL("received heartbeat timeout in state %d"),
-               psessionEntry->limMlmState);)
+        limLog(pMac, LOG1, FL("received heartbeat timeout in state %d"),
+               psessionEntry->limMlmState);
         limPrintMlmState(pMac, LOG1, psessionEntry->limMlmState);
         pMac->lim.gLimHBfailureCntInOtherStates++;
         limReactivateHeartBeatTimer(pMac, psessionEntry);

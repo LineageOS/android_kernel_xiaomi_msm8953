@@ -664,7 +664,7 @@ tSirRetStatus limStart(tpAniSirGlobal pMac)
 {
    tSirResultCodes retCode = eSIR_SUCCESS;
 
-   PELOG1(limLog(pMac, LOG1, FL(" enter"));)
+   limLog(pMac, LOG1, FL(" enter"));
 
    if (pMac->lim.gLimSmeState == eLIM_SME_OFFLINE_STATE)
    {
@@ -1724,7 +1724,7 @@ limHandleIBSScoalescing(
         ieLen    = WDA_GET_RX_PAYLOAD_LEN(pRxPacketInfo);
         tsfLater = WDA_GET_RX_TSF_LATER(pRxPacketInfo);
         pIEs = WDA_GET_RX_MPDU_DATA(pRxPacketInfo);
-        PELOG3(limLog(pMac, LOG3, FL("BEFORE Coalescing tsfLater val :%d"), tsfLater);)
+        limLog(pMac, LOG1, FL("BEFORE Coalescing tsfLater val :%d"), tsfLater);
         retCode  = limIbssCoalesce(pMac, pHdr, pBeacon, pIEs, ieLen, tsfLater,psessionEntry);
     }
     return retCode;
@@ -2002,7 +2002,7 @@ tSirRetStatus limUpdateShortSlot(tpAniSirGlobal pMac, tpSirProbeRespBeacon pBeac
     if (nShortSlot != psessionEntry->shortSlotTimeSupported)
     {
         // Short slot time capability of AP has changed. Adopt to it.
-        PELOG1(limLog(pMac, LOG1, FL("Shortslot capability of AP changed: %d"),  nShortSlot);)
+        limLog(pMac, LOG1, FL("Shortslot capability of AP changed: %d"),  nShortSlot);
         ((tpSirMacCapabilityInfo)&psessionEntry->limCurrentBssCaps)->shortSlotTime = (tANI_U16)nShortSlot;
         psessionEntry->shortSlotTimeSupported = nShortSlot;
         pBeaconParams->fShortSlotTime = (tANI_U8) nShortSlot;
@@ -2076,7 +2076,7 @@ void limHandleBmpsStatusInd(tpAniSirGlobal pMac)
         case ePMM_STATE_UAPSD_SLEEP:
         case ePMM_STATE_UAPSD_WT_WAKEUP_RSP:
         case ePMM_STATE_WOWLAN:
-            PELOG1(limLog(pMac, LOG1, FL("Sending EXIT_BMPS_IND to SME "));)
+            limLog(pMac, LOG1, FL("Sending EXIT_BMPS_IND to SME "));
             limSendExitBmpsInd(pMac, eSME_BMPS_STATUS_IND_RCVD);
             break;
 

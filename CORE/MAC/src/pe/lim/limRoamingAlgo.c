@@ -152,8 +152,8 @@ void limTriggerBackgroundScan(tpAniSirGlobal pMac)
     tSirMacAddr      bcAddr = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
     tSirBackgroundScanMode   backgroundScan;
 
-    PELOG1(limLog(pMac, LOG1, FL("Background Scan: %d success, %d consec fail "),
-        pMac->lim.gLimNumOfBackgroundScanSuccess,  pMac->lim.gLimNumOfConsecutiveBkgndScanFailure);)
+    limLog(pMac, LOG1, FL("Background Scan: %d success, %d consec fail "),
+        pMac->lim.gLimNumOfBackgroundScanSuccess,  pMac->lim.gLimNumOfConsecutiveBkgndScanFailure);
 
     if (! limIsBackgroundScanAllowed(pMac))
     {

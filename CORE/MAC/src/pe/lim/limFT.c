@@ -318,15 +318,15 @@ int limProcessFTPreAuthReq(tpAniSirGlobal pMac, tpSirMsgQ pMsg)
     if (psessionEntry->currentOperChannel != pMac->ft.ftPEContext.pFTPreAuthReq->preAuthchannelNum) 
     {
         // Need to suspend link only if the channels are different
-        PELOG2(limLog(pMac,LOG2,"%s: Performing pre-auth on different"
-               " channel (session %p)", __func__, psessionEntry);)
+        limLog(pMac, LOG1, FL(" Performing pre-auth on different"
+               " channel (session %p)"), psessionEntry);
         limSuspendLink(pMac, eSIR_CHECK_ROAMING_SCAN, FTPreAuthSuspendLinkHandler, 
                        (tANI_U32 *)psessionEntry); 
     }
     else 
     {
-        PELOG2(limLog(pMac,LOG2,"%s: Performing pre-auth on same"
-               " channel (session %p)", __func__, psessionEntry);)
+        limLog(pMac, LOG1, FL(" Performing pre-auth on same"
+               " channel (session %p)"), psessionEntry);
         // We are in the same channel. Perform pre-auth
         limPerformFTPreAuth(pMac, eHAL_STATUS_SUCCESS, NULL, psessionEntry);
     }
@@ -364,9 +364,9 @@ void limPerformFTPreAuth(tpAniSirGlobal pMac, eHalStatus status, tANI_U32 *data,
     pMac->ft.ftPEContext.psavedsessionEntry = psessionEntry;
 
 #if defined WLAN_FEATURE_VOWIFI_11R_DEBUG
-    PELOG2(limLog(pMac,LOG2,"Entered wait auth2 state for FT"
-           " (old session %p)",
-           pMac->ft.ftPEContext.psavedsessionEntry);)
+    limLog(pMac, LOG1, FL("Entered wait auth2 state for FT"
+           " (old session %p)"),
+           pMac->ft.ftPEContext.psavedsessionEntry);
 #endif
 
 
@@ -1435,18 +1435,18 @@ tANI_BOOLEAN limProcessFTUpdateKey(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf )
     }
 
     pAddBssParams->extSetStaKeyParam.singleTidRc = val;
-    PELOG1(limLog(pMac, LOG1, FL("Key valid %d"),
+    limLog(pMac, LOG1, FL("Key valid %d key len = %d"),
                 pAddBssParams->extSetStaKeyParamValid,
-                pAddBssParams->extSetStaKeyParam.key[0].keyLength);)
+                pAddBssParams->extSetStaKeyParam.key[0].keyLength);
 
     pAddBssParams->extSetStaKeyParam.staIdx = 0;
 
-    PELOG1(limLog(pMac, LOG1,
-           FL("BSSID = "MAC_ADDRESS_STR), MAC_ADDR_ARRAY(pKeyInfo->bssId));)
+    limLog(pMac, LOG1,
+           FL("BSSID = "MAC_ADDRESS_STR), MAC_ADDR_ARRAY(pKeyInfo->bssId));
 
     if(pAddBssParams->extSetStaKeyParam.key[0].keyLength == 16)
     {
-        PELOG1(limLog(pMac, LOG1,
+        limLog(pMac, LOG1,
         FL("BSS key = %02X-%02X-%02X-%02X-%02X-%02X-%02X- "
         "%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X"),
         pAddBssParams->extSetStaKeyParam.key[0].key[0],
@@ -1464,7 +1464,7 @@ tANI_BOOLEAN limProcessFTUpdateKey(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf )
         pAddBssParams->extSetStaKeyParam.key[0].key[12],
         pAddBssParams->extSetStaKeyParam.key[0].key[13],
         pAddBssParams->extSetStaKeyParam.key[0].key[14],
-        pAddBssParams->extSetStaKeyParam.key[0].key[15]);)
+        pAddBssParams->extSetStaKeyParam.key[0].key[15]);
     }
 
     return TRUE;
@@ -1651,7 +1651,7 @@ void limProcessFTAggrQoSRsp(tpAniSirGlobal pMac, tpSirMsgQ limMsg)
     tpPESession  psessionEntry = NULL;
     int i = 0;
 
-    PELOG1(limLog(pMac, LOG1, FL(" Received AGGR_QOS_RSP from HAL"));)
+    limLog(pMac, LOG1, FL(" Received AGGR_QOS_RSP from HAL"));
 
     /* Need to process all the deferred messages enqueued since sending the
        SIR_HAL_AGGR_ADD_TS_REQ */

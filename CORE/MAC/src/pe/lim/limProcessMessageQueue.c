@@ -358,8 +358,8 @@ static void limHandleUnknownA2IndexFrames(tpAniSirGlobal pMac, void *pRxPacketIn
 
         if (limIsGroupAddr(pMacHdr->addr2))
         {
-            PELOG2(limLog(pMac, LOG2, FL("Ignoring A2 Invalid Packet received for MC/BC:"));
-                    limPrintMacAddr(pMac, pMacHdr->addr2, LOG2);)
+            limLog(pMac, LOG1, FL("Ignoring A2 Invalid Packet received for MC/BC:"));
+                    limPrintMacAddr(pMac, pMacHdr->addr2, LOG1);
 
                 return;
         }
@@ -1101,7 +1101,7 @@ limProcessAbortScanInd(tpAniSirGlobal pMac, tANI_U8 SessionId)
      * SME should send WNI_CFG_BACKGROUND_SCAN_PERIOD indication 
      * to start the background scan again
      */
-    PELOG2(limLog(pMac, LOG2, FL("Processing AbortScan Ind"));)
+    limLog(pMac, LOG1, FL("Processing AbortScan Ind"));
 
     limAbortBackgroundScan(pMac);
 
@@ -1449,7 +1449,8 @@ limProcessMessages(tpAniSirGlobal pMac, tpSirMsgQ  limMsg)
 
                 if ( deferMsg == true )
                 {
-                    PELOG1(limLog(pMac, LOG1, FL("Defer message type=%X "), limMsg->type);)
+                        limLog(pMac, LOG2, FL("Defer message type=%X "),
+                                                            limMsg->type);
                         if (limDeferMsg(pMac, limMsg) != TX_SUCCESS)
                         {
                             PELOGE(limLog(pMac, LOGE, FL("Unable to Defer message(0x%X) limSmeState %d (prev sme state %d) sysRole %d mlm state %d (prev mlm state %d)"),
@@ -2577,10 +2578,13 @@ void limLogSessionStates(tpAniSirGlobal pMac)
     {
         if(pMac->lim.gpSession[i].valid)
         {
-            PELOG1(limLog(pMac, LOG1, FL("Session[%d] sysRole(%d) limSmeState %d (prev sme state %d) mlm state %d (prev mlm state %d)"),
-                   i, pMac->lim.gpSession[i].limSystemRole,  pMac->lim.gpSession[i].limSmeState,  
-                   pMac->lim.gpSession[i].limPrevSmeState,   pMac->lim.gpSession[i].limMlmState,  
-                   pMac->lim.gpSession[i].limPrevMlmState);)
+            limLog(pMac, LOG1, FL("Session[%d] sysRole(%d) limSmeState %d "
+                    "(prev sme state %d) mlm state %d (prev mlm state %d)"),
+                   i, pMac->lim.gpSession[i].limSystemRole,
+                   pMac->lim.gpSession[i].limSmeState,
+                   pMac->lim.gpSession[i].limPrevSmeState,
+                   pMac->lim.gpSession[i].limMlmState,
+                   pMac->lim.gpSession[i].limPrevMlmState);
         }
     }
 #endif //ifdef WLAN_DEBUG

@@ -100,8 +100,8 @@ void limStopTxAndSwitchChannel(tpAniSirGlobal pMac, tANI_U8 sessionId)
       return;
     }
 
-    PELOG1(limLog(pMac, LOG1, FL("Channel switch Mode == %d"),
-                       psessionEntry->gLimChannelSwitch.switchMode);)
+    limLog(pMac, LOG1, FL("Channel switch Mode == %d"),
+                       psessionEntry->gLimChannelSwitch.switchMode);
 
     if (psessionEntry->gLimChannelSwitch.switchMode == eSIR_CHANSW_MODE_SILENT ||
         psessionEntry->gLimChannelSwitch.switchCount <= SIR_CHANSW_TX_STOP_MAX_COUNT)
@@ -165,7 +165,7 @@ void limStopTxAndSwitchChannel(tpAniSirGlobal pMac, tANI_U8 sessionId)
 ------------------------------------------------------------*/
 tSirRetStatus limStartChannelSwitch(tpAniSirGlobal pMac, tpPESession psessionEntry)
 {
-    PELOG1(limLog(pMac, LOG1, FL("Starting the channel switch"));)
+    limLog(pMac, LOG1, FL(" ENTER"));
     
     /*If channel switch is already running and it is on a different session, just return*/  
     /*This need to be removed for MCC */
@@ -259,7 +259,7 @@ __limProcessChannelSwitchActionFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo
     pBody = WDA_GET_RX_MPDU_DATA(pRxPacketInfo);
     frameLen = WDA_GET_RX_PAYLOAD_LEN(pRxPacketInfo);
 
-    PELOG3(limLog(pMac, LOG3, FL("Received Channel switch action frame"));)
+    limLog(pMac, LOG1, FL("Received Channel switch action frame"));
     if (!psessionEntry->lim11hEnable)
         return;
 
@@ -323,8 +323,8 @@ __limProcessChannelSwitchActionFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo
         }
 #endif
 
-       PELOG3(limLog(pMac, LOG3, FL("Rcv Chnl Swtch Frame: Timeout in %d ticks"),
-                             psessionEntry->gLimChannelSwitch.switchTimeoutValue);)
+       limLog(pMac, LOG1, FL("Rcv Chnl Swtch Frame: Timeout in %d ticks"),
+                             psessionEntry->gLimChannelSwitch.switchTimeoutValue);
 
         /* Only primary channel switch element is present */
         psessionEntry->gLimChannelSwitch.state = eLIM_CHANNEL_SWITCH_PRIMARY_ONLY;
@@ -362,12 +362,12 @@ __limProcessChannelSwitchActionFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo
     }
     else
     {
-        PELOG1(limLog(pMac, LOG1, FL("LIM: Received action frame not from our BSS, dropping..."));)
+        limLog(pMac, LOG1, FL("LIM: Received action frame not from our BSS, dropping..."));
     }
 
     if (eSIR_SUCCESS != limStartChannelSwitch(pMac, psessionEntry))
     {
-        PELOG1(limLog(pMac, LOG1, FL("Could not start channel switch"));)
+        limLog(pMac, LOG1, FL("Could not start channel switch"));
     }
 
     vos_mem_free(pChannelSwitchFrame);
@@ -750,15 +750,15 @@ __limProcessDelTsReq(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,tpPESession pse
             PELOGW(limLog(pMac, LOGW, FL("Ignoring delts request: wme not enabled/capable"));)
             return;
         }
-        PELOG2(limLog(pMac, LOG2, FL("WME Delts received"));)
+        limLog(pMac, LOG1, FL("WME Delts received"));
     }
     else if ((psessionEntry->limQosEnabled) && pSta->lleEnabled)
         {
-        PELOG2(limLog(pMac, LOG2, FL("11e QoS Delts received"));)
+        limLog(pMac, LOG1, FL("11e QoS Delts received"));
         }
     else if ((psessionEntry->limWsmEnabled) && pSta->wsmEnabled)
         {
-        PELOG2(limLog(pMac, LOG2, FL("WSM Delts received"));)
+        limLog(pMac, LOG1, FL("WSM Delts received"));
         }
     else
     {
@@ -863,7 +863,7 @@ __limProcessDelTsReq(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,tpPESession pse
     else
         limLog(pMac, LOGE, FL("Self entry missing in Hash Table "));
 
-    PELOG1(limLog(pMac, LOG1, FL("DeleteTS succeeded"));)
+    limLog(pMac, LOG1, FL("DeleteTS succeeded"));
 
 #ifdef FEATURE_WLAN_ESE
 #ifdef FEATURE_WLAN_ESE_UPLOAD
@@ -1065,8 +1065,8 @@ __limProcessMeasurementRequestFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo)
             break;
 
         default:
-            PELOG1(limLog(pMac, LOG1, FL("Unknown Measurement Type %d "),
-                   pMeasReqFrame->measReqIE.measType);)
+            limLog(pMac, LOG1, FL("Unknown Measurement Type %d "),
+                   pMeasReqFrame->measReqIE.measType);
             break;
     }
 
@@ -1098,7 +1098,7 @@ __limProcessTpcRequestFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo)
     pBody = WDA_GET_RX_MPDU_DATA(pRxPacketInfo);
     frameLen = WDA_GET_RX_PAYLOAD_LEN(pRxPacketInfo);
 
-    PELOG1(limLog(pMac, LOG1, FL("****LIM: Processing TPC Request from peer ****"));)
+    limLog(pMac, LOG1, FL("****LIM: Processing TPC Request from peer ****"));
 
     pTpcReqFrame = vos_mem_malloc(sizeof( tSirMacTpcReqActionFrame ));
     if (NULL == pTpcReqFrame)
