@@ -2398,6 +2398,12 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_P2P_LISTEN_DEFER_INTERVAL_MIN      ( 100 )
 #define CFG_P2P_LISTEN_DEFER_INTERVAL_MAX      ( 200 )
 #define CFG_P2P_LISTEN_DEFER_INTERVAL_DEFAULT  ( 100 )
+
+#define CFG_BTC_ENABLE_IND_TIMER_VALUE          "gBtcEnableIndTimerVal"
+#define CFG_BTC_ENABLE_IND_TIMER_VALUE_MIN     ( 5 )
+#define CFG_BTC_ENABLE_IND_TIMER_VALUE_MAX     ( 60 )
+#define CFG_BTC_ENABLE_IND_TIMER_VALUE_DEFAULT ( 60 )
+
 /*--------------------------------------------------------------------------- 
   Type declarations
   -------------------------------------------------------------------------*/ 
@@ -2890,6 +2896,7 @@ typedef struct
    v_BOOL_t                    apHT40_24GEnabled;
 #endif
    v_U16_t                     gP2PListenDeferInterval;
+   v_U8_t                      btcEnableIndTimerVal;
 } hdd_config_t;
 /*--------------------------------------------------------------------------- 
   Function declarations and documenation
