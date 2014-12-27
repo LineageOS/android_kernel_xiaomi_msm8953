@@ -1033,7 +1033,8 @@ void __hdd_tx_timeout(struct net_device *dev)
    v_ULONG_t diff_in_jiffies = 0;
 
    VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
-      "%s: Transmission timeout occurred", __func__);
+      "%s: Transmission timeout occurred jiffies %lu dev->trans_start %lu",
+        __func__,jiffies,dev->trans_start);
 
    if ( NULL == pAdapter )
    {
@@ -1068,7 +1069,8 @@ void __hdd_tx_timeout(struct net_device *dev)
    {
       txq = netdev_get_tx_queue(dev, i);
       VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
-                "Queue%d status: %d", i, netif_tx_queue_stopped(txq));
+                "Queue%d status: %d txq->trans_start %lu",
+                 i, netif_tx_queue_stopped(txq),txq->trans_start);
    }
 
    VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
