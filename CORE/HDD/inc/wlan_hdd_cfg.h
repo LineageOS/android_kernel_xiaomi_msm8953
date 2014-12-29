@@ -1880,7 +1880,7 @@ static __inline tANI_U32 defHddRateToDefCfgRate( tANI_U32 defRateIndex )
 #define CFG_TDLS_WMM_MODE_ENABLE                     "gEnableTDLSWmmMode"
 #define CFG_TDLS_WMM_MODE_ENABLE_MIN                 (0)
 #define CFG_TDLS_WMM_MODE_ENABLE_MAX                 (1)
-#define CFG_TDLS_WMM_MODE_ENABLE_DEFAULT             (0)
+#define CFG_TDLS_WMM_MODE_ENABLE_DEFAULT             (1)
 
 #define CFG_TDLS_SCAN_COEX_SUPPORT_ENABLE            "gEnableTDLSScanCoexistence"
 #define CFG_TDLS_SCAN_COEX_SUPPORT_ENABLE_MIN        (0)
