@@ -438,7 +438,8 @@ void hdd_mon_tx_mgmt_pkt(hdd_adapter_t* pAdapter)
        {
           struct tagCsrDelStaParams delStaParams;
 
-          WLANSAP_PopulateDelStaParams(hdr->addr1, eCsrForcedDeauthSta,
+          WLANSAP_PopulateDelStaParams(hdr->addr1,
+                                  eSIR_MAC_DEAUTH_LEAVING_BSS_REASON,
                                  (SIR_MAC_MGMT_DEAUTH >> 4), &delStaParams);
 
           hdd_softap_sta_deauth(pAdapter, &delStaParams);
@@ -1153,14 +1154,14 @@ void hdd_tx_timeout(struct net_device *dev)
 }
 
 /**============================================================================
-  @brief hdd_stats() - Function registered with the Linux OS for 
+  @brief __hdd_stats() - Function registered with the Linux OS for
   device TX/RX statistic
 
   @param dev      : [in] pointer to Libra network device
   
   @return         : pointer to net_device_stats structure
   ===========================================================================*/
-struct net_device_stats* hdd_stats(struct net_device *dev)
+struct net_device_stats* __hdd_stats(struct net_device *dev)
 {
    hdd_adapter_t *pAdapter =  WLAN_HDD_GET_PRIV_PTR(dev);
 
@@ -1175,6 +1176,16 @@ struct net_device_stats* hdd_stats(struct net_device *dev)
    return &pAdapter->stats;
 }
 
+struct net_device_stats* hdd_stats(struct net_device *dev)
+{
+    struct net_device_stats* dev_stats;
+
+    vos_ssr_protect(__func__);
+    dev_stats = __hdd_stats(dev);
+    vos_ssr_unprotect(__func__);
+
+    return dev_stats;
+}
 
 /**============================================================================
   @brief hdd_init_tx_rx() - Init function to initialize Tx/RX
