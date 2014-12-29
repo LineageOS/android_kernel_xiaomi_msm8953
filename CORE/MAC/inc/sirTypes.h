@@ -166,6 +166,7 @@ typedef enum eSirRetStatus
     eSIR_PMM_STA_NOT_ASSOCIATED,
     eSIR_PMM_HEART_BEAT_TMOUT,
     eSIR_PMM_NTH_BEACON_DELIVERY,
+    eSIR_PMM_INVALID_REQ,
 
     // ARQ Return Codes
     eSIR_ARQ_ERROR_BASE=0x2500,
