@@ -188,6 +188,7 @@ int __hdd_hostapd_open (struct net_device *dev)
    //Turn ON carrier state
    netif_carrier_on(dev);
    //Enable all Tx queues  
+   hddLog(VOS_TRACE_LEVEL_INFO, FL("Enabling queues"));
    netif_tx_start_all_queues(dev);
    
    EXIT();
@@ -221,6 +222,7 @@ int __hdd_hostapd_stop (struct net_device *dev)
    ENTER();
 
    if(NULL != dev) {
+       hddLog(VOS_TRACE_LEVEL_INFO, FL("Disabling queues"));
        //Stop all tx queues
        netif_tx_disable(dev);
 
