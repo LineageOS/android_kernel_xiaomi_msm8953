@@ -340,7 +340,8 @@ tSirRetStatus schSetFixedBeaconFields(tpAniSirGlobal pMac,tpPESession psessionEn
     }
 
 #ifdef WLAN_FEATURE_AP_HT40_24G
-    if (pMac->roam.configParam.apHT40_24GEnabled)
+    if ((pMac->roam.configParam.apHT40_24GEnabled)
+     && (IS_DOT11_MODE_HT(psessionEntry->dot11mode)))
     {
         PopulateDot11fOBSSScanParameters( pMac, &pBcn2->OBSSScanParameters,
                                                                psessionEntry);

@@ -740,7 +740,8 @@ limSendProbeRspMgmtFrame(tpAniSirGlobal pMac,
     /* Populate Overlapping BSS Scan Parameters IEs,
      * when operating in HT40 in 2.4GHz.
      */
-    if (pMac->roam.configParam.apHT40_24GEnabled)
+    if ((pMac->roam.configParam.apHT40_24GEnabled)
+     && (IS_DOT11_MODE_HT(psessionEntry->dot11mode)))
     {
         PopulateDot11fOBSSScanParameters( pMac, &pFrm->OBSSScanParameters,
                                                              psessionEntry);
@@ -1487,7 +1488,8 @@ limSendAssocRspMgmtFrame(tpAniSirGlobal pMac,
         /* Populate Overlapping BSS Scan Parameters IEs,
          * when operating in HT40 in 2.4GHz.
          */
-        if (pMac->roam.configParam.apHT40_24GEnabled)
+        if ((pMac->roam.configParam.apHT40_24GEnabled)
+         && (IS_DOT11_MODE_HT(psessionEntry->dot11mode)))
         {
             PopulateDot11fOBSSScanParameters( pMac, &frm.OBSSScanParameters,
                                                                psessionEntry);
