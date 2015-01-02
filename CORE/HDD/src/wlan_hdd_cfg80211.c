@@ -11499,6 +11499,7 @@ int wlan_hdd_disconnect( hdd_adapter_t *pAdapter, u16 reason )
      * the tx frames after BSS/STA has been deleted and will not send
      * back a response resulting in WDI timeout
      */
+    hddLog(VOS_TRACE_LEVEL_INFO, FL("Disabling queues"));
     netif_tx_disable(pAdapter->dev);
     netif_carrier_off(pAdapter->dev);
 

@@ -2495,6 +2495,7 @@ static void hdd_wlan_tx_complete( hdd_adapter_t* pAdapter,
         netif_rx_ni( skb );
 
     /* Enable Queues which we have disabled earlier */
+    hddLog(VOS_TRACE_LEVEL_INFO, FL("Enabling queues"));
     netif_tx_start_all_queues( pAdapter->dev );
 
 }
