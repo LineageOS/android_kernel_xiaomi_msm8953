@@ -6523,7 +6523,11 @@ void hdd_reset_pwrparams(hdd_context_t *pHddCtx)
 VOS_STATUS hdd_enable_bmps_imps(hdd_context_t *pHddCtx)
 {
    VOS_STATUS status = VOS_STATUS_SUCCESS;
-
+   if (WLAN_HDD_IS_UNLOAD_IN_PROGRESS(pHddCtx))
+   {
+       hddLog( LOGE, FL("Wlan Unload in progress"));
+       return VOS_STATUS_E_PERM;
+   }
    if(pHddCtx->cfg_ini->fIsBmpsEnabled)
    {
       sme_EnablePowerSave(pHddCtx->hHal, ePMC_BEACON_MODE_POWER_SAVE);
@@ -6661,7 +6665,6 @@ hdd_adapter_t* hdd_open_adapter( hdd_context_t *pHddCtx, tANI_U8 session_type,
                                  const char *iface_name, tSirMacAddr macAddr,
                                  tANI_U8 rtnl_held )
 {
-   int ret = 0;
    hdd_adapter_t *pAdapter = NULL;
    hdd_adapter_list_node_t *pHddAdapterNode = NULL;
    VOS_STATUS status = VOS_STATUS_E_FAILURE;
@@ -6733,36 +6736,10 @@ hdd_adapter_t* hdd_open_adapter( hdd_context_t *pHddCtx, tANI_U8 session_type,
 
          // Workqueue which gets scheduled in IPv4 notification callback.
          INIT_WORK(&pAdapter->ipv4NotifierWorkQueue, hdd_ipv4_notifier_work_queue);
-         // Register IPv4 notifier to notify if any change in IP
-         // So that we can reconfigure the offload parameters
-         pAdapter->ipv4_notifier.notifier_call = wlan_hdd_ipv4_changed;
-         ret = register_inetaddr_notifier(&pAdapter->ipv4_notifier);
-         if (ret)
-         {
-             hddLog(LOGE, FL("Failed to register IPv4 notifier"));
-         }
-         else
-         {
-             hddLog(LOG1, FL("Registered IPv4 notifier"));
-             pAdapter->ipv4_notifier_registered = true;
-         }
 
 #ifdef WLAN_NS_OFFLOAD
          // Workqueue which gets scheduled in IPv6 notification callback.
          INIT_WORK(&pAdapter->ipv6NotifierWorkQueue, hdd_ipv6_notifier_work_queue);
-         // Register IPv6 notifier to notify if any change in IP
-         // So that we can reconfigure the offload parameters
-         pAdapter->ipv6_notifier.notifier_call = wlan_hdd_ipv6_changed;
-         ret = register_inet6addr_notifier(&pAdapter->ipv6_notifier);
-         if (ret)
-         {
-             hddLog(LOGE, FL("Failed to register IPv6 notifier"));
-         }
-         else
-         {
-             hddLog(LOG1, FL("Registered IPv6 notifier"));
-             pAdapter->ipv6_notifier_registered = true;
-         }
 #endif
          //Stop the Interface TX queue.
          hddLog(VOS_TRACE_LEVEL_INFO, FL("Disabling queues"));
@@ -7083,7 +7060,14 @@ VOS_STATUS hdd_stop_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter,
    v_U8_t retry = 0;
    long ret;
 
+   if (pHddCtx->isLogpInProgress) {
+       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                       "%s:LOGP in Progress. Ignore!!!",__func__);
+       return VOS_STATUS_E_FAILURE;
+   }
+
    ENTER();
+
    pScanInfo =  &pHddCtx->scan_info;
    switch(pAdapter->device_mode)
    {
@@ -7174,22 +7158,12 @@ VOS_STATUS hdd_stop_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter,
 #ifdef WLAN_OPEN_SOURCE
          cancel_work_sync(&pAdapter->ipv6NotifierWorkQueue);
 #endif
-         if (pAdapter->ipv6_notifier_registered)
-         {
-            hddLog(LOG1, FL("Unregistered IPv6 notifier"));
-            unregister_inet6addr_notifier(&pAdapter->ipv6_notifier);
-            pAdapter->ipv6_notifier_registered = false;
-         }
 #endif
-         if (pAdapter->ipv4_notifier_registered)
-         {
-            hddLog(LOG1, FL("Unregistered IPv4 notifier"));
-            unregister_inetaddr_notifier(&pAdapter->ipv4_notifier);
-            pAdapter->ipv4_notifier_registered = false;
-         }
+
 #ifdef WLAN_OPEN_SOURCE
          cancel_work_sync(&pAdapter->ipv4NotifierWorkQueue);
 #endif
+
          /* It is possible that the caller of this function does not
           * wish to close the session
           */
@@ -8134,6 +8108,13 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
    hdd_adapter_list_node_t *pAdapterNode = NULL, *pNext = NULL;
 
    ENTER();
+
+#ifdef WLAN_NS_OFFLOAD
+   hddLog(LOGE, FL("Unregister IPv6 notifier"));
+   unregister_inet6addr_notifier(&pHddCtx->ipv6_notifier);
+#endif
+   hddLog(LOGE, FL("Unregister IPv4 notifier"));
+   unregister_inetaddr_notifier(&pHddCtx->ipv4_notifier);
 
    if (VOS_FTM_MODE != hdd_get_conparam())
    {
@@ -9630,6 +9611,35 @@ int hdd_wlan_startup(struct device *dev )
             wlan_hdd_cfg80211_extscan_callback,
                            pHddCtx);
 #endif /* WLAN_FEATURE_EXTSCAN */
+
+#ifdef WLAN_NS_OFFLOAD
+   // Register IPv6 notifier to notify if any change in IP
+   // So that we can reconfigure the offload parameters
+   pHddCtx->ipv6_notifier.notifier_call = wlan_hdd_ipv6_changed;
+   ret = register_inet6addr_notifier(&pHddCtx->ipv6_notifier);
+   if (ret)
+   {
+      hddLog(LOGE, FL("Failed to register IPv6 notifier"));
+   }
+   else
+   {
+      hddLog(LOGE, FL("Registered IPv6 notifier"));
+   }
+#endif
+
+   // Register IPv4 notifier to notify if any change in IP
+   // So that we can reconfigure the offload parameters
+   pHddCtx->ipv4_notifier.notifier_call = wlan_hdd_ipv4_changed;
+   ret = register_inetaddr_notifier(&pHddCtx->ipv4_notifier);
+   if (ret)
+   {
+      hddLog(LOGE, FL("Failed to register IPv4 notifier"));
+   }
+   else
+   {
+      hddLog(LOGE, FL("Registered IPv4 notifier"));
+   }
+
    goto success;
 
 err_nl_srv:
