@@ -1442,7 +1442,7 @@ static void pmcProcessResponse( tpAniSirGlobal pMac, tSirSmeRsp *pMsg )
         case eWNI_PMC_ENTER_UAPSD_RSP:
             pmcLog(pMac, LOG2, FL("Rcvd eWNI_PMC_ENTER_UAPSD_RSP with status = %d"), pMsg->statusCode);
             if( eSmeCommandEnterUapsd != pCommand->command )
-        {
+            {
                 pmcLog(pMac, LOGW, FL("Rcvd eWNI_PMC_ENTER_UAPSD_RSP without request"));
                 fRemoveCommand = eANI_BOOLEAN_FALSE;
                 break;
@@ -1455,23 +1455,32 @@ static void pmcProcessResponse( tpAniSirGlobal pMac, tSirSmeRsp *pMsg )
                 break;
             }
 
-         /* Enter UAPSD State if response indicates success. */
+            /* Enter UAPSD State if response indicates success. */
             if (pMsg->statusCode == eSIR_SME_SUCCESS) 
             {
                 pmcEnterUapsdState(pMac);
                 pmcDoStartUapsdCallbacks(pMac, eHAL_STATUS_SUCCESS);
-         }
-         /* If response is failure, then we try to put the chip back in
-            BMPS mode*/
-            else {
+            }
+            else
+            {
+                /* If response is failure, then we try to put the chip back in
+                   BMPS mode*/
+                tANI_BOOLEAN OrigUapsdReqState = pMac->pmc.uapsdSessionRequired;
                 pmcLog(pMac, LOGE, "PMC: response message to request to enter "
                    "UAPSD indicates failure, status %d", pMsg->statusCode);
+
                 //Need to reset the UAPSD flag so pmcEnterBmpsState won't try to enter UAPSD.
                 pMac->pmc.uapsdSessionRequired = FALSE;
                 pmcEnterBmpsState(pMac);
-                //UAPSD will not be retied in this case so tell requester we are done with failure
-                pmcDoStartUapsdCallbacks(pMac, eHAL_STATUS_FAILURE);
-         }
+
+                if (pMsg->statusCode != eSIR_SME_UAPSD_REQ_INVALID)
+                {
+                    //UAPSD will not be retied in this case so tell requester we are done with failure
+                    pmcDoStartUapsdCallbacks(pMac, eHAL_STATUS_FAILURE);
+                }
+                else
+                    pMac->pmc.uapsdSessionRequired = OrigUapsdReqState;
+            }
          break;
 
       /* We got a response to our Stop UAPSD request.  */

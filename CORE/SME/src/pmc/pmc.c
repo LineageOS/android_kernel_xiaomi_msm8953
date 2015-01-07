@@ -1174,7 +1174,6 @@ void pmcDoStartUapsdCallbacks (tHalHandle hHal, eHalStatus callbackStatus)
 eHalStatus pmcEnterRequestStartUapsdState (tHalHandle hHal)
 {
    tpAniSirGlobal pMac = PMAC_STRUCT(hHal);
-   v_BOOL_t fFullPower = VOS_FALSE;     //need to get back to full power state
 
    pmcLog(pMac, LOG1, FL("Enter. PMC State is %d"), pMac->pmc.pmcState);
 
@@ -1182,51 +1181,42 @@ eHalStatus pmcEnterRequestStartUapsdState (tHalHandle hHal)
    switch (pMac->pmc.pmcState)
    {
       case FULL_POWER:
+         /* UAPSD mode will be attempted when we enter BMPS later */
+         pMac->pmc.uapsdSessionRequired = TRUE;
+
          /* Check that entry into a power save mode is allowed at this time. */
          if (!pmcPowerSaveCheck(hHal))
          {
             pmcLog(pMac, LOGW, "PMC: Power save check failed. UAPSD request "
                       "will be accepted and buffered");
-            /* UAPSD mode will be attempted when we enter BMPS later */
-            pMac->pmc.uapsdSessionRequired = TRUE;
             /* Make sure the BMPS retry timer is running */
             if(pmcShouldBmpsTimerRun(pMac))
                (void)pmcStartTrafficTimer(hHal, pMac->pmc.bmpsConfig.trafficMeasurePeriod);
-            break;
          }
          else
          {
-            pMac->pmc.uapsdSessionRequired = TRUE;
-            //Check BTC state
-#ifndef WLAN_MDM_CODE_REDUCTION_OPT
-            if( btcIsReadyForUapsd( pMac ) )
-#endif /* WLAN_MDM_CODE_REDUCTION_OPT*/
+            /*  PowerSaveCheck passed, put the device into BMPS first */
+            if(pmcEnterRequestBmpsState(hHal) != eHAL_STATUS_SUCCESS)
             {
-               /* Put device in BMPS mode first. This step should NEVER fail.
-                  That is why no need to buffer the UAPSD request*/
-               if(pmcEnterRequestBmpsState(hHal) != eHAL_STATUS_SUCCESS)
-               {
-                   pmcLog(pMac, LOGE, "PMC: Device in Full Power. Enter Request Bmps failed. "
-                            "UAPSD request will be dropped ");
-                  return eHAL_STATUS_FAILURE;
-               }
+                pmcLog(pMac, LOGE, "PMC: Device in Full Power. Enter Request Bmps failed. "
+                        "UAPSD request will be dropped ");
+                return eHAL_STATUS_FAILURE;
             }
-#ifndef WLAN_MDM_CODE_REDUCTION_OPT
-            else
-            {
-               (void)pmcStartTrafficTimer(hHal, pMac->pmc.bmpsConfig.trafficMeasurePeriod);
-            }
-#endif /* WLAN_MDM_CODE_REDUCTION_OPT*/
          }
          break;
 
       case BMPS:
+      {
+         tANI_U8 staticUapsdMask = 0;
+         csrGetStaticUapsdMask(pMac, &staticUapsdMask);
+
          //It is already in BMPS mode, check BTC state
 #ifndef WLAN_MDM_CODE_REDUCTION_OPT
-         if( btcIsReadyForUapsd(pMac) )
+         if (btcIsReadyForUapsd(pMac) || staticUapsdMask)
 #endif /* WLAN_MDM_CODE_REDUCTION_OPT*/
          {
-            /* Tell MAC to have device enter UAPSD mode. */
+            /* BTC is OK with Uapsd or static Uapsd is configured, then tell
+               MAC to have device enter UAPSD mode. */
             if (pmcIssueCommand(hHal, eSmeCommandEnterUapsd, NULL, 0, FALSE) !=
                eHAL_STATUS_SUCCESS)
             {
@@ -1239,50 +1229,29 @@ eHalStatus pmcEnterRequestStartUapsdState (tHalHandle hHal)
          else
          {
             //Not ready for UAPSD at this time, save it first and wake up the chip
-            pmcLog(pMac, LOGE, " PMC state = %d",pMac->pmc.pmcState);
+            pmcLog(pMac, LOGE, "Uapsd not needed now, PMC state = %d"
+                   "btcIsUapsdOk:%d staticUapsdMask:0x%x",pMac->pmc.pmcState,
+                   btcIsReadyForUapsd(pMac), staticUapsdMask);
             pMac->pmc.uapsdSessionRequired = TRUE;
-            /* While BTC traffic is going on, STA can be in BMPS
-             * and need not go to Full Power */
-            //fFullPower = VOS_TRUE;
          }
 #endif /* WLAN_MDM_CODE_REDUCTION_OPT*/
-         break;
+      }
+      break;
 
       case REQUEST_START_UAPSD:
-#ifndef WLAN_MDM_CODE_REDUCTION_OPT
-         if( !btcIsReadyForUapsd(pMac) )
-         {
-            //BTC rejects UAPSD, bring it back to full power
-            fFullPower = VOS_TRUE;
-         }
-#endif
+         pmcLog(pMac, LOGE, "Request Uapsd in progress");
          break;
 
       case REQUEST_BMPS:
-        /* Buffer request for UAPSD mode. */
-        pMac->pmc.uapsdSessionRequired = TRUE;
-#ifndef WLAN_MDM_CODE_REDUCTION_OPT
-        if( !btcIsReadyForUapsd(pMac) )
-         {
-            //BTC rejects UAPSD, bring it back to full power
-            fFullPower = VOS_TRUE;
-         }
-#endif /* WLAN_MDM_CODE_REDUCTION_OPT*/
-        break;
+         /* Buffer request for UAPSD mode. */
+         pMac->pmc.uapsdSessionRequired = TRUE;
+         pmcLog(pMac, LOGE, "Request BMPS in progress");
+         break;
 
       default:
          pmcLog(pMac, LOGE, "PMC: trying to enter UAPSD State from state %d",
             pMac->pmc.pmcState);
          return eHAL_STATUS_FAILURE;
-   }
-
-   if(fFullPower)
-   {
-      if( eHAL_STATUS_PMC_PENDING != pmcRequestFullPower( pMac, NULL, NULL, eSME_REASON_OTHER ) )
-      {
-         //This is an error
-         pmcLog(pMac, LOGE, FL(" fail to request full power because BTC"));
-      }
    }
 
    return eHAL_STATUS_SUCCESS;

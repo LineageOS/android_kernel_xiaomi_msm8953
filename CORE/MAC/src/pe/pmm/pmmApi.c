@@ -1787,7 +1787,10 @@ void pmmEnterUapsdRequestHandler (tpAniSirGlobal pMac)
     {
         PELOGE(pmmLog(pMac, LOGE,
             FL("pmmUapsd: HAL_ENTER_UAPSD_REQ failed with response: %x"), retStatus);)
-        resultCode = eSIR_SME_UAPSD_REQ_FAILED;
+        if (retStatus == eSIR_PMM_INVALID_REQ)
+            resultCode = eSIR_SME_UAPSD_REQ_INVALID;
+        else
+            resultCode = eSIR_SME_UAPSD_REQ_FAILED;
         goto failure;
     }
 
@@ -2677,6 +2680,21 @@ tSirRetStatus pmmUapsdSendChangePwrSaveMsg (tpAniSirGlobal pMac, tANI_U8 mode)
             pUapsdParams->beTriggerEnabled, 
             pUapsdParams->viTriggerEnabled, 
             pUapsdParams->voTriggerEnabled);)
+
+        if (pUapsdParams->bkDeliveryEnabled == 0 &&
+            pUapsdParams->beDeliveryEnabled == 0 &&
+            pUapsdParams->viDeliveryEnabled == 0 &&
+            pUapsdParams->voDeliveryEnabled == 0 &&
+            pUapsdParams->bkTriggerEnabled == 0 &&
+            pUapsdParams->beTriggerEnabled == 0 &&
+            pUapsdParams->viTriggerEnabled == 0 &&
+            pUapsdParams->voTriggerEnabled == 0)
+        {
+            limLog(pMac, LOGW, FL("No Need to enter UAPSD since Trigger "
+                 "Enabled and Delivery Enabled Mask is zero for all ACs"));
+            retStatus = eSIR_PMM_INVALID_REQ;
+            return retStatus;
+        }
 
         PELOGW(pmmLog (pMac, LOGW, FL("pmmUapsd: Sending WDA_ENTER_UAPSD_REQ to HAL"));)
     }
