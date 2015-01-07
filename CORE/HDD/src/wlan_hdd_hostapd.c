@@ -1468,6 +1468,13 @@ void hdd_hostapd_ch_avoid_cb
    v_CONTEXT_t         pVosContext;
    tHddAvoidFreqList   hddAvoidFreqList;
    tANI_U32            i;
+#ifdef WLAN_FEATURE_AP_HT40_24G
+   ptSapContext pSapCtx = NULL;
+   tHalHandle hHal;
+   v_U8_t cbMode;
+   VOS_STATUS  vosStatus = VOS_STATUS_SUCCESS;
+   v_U32_t delay;
+#endif
 
    /* Basic sanity */
    if ((NULL == pAdapter) || (NULL == indParam))
@@ -1569,6 +1576,12 @@ void hdd_hostapd_ch_avoid_cb
    /* Get SAP context first
     * SAP and P2PGO would not concurrent */
    pHostapdAdapter = hdd_get_adapter(hddCtxt, WLAN_HDD_SOFTAP);
+#ifdef WLAN_FEATURE_AP_HT40_24G
+   if (NULL == pHostapdAdapter)
+   {
+       pHostapdAdapter = hdd_get_adapter(hddCtxt, WLAN_HDD_P2P_GO);
+   }
+#endif
    if ((pHostapdAdapter) &&
        (test_bit(SOFTAP_BSS_STARTED, &pHostapdAdapter->event_flags)) &&
        (unsafeChannelCount))
@@ -1579,25 +1592,145 @@ void hdd_hostapd_ch_avoid_cb
                 pHostapdAdapter->sessionCtx.ap.operatingChannel);
       for (channelLoop = 0; channelLoop < unsafeChannelCount; channelLoop++)
       {
-         if (((unsafeChannelList[channelLoop] ==
-               pHostapdAdapter->sessionCtx.ap.operatingChannel)) &&
-             (AUTO_CHANNEL_SELECT ==
-               pHostapdAdapter->sessionCtx.ap.sapConfig.channel))
-         {
-            /* current operating channel is un-safe channel
-             * restart driver */
-            hdd_hostapd_stop(pHostapdAdapter->dev);
-            /* On LE, this event is handled by wlan-services to restart SAP.
-               On android, this event would be ignored. */
-            wlan_hdd_send_svc_nlink_msg(WLAN_SVC_SAP_RESTART_IND, NULL, 0);
-            break;
-         }
+          if ((unsafeChannelList[channelLoop] ==
+                pHostapdAdapter->sessionCtx.ap.operatingChannel))
+          {
+              if ((AUTO_CHANNEL_SELECT ==
+                     pHostapdAdapter->sessionCtx.ap.sapConfig.channel)
+                && (WLAN_HDD_SOFTAP == pHostapdAdapter->device_mode))
+              {
+                  /* current operating channel is un-safe channel
+                   * restart driver */
+                   hdd_hostapd_stop(pHostapdAdapter->dev);
+                   /* On LE, this event is handled by wlan-services to
+                    * restart SAP. On android, this event would be
+                    * ignored.
+                    */
+                   wlan_hdd_send_svc_nlink_msg(WLAN_SVC_SAP_RESTART_IND,
+                                                                  NULL, 0);
+              }
+              return;
+          }
       }
    }
 
+#ifdef WLAN_FEATURE_AP_HT40_24G
+   if (hddCtxt->cfg_ini->apHT40_24GEnabled)
+   {
+       pSapCtx = VOS_GET_SAP_CB(pVosContext);
+
+       if(pSapCtx == NULL)
+       {
+           VOS_TRACE(VOS_MODULE_ID_HDD_SAP_DATA, VOS_TRACE_LEVEL_ERROR,
+                   FL("psapCtx is NULL"));
+           return;
+       }
+
+       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+               FL("SAP Secondary channel: %d "),
+               pSapCtx->sap_sec_chan);
+
+       /* tHalHandle */
+       hHal = VOS_GET_HAL_CB(pSapCtx->pvosGCtx);
+
+       if (NULL == hHal)
+       {
+           VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
+                   FL("In invalid hHal"));
+           return;
+       }
+
+       cbMode = sme_GetChannelBondingMode24G(hHal);
+
+       VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO,
+               FL("Selected Channel bonding : %d"), cbMode);
+
+       if (cbMode && (pSapCtx->sap_sec_chan > 0))
+       {
+           int i;
+           eHalStatus halStatus;
+
+           for (i = 0; i < unsafeChannelCount; i++)
+           {
+               if ((pSapCtx->sap_sec_chan == unsafeChannelList[i]))
+               {
+                   /* Current SAP Secondary channel is un-safe channel */
+                   VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
+                           FL("Move SAP from HT40 to HT20"));
+
+                   halStatus = sme_SetHT2040Mode(hHal, pSapCtx->sessionId,
+                           PHY_SINGLE_CHANNEL_CENTERED);
+
+                   if (halStatus == eHAL_STATUS_FAILURE)
+                   {
+                       VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
+                               FL("Failed to change HT20/40 mode"));
+                       return;
+                   }
+
+                   /* Disable Channel Bonding for 2.4GHz */
+                   sme_UpdateChannelBondingMode24G(hHal,
+                           PHY_SINGLE_CHANNEL_CENTERED);
+                   return;
+               }
+           }
+       }
+
+       if ((!pSapCtx->numHT40IntoSta)
+          && (pHostapdAdapter)
+          && (test_bit(SOFTAP_BSS_STARTED, &pHostapdAdapter->event_flags)))
+       {
+           /* if Unsafe channel is Zero or SAP Primary/Secondary channel
+            * are Safe then start HT20/40 timer to Move SAP from HT20
+            * to HT40.
+            */
+           if (((!unsafeChannelCount)
+              || (!sapCheckHT40SecondaryIsNotAllowed(pSapCtx))) && (!cbMode))
+           {
+               /* Stop Previous Running HT20/40 Timer & Start timer
+                  with (OBSS TransitionDelayFactor * obss interval)
+                  delay after time out move AP from HT20 -> HT40
+                  mode
+                */
+               if (VOS_TIMER_STATE_RUNNING == pSapCtx->sap_HT2040_timer.state)
+               {
+                   vosStatus = vos_timer_stop(&pSapCtx->sap_HT2040_timer);
+                   if (!VOS_IS_STATUS_SUCCESS(vosStatus))
+                       VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
+                               FL("Failed to Stop HT20/40 timer"));
+               }
+
+               delay =
+               (pSapCtx->ObssScanInterval * pSapCtx->ObssTransitionDelayFactor);
+
+               VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
+                       FL("Start HT20/40 transition timer (%d sec)"), delay);
+
+               vosStatus = vos_timer_start( &pSapCtx->sap_HT2040_timer,
+                       (delay * 1000));
+
+               if (!VOS_IS_STATUS_SUCCESS(vosStatus))
+                   VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
+                           FL("Failed to Start HT20/40 timer"));
+           }
+           else
+           {
+               /* Stop HT20/40 Timer */
+               if (VOS_TIMER_STATE_RUNNING == pSapCtx->sap_HT2040_timer.state)
+               {
+                   VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO,
+                           FL("Stop HT20/40 transition timer"));
+                   vosStatus = vos_timer_stop(&pSapCtx->sap_HT2040_timer);
+                   if (!VOS_IS_STATUS_SUCCESS(vosStatus))
+                       VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
+                               FL("Failed to Stop HT20/40 timer"));
+               }
+           }
+       }
+   }
+#endif
    return;
 }
-
 #endif /* FEATURE_WLAN_CH_AVOID */
 
 int
