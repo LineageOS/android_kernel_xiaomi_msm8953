@@ -805,20 +805,15 @@ eHalStatus sapCheck40Mhz24G(tHalHandle halHandle, ptSapContext psapCtx,
             if ((eSIR_SUCCESS == sirParseBeaconIE(pMac, pBeaconStruct,
                      (tANI_U8 *)( pScanResult->BssDescriptor.ieFields), ieLen)))
             {
-                /* SAP Operating channel is not same with other BSS Operating
-                 * channel then check for Peer BSS is HT20 or Legacy AP
-                 */
-                if (psapCtx->channel != channelNumber)
-                {
-                    if (eHAL_STATUS_SUCCESS !=
+                /* Check Peer BSS is HT20 or Legacy AP */
+                if (eHAL_STATUS_SUCCESS !=
                           sapCheckFor20MhzObss(channelNumber, pBeaconStruct,
                                                                     psapCtx))
-                    {
-                        VOS_TRACE(VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO,
+                {
+                    VOS_TRACE(VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO,
                               FL("Overlapping 20 MHz BSS is found"));
-                        vos_mem_free(pBeaconStruct);
-                        return halStatus;
-                    }
+                    vos_mem_free(pBeaconStruct);
+                    return halStatus;
                 }
 
                 sapGetPrimarySecondaryChannelOfBss(pBeaconStruct,
@@ -832,7 +827,12 @@ eHalStatus sapCheck40Mhz24G(tHalHandle halHandle, ptSapContext psapCtx,
                    && (sec_chan < psapCtx->affected_start
                     || sec_chan > psapCtx->affected_end))
                 {
-                      goto NextResult; /* not within affected channel range */
+                    VOS_TRACE(VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO,
+                     FL("Peer BSS: %s Primary & Secondary Channel [%d %d]"
+                        "is out of affected Range: [%d %d]"),
+                     pBeaconStruct->ssId.ssId, pri_chan, sec_chan,
+                     psapCtx->affected_start, psapCtx->affected_end);
+                    goto NextResult; /* not within affected channel range */
                 }
 
                 VOS_TRACE(VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO,
@@ -857,14 +857,6 @@ eHalStatus sapCheck40Mhz24G(tHalHandle halHandle, ptSapContext psapCtx,
                          vos_mem_free(pBeaconStruct);
                          return halStatus;
                     }
-                }
-                else
-                {
-                    VOS_TRACE(VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO,
-                            FL("Channel: %d Overlapping BSS is found"),
-                            pri_chan);
-                    vos_mem_free(pBeaconStruct);
-                    return halStatus;
                 }
 
                 if (pBeaconStruct->HTCaps.present)
