@@ -88,6 +88,20 @@ limProcessChannelSwitchSuspendLink(tpAniSirGlobal pMac,
                                     eHalStatus status,
                                     tANI_U32 *ctx);
 /** -------------------------------------------------------------
+\fn limCheck11BRateBitmap
+\brief Verifies if basic rates are set.
+\param     tANI_U16 pRateBitmap
+\return tANI_BOOLEAN - true or false
+  -------------------------------------------------------------*/
+
+tANI_BOOLEAN limCheck11BRateBitmap(tANI_U16 pRateBitmap)
+{
+        return ( ( pRateBitmap & ( 1 << 0 ) ) || ( pRateBitmap & ( 1 << 1 ) ) ||
+                        ( pRateBitmap & ( 1 << 2 ) ) ||
+                               ( pRateBitmap & ( 1 << 3 ) ) ? 1 : 0 ) ;
+}
+
+/** -------------------------------------------------------------
 \fn limAssignDialogueToken
 \brief Assigns dialogue token.
 \param     tpAniSirGlobal    pMac

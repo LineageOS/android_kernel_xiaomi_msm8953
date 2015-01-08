@@ -3496,7 +3496,7 @@ eHalStatus csrSetQosToCfg( tpAniSirGlobal pMac, tANI_U32 sessionId, eCsrMediaAcc
     return (status);
 }
 static eHalStatus csrGetRateSet( tpAniSirGlobal pMac,  tCsrRoamProfile *pProfile, eCsrPhyMode phyMode, tSirBssDescription *pBssDesc,
-                           tDot11fBeaconIEs *pIes, tSirMacRateSet *pOpRateSet, tSirMacRateSet *pExRateSet)
+                           tDot11fBeaconIEs *pIes, tSirMacRateSet *pOpRateSet, tSirMacRateSet *pExRateSet, tANI_U16 *pRateBitmap)
 {
     eHalStatus status = eHAL_STATUS_FAILURE;
     int i;
@@ -3549,6 +3549,7 @@ static eHalStatus csrGetRateSet( tpAniSirGlobal pMac,  tCsrRoamProfile *pProfile
                     {
                         if (!csrIsRateAlreadyPresent(pIes->ExtSuppRates.rates[ i ], rateBitmap))
                         {
+                            csrAddRateBitmap(pIes->ExtSuppRates.rates[ i ], &rateBitmap);
                             *pDstRate++ = pIes->ExtSuppRates.rates[ i ];
                             pExRateSet->numRates++;
                         }
@@ -3556,6 +3557,7 @@ static eHalStatus csrGetRateSet( tpAniSirGlobal pMac,  tCsrRoamProfile *pProfile
                 }
             }
         }
+        *pRateBitmap = rateBitmap;
     }//Parsing BSSDesc
     else
     {
@@ -12871,6 +12873,7 @@ eHalStatus csrSendJoinReqMsg( tpAniSirGlobal pMac, tANI_U32 sessionId, tSirBssDe
     tANI_U8 wpaRsnIE[DOT11F_IE_RSN_MAX_LEN];    //RSN MAX is bigger than WPA MAX
     tANI_U32 ucDot11Mode = 0;
     tANI_U8 txBFCsnValue = 0;
+    tANI_U16 rateBitmap = 0;
 
     if(!pSession)
     {
@@ -12966,7 +12969,7 @@ eHalStatus csrSendJoinReqMsg( tpAniSirGlobal pMac, tANI_U32 sessionId, tSirBssDe
 
 
 
-        status = csrGetRateSet(pMac, pProfile, (eCsrPhyMode)pProfile->phyMode, pBssDescription, pIes, &OpRateSet, &ExRateSet);
+        status = csrGetRateSet(pMac, pProfile, (eCsrPhyMode)pProfile->phyMode, pBssDescription, pIes, &OpRateSet, &ExRateSet,&rateBitmap);
         if (HAL_STATUS_SUCCESS(status) )
         {
             // OperationalRateSet
@@ -12987,6 +12990,11 @@ eHalStatus csrSendJoinReqMsg( tpAniSirGlobal pMac, tANI_U32 sessionId, tSirBssDe
             *pBuf++ = 0;
             *pBuf++ = 0;
         }
+
+        //rateBitmap
+        vos_mem_copy(pBuf, &rateBitmap, sizeof(tANI_U16));
+        pBuf += sizeof(tANI_U16);
+
         // rsnIE
         if ( csrIsProfileWpa( pProfile ) )
         {

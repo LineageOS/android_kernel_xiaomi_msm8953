@@ -113,6 +113,7 @@ typedef struct op_class_map {
     tANI_U8 channels[15];
 }op_class_map_t;
 // LIM utility functions
+tANI_BOOLEAN limCheck11BRateBitmap(tANI_U16 RateBitmap);
 void limGetBssidFromPkt(tpAniSirGlobal, tANI_U8 *, tANI_U8 *, tANI_U32 *);
 char * limMlmStateStr(tLimMlmStates state);
 char * limSmeStateStr(tLimSmeStates state);
