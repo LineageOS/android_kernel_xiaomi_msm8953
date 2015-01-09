@@ -1051,6 +1051,7 @@ typedef struct sSirSmeJoinReq
 
     tSirMacRateSet      operationalRateSet;// Has 11a or 11b rates
     tSirMacRateSet      extendedRateSet;    // Has 11g rates
+    tANI_U16            rateBitMap;
     tSirRSNie           rsnIE;                  // RSN IE to be sent in
                                                 // (Re) Association Request
 #ifdef FEATURE_WLAN_ESE

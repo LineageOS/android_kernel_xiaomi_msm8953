@@ -74,6 +74,9 @@
 #include "sme_Api.h"
 // SAP Internal API header file
 #include "sapInternal.h"
+#ifdef WLAN_FEATURE_AP_HT40_24G
+#include "vos_utils.h"
+#endif
 
 /*----------------------------------------------------------------------------
  * Preprocessor Definitions and Constants
@@ -406,7 +409,8 @@ void sapCheckHT2040CoexAction(ptSapContext psapCtx,
         VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO,
                 FL("SAP is Already in HT20"));
 
-        if (!psapCtx->numHT40IntoSta)
+        if ((!sapCheckHT40SecondaryIsNotAllowed(psapCtx))
+           && (!psapCtx->numHT40IntoSta))
         {
             /* Stop Previous Running HT20/40 Timer & Start timer
                with (OBSS TransitionDelayFactor * obss interval)
@@ -554,10 +558,10 @@ void sapGetPrimarySecondaryChannelOfBss(tpSirProbeRespBeacon pBeaconStruct,
 }
 
 /*==========================================================================
-  FUNCTION    sapCheckHT40PairIsAllowed()
+  FUNCTION    sapCheckHT40SecondaryIsNotAllowed()
 
   DESCRIPTION
-    Check HT40 Channel Pair is Allowed
+    Check HT40 Channel Secondary is Allowed
 
   DEPENDENCIES
     NA.
@@ -574,11 +578,16 @@ void sapGetPrimarySecondaryChannelOfBss(tpSirProbeRespBeacon pBeaconStruct,
   SIDE EFFECTS
 ============================================================================*/
 
-eHalStatus sapCheckHT40PairIsAllowed(ptSapContext psapCtx)
+eHalStatus sapCheckHT40SecondaryIsNotAllowed(ptSapContext psapCtx)
 {
     v_U8_t count;
     v_U8_t fValidChannel = 0;
     eHalStatus halStatus = eHAL_STATUS_SUCCESS;
+#ifdef FEATURE_WLAN_CH_AVOID
+    int i;
+    v_U16_t unsafeChannelList[NUM_20MHZ_RF_CHANNELS];
+    v_U16_t unsafeChannelCount;
+#endif /* FEATURE_WLAN_CH_AVOID */
 
     /* Verify that HT40 secondary channel is an allowed 20 MHz
      * channel */
@@ -591,6 +600,30 @@ eHalStatus sapCheckHT40PairIsAllowed(ptSapContext psapCtx)
             break;
         }
     }
+
+#ifdef FEATURE_WLAN_CH_AVOID
+    /* Get unsafe cahnnel list from cached location */
+    vos_get_wlan_unsafe_channel(unsafeChannelList,
+                                  sizeof(unsafeChannelList),
+                                  &unsafeChannelCount);
+
+    VOS_TRACE(VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO,
+        FL("Unsafe Channel count %d"
+           " SAP Secondary Channel: %d"),
+           unsafeChannelCount, psapCtx->sap_sec_chan);
+
+    for (i = 0; i < unsafeChannelCount; i++)
+    {
+        if ((psapCtx->sap_sec_chan == unsafeChannelList[i]))
+        {
+            VOS_TRACE(VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO,
+                FL("Unsafe Channel %d SAP Secondary Channel: %d"),
+                    unsafeChannelList[i], psapCtx->sap_sec_chan);
+            fValidChannel = FALSE;
+            break;
+        }
+    }
+#endif /* FEATURE_WLAN_CH_AVOID */
 
     if (!fValidChannel)
     {
@@ -893,7 +926,7 @@ NextResult:
 
     if (psapCtx->sap_sec_chan)
     {
-        if (eHAL_STATUS_SUCCESS == sapCheckHT40PairIsAllowed(psapCtx))
+        if (eHAL_STATUS_SUCCESS == sapCheckHT40SecondaryIsNotAllowed(psapCtx))
         {
             VOS_TRACE(VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO,
                        FL("Start SAP/P2P GO in HT 40MHz "

@@ -899,6 +899,16 @@ DESCRIPTION Function to implement ht2040 timer callback implementation
 SIDE EFFECTS
 ============================================================================*/
 void sap_ht2040_timer_cb(v_PVOID_t usrDataForCallback);
+
+/*==========================================================================
+FUNCTION  sapCheckHT40SecondaryIsNotAllowed
+
+DESCRIPTION Function to check HT40 secondary channel is allowed or not
+
+SIDE EFFECTS
+============================================================================*/
+
+eHalStatus sapCheckHT40SecondaryIsNotAllowed(ptSapContext psapCtx);
 #endif
 
 #ifdef __cplusplus

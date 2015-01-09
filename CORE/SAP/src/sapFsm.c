@@ -389,6 +389,16 @@ sapGotoChannelSel
                                                 &channelList, &numOfChannels);
                 if (VOS_STATUS_SUCCESS == vosStatus && channelList != NULL)
                 {
+
+                    if (sapCheckHT40SecondaryIsNotAllowed(sapContext))
+                    {
+                        if(channelList != NULL)
+                        {
+                           vos_mem_free(channelList);
+                           channelList = NULL;
+                        }
+                        goto disable24GChannelBonding;
+                    }
                     vos_mem_zero(&scanRequest, sizeof(scanRequest));
 
                     /* Set scanType to Passive scan */
@@ -1771,7 +1781,8 @@ void sapRemoveHT40IntolerantSta(ptSapContext sapContext,
                 sapContext->numHT40IntoSta,
                 staId, sapContext->aStaInfo[staId].isHT40IntolerantSet);
 
-    if (!sapContext->numHT40IntoSta)
+    if ((!sapCheckHT40SecondaryIsNotAllowed(sapContext))
+       && (!sapContext->numHT40IntoSta))
     {
         /* Stop Previous Running HT20/40 Timer & Start timer
            with (OBSS TransitionDelayFactor * obss interval)

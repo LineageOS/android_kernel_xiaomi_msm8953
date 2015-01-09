@@ -356,6 +356,7 @@ typedef struct sPESession           // Added to Support BT-AMP
     /*  DSCP to UP mapping for HS 2.0 */
     tSirQosMapSet QosMapSet;
     tANI_U8  isKeyInstalled;
+    tANI_BOOLEAN is11Gonly;
 }tPESession, *tpPESession;
 
 #define LIM_MAX_ACTIVE_SESSIONS 4

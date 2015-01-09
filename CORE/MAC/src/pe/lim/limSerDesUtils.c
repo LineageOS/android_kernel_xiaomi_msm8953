@@ -1018,6 +1018,11 @@ limJoinReqSerDes(tpAniSirGlobal pMac, tpSirSmeJoinReq pJoinReq, tANI_U8 *pBuf)
         }
     }
 
+    //Extract rateBitMap
+    pJoinReq->rateBitMap = limGetU16(pBuf);
+    pBuf += sizeof(tANI_U16);
+    len -= sizeof(tANI_U16);
+
     // Extract RSN IE
     pJoinReq->rsnIE.length = limGetU16(pBuf);
     pBuf += sizeof(tANI_U16);
