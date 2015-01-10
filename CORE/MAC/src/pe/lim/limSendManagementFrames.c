@@ -62,7 +62,7 @@
 
 #include "wlan_qct_wda.h"
 
-
+#define IS_BROADCAST_MAC(x) (((x[0] & x[1] & x[2] & x[3] & x[4] & x[5]) == 0xff) ? 1 : 0)
 ////////////////////////////////////////////////////////////////////////
 
 tSirRetStatus limStripOffExtCapIE(tpAniSirGlobal pMac,
@@ -523,6 +523,11 @@ limSendProbeReqMgmtFrame(tpAniSirGlobal pMac,
       ) 
     {
         txFlag |= HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME; 
+    }
+
+    if( ( psessionEntry != NULL ) && ( psessionEntry->is11Gonly == true ) &&
+                                     ( !IS_BROADCAST_MAC(bssid) ) ){
+        txFlag |= HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME;
     }
 
     halstatus = halTxFrame( pMac, pPacket, ( tANI_U16 ) sizeof(tSirMacMgmtHdr) + nPayload,
@@ -2601,6 +2606,11 @@ limSendAssocReqMgmtFrame(tpAniSirGlobal   pMac,
     // enable caching
     WLANTL_EnableCaching(psessionEntry->staId);
 
+    if( ( psessionEntry->is11Gonly == true ) &&
+                          ( !IS_BROADCAST_MAC(pMlmAssocReq->peerMacAddr) ) ){
+        txFlag |= HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME;
+    }
+
     halstatus = halTxFrame( pMac, pPacket, ( tANI_U16 ) (sizeof(tSirMacMgmtHdr) + nPayload),
             HAL_TXRX_FRM_802_11_MGMT,
             ANI_TXDIR_TODS,
@@ -3748,6 +3758,12 @@ limSendAuthMgmtFrame(tpAniSirGlobal pMac,
     MTRACE(macTrace(pMac, TRACE_CODE_TX_MGMT,
            psessionEntry->peSessionId,
            pMacHdr->fc.subType));
+
+    if( ( psessionEntry->is11Gonly == true ) &&
+                        ( !IS_BROADCAST_MAC(peerMacAddr) ) ){
+         txFlag |= HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME;
+    }
+
     /// Queue Authentication frame in high priority WQ
     halstatus = halTxFrame( pMac, pPacket, ( tANI_U16 ) frameLen,
                             HAL_TXRX_FRM_802_11_MGMT,

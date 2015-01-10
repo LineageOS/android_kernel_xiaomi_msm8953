@@ -61,6 +61,7 @@
 #include "vos_trace.h"
 #include "vos_utils.h"
 #include "vos_memory.h"
+#include <linux/wcnss_wlan.h>
 
 #include <linux/err.h>
 #include <linux/random.h>
@@ -724,6 +725,14 @@ v_U8_t vos_chan_to_band(v_U32_t chan)
         return VOS_BAND_2GHZ;
 
     return VOS_BAND_5GHZ;
+}
+
+void vos_get_wlan_unsafe_channel(v_U16_t *unsafeChannelList,
+                           v_U16_t buffer_size, v_U16_t *unsafeChannelCount)
+{
+    /* Get unsafe channel list from cached location */
+    wcnss_get_wlan_unsafe_channel(unsafeChannelList, buffer_size,
+                                  unsafeChannelCount);
 }
 
 #ifdef DEBUG_ROAM_DELAY

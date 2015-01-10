@@ -164,6 +164,8 @@ VOS_STATUS vos_decrypt_AES(v_U32_t cryptHandle, /* Handle */
                            v_U8_t *pKey); /* pointer to authentication key */
 
 v_U8_t vos_chan_to_band(v_U32_t chan);
+void vos_get_wlan_unsafe_channel(v_U16_t *unsafeChannelList,
+                    v_U16_t buffer_size, v_U16_t *unsafeChannelCount);
 
 #ifdef DEBUG_ROAM_DELAY
 #define ROAM_DELAY_TABLE_SIZE   30

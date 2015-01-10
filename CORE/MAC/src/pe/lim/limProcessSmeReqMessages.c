@@ -1739,7 +1739,14 @@ __limProcessSmeJoinReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
             else
                 limLog(pMac,LOG1,FL("SessionId:%d New session created"),
                        sessionId);
-        }   
+        }
+
+        if(psessionEntry != NULL && pSmeJoinReq->operationalRateSet.numRates > 0 ){
+            if(!limCheck11BRateBitmap(pSmeJoinReq->rateBitMap)){
+                psessionEntry->is11Gonly = true;
+            }
+        }
+
         handleHTCapabilityandHTInfo(pMac, psessionEntry);
         psessionEntry->isAmsduSupportInAMPDU = pSmeJoinReq->isAmsduSupportInAMPDU;
 
