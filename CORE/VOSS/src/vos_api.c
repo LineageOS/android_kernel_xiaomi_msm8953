@@ -74,7 +74,7 @@
 
 #include "sapApi.h"
 #include "vos_trace.h"
-
+#include "vos_utils.h"
 
 
 #ifdef WLAN_BTAMP_FEATURE
@@ -419,6 +419,13 @@ VOS_STATUS vos_open( v_CONTEXT_t *pVosContext, void *devHandle )
                "%s: Failed to open TL", __func__);
      VOS_ASSERT(0);
      goto err_sme_close;
+   }
+
+   if (gpVosContext->roamDelayStatsEnabled &&
+       !vos_roam_delay_stats_init())
+   {
+       VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+                 "%s: Could not init roamDelayStats", __func__);
    }
 
    VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_INFO_HIGH,
@@ -974,6 +981,13 @@ VOS_STATUS vos_close( v_CONTEXT_t vosContext )
      VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
          "%s: failed to destroy ProbeEvent", __func__);
      VOS_ASSERT( VOS_IS_STATUS_SUCCESS( vosStatus ) );
+  }
+
+  if (gpVosContext->roamDelayStatsEnabled &&
+      !vos_roam_delay_stats_deinit())
+  {
+      VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+                "%s: Could not deinit roamDelayStats", __func__);
   }
 
   return VOS_STATUS_SUCCESS;

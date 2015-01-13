@@ -164,7 +164,7 @@ v_U8_t vos_chan_to_band(v_U32_t chan);
 void vos_get_wlan_unsafe_channel(v_U16_t *unsafeChannelList,
                     v_U16_t buffer_size, v_U16_t *unsafeChannelCount);
 
-#define ROAM_DELAY_TABLE_SIZE   30
+#define ROAM_DELAY_TABLE_SIZE   10
 
 enum e_roaming_event
 {
@@ -284,9 +284,11 @@ typedef struct sRoamDelayMetaInfo
 } tRoamDelayMetaInfo, *tpRoamDelayMetaInfo;
 
 extern  tRoamDelayMetaInfo gRoamDelayMetaInfo;
-extern  tRoamDelayMetaInfo gRoamDelayTable[ROAM_DELAY_TABLE_SIZE];
+extern  tRoamDelayMetaInfo *gpRoamDelayTable;
 extern  v_BOOL_t           gRoamDelayCurrentIndex;
 
+v_BOOL_t vos_roam_delay_stats_init(void);
+v_BOOL_t vos_roam_delay_stats_deinit(void);
 void    vos_reset_roam_timer_log(void);
 void    vos_dump_roam_time_log_service(void);
 void    vos_record_roam_event(enum e_roaming_event, void *pBuff, v_ULONG_t buff_len);

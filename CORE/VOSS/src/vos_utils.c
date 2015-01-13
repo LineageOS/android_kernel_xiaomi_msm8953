@@ -65,6 +65,7 @@
 #include <linux/crypto.h>
 #include <linux/scatterlist.h>
 #include <linux/completion.h>
+#include <linux/vmalloc.h>
 #include <crypto/hash.h>
 
 /*----------------------------------------------------------------------------
@@ -744,7 +745,7 @@ void vos_get_wlan_unsafe_channel(v_U16_t *unsafeChannelList,
 
 //Define gRoamDelayMetaInfo
 tRoamDelayMetaInfo gRoamDelayMetaInfo = {0};
-tRoamDelayMetaInfo gRoamDelayTable[ROAM_DELAY_TABLE_SIZE];
+tRoamDelayMetaInfo *gpRoamDelayTable = NULL;
 v_BOOL_t gRoamDelayCurrentIndex = 0;
 
 #define VOS_ETHERTYPE_802_1_X                           ( 0x888E )
@@ -811,8 +812,51 @@ v_BOOL_t vos_skb_is_eapol(struct sk_buff *skb,
     return fEAPOL;
 }
 
+v_BOOL_t vos_roam_delay_stats_init(void)
+{
+    if (gpRoamDelayTable == NULL)
+    {
+        gpRoamDelayTable = vmalloc(sizeof(tRoamDelayMetaInfo) * ROAM_DELAY_TABLE_SIZE);
+        if (gpRoamDelayTable == NULL)
+        {
+            VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR, "Memory allocation failed");
+            return VOS_FALSE;
+        }
+    }
+    else
+    {
+        VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_INFO, "Memory is already allocated");
+        return VOS_FALSE;
+    }
+
+    return VOS_TRUE;
+}
+
+
+v_BOOL_t vos_roam_delay_stats_deinit(void)
+{
+    if (gpRoamDelayTable != NULL)
+    {
+        vfree(gpRoamDelayTable);
+        gpRoamDelayTable = NULL;
+    }
+    else
+    {
+        VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_INFO, "Memory is already freed");
+        return VOS_FALSE;
+    }
+
+    return VOS_TRUE;
+}
+
 void vos_record_roam_event(enum e_roaming_event roam_event, void *pBuff, v_ULONG_t buff_len)
 {
+    if (gpRoamDelayTable == NULL)
+    {
+        VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  "Roam delay table is not initialized\n");
+        return;
+    }
     switch(roam_event)
     {
         case e_HDD_DISABLE_TX_QUEUE:
@@ -1110,7 +1154,7 @@ void vos_record_roam_event(enum e_roaming_event roam_event, void *pBuff, v_ULONG
              //Let us copy roam meta info
              if(gRoamDelayCurrentIndex > ROAM_DELAY_TABLE_SIZE)
                  gRoamDelayCurrentIndex = 0;
-             vos_mem_copy(&gRoamDelayTable[gRoamDelayCurrentIndex++],
+             vos_mem_copy(&gpRoamDelayTable[gRoamDelayCurrentIndex++],
                           &gRoamDelayMetaInfo, sizeof(gRoamDelayMetaInfo));
              vos_mem_set(&gRoamDelayMetaInfo, sizeof(gRoamDelayMetaInfo), 0);
              break;
@@ -1123,8 +1167,11 @@ void vos_record_roam_event(enum e_roaming_event roam_event, void *pBuff, v_ULONG
 
 void vos_reset_roam_timer_log(void)
 {
-    //Set zero to whole gRoamDelayTable
-    vos_mem_set(&gRoamDelayTable, (sizeof(gRoamDelayMetaInfo) * ROAM_DELAY_TABLE_SIZE), 0);
+    if (gpRoamDelayTable != NULL)
+    {
+       //Set zero to whole gpRoamDelayTable
+       vos_mem_set(gpRoamDelayTable, (sizeof(tRoamDelayMetaInfo) * ROAM_DELAY_TABLE_SIZE), 0);
+    }
 }
 
 void vos_dump_roam_time_log_service(void)
@@ -1133,10 +1180,16 @@ void vos_dump_roam_time_log_service(void)
     tRoamDelayMetaInfo currentRoamDelayInfo;
     v_ULONG_t index = 0,i=0;
 
-    //Let us first copy the current gRoamDelayMetaInfo into gRoamDelayTable
+    if (gpRoamDelayTable == NULL)
+    {
+        VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  "Roam delay table is not initialized\n");
+        return;
+    }
+    //Let us first copy the current gRoamDelayMetaInfo into gpRoamDelayTable
     if(gRoamDelayCurrentIndex > ROAM_DELAY_TABLE_SIZE)
         gRoamDelayCurrentIndex = 0;
-    vos_mem_copy(&gRoamDelayTable[gRoamDelayCurrentIndex++], &gRoamDelayMetaInfo, sizeof(gRoamDelayMetaInfo));
+    vos_mem_copy(&gpRoamDelayTable[gRoamDelayCurrentIndex++], &gRoamDelayMetaInfo, sizeof(gRoamDelayMetaInfo));
 
     VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
          "** RoamDelay = ( dxe_first_tx_time - disable_tx_queues_time)\n");
@@ -1171,7 +1224,7 @@ void vos_dump_roam_time_log_service(void)
 
     for (index = 0; index < gRoamDelayCurrentIndex; index++)
     {
-        currentRoamDelayInfo = gRoamDelayTable[index];
+        currentRoamDelayInfo = gpRoamDelayTable[index];
         /* PreAuth Timer to Roam Start */
         slA = (currentRoamDelayInfo.preauth_cb_time -
                currentRoamDelayInfo.preauth_reassoc_start_time);
@@ -1255,7 +1308,7 @@ void vos_dump_roam_time_log_service(void)
     for (index = 0; index < gRoamDelayCurrentIndex; index++)
     {
 
-        currentRoamDelayInfo = gRoamDelayTable[index];
+        currentRoamDelayInfo = gpRoamDelayTable[index];
         VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                 "||%2ld: Peer Mac: <"MAC_ADDRESS_STR">\n",
                 (index+1), MAC_ADDR_ARRAY(currentRoamDelayInfo.peer_mac_addr)
