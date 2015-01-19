@@ -317,7 +317,6 @@ limSendProbeReqMgmtFrame(tpAniSirGlobal pMac,
     tANI_U8              sessionId;
     tANI_U8             *p2pIe = NULL;
     tANI_U32             txFlag = 0;
-    tANI_U32             chanbond24G = 0;
 
 #ifndef GEN4_SCAN
     return eSIR_FAILURE;
@@ -414,9 +413,9 @@ limSendProbeReqMgmtFrame(tpAniSirGlobal pMac,
            }
     }
 
-    /* Get HT40 capability  for 2.4GHz band */
-    wlan_cfgGetInt(pMac,WNI_CFG_CHANNEL_BONDING_24G,&chanbond24G);
-    if( (nChannelNum <= SIR_11B_CHANNEL_END) && chanbond24G != TRUE)
+    if((nChannelNum <= SIR_11B_CHANNEL_END)
+       && (!IS_HT40_OBSS_SCAN_FEATURE_ENABLE)
+       && (!pMac->roam.configParam.channelBondingMode24GHz))
     {
         pr.HTCaps.supportedChannelWidthSet = eHT_CHANNEL_WIDTH_20MHZ;
         pr.HTCaps.shortGI40MHz = 0;
