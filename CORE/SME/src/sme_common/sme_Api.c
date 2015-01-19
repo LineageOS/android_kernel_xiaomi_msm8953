@@ -4814,18 +4814,21 @@ eHalStatus sme_RoamSetKey(tHalHandle hHal, tANI_U8 sessionId, tCsrRoamSetKey *pS
       sme_ReleaseGlobalLock( &pMac->sme );
    }
 #ifdef DEBUG_ROAM_DELAY
-   //Store sent PTK key time
-   if(pSetKey->keyDirection == eSIR_TX_RX)
+   if (pMac->roam.configParam.roamDelayStatsEnabled)
    {
-      vos_record_roam_event(e_HDD_SET_PTK_REQ, NULL, 0);
-   }
-   else if(pSetKey->keyDirection == eSIR_RX_ONLY)
-   {
-      vos_record_roam_event(e_HDD_SET_GTK_REQ, NULL, 0);
-   }
-   else
-   {
-      return (status);
+       //Store sent PTK key time
+       if(pSetKey->keyDirection == eSIR_TX_RX)
+       {
+           vos_record_roam_event(e_HDD_SET_PTK_REQ, NULL, 0);
+       }
+       else if(pSetKey->keyDirection == eSIR_RX_ONLY)
+       {
+           vos_record_roam_event(e_HDD_SET_GTK_REQ, NULL, 0);
+       }
+       else
+       {
+           return (status);
+       }
    }
 #endif
 

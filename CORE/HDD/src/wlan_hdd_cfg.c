@@ -5429,6 +5429,9 @@ VOS_STATUS hdd_set_sme_config( hdd_context_t *pHddCtx )
                         pConfig->nOBSSScanWidthTriggerInterval;
    smeConfig->fDeferIMPSTime = pHddCtx->cfg_ini->deferImpsTime;
    smeConfig->fBtcEnableIndTimerVal = pHddCtx->cfg_ini->btcEnableIndTimerVal;
+#ifdef DEBUG_ROAM_DELAY
+   smeConfig->csrConfig.roamDelayStatsEnabled = pHddCtx->cfg_ini->gEnableRoamDelayStats;
+#endif //#ifdef DEBUG_ROAM_DELAY
    halStatus = sme_UpdateConfig( pHddCtx->hHal, smeConfig);
    if ( !HAL_STATUS_SUCCESS( halStatus ) )
    {
