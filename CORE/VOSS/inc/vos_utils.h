@@ -164,7 +164,6 @@ v_U8_t vos_chan_to_band(v_U32_t chan);
 void vos_get_wlan_unsafe_channel(v_U16_t *unsafeChannelList,
                     v_U16_t buffer_size, v_U16_t *unsafeChannelCount);
 
-#ifdef DEBUG_ROAM_DELAY
 #define ROAM_DELAY_TABLE_SIZE   30
 
 enum e_roaming_event
@@ -291,5 +290,4 @@ extern  v_BOOL_t           gRoamDelayCurrentIndex;
 void    vos_reset_roam_timer_log(void);
 void    vos_dump_roam_time_log_service(void);
 void    vos_record_roam_event(enum e_roaming_event, void *pBuff, v_ULONG_t buff_len);
-#endif //#ifdef DEBUG_ROAM_DELAY
 #endif // #if !defined __VOSS_UTILS_H

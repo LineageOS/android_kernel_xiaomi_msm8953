@@ -39,10 +39,7 @@
 #include <smsDebug.h>
 #include <csrInsideApi.h>
 #include <csrNeighborRoam.h>
-
-#ifdef DEBUG_ROAM_DELAY
 #include "vos_utils.h"
-#endif
 
 /*--------------------------------------------------------------------------
   Initialize the FT context. 
@@ -62,9 +59,7 @@ void sme_FTOpen(tHalHandle hHal)
         smsLog(pMac, LOGE, FL("Preauth Reassoc interval Timer allocation failed"));
         return;
     }                 
-#ifdef DEBUG_ROAM_DELAY
     vos_reset_roam_timer_log();
-#endif
 }
 
 /*--------------------------------------------------------------------------
@@ -336,13 +331,11 @@ eHalStatus sme_FTUpdateKey( tHalHandle hHal, tCsrRoamSetKey * pFTKeyInfo )
     switch(pMac->ft.ftSmeContext.FTState)
     {
     case eFT_SET_KEY_WAIT:
-#ifdef DEBUG_ROAM_DELAY
       if (pMac->roam.configParam.roamDelayStatsEnabled)
       {
           //store the PTK send event
           vos_record_roam_event(e_HDD_SET_PTK_REQ, NULL, 0);
       }
-#endif
       if (sme_GetFTPreAuthState (hHal) == TRUE)
       {
           status = sme_FTSendUpdateKeyInd(pMac, pFTKeyInfo);
@@ -480,12 +473,10 @@ void sme_PreauthReassocIntvlTimerCallback(void *context)
     tpAniSirGlobal pMac = (tpAniSirGlobal )context;
     csrNeighborRoamRequestHandoff(pMac);
 #endif
-#ifdef DEBUG_ROAM_DELAY
     if (pMac->roam.configParam.roamDelayStatsEnabled)
     {
         vos_record_roam_event(e_SME_PREAUTH_CALLBACK_HIT, NULL, 0);
     }
-#endif
     return;
 }
 

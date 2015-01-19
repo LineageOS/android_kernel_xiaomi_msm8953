@@ -732,7 +732,6 @@ void vos_get_wlan_unsafe_channel(v_U16_t *unsafeChannelList,
                                   unsafeChannelCount);
 }
 
-#ifdef DEBUG_ROAM_DELAY
 
 #include <linux/skbuff.h>
 #include "vos_timer.h"
@@ -1416,5 +1415,3 @@ void vos_dump_roam_time_log_service(void)
          "||== END ====================="
          "===============================||\n");
 }
-#endif /* DEBUG_ROAM_DELAY */
-

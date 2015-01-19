@@ -1238,10 +1238,8 @@ typedef struct
   /* reason for WDI_DetectedDeviceError */
   void *                        DeviceErrorReason;
 
-#ifdef DEBUG_ROAM_DELAY
    /* Roam delay statistic enabled in ini*/
    wpt_uint8                  roamDelayStatsEnabled;
-#endif
 }WDI_ControlBlockType; 
 
 

@@ -9129,9 +9129,7 @@ int hdd_wlan_startup(struct device *dev )
    }
 
 #endif
-#ifdef DEBUG_ROAM_DELAY
    vos_set_roam_delay_stats_enabled(pHddCtx->cfg_ini->gEnableRoamDelayStats);
-#endif //#ifdef DEBUG_ROAM_DELAY
    status = vos_open( &pVosContext, pHddCtx->parent_dev);
    if ( !VOS_IS_STATUS_SUCCESS( status ))
    {

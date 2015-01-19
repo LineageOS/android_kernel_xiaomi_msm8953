@@ -65,9 +65,7 @@
 #endif
 #include "sme_Api.h"
 #include "wlan_hdd_hostapd.h"
-#ifdef DEBUG_ROAM_DELAY
 #include "vos_utils.h"
-#endif
 
 v_BOOL_t mibIsDot11DesiredBssTypeInfrastructure( hdd_adapter_t *pAdapter );
 
@@ -1471,12 +1469,10 @@ static eHalStatus hdd_AssociationCompletionHandler( hdd_adapter_t *pAdapter, tCs
                                          (int)pRoamInfo->pBssDesc->channelId);
                         hddLog(LOG1, "assocReqlen %d assocRsplen %d", assocReqlen,
                                          assocRsplen);
-#ifdef DEBUG_ROAM_DELAY
                         if (pHddCtx->cfg_ini->gEnableRoamDelayStats)
                         {
                             vos_record_roam_event(e_HDD_SEND_REASSOC_RSP, NULL, 0);
                         }
-#endif
                         cfg80211_roamed(dev,chan, pRoamInfo->bssid,
                                     pFTAssocReq, assocReqlen, pFTAssocRsp, assocRsplen,
                                     GFP_KERNEL);
@@ -1527,12 +1523,10 @@ static eHalStatus hdd_AssociationCompletionHandler( hdd_adapter_t *pAdapter, tCs
                     if(ft_carrier_on)
                     {
                         hdd_SendReAssocEvent(dev, pAdapter, pRoamInfo, reqRsnIe, reqRsnLength);
-#ifdef DEBUG_ROAM_DELAY
                         if (pHddCtx->cfg_ini->gEnableRoamDelayStats)
                         {
                             vos_record_roam_event(e_HDD_SEND_REASSOC_RSP, NULL, 0);
                         }
-#endif
                     }
                     else
 #endif /* FEATURE_WLAN_ESE */
@@ -1621,12 +1615,10 @@ static eHalStatus hdd_AssociationCompletionHandler( hdd_adapter_t *pAdapter, tCs
             hddLog(VOS_TRACE_LEVEL_INFO, FL("Enabling queues"));
             netif_tx_wake_all_queues(dev);
         }
-#ifdef DEBUG_ROAM_DELAY
         if (pHddCtx->cfg_ini->gEnableRoamDelayStats)
         {
             vos_record_roam_event(e_HDD_ENABLE_TX_QUEUE, NULL, 0);
         }
-#endif
     }
     else
     {
@@ -2191,23 +2183,19 @@ static eHalStatus hdd_RoamSetKeyCompleteHandler( hdd_adapter_t *pAdapter, tCsrRo
             {
                 spin_unlock(&pHddCtx->filter_lock);
             }
-#ifdef DEBUG_ROAM_DELAY
             if (pHddCtx->cfg_ini->gEnableRoamDelayStats)
             {
                 vos_record_roam_event(e_HDD_SET_GTK_RSP, NULL, 0);
             }
-#endif
          }
          else
          {
             vosStatus = WLANTL_STAPtkInstalled( pHddCtx->pvosContext,
                                                 pHddStaCtx->conn_info.staId[ 0 ]);
-#ifdef DEBUG_ROAM_DELAY
             if (pHddCtx->cfg_ini->gEnableRoamDelayStats)
             {
                 vos_record_roam_event(e_HDD_SET_PTK_RSP, (void *)pRoamInfo->peerMac, 6);
             }
-#endif
          }
 
          pHddStaCtx->roam_info.roamingState = HDD_ROAM_STATE_NONE;
@@ -2840,13 +2828,11 @@ eHalStatus hdd_smeRoamCallback( void *pContext, tCsrRoamInfo *pRoamInfo, tANI_U3
                 struct net_device *dev = pAdapter->dev;
                 hddLog(VOS_TRACE_LEVEL_INFO, FL("Disabling queues"));
                 netif_tx_disable(dev);
-#ifdef DEBUG_ROAM_DELAY
                 pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
                 if (pHddCtx->cfg_ini->gEnableRoamDelayStats)
                 {
                     vos_record_roam_event(e_HDD_DISABLE_TX_QUEUE, NULL, 0);
                 }
-#endif
                 /*
                  * Deregister for this STA with TL with the objective to flush
                  * all the packets for this STA from wmm_tx_queue. If not done here,

@@ -2258,7 +2258,6 @@ v_BOOL_t vos_is_wlan_in_badState(VOS_MODULE_ID moduleId,
     return pVosWDCtx->isFatalError;
 }
 
-#ifdef DEBUG_ROAM_DELAY
 /**---------------------------------------------------------------------------
 
   \brief vos_set_roam_delay_stats_enabled() -
@@ -2293,4 +2292,3 @@ v_U8_t  vos_get_roam_delay_stats_enabled(v_VOID_t)
 {
     return gpVosContext->roamDelayStatsEnabled;
 }
-#endif //#ifdef DEBUG_ROAM_DELAY

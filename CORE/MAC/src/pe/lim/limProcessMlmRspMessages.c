@@ -59,10 +59,7 @@
 #include <limFT.h>
 #endif
 #include "wlan_qct_wda.h"
-
-#ifdef DEBUG_ROAM_DELAY
 #include "vos_utils.h"
-#endif
 
 static void limHandleSmeJoinResult(tpAniSirGlobal, tSirResultCodes, tANI_U16,tpPESession);
 static void limHandleSmeReaasocResult(tpAniSirGlobal, tSirResultCodes, tANI_U16, tpPESession);
@@ -2882,12 +2879,10 @@ limProcessStaMlmAddBssRspFT(tpAniSirGlobal pMac, tpSirMsgQ limMsgQ, tpPESession 
         limPrintMacAddr(pMac, pAddBssParams->staContext.staMac, LOGE);
         goto end;
     }
-#ifdef DEBUG_ROAM_DELAY
     if (pMac->roam.configParam.roamDelayStatsEnabled)
     {
         vos_record_roam_event(e_LIM_ADD_BS_RSP, NULL, 0);
     }
-#endif
     // Prepare and send Reassociation request frame
     // start reassoc timer.
 
@@ -2957,12 +2952,10 @@ limProcessStaMlmAddBssRspFT(tpAniSirGlobal pMac, tpSirMsgQ limMsgQ, tpPESession 
     pMac->lim.reAssocRetryAttempt = 0;
 #endif
     limSendReassocReqWithFTIEsMgmtFrame(pMac, psessionEntry->pLimMlmReassocReq, psessionEntry);
-#ifdef DEBUG_ROAM_DELAY
     if (pMac->roam.configParam.roamDelayStatsEnabled)
     {
         vos_record_roam_event(e_LIM_SEND_REASSOC_REQ, NULL, 0);
     }
-#endif
     psessionEntry->limPrevMlmState = psessionEntry->limMlmState;
     psessionEntry->limMlmState = eLIM_MLM_WT_FT_REASSOC_RSP_STATE;
     MTRACE(macTrace(pMac, TRACE_CODE_MLM_STATE, psessionEntry->peSessionId, eLIM_MLM_WT_FT_REASSOC_RSP_STATE));

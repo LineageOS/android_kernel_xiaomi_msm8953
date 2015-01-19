@@ -60,9 +60,7 @@
 #include "wlan_hdd_tdls.h"
 #endif
 
-#ifdef DEBUG_ROAM_DELAY
 #include "vos_utils.h"
-#endif
 #include  "sapInternal.h"
 #include  "wlan_hdd_trace.h"
 /*--------------------------------------------------------------------------- 
@@ -858,12 +856,10 @@ int hdd_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
               "%s: Classified as ac %d up %d", __func__, ac, up);
 #endif // HDD_WMM_DEBUG
 
-#ifdef DEBUG_ROAM_DELAY
    if (pHddCtx->cfg_ini->gEnableRoamDelayStats)
    {
        vos_record_roam_event(e_HDD_FIRST_XMIT_TIME, (void *)skb, 0);
    }
-#endif
 
    spin_lock(&pAdapter->wmm_tx_queue[ac].lock);
    /*CR 463598,384996*/
@@ -1809,12 +1805,10 @@ VOS_STATUS hdd_tx_fetch_packet_cbk( v_VOID_t *vosContext,
                 pktNode->userPriority, pPktMetaInfo->ucUP);
    }
 
-#ifdef DEBUG_ROAM_DELAY
    if (pHddCtx->cfg_ini->gEnableRoamDelayStats)
    {
        vos_record_roam_event(e_TL_FIRST_XMIT_TIME, NULL, 0);
    }
-#endif
 
    pPktMetaInfo->ucType = 0;          //FIXME Don't know what this is
    pPktMetaInfo->ucDisableFrmXtl = 0; //802.3 frame so we need to xlate
@@ -2126,12 +2120,10 @@ VOS_STATUS hdd_rx_packet_cbk( v_VOID_t *vosContext,
          }
       }
 
-#ifdef DEBUG_ROAM_DELAY
-   if (pHddCtx->cfg_ini->gEnableRoamDelayStats)
-   {
-       vos_record_roam_event(e_HDD_RX_PKT_CBK_TIME, (void *)skb, 0);
-   }
-#endif
+      if (pHddCtx->cfg_ini->gEnableRoamDelayStats)
+      {
+          vos_record_roam_event(e_HDD_RX_PKT_CBK_TIME, (void *)skb, 0);
+      }
       if (( NULL != pHddCtx ) &&
          (pHddCtx->cfg_ini->gEnableDebugLog & VOS_PKT_PROTO_TYPE_DHCP))
       {

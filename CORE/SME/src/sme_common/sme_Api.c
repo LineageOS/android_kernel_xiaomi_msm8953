@@ -72,10 +72,7 @@
 #include "vos_trace.h"
 #include "sapApi.h"
 #include "macTrace.h"
-
-#ifdef DEBUG_ROAM_DELAY
 #include "vos_utils.h"
-#endif
 
 extern tSirRetStatus uMacPostCtrlMsg(void* pSirGlobal, tSirMbMsg* pMb);
 
@@ -4856,7 +4853,6 @@ eHalStatus sme_RoamSetKey(tHalHandle hHal, tANI_U8 sessionId, tCsrRoamSetKey *pS
       status = csrRoamSetKey ( pMac, sessionId, pSetKey, roamId );
       sme_ReleaseGlobalLock( &pMac->sme );
    }
-#ifdef DEBUG_ROAM_DELAY
    if (pMac->roam.configParam.roamDelayStatsEnabled)
    {
        //Store sent PTK key time
@@ -4873,7 +4869,6 @@ eHalStatus sme_RoamSetKey(tHalHandle hHal, tANI_U8 sessionId, tCsrRoamSetKey *pS
            return (status);
        }
    }
-#endif
 
    return (status);
 }

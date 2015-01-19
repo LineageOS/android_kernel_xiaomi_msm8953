@@ -334,10 +334,8 @@ typedef struct _VosContextType
    /* NV BIN Version */
    eNvVersionType     nvVersion;
 
-#ifdef DEBUG_ROAM_DELAY
    /* Roam delay statistic enabled in ini*/
    v_U8_t             roamDelayStatsEnabled;
-#endif
 } VosContextType, *pVosContextType;
 
 
