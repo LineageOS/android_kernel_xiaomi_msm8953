@@ -345,6 +345,11 @@ tSirRetStatus schSetFixedBeaconFields(tpAniSirGlobal pMac,tpPESession psessionEn
     {
         PopulateDot11fOBSSScanParameters( pMac, &pBcn2->OBSSScanParameters,
                                                                psessionEntry);
+        /* 10.15.8 Support of DSSS/CCK in 40 MHz, An associated HT STA in
+         * a 20/40 MHz BSS may generate DSSS/CCK transmissions. Set DSSS/CCK
+         * Mode in 40 MHz bit in HT capablity.
+         */
+        pBcn2->HTCaps.dsssCckMode40MHz = 1;
     }
 #endif
 
