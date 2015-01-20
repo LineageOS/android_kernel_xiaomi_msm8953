@@ -316,17 +316,20 @@ VOS_STATUS wlan_hdd_cancel_existing_remain_on_channel(hdd_adapter_t *pAdapter)
               * The remain on channel callback will make sure the remain_on_chan
               * expired event is sent.
               */
-              if (( WLAN_HDD_INFRA_STATION == pAdapter->device_mode ) ||
-                 ( WLAN_HDD_P2P_CLIENT == pAdapter->device_mode ) ||
+              if (( WLAN_HDD_P2P_CLIENT == pAdapter->device_mode ) ||
                  ( WLAN_HDD_P2P_DEVICE == pAdapter->device_mode ))
               {
-                  sme_CancelRemainOnChannel( WLAN_HDD_GET_HAL_CTX( pAdapter ),
-                                                     pAdapter->sessionId );
+                  if (eHAL_STATUS_SUCCESS !=
+                          sme_CancelRemainOnChannel( WLAN_HDD_GET_HAL_CTX( pAdapter ),
+                                                     pAdapter->sessionId ))
+                  {
+                      VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                              FL("Failed to Cancel Remain on Channel"));
+                  }
               }
-              else if ( (WLAN_HDD_SOFTAP== pAdapter->device_mode) ||
-                      (WLAN_HDD_P2P_GO == pAdapter->device_mode))
+              else if (WLAN_HDD_P2P_GO == pAdapter->device_mode)
               {
-                   WLANSAP_CancelRemainOnChannel(
+                  WLANSAP_CancelRemainOnChannel(
                           (WLAN_HDD_GET_CTX(pAdapter))->pvosContext);
               }
 
@@ -422,20 +425,22 @@ void wlan_hdd_remain_on_chan_timeout(void *data)
     pRemainChanCtx->hdd_remain_on_chan_cancel_in_progress = TRUE;
     INIT_COMPLETION(pAdapter->cancel_rem_on_chan_var);
     hddLog( LOG1,"%s: Cancel Remain on Channel on timeout", __func__);
-    if ( ( WLAN_HDD_INFRA_STATION == pAdapter->device_mode ) ||
-          ( WLAN_HDD_P2P_CLIENT == pAdapter->device_mode ) ||
+    if ( ( WLAN_HDD_P2P_CLIENT == pAdapter->device_mode ) ||
            ( WLAN_HDD_P2P_DEVICE == pAdapter->device_mode )
        )
     {
-        sme_CancelRemainOnChannel( WLAN_HDD_GET_HAL_CTX( pAdapter ),
-                                                     pAdapter->sessionId );
+        if (eHAL_STATUS_SUCCESS !=
+                sme_CancelRemainOnChannel( WLAN_HDD_GET_HAL_CTX( pAdapter),
+                    pAdapter->sessionId ))
+        {
+            VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                    FL("Failed to Cancel Remain on Channel"));
+        }
     }
-    else if ( ( WLAN_HDD_SOFTAP== pAdapter->device_mode ) ||
-                  ( WLAN_HDD_P2P_GO == pAdapter->device_mode )
-                )
+    else if ( WLAN_HDD_P2P_GO == pAdapter->device_mode )
     {
-         WLANSAP_CancelRemainOnChannel(
-                         (WLAN_HDD_GET_CTX(pAdapter))->pvosContext);
+        WLANSAP_CancelRemainOnChannel(
+                (WLAN_HDD_GET_CTX(pAdapter))->pvosContext);
     }
     hdd_allow_suspend();
 }
@@ -927,21 +932,22 @@ int __wlan_hdd_cfg80211_cancel_remain_on_channel( struct wiphy *wiphy,
      * The remain on channel callback will make sure the remain_on_chan
      * expired event is sent.
      */
-    if ( ( WLAN_HDD_INFRA_STATION == pAdapter->device_mode ) ||
-         ( WLAN_HDD_P2P_CLIENT == pAdapter->device_mode ) ||
-         ( WLAN_HDD_P2P_DEVICE == pAdapter->device_mode )
-       )
+    if (( WLAN_HDD_P2P_CLIENT == pAdapter->device_mode ) ||
+         ( WLAN_HDD_P2P_DEVICE == pAdapter->device_mode ))
     {
         tANI_U8 sessionId = pAdapter->sessionId;
-        sme_CancelRemainOnChannel( WLAN_HDD_GET_HAL_CTX( pAdapter ),
-                                            sessionId );
+        if (eHAL_STATUS_SUCCESS !=
+                sme_CancelRemainOnChannel( WLAN_HDD_GET_HAL_CTX( pAdapter ),
+                                           sessionId ))
+        {
+            VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                    FL("Failed to Cancel Remain on Channel"));
+        }
     }
-    else if ( (WLAN_HDD_SOFTAP== pAdapter->device_mode) ||
-              (WLAN_HDD_P2P_GO == pAdapter->device_mode)
-            )
+    else if (WLAN_HDD_P2P_GO == pAdapter->device_mode)
     {
         WLANSAP_CancelRemainOnChannel(
-                                (WLAN_HDD_GET_CTX(pAdapter))->pvosContext);
+                (WLAN_HDD_GET_CTX(pAdapter))->pvosContext);
     }
     else
     {

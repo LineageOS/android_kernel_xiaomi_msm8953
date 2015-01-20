@@ -7137,8 +7137,13 @@ VOS_STATUS hdd_stop_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter,
                {
                   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                             "%s: ROC completion is not received.!!!", __func__);
-                  sme_CancelRemainOnChannel(WLAN_HDD_GET_HAL_CTX(pAdapter),
-                                            pAdapter->sessionId);
+                  if (eHAL_STATUS_SUCCESS !=
+                      sme_CancelRemainOnChannel( WLAN_HDD_GET_HAL_CTX( pAdapter),
+                                                     pAdapter->sessionId ))
+                  {
+                      VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                              FL("Failed to Cancel Remain on Channel"));
+                  }
                   wait_for_completion_interruptible_timeout(
                                        &pAdapter->cancel_rem_on_chan_var,
                                        msecs_to_jiffies(WAIT_CANCEL_REM_CHAN));
