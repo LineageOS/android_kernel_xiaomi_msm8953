@@ -1360,6 +1360,7 @@ VOS_STATUS hdd_softap_tx_fetch_packet_cbk( v_VOID_t *vosContext,
          VOS_TRACE( VOS_MODULE_ID_HDD_SAP_DATA, VOS_TRACE_LEVEL_INFO_HIGH,
                     "%s: VOS packet is EAPOL packet", __func__);
          pPktMetaInfo->ucIsEapol = 1;
+         pPktMetaInfo->ucEapolSubType = hdd_FindEapolSubType(pVosPacket);
       }
    }
  
@@ -1371,7 +1372,7 @@ VOS_STATUS hdd_softap_tx_fetch_packet_cbk( v_VOID_t *vosContext,
       if (VOS_PKT_PROTO_TYPE_EAPOL & proto_type)
       {
          VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-                   "SAP TX EAPOL");
+                   "SAP TX EAPOL SubType %d",pPktMetaInfo->ucEapolSubType);
       }
       else if (VOS_PKT_PROTO_TYPE_DHCP & proto_type)
       {
@@ -1526,6 +1527,7 @@ VOS_STATUS hdd_softap_rx_packet_cbk( v_VOID_t *vosContext,
    vos_pkt_t* pNextVosPacket;   
    hdd_context_t *pHddCtx = NULL;   
    v_U8_t proto_type;
+   EAPOL_SubType eapolSubType;
 
    //Sanity check on inputs
    if ( ( NULL == vosContext ) || 
@@ -1593,6 +1595,12 @@ VOS_STATUS hdd_softap_rx_packet_cbk( v_VOID_t *vosContext,
          return VOS_STATUS_E_FAILURE;
       }
 
+      if (pHddCtx->cfg_ini->gEnableDebugLog)
+      {
+         if(hdd_IsEAPOLPacket(pVosPacket))
+            eapolSubType = hdd_FindEapolSubType(pVosPacket);
+      }
+
       // Extract the OS packet (skb).
       // Tell VOS to detach the OS packet from the VOS packet
       status = vos_pkt_get_os_packet( pVosPacket, (v_VOID_t **)&skb, VOS_TRUE );
@@ -1625,7 +1633,7 @@ VOS_STATUS hdd_softap_rx_packet_cbk( v_VOID_t *vosContext,
          if (VOS_PKT_PROTO_TYPE_EAPOL & proto_type)
          {
             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-                      "SAP RX EAPOL");
+                      "SAP RX EAPOL SubType %d",eapolSubType);
          }
          else if (VOS_PKT_PROTO_TYPE_DHCP & proto_type)
          {
