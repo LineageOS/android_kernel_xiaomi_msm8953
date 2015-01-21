@@ -8273,14 +8273,17 @@ int hdd_setBand(struct net_device *dev, u8 ui_band)
 
     if (currBand != band)
     {
-        /* Return failure if current country code is world regulatory domain*/
-        if( (pMac->scan.countryCodeCurrent[0] == '0' &&
-                        pMac->scan.countryCodeCurrent[1] == '0') )
+        if ( band == eCSR_BAND_5G )
         {
-          VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-             "%s: failed to set the band value to %u as country code is 00",
+            /* Return failure if current country code is world regulatory domain*/
+            if( (pMac->scan.countryCodeCurrent[0] == '0' &&
+                        pMac->scan.countryCodeCurrent[1] == '0') )
+            {
+                VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                        "%s: failed to set the band value to %u as country code is 00",
                         __func__, band);
-             return -EAGAIN;
+                return -EAGAIN;
+            }
         }
 
         /* Change band request received.
