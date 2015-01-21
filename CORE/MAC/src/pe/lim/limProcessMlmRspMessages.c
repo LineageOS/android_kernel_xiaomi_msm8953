@@ -2274,24 +2274,28 @@ void limProcessBtAmpApMlmDelStaRsp( tpAniSirGlobal pMac, tpSirMsgQ limMsgQ,tpPES
     tSirResultCodes statusCode = eSIR_SME_SUCCESS;
     if(limMsgQ->bodyptr == NULL)
     {
-      return;
+        limLog( pMac, LOGE,
+             FL( "limMsgQ->bodyptry NULL"));
+        return;
     }
-
     pStaDs = dphGetHashEntry(pMac, pDelStaParams->assocId, &psessionEntry->dph.dphHashTable);
     if(pStaDs == NULL)
     {
         limLog( pMac, LOGE,
-             FL( "DPH Entry for STA %X missing."), pDelStaParams->assocId);
+             FL( "DPH Entry for STA %d missing."), pDelStaParams->assocId);
         statusCode = eSIR_SME_REFUSED;
         vos_mem_free(pDelStaParams);
         limMsgQ->bodyptr = NULL;
 
         return;
     }
+    limLog( pMac, LOG1,
+            FL( "Received del Sta Rsp in StaD MlmState : %d"),
+                 pStaDs->mlmStaContext.mlmState);
     if( eHAL_STATUS_SUCCESS == pDelStaParams->status )
     {
         limLog( pMac, LOGW,
-                   FL( "AP received the DEL_STA_RSP for assocID: %X."), pDelStaParams->assocId);
+                   FL( "AP received the DEL_STA_RSP for assocID: %d."), pDelStaParams->assocId);
 
         if(( eLIM_MLM_WT_DEL_STA_RSP_STATE != pStaDs->mlmStaContext.mlmState) &&
            ( eLIM_MLM_WT_ASSOC_DEL_STA_RSP_STATE != pStaDs->mlmStaContext.mlmState))
@@ -2458,7 +2462,7 @@ void limProcessBtAmpApMlmAddStaRsp( tpAniSirGlobal pMac, tpSirMsgQ limMsgQ,tpPES
     pStaDs->valid = 1;
     pStaDs->mlmStaContext.mlmState = eLIM_MLM_WT_ASSOC_CNF_STATE;
     limLog( pMac, LOG1,
-            FL("STA AssocID %d staId %d MAC "),
+            FL("AddStaRsp Success.STA AssocID %d staId %d MAC "),
             pStaDs->assocId,
             pStaDs->staIndex);
     limPrintMacAddr(pMac, pStaDs->staAddr, LOG1);

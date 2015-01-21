@@ -2936,10 +2936,13 @@ limProcessMlmDisassocReqNtf(tpAniSirGlobal pMac, eHalStatus suspendStatus, tANI_
          * have context or in some transit state.
          * Log error
          */
-        PELOGW(limLog(pMac, LOGW,
+        limLog(pMac, LOGE,
            FL("received MLM_DISASSOC_REQ for STA that either has no context "
            "or in some transit state, Addr= "
-           MAC_ADDRESS_STR),MAC_ADDR_ARRAY(pMlmDisassocReq->peerMacAddr));)
+           MAC_ADDRESS_STR),MAC_ADDR_ARRAY(pMlmDisassocReq->peerMacAddr));
+        if (pStaDs != NULL)
+            limLog(pMac, LOGE, FL("Sta MlmState : %d"),
+                    pStaDs->mlmStaContext.mlmState);
 
         /// Prepare and Send LIM_MLM_DISASSOC_CNF
 

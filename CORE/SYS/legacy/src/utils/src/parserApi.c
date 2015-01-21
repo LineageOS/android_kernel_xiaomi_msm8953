@@ -999,7 +999,6 @@ PopulateDot11fExtCap(tpAniSirGlobal      pMac,
                            tDot11fIEExtCap  *pDot11f,
                            tpPESession   psessionEntry)
 {
-    tANI_U32            val;
 
 #ifdef WLAN_FEATURE_11AC
     if (psessionEntry->vhtCapability)
@@ -1012,15 +1011,13 @@ PopulateDot11fExtCap(tpAniSirGlobal      pMac,
                the bss co-ex capability*/
     if (psessionEntry->currentOperChannel <= RF_CHAN_14)
     {
-       if (wlan_cfgGetInt(pMac, WNI_CFG_CHANNEL_BONDING_24G, &val) !=
-                         eSIR_SUCCESS)
-            PELOGE(limLog(pMac, LOGE, FL("could not retrieve "
-                                         "24G Chan bond Length \n"));)
-
 #ifdef WLAN_FEATURE_AP_HT40_24G
-       if (TRUE == val || pMac->roam.configParam.apHT40_24GEnabled)
+       if(((IS_HT40_OBSS_SCAN_FEATURE_ENABLE)
+         && pMac->roam.configParam.channelBondingMode24GHz)
+         || pMac->roam.configParam.apHT40_24GEnabled)
 #else
-       if (TRUE == val)
+       if((IS_HT40_OBSS_SCAN_FEATURE_ENABLE)
+         && pMac->roam.configParam.channelBondingMode24GHz)
 #endif
        {
            pDot11f->bssCoexistMgmtSupport = 1;
