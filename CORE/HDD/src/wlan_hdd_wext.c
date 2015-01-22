@@ -3195,6 +3195,8 @@ static void parse_Bufferforpkt(tSirpkt80211 *pkt, u8 *pBuffer, u16 len)
     uint8 byte = 0;
     char *temp = pBuffer;
     uint16 fragNum = 0;
+    char *pHeader;
+    tSir80211Header header;
 
     macHeader = &pkt->macHeader;
 
@@ -3229,6 +3231,15 @@ static void parse_Bufferforpkt(tSirpkt80211 *pkt, u8 *pBuffer, u16 len)
     }
 
     length = getByte(&temp);
+
+    pHeader = temp;
+    vos_mem_zero(&header, sizeof(tSir80211Header));
+    for (i = 0; i < length; i++) {
+        *((uint8 *)&header + i) = getByte(&pHeader);
+    }
+
+    print_hex_dump(KERN_INFO, "Header : ", DUMP_PREFIX_NONE, 16, 1,
+            (char *)&header, length, 0);
 
     byte = getByte(&temp);
 
@@ -3315,9 +3326,6 @@ static void parse_Bufferforpkt(tSirpkt80211 *pkt, u8 *pBuffer, u16 len)
         macHeader->usQosCtrl = getByte(&temp);
         macHeader->usQosCtrl += getByte(&temp) << 8;
     }
-
-    print_hex_dump(KERN_INFO, "Header : ", DUMP_PREFIX_NONE, 16, 1,
-            (char *)&pkt->macHeader, sizeof(tSir80211Header), 0);
 
     //parse payload
     length = getByte(&temp);
