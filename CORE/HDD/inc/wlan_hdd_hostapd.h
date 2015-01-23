@@ -33,8 +33,6 @@
   \file  WLAN_HDD_HOSTAPD_H.h
 
   \brief Linux HDD HOSTAPD include file
-         Copyright 2008-2013 (c) Qualcomm, Incorporated.
-         All Rights Reserved.
   ==========================================================================*/
 
 /*---------------------------------------------------------------------------

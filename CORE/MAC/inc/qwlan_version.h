@@ -37,9 +37,6 @@ BRIEF DESCRIPTION:
    Build number automaticly updated by build scripts.
 
 
-                Copyright (c) 2008-2011 QUALCOMM Incorporated.
-                All Right Reserved.
-                Qualcomm Confidential and Proprietary
 ===========================================================================*/
 
 #define QWLAN_VERSION_MAJOR            3

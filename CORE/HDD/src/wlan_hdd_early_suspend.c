@@ -31,9 +31,6 @@
 *     \brief      power management functions
 *
 *     Description
-*                 Copyright 2009 (c) Qualcomm, Incorporated.
-*                 All Rights Reserved.
-*                 Qualcomm Confidential and Proprietary.
 *
 ==============================================================================**/
 /* $HEADER$ */

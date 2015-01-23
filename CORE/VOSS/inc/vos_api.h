@@ -36,9 +36,6 @@
                
    Header file that inludes all the vOSS API definitions.
   
-   Copyright 2008 (c) Qualcomm, Incorporated.  All Rights Reserved.
-   
-   Qualcomm Confidential and Proprietary.
   
   ========================================================================*/
  /*=========================================================================== 
