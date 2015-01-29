@@ -3527,4 +3527,18 @@ eHalStatus sme_RegisterBtCoexTDLSCallback
 ---------------------------------------------------------------------------*/
 tANI_BOOLEAN smeNeighborRoamIsHandoffInProgress(tHalHandle hHal);
 
+/* ---------------------------------------------------------------------------
+
+    \fn sme_IsTdlsOffChannelValid
+    \brief To check if the channel is valid for currently established domain
+    This is a synchronous API.
+
+    \param hHal - The handle returned by macOpen.
+    \param channel - channel to verify
+
+    \return TRUE/FALSE, TRUE if channel is valid
+
+  -------------------------------------------------------------------------------*/
+tANI_BOOLEAN sme_IsTdlsOffChannelValid(tHalHandle hHal, tANI_U8 channel);
+
 #endif //#if !defined( __SME_API_H )

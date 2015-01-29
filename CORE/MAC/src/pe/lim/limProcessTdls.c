@@ -154,6 +154,9 @@ op_class_map_t global_op_class[] = {
     {125, 20, BW20,      {149, 153, 157, 161, 165, 169}},
     {126, 40, BW40PLUS,  {149, 157}},
     {127, 40, BW40MINUS, {153, 161}},
+    {128, 80, BW80,      {36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112,
+                          116, 120, 124, 128, 132, 136, 140, 144,
+                          149, 153, 157, 161}},
     {0, 0, 0, {0}},
 
 };/*end global_op_class*/
@@ -161,18 +164,22 @@ op_class_map_t global_op_class[] = {
 op_class_map_t us_op_class[] = {
     {1, 20,  BW20,       {36, 40, 44, 48}},
     {2, 20,  BW20,       {52, 56, 60, 64}},
-    {4, 20,  BW20,   {100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140}},
+    {4, 20,  BW20,   {100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144}},
     {5, 20,  BW20,       {149, 153, 157, 161, 165}},
+    {12, 25, BW20,      {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}},
     {22, 40, BW40PLUS,  {36, 44}},
     {23, 40, BW40PLUS,  {52, 60}},
-    {24, 40, BW40PLUS,  {100, 108, 116, 124, 132}},
+    {24, 40, BW40PLUS,  {100, 108, 116, 124, 132, 140}},
     {26, 40, BW40PLUS,  {149, 157}},
     {27, 40, BW40MINUS, {40, 48}},
     {28, 40, BW40MINUS, {56, 64}},
-    {29, 40, BW40MINUS, {104, 112, 120, 128, 136}},
+    {29, 40, BW40MINUS, {104, 112, 120, 128, 136, 144}},
     {31, 40, BW40MINUS, {153, 161}},
     {32, 40, BW40PLUS,  {1, 2, 3, 4, 5, 6, 7}},
     {33, 40, BW40MINUS, {5, 6, 7, 8, 9, 10, 11}},
+    {128, 80, BW80,     {36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112,
+                         116, 120, 124, 128, 132, 136, 140, 144,
+                         149, 153, 157, 161}},
     {0, 0, 0, {0}},
 };/*end us_op_class*/
 
@@ -190,6 +197,8 @@ op_class_map_t euro_op_class[] = {
     {11, 40, BW40PLUS,  {1, 2, 3, 4, 5, 6, 7, 8, 9}},
     {12, 40, BW40MINUS, {5, 6, 7, 8, 9, 10, 11, 12, 13}},
     {17, 20, BW20,      {149, 153, 157, 161, 165, 169}},
+    {128, 80, BW80,     {36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112,
+                         116, 120, 124, 128}},
     {0, 0, 0, {0}},
 };/*end euro_op_class*/
 
@@ -205,6 +214,8 @@ op_class_map_t japan_op_class[] = {
     {41, 40, BW40MINUS, {40, 48}},
     {42, 40, BW40MINUS, {56, 64}},
     {44, 40, BW40MINUS, {104, 112, 120, 128, 136}},
+    {128, 80, BW80,     {36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112,
+                         116, 120, 124, 128}},
     {0, 0, 0, {0}},
 };/*end japan_op_class*/
 
@@ -1018,24 +1029,14 @@ static void PopulateDot11fTdlsHtVhtCap(tpAniSirGlobal pMac, uint32 selfDot11Mode
         htCap->present = 0;
     }
 #ifdef WLAN_FEATURE_11AC
-    if (((psessionEntry->currentOperChannel <= SIR_11B_CHANNEL_END) &&
-          pMac->roam.configParam.enableVhtFor24GHz) ||
-         (psessionEntry->currentOperChannel >= SIR_11B_CHANNEL_END))
+    if (IS_DOT11_MODE_VHT(selfDot11Mode) &&
+        IS_FEATURE_SUPPORTED_BY_FW(DOT11AC))
     {
-        if (IS_DOT11_MODE_VHT(selfDot11Mode) &&
-            IS_FEATURE_SUPPORTED_BY_FW(DOT11AC))
-        {
-            /* Include VHT Capability IE */
-            PopulateDot11fVHTCaps( pMac, vhtCap, eSIR_FALSE );
-        }
-        else
-        {
-            vhtCap->present = 0;
-        }
+        /* Include VHT Capability IE */
+        PopulateDot11fVHTCaps( pMac, vhtCap, eSIR_FALSE );
     }
     else
     {
-        /* Vht Disable from ini in 2.4 GHz */
         vhtCap->present = 0;
     }
 #endif
@@ -5801,6 +5802,53 @@ tSirRetStatus limDeleteTDLSPeers(tpAniSirGlobal pMac, tpPESession psessionEntry)
 }
 
 
+tANI_U8 limGetOffChMaxBwOffsetFromChannel(tANI_U8 *country,
+                                          tANI_U8 channel,
+                                          tANI_U8 peerVHTCapability)
+{
+    op_class_map_t *class = NULL;
+    tANI_U16 i = 0;
+    offset_t offset = BW20, max_allowed = BW80;
+
+    if ((TRUE == peerVHTCapability) &&
+        IS_FEATURE_SUPPORTED_BY_FW(DOT11AC) &&
+        IS_FEATURE_SUPPORTED_BY_DRIVER(DOT11AC))
+        max_allowed = BW80;
+    else
+        max_allowed = BW40MINUS;
+
+    if (VOS_TRUE == vos_mem_compare(country,"US", 2))  {
+
+        class = us_op_class;
+
+    } else if (VOS_TRUE == vos_mem_compare(country,"EU", 2)) {
+
+        class = euro_op_class;
+
+    } else if (VOS_TRUE == vos_mem_compare(country,"JP", 2)) {
+
+        class = japan_op_class;
+
+    } else {
+
+        class = global_op_class;
+
+    }
+
+    while (class->op_class)
+    {
+        for (i=0; (i < 25 && class->channels[i]); i++)
+        {
+            if (channel == class->channels[i] && class->offset <= max_allowed)
+                offset = class->offset;
+        }
+        class++;
+    }
+
+    return offset;
+}
+
+
 tANI_U8 limGetOPClassFromChannel(tANI_U8 *country,
                                          tANI_U8 channel,
                                          tANI_U8 offset)
@@ -5830,7 +5878,7 @@ tANI_U8 limGetOPClassFromChannel(tANI_U8 *country,
     {
         if ((offset == class->offset) || (offset == BWALL))
         {
-            for (i=0; (i < 15 && class->channels[i]); i++)
+            for (i=0; (i < 25 && class->channels[i]); i++)
             {
                 if (channel == class->channels[i])
                     return class->op_class;
@@ -6036,6 +6084,34 @@ tSirRetStatus limProcesSmeTdlsChanSwitchReq(tpAniSirGlobal pMac,
 
     vos_mem_set( (tANI_U8 *)pMsgTdlsChanSwitch, sizeof(tpTdlsChanSwitchParams), 0);
 
+    /* if channel bw offset is not set,
+       send maximum supported offset in the band */
+    if (pTdlsChanSwitch->tdlsOffChBwOffset == 0)
+    {
+        VOS_TRACE(VOS_MODULE_ID_PE, VOS_TRACE_LEVEL_INFO,
+                  ("Set TDLS channel Bw Offset"));
+
+        if ((pTdlsChanSwitch->tdlsOffCh >= 1) &&
+            (pTdlsChanSwitch->tdlsOffCh <= 14))
+        {
+            pTdlsChanSwitch->tdlsOffChBwOffset = BW20;
+        }
+        else if ((pTdlsChanSwitch->tdlsOffCh >= 36) &&
+                 (pTdlsChanSwitch->tdlsOffCh <= 169))
+        {
+            pTdlsChanSwitch->tdlsOffChBwOffset =
+                                limGetOffChMaxBwOffsetFromChannel(
+                                              pMac->scan.countryCodeCurrent,
+                                              pTdlsChanSwitch->tdlsOffCh,
+                                              pStaDs->mlmStaContext.vhtCapability);
+        }
+    }
+    else
+    {
+        /* Channel Bandwidth Offset is set through iwpriv ioctl */
+        (pTdlsChanSwitch->tdlsOffChBwOffset)--;
+    }
+
     pMsgTdlsChanSwitch->staIdx = pStaDs->staIndex;
     pMsgTdlsChanSwitch->tdlsOffCh = pTdlsChanSwitch->tdlsOffCh;
     pMsgTdlsChanSwitch->tdlsOffChBwOffset = pTdlsChanSwitch->tdlsOffChBwOffset;
@@ -6044,6 +6120,7 @@ tSirRetStatus limProcesSmeTdlsChanSwitchReq(tpAniSirGlobal pMac,
                                            pMac->scan.countryCodeCurrent,
                                            pTdlsChanSwitch->tdlsOffCh,
                                            pTdlsChanSwitch->tdlsOffChBwOffset);
+
     if(pMsgTdlsChanSwitch->operClass == 0)
     {
 
