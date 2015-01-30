@@ -45,9 +45,6 @@
   Are listed for each API below.
 
 
-  Copyright (c) 2008 QUALCOMM Incorporated.
-  All Rights Reserved.
-  Qualcomm Confidential and Proprietary
 ===========================================================================*/
 
 /*===========================================================================
@@ -9341,7 +9338,7 @@ WLANTL_TxProcessMsg
     break;
 
   case WLANTL_TX_FW_DEBUG:
-    vos_fwDumpReq(274, 0, 0, 0, 0);
+    vos_fwDumpReq(274, 0, 0, 0, 0, 1); //Async event
     break;
 
   default:

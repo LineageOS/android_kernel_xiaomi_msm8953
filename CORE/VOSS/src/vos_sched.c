@@ -29,9 +29,6 @@
   @file vos_sched.c
   @brief VOS Scheduler Implementation
 
-  Copyright (c) 2011 QUALCOMM Incorporated.
-  All Rights Reserved.
-  Qualcomm Confidential and Proprietary
 ===========================================================================*/
 /*===========================================================================
                        EDIT HISTORY FOR FILE

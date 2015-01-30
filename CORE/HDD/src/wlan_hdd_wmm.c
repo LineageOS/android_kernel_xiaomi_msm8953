@@ -47,9 +47,6 @@
   The remaining functions are utility functions for information hiding.
 
 
-               Copyright (c) 2008-9 QUALCOMM Incorporated.
-               All Rights Reserved.
-               Qualcomm Confidential and Proprietary
 ============================================================================*/
 
 /*---------------------------------------------------------------------------

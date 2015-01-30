@@ -37,9 +37,6 @@ BRIEF DESCRIPTION:
    Build number automaticly updated by build scripts.
 
 
-                Copyright (c) 2008-2011 QUALCOMM Incorporated.
-                All Right Reserved.
-                Qualcomm Confidential and Proprietary
 ===========================================================================*/
 
 #define QWLAN_VERSION_MAJOR            3
@@ -47,8 +44,8 @@ BRIEF DESCRIPTION:
 #define QWLAN_VERSION_PATCH            10
 #define QWLAN_VERSION_EXTRA            ""
 
-#define QWLAN_VERSION_BUILD            7
+#define QWLAN_VERSION_BUILD            8
 
-#define QWLAN_VERSIONSTR               "3.0.10.007"
+#define QWLAN_VERSIONSTR               "3.0.10.008"
 
 #endif /* QWLAN_VERSION_H */

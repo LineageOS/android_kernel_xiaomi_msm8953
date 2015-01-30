@@ -35,9 +35,6 @@
   \file  WLAN_HDD_MAIN_H.h
   
   \brief Linux HDD Adapter Type
-         Copyright 2008 (c) Qualcomm, Incorporated.
-         All Rights Reserved.
-         Qualcomm Confidential and Proprietary.
   
   ==========================================================================*/
   

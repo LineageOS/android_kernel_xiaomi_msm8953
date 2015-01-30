@@ -30,9 +30,6 @@
   \file  wlan_hdd_softap_tx_rx.c
   
   \brief Linux HDD Tx/RX APIs
-         Copyright 2008 (c) Qualcomm, Incorporated.
-         All Rights Reserved.
-         Qualcomm Confidential and Proprietary.
   
   ==========================================================================*/
 
