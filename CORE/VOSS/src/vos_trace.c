@@ -33,9 +33,6 @@
 
    Trace, logging, and debugging definitions and APIs
 
-   Copyright 2008,2011 (c) Qualcomm, Incorporated.  All Rights Reserved.
-
-   Qualcomm Confidential and Proprietary.
 
   ========================================================================*/
 

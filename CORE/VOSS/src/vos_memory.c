@@ -31,9 +31,6 @@
   @brief Virtual Operating System Services Memory API
 
   
-  Copyright (c) 2008 QUALCOMM Incorporated.
-  All Rights Reserved.
-  Qualcomm Confidential and Proprietary
 ===========================================================================*/
 
 /*=========================================================================== 

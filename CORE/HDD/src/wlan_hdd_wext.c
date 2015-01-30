@@ -3195,6 +3195,8 @@ static void parse_Bufferforpkt(tSirpkt80211 *pkt, u8 *pBuffer, u16 len)
     uint8 byte = 0;
     char *temp = pBuffer;
     uint16 fragNum = 0;
+    char *pHeader;
+    tSir80211Header header;
 
     macHeader = &pkt->macHeader;
 
@@ -3229,6 +3231,15 @@ static void parse_Bufferforpkt(tSirpkt80211 *pkt, u8 *pBuffer, u16 len)
     }
 
     length = getByte(&temp);
+
+    pHeader = temp;
+    vos_mem_zero(&header, sizeof(tSir80211Header));
+    for (i = 0; i < length; i++) {
+        *((uint8 *)&header + i) = getByte(&pHeader);
+    }
+
+    print_hex_dump(KERN_INFO, "Header : ", DUMP_PREFIX_NONE, 16, 1,
+            (char *)&header, length, 0);
 
     byte = getByte(&temp);
 
@@ -3315,9 +3326,6 @@ static void parse_Bufferforpkt(tSirpkt80211 *pkt, u8 *pBuffer, u16 len)
         macHeader->usQosCtrl = getByte(&temp);
         macHeader->usQosCtrl += getByte(&temp) << 8;
     }
-
-    print_hex_dump(KERN_INFO, "Header : ", DUMP_PREFIX_NONE, 16, 1,
-            (char *)&pkt->macHeader, sizeof(tSir80211Header), 0);
 
     //parse payload
     length = getByte(&temp);
@@ -8273,14 +8281,17 @@ int hdd_setBand(struct net_device *dev, u8 ui_band)
 
     if (currBand != band)
     {
-        /* Return failure if current country code is world regulatory domain*/
-        if( (pMac->scan.countryCodeCurrent[0] == '0' &&
-                        pMac->scan.countryCodeCurrent[1] == '0') )
+        if ( band == eCSR_BAND_5G )
         {
-          VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-             "%s: failed to set the band value to %u as country code is 00",
+            /* Return failure if current country code is world regulatory domain*/
+            if( (pMac->scan.countryCodeCurrent[0] == '0' &&
+                        pMac->scan.countryCodeCurrent[1] == '0') )
+            {
+                VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                        "%s: failed to set the band value to %u as country code is 00",
                         __func__, band);
-             return -EAGAIN;
+                return -EAGAIN;
+            }
         }
 
         /* Change band request received.
@@ -9625,27 +9636,13 @@ int hdd_register_wext(struct net_device *dev)
 
 int hdd_UnregisterWext(struct net_device *dev)
 {
-#if 0
-   hdd_wext_state_t *wextBuf;
-   hdd_adapter_t *pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
-
-   ENTER();
-   // Set up the pointer to the Wireless Extensions state structure
-   wextBuf = pAdapter->pWextState;
-
-   // De-allocate the Wireless Extensions state structure
-   kfree(wextBuf);
-
-   // Clear out the pointer to the Wireless Extensions state structure
-   pAdapter->pWextState = NULL;
-
-   EXIT();
-#endif
-
-   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,"In %s", __func__);
-   rtnl_lock();
-   dev->wireless_handlers = NULL;
-   rtnl_unlock();
+   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,"In %s %p", __func__, dev);
+   if (dev != NULL)
+   {
+       rtnl_lock();
+       dev->wireless_handlers = NULL;
+       rtnl_unlock();
+   }
 
    return 0;
 }
