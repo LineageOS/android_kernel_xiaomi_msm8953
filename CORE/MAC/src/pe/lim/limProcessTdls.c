@@ -1051,7 +1051,7 @@ static tSirRetStatus limSendTdlsDisRspFrame(tpAniSirGlobal pMac,
                      tANI_U16 addIeLen)
 {
     tDot11fTDLSDisRsp   tdlsDisRsp ;
-    tANI_U16            caps = 0 ;            
+    tANI_U16            caps = 0 ;
     tANI_U32            status = 0 ;
     tANI_U32            nPayload = 0 ;
     tANI_U32            nBytes = 0 ;
@@ -1065,7 +1065,7 @@ static tSirRetStatus limSendTdlsDisRspFrame(tpAniSirGlobal pMac,
 //  As of now, we hardcoded to max channel bonding of dot11Mode (i.e HT80 for 11ac/HT40 for 11n)
 //  uint32 tdlsChannelBondingMode;
 
-    /* 
+    /*
      * The scheme here is to fill out a 'tDot11fProbeRequest' structure
      * and then hand it off to 'dot11fPackProbeRequest' (for
      * serialization).  We start by zero-initializing the structure:
@@ -1080,7 +1080,7 @@ static tSirRetStatus limSendTdlsDisRspFrame(tpAniSirGlobal pMac,
     tdlsDisRsp.Action.action     = SIR_MAC_TDLS_DIS_RSP ;
     tdlsDisRsp.DialogToken.token = dialog ;
 
-    PopulateDot11fLinkIden( pMac, psessionEntry, &tdlsDisRsp.LinkIdentifier, 
+    PopulateDot11fLinkIden( pMac, psessionEntry, &tdlsDisRsp.LinkIdentifier,
                                            peerMac, TDLS_RESPONDER) ;
 
     if (cfgGetCapabilityInfo(pMac, &caps, psessionEntry) != eSIR_SUCCESS)
@@ -1093,15 +1093,12 @@ static tSirRetStatus limSendTdlsDisRspFrame(tpAniSirGlobal pMac,
     }
     swapBitField16(caps, ( tANI_U16* )&tdlsDisRsp.Capabilities );
 
-    /* populate supported rate IE */
-    PopulateDot11fSuppRates( pMac, POPULATE_DOT11F_RATES_OPERATIONAL, 
-                                     &tdlsDisRsp.SuppRates, psessionEntry );
-   
-    /* Populate extended supported rates */
-    PopulateDot11fExtSuppRates( pMac, POPULATE_DOT11F_RATES_OPERATIONAL,
-                                &tdlsDisRsp.ExtSuppRates, psessionEntry );
+    /* populate supported rate and ext supported rate IE */
+    if (eSIR_FAILURE == PopulateDot11fRatesTdls(pMac, &tdlsDisRsp.SuppRates,
+                               &tdlsDisRsp.ExtSuppRates))
+        limLog(pMac, LOGE, FL("could not populate supported data rates"));
 
-    /* Populate extended supported rates */
+    /* Populate extended capability IE */
     PopulateDot11fTdlsExtCapability( pMac, &tdlsDisRsp.ExtCap );
 
     wlan_cfgGetInt(pMac,WNI_CFG_DOT11_MODE,&selfDot11Mode);
@@ -1360,15 +1357,11 @@ tSirRetStatus limSendTdlsLinkSetupReqFrame(tpAniSirGlobal pMac,
 
     swapBitField16(caps, ( tANI_U16* )&tdlsSetupReq.Capabilities );
 
-    /* populate supported rate IE */
-    PopulateDot11fSuppRates( pMac, POPULATE_DOT11F_RATES_OPERATIONAL,
-                              &tdlsSetupReq.SuppRates, psessionEntry );
+    /* populate supported rate and ext supported rate IE */
+    PopulateDot11fRatesTdls(pMac, &tdlsSetupReq.SuppRates,
+                               &tdlsSetupReq.ExtSuppRates);
 
-    /* Populate extended supported rates */
-    PopulateDot11fExtSuppRates( pMac, POPULATE_DOT11F_RATES_OPERATIONAL,
-                                &tdlsSetupReq.ExtSuppRates, psessionEntry );
-
-    /* Populate extended supported rates */
+    /* Populate extended capability IE */
     PopulateDot11fTdlsExtCapability( pMac, &tdlsSetupReq.ExtCap );
 
     if ( 1 == pMac->lim.gLimTDLSWmmMode )
@@ -1751,13 +1744,13 @@ tSirRetStatus limSendTdlsTeardownFrame(tpAniSirGlobal pMac,
 /*
  * Send Setup RSP frame on AP link.
  */
-static tSirRetStatus limSendTdlsSetupRspFrame(tpAniSirGlobal pMac, 
-                    tSirMacAddr peerMac, tANI_U8 dialog, tpPESession psessionEntry, 
+static tSirRetStatus limSendTdlsSetupRspFrame(tpAniSirGlobal pMac,
+                    tSirMacAddr peerMac, tANI_U8 dialog, tpPESession psessionEntry,
                     etdlsLinkSetupStatus setupStatus, tANI_U8 *addIe, tANI_U16 addIeLen )
 {
     tDot11fTDLSSetupRsp  tdlsSetupRsp ;
     tANI_U32            status = 0 ;
-    tANI_U16            caps = 0 ;            
+    tANI_U16            caps = 0 ;
     tANI_U32            nPayload = 0 ;
     tANI_U32            header_offset = 0 ;
     tANI_U32            nBytes = 0 ;
@@ -1772,7 +1765,7 @@ static tSirRetStatus limSendTdlsSetupRspFrame(tpAniSirGlobal pMac,
 //  As of now, we hardcoded to max channel bonding of dot11Mode (i.e HT80 for 11ac/HT40 for 11n)
 //  uint32 tdlsChannelBondingMode;
 
-    /* 
+    /*
      * The scheme here is to fill out a 'tDot11fProbeRequest' structure
      * and then hand it off to 'dot11fPackProbeRequest' (for
      * serialization).  We start by zero-initializing the structure:
@@ -1804,15 +1797,11 @@ static tSirRetStatus limSendTdlsSetupRspFrame(tpAniSirGlobal pMac,
 
     swapBitField16(caps, ( tANI_U16* )&tdlsSetupRsp.Capabilities );
 
-    /* ipopulate supported rate IE */
-    PopulateDot11fSuppRates( pMac, POPULATE_DOT11F_RATES_OPERATIONAL, 
-                                &tdlsSetupRsp.SuppRates, psessionEntry );
-   
-    /* Populate extended supported rates */
-    PopulateDot11fExtSuppRates( pMac, POPULATE_DOT11F_RATES_OPERATIONAL,
-                                &tdlsSetupRsp.ExtSuppRates, psessionEntry );
+    /* populate supported rate and ext supported rate IE */
+    PopulateDot11fRatesTdls(pMac, &tdlsSetupRsp.SuppRates,
+                                &tdlsSetupRsp.ExtSuppRates);
 
-    /* Populate extended supported rates */
+    /* Populate extended capability IE */
     PopulateDot11fTdlsExtCapability( pMac, &tdlsSetupRsp.ExtCap );
 
     if ( 1 == pMac->lim.gLimTDLSWmmMode )
