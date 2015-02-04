@@ -552,4 +552,10 @@ tANI_U8 limGetOPClassFromChannel(tANI_U8 *country,
 void limParseBeaconForTim(tpAniSirGlobal pMac, tANI_U8* pRxPacketInfo,
                           tpPESession psessionEntry);
 
+void limUpdateMaxRateFlag(tpAniSirGlobal pMac,
+                          tANI_U8 smeSessionId,
+                          tANI_U32 maxRateFlag);
+
+extern tANI_U32 limGetMaxRateFlags(tpDphHashNode pStaDs,
+                                   tpPESession psessionEntry);
 #endif /* __LIM_UTILS_H */

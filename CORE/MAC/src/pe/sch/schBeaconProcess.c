@@ -515,6 +515,8 @@ static void __schBeaconProcessForSession( tpAniSirGlobal      pMac,
                              pBeacon->HTInfo.recommendedTxWidthSet;
                   pStaDs->htSecondaryChannelOffset =
                              pBeacon->HTInfo.secondaryChannelOffset;
+                  limUpdateMaxRateFlag(pMac, psessionEntry->smeSessionId,
+                                       limGetMaxRateFlags(pStaDs, psessionEntry));
               }
            }
         }

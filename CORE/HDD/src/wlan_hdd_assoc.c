@@ -3102,7 +3102,12 @@ eHalStatus hdd_smeRoamCallback( void *pContext, tCsrRoamInfo *pRoamInfo, tANI_U3
             break;
          }
 #endif /* FEATURE_WLAN_ESE && FEATURE_WLAN_ESE_UPLOAD */
-        default:
+       case eCSR_ROAM_UPDATE_MAX_RATE_IND:
+         {
+            pAdapter->maxRateFlags = roamResult;
+            break;
+         }
+       default:
             break;
     }
     return( halStatus );

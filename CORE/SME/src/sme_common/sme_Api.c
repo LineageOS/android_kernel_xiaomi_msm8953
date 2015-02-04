@@ -1960,6 +1960,20 @@ eHalStatus sme_EncryptMsgResponseHandler(tHalHandle hHal,
    return eHAL_STATUS_SUCCESS;
 }
 
+eHalStatus sme_UpdateMaxRateInd(tHalHandle hHal,
+                                tSirSmeUpdateMaxRateParams *pSmeUpdateMaxRateParams)
+{
+    tpAniSirGlobal pMac = PMAC_STRUCT( hHal );
+    eHalStatus     status = eHAL_STATUS_SUCCESS;
+    tANI_U8        sessionId = pSmeUpdateMaxRateParams->smeSessionId;
+
+    /* forward the information to HDD */
+    status = csrRoamCallCallback(pMac, sessionId, NULL, 0,
+                                 eCSR_ROAM_UPDATE_MAX_RATE_IND,
+                                 pSmeUpdateMaxRateParams->maxRateFlag);
+    return status;
+}
+
 /*--------------------------------------------------------------------------
 
   \brief sme_ProcessMsg() - The main message processor for SME.
@@ -2400,6 +2414,19 @@ eHalStatus sme_ProcessMsg(tHalHandle hHal, vos_msg_t* pMsg)
               }
               break ;
 
+          case eWNI_SME_UPDATE_MAX_RATE_IND:
+              if (pMsg->bodyptr)
+              {
+                  sme_UpdateMaxRateInd(pMac, pMsg->bodyptr);
+                  vos_mem_free(pMsg->bodyptr);
+              }
+              else
+              {
+                  smsLog(pMac, LOGE,
+                         "Empty message for (eWNI_SME_UPDATE_MAX_RATE_IND),"
+                         " nothing to process");
+              }
+              break;
 
           default:
 
