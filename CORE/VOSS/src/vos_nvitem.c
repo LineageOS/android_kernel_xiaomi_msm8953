@@ -53,6 +53,8 @@
 #include "wlan_nv_parser.h"
 #include "wlan_hdd_main.h"
 #include <net/cfg80211.h>
+#include <linux/firmware.h>
+#include <linux/vmalloc.h>
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3,9,0))
 #define IEEE80211_CHAN_NO_80MHZ		1<<7
@@ -544,6 +546,7 @@ nvEFSTable_t *gnvEFSTable;
 /* EFS Table  to send the NV structure to HAL*/
 static nvEFSTable_t *pnvEFSTable;
 static v_U8_t *pnvEncodedBuf;
+static v_U8_t *pnvtmpBuf;
 static v_U8_t *pDictFile;
 static v_U8_t *pEncodedBuf;
 static v_SIZE_t nvReadEncodeBufSize;
@@ -1112,15 +1115,26 @@ VOS_STATUS vos_nv_open(void)
 
     status = hdd_request_firmware(WLAN_NV_FILE,
                                   ((VosContextType*)(pVosContext))->pHDDContext,
-                                  (v_VOID_t**)&pnvEncodedBuf, &nvReadBufSize);
+                                  (v_VOID_t**)&pnvtmpBuf, &nvReadBufSize);
 
-    if ((!VOS_IS_STATUS_SUCCESS( status )) || (!pnvEncodedBuf))
+    if ((!VOS_IS_STATUS_SUCCESS( status )) || (!pnvtmpBuf))
     {
        VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
                    "%s: unable to download NV file %s",
                    __func__, WLAN_NV_FILE);
        return VOS_STATUS_E_RESOURCES;
     }
+
+    pnvEncodedBuf = (v_U8_t *)vmalloc(nvReadBufSize);
+
+    if (NULL == pnvEncodedBuf) {
+        VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+                    "%s : failed to allocate memory for NV", __func__);
+        return VOS_STATUS_E_NOMEM;
+    }
+    vos_mem_copy(pnvEncodedBuf, pnvtmpBuf, nvReadBufSize);
+    release_firmware(((hdd_context_t*)((VosContextType*)
+                        (pVosContext))->pHDDContext)->nv);
 
     vos_mem_copy(&magicNumber, &pnvEncodedBuf[sizeof(v_U32_t)], sizeof(v_U32_t));
 
@@ -1499,25 +1513,21 @@ VOS_STATUS vos_nv_open(void)
 error:
     vos_mem_free(pnvEFSTable);
     vos_mem_free(pEncodedBuf);
+    vfree(pnvEncodedBuf);
     return eHAL_STATUS_FAILURE ;
 }
 
 VOS_STATUS vos_nv_close(void)
 {
-    VOS_STATUS status = VOS_STATUS_SUCCESS;
     v_CONTEXT_t pVosContext= NULL;
          /*Get the global context */
     pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
-    status = hdd_release_firmware(WLAN_NV_FILE, ((VosContextType*)(pVosContext))->pHDDContext);
-    if ( !VOS_IS_STATUS_SUCCESS( status ))
-    {
-        VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
-                         "%s : vos_open failed",__func__);
-        return VOS_STATUS_E_FAILURE;
-    }
+
+    ((hdd_context_t*)((VosContextType*)(pVosContext))->pHDDContext)->nv = NULL;
     vos_mem_free(pnvEFSTable);
     vos_mem_free(pEncodedBuf);
     vos_mem_free(pDictFile);
+    vfree(pnvEncodedBuf);
 
     gnvEFSTable=NULL;
     return VOS_STATUS_SUCCESS;
