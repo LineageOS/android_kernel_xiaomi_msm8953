@@ -4387,6 +4387,7 @@ static int wlan_hdd_cfg80211_exttdls_enable(struct wiphy *wiphy,
 
     return (wlan_hdd_tdls_extctrl_config_peer(pAdapter,
                                  peer,
+                                 &pReqMsg,
                                  wlan_hdd_cfg80211_exttdls_callback));
 }
 
@@ -14312,10 +14313,11 @@ static int wlan_hdd_cfg80211_tdls_mgmt(struct wiphy *wiphy, struct net_device *d
 
 int wlan_hdd_tdls_extctrl_config_peer(hdd_adapter_t *pAdapter,
                                       u8 *peer,
+                                      tdls_req_params_t *tdls_peer_params,
                                       cfg80211_exttdls_callback callback)
 {
 
-    hddTdlsPeer_t *pTdlsPeer;
+    hddTdlsPeer_t *pTdlsPeer = NULL;
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
     VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
               " %s : NL80211_TDLS_SETUP for " MAC_ADDRESS_STR,
@@ -14339,6 +14341,38 @@ int wlan_hdd_tdls_extctrl_config_peer(hdd_adapter_t *pAdapter,
                   "%s: peer " MAC_ADDRESS_STR " not existing",
                   __func__, MAC_ADDR_ARRAY(peer));
         return -EINVAL;
+    }
+
+    if (NULL != tdls_peer_params)
+    {
+        pTdlsPeer->peerParams.channel = tdls_peer_params->channel;
+        pTdlsPeer->peerParams.global_operating_class =
+                         tdls_peer_params->global_operating_class;
+        pTdlsPeer->peerParams.max_latency_ms = tdls_peer_params->max_latency_ms;
+        pTdlsPeer->peerParams.min_bandwidth_kbps =
+                                          tdls_peer_params->min_bandwidth_kbps;
+        /* check configured channel is valid and non dfs */
+        if (sme_IsTdlsOffChannelValid(WLAN_HDD_GET_HAL_CTX(pAdapter),
+                                      tdls_peer_params->channel))
+        {
+            pTdlsPeer->isOffChannelConfigured = TRUE;
+        }
+        else
+        {
+            pTdlsPeer->isOffChannelConfigured = FALSE;
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                      "%s: Configured Tdls Off Channel is not valid", __func__);
+
+        }
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                  "%s: tdls_off_channel %d isOffChannelConfigured %d",
+                  __func__, pTdlsPeer->peerParams.channel,
+                  pTdlsPeer->isOffChannelConfigured);
+    }
+    else
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                      "%s: Invalid TDLS Peer Params", __func__);
     }
 
     if ( 0 != wlan_hdd_tdls_set_force_peer(pAdapter, peer, TRUE) ) {
@@ -14391,6 +14425,13 @@ int wlan_hdd_tdls_extctrl_deconfig_peer(hdd_adapter_t *pAdapter, u8 *peer)
     else {
         wlan_hdd_tdls_indicate_teardown(pAdapter, pTdlsPeer,
                            eSIR_MAC_TDLS_TEARDOWN_UNSPEC_REASON);
+        /* if channel switch is configured, reset
+           the channel for this peer */
+        if (TRUE == pTdlsPeer->isOffChannelConfigured)
+        {
+            pTdlsPeer->peerParams.channel = 0;
+            pTdlsPeer->isOffChannelConfigured = FALSE;
+        }
     }
 
     if ( 0 != wlan_hdd_tdls_set_force_peer(pAdapter, peer, FALSE) )
@@ -14452,6 +14493,8 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                 long ret;
                 tCsrTdlsLinkEstablishParams tdlsLinkEstablishParams;
                 WLAN_STADescType         staDesc;
+                tANI_U16 numCurrTdlsPeers = 0;
+                hddTdlsPeer_t *connPeer = NULL;
 
                 pTdlsPeer = wlan_hdd_tdls_find_peer(pAdapter, peer, TRUE);
                 memset(&staDesc, 0, sizeof(staDesc));
@@ -14473,6 +14516,36 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                            MAC_ADDRESS_STR " failed",
                            __func__, pTdlsPeer->staId, MAC_ADDR_ARRAY(peer));
                     return -EINVAL;
+                }
+
+                /* TDLS Off Channel, Disable tdls channel switch,
+                   when there are more than one tdls link */
+                numCurrTdlsPeers = wlan_hdd_tdlsConnectedPeers(pAdapter);
+                if (numCurrTdlsPeers == 1)
+                {
+                    /* get connected peer and send disable tdls off chan */
+                    connPeer = wlan_hdd_tdls_get_connected_peer(pAdapter);
+                    if (connPeer && (connPeer->isOffChannelConfigured == TRUE))
+                    {
+                        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                                  "%s: More then one peer connected, Disable "
+                                  "TDLS channel switch", __func__);
+
+                        sme_SendTdlsChanSwitchReq(WLAN_HDD_GET_HAL_CTX(pAdapter),
+                                           pAdapter->sessionId,
+                                           connPeer->peerMac,
+                                           connPeer->peerParams.channel,
+                                           TDLS_OFF_CHANNEL_BW_OFFSET,
+                                           TDLS_CHANNEL_SWITCH_DISABLE);
+                    }
+                    else
+                    {
+                        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                                  "%s: No TDLS Connected Peer or "
+                                  "isOffChannelConfigured %d",
+                                  __func__,
+                                  (connPeer ? connPeer->isOffChannelConfigured : -1));
+                    }
                 }
 
                 if (eTDLS_LINK_CONNECTED != pTdlsPeer->link_status)
@@ -14530,6 +14603,36 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                                                    &staId, NULL);
                         }
                         wlan_hdd_tdls_increment_peer_count(pAdapter);
+
+                        /* TDLS Off Channel, Enable tdls channel switch,
+                           when their is only one tdls link and it supports */
+                        numCurrTdlsPeers = wlan_hdd_tdlsConnectedPeers(pAdapter);
+                        if ((numCurrTdlsPeers == 1) &&
+                            (TRUE == pTdlsPeer->isOffChannelSupported) &&
+                            (TRUE == pTdlsPeer->isOffChannelConfigured))
+                        {
+                            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                                  "%s: Send TDLS channel switch request for channel %d",
+                                  __func__, pTdlsPeer->peerParams.channel);
+                            ret = sme_SendTdlsChanSwitchReq(WLAN_HDD_GET_HAL_CTX(pAdapter),
+                                                           pAdapter->sessionId,
+                                                           pTdlsPeer->peerMac,
+                                                           pTdlsPeer->peerParams.channel,
+                                                           TDLS_OFF_CHANNEL_BW_OFFSET,
+                                                           TDLS_CHANNEL_SWITCH_ENABLE);
+                        }
+                        else
+                        {
+                            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                                      "%s: TDLS channel switch request not sent"
+                                      " numCurrTdlsPeers %d "
+                                      "isOffChannelSupported %d "
+                                      "isOffChannelConfigured %d",
+                                      __func__, numCurrTdlsPeers,
+                                      pTdlsPeer->isOffChannelSupported,
+                                      pTdlsPeer->isOffChannelConfigured);
+                        }
+
                     }
                     wlan_hdd_tdls_check_bmps(pAdapter);
 
@@ -14557,6 +14660,9 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
             break;
         case NL80211_TDLS_DISABLE_LINK:
             {
+                tANI_U16 numCurrTdlsPeers = 0;
+                hddTdlsPeer_t *connPeer = NULL;
+
                 pTdlsPeer = wlan_hdd_tdls_find_peer(pAdapter, peer, TRUE);
 
                 if ( NULL == pTdlsPeer ) {
@@ -14598,6 +14704,39 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                                   __func__, status);
                         return -EPERM;
                     }
+
+                    /* TDLS Off Channel, Enable tdls channel switch,
+                       when their is only one tdls link and it supports */
+                    numCurrTdlsPeers = wlan_hdd_tdlsConnectedPeers(pAdapter);
+                    if (numCurrTdlsPeers == 1)
+                    {
+                        connPeer = wlan_hdd_tdls_get_connected_peer(pAdapter);
+                        if ((connPeer) &&
+                            (connPeer->isOffChannelSupported == TRUE) &&
+                            (connPeer->isOffChannelConfigured == TRUE))
+                        {
+                            sme_SendTdlsChanSwitchReq(WLAN_HDD_GET_HAL_CTX(pAdapter),
+                                                           pAdapter->sessionId,
+                                                           connPeer->peerMac,
+                                                           connPeer->peerParams.channel,
+                                                           TDLS_OFF_CHANNEL_BW_OFFSET,
+                                                           TDLS_CHANNEL_SWITCH_ENABLE);
+                        }
+                        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                                  "%s: TDLS channel switch "
+                                  "isOffChannelSupported %d "
+                                  "isOffChannelConfigured %d",
+                                  __func__,
+                                  (connPeer ? connPeer->isOffChannelSupported : -1),
+                                  (connPeer ? connPeer->isOffChannelConfigured : -1));
+                    }
+                    else
+                    {
+                        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                                  "%s: TDLS channel switch request not sent "
+                                  "numCurrTdlsPeers %d ",
+                                  __func__, numCurrTdlsPeers);
+                    }
                 }
                 else
                 {
@@ -14622,6 +14761,7 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
             {
                 status = wlan_hdd_tdls_extctrl_config_peer(pAdapter,
                                                            peer,
+                                                           NULL,
                                                            NULL);
 
                 if (0 != status)
