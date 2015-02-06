@@ -5676,4 +5676,7 @@ typedef enum eSirAbortScanStatus
     eSIR_ABORT_SCAN_FAILURE
 }tSirAbortScanStatus;
 
+/* Max number of rates allowed in Supported Rates IE */
+#define MAX_NUM_SUPPORTED_RATES (8)
+
 #endif /* __SIR_API_H */
