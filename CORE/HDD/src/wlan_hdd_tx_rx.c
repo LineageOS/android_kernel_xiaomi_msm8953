@@ -751,6 +751,196 @@ void hdd_dump_dhcp_pkt(struct sk_buff *skb, int path)
 }
 
 /**============================================================================
+   @brief hdd_ibss_hard_start_xmit() - Function registered with the Linux OS for
+   transmitting packets in case of IBSS. There are 2 versions of this function.
+   One that uses locked queue and other that uses lockless queues. Both have been
+   retained to do some performance testing
+
+   @param skb      : [in]  pointer to OS packet (sk_buff)
+   @param dev      : [in] pointer to network device
+
+   @return         : NET_XMIT_DROP if packets are dropped
+                   : NET_XMIT_SUCCESS if packet is enqueued succesfully
+   ===========================================================================*/
+ int hdd_ibss_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
+ {
+    VOS_STATUS status;
+    WLANTL_ACEnumType ac;
+    sme_QosWmmUpType up;
+    skb_list_node_t *pktNode = NULL;
+    hdd_list_node_t *anchor = NULL;
+    v_SIZE_t pktListSize = 0;
+    hdd_adapter_t *pAdapter =  WLAN_HDD_GET_PRIV_PTR(dev);
+    hdd_station_ctx_t *pHddStaCtx = &pAdapter->sessionCtx.station;
+    hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+    hdd_ibss_peer_info_t * pPeerInfo;
+    v_U8_t STAId = WLAN_MAX_STA_COUNT;
+    v_BOOL_t txSuspended = VOS_FALSE;
+    struct sk_buff *skb1;
+    v_MACADDR_t *pDestMacAddress = (v_MACADDR_t*)skb->data;
+
+    if (NULL == pHddCtx || NULL == pHddStaCtx) {
+        VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
+                   "%s HDD context is NULL", __func__);
+        return NETDEV_TX_BUSY;
+    }
+    pPeerInfo = &pHddStaCtx->ibss_peer_info;
+    ++pAdapter->hdd_stats.hddTxRxStats.txXmitCalled;
+
+    //Get TL AC corresponding to Qdisc queue index/AC.
+    ac = hdd_QdiscAcToTlAC[skb->queue_mapping];
+
+    if (eConnectionState_IbssDisconnected == pHddStaCtx->conn_info.connState)
+    {
+        VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_INFO,
+                  "%s: Tx frame in disconnected state in IBSS mode", __func__);
+        ++pAdapter->stats.tx_dropped;
+        ++pAdapter->hdd_stats.hddTxRxStats.txXmitDropped;
+        ++pAdapter->hdd_stats.hddTxRxStats.txXmitDroppedAC[ac];
+        kfree_skb(skb);
+        return NETDEV_TX_OK;
+    }
+
+     STAId = *(v_U8_t *)(((v_U8_t *)(skb->data)) - 1);
+
+     if ((STAId == HDD_WLAN_INVALID_STA_ID) &&
+           (vos_is_macaddr_broadcast( pDestMacAddress ) ||
+            vos_is_macaddr_group(pDestMacAddress)))
+     {
+          STAId = IBSS_BROADCAST_STAID;
+          VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_INFO_LOW,
+                     "%s: BC/MC packet", __func__);
+     }
+     else if (STAId >= HDD_MAX_NUM_IBSS_STA)
+     {
+          VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_INFO,
+                     "%s: Received Unicast frame with invalid staID", __func__);
+          ++pAdapter->stats.tx_dropped;
+          ++pAdapter->hdd_stats.hddTxRxStats.txXmitDropped;
+          ++pAdapter->hdd_stats.hddTxRxStats.txXmitDroppedAC[ac];
+          kfree_skb(skb);
+          return NETDEV_TX_OK;
+     }
+
+    //user priority from IP header, which is already extracted and set from
+    //select_queue call back function
+    up = skb->priority;
+    ++pAdapter->hdd_stats.hddTxRxStats.txXmitClassifiedAC[ac];
+
+    VOS_TRACE( VOS_MODULE_ID_HDD_SAP_DATA, VOS_TRACE_LEVEL_INFO,
+               "%s: Classified as ac %d up %d", __func__, ac, up);
+
+    if ( pHddCtx->cfg_ini->gEnableDebugLog & VOS_PKT_PROTO_TYPE_DHCP )
+    {
+       hdd_dump_dhcp_pkt(skb, TX_PATH);
+    }
+
+     spin_lock_bh(&pPeerInfo->ibssStaInfo[STAId].wmm_tx_queue[ac].lock);
+     hdd_list_size(&pPeerInfo->ibssStaInfo[STAId].wmm_tx_queue[ac], &pktListSize);
+     if(pktListSize >= pAdapter->aTxQueueLimit[ac])
+     {
+        VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_WARN,
+             "%s: station %d ac %d queue over limit %d", __func__, STAId, ac, pktListSize);
+        pPeerInfo->ibssStaInfo[STAId].txSuspended[ac] = VOS_TRUE;
+        netif_stop_subqueue(dev, skb_get_queue_mapping(skb));
+        txSuspended = VOS_TRUE;
+        spin_unlock_bh(&pPeerInfo->ibssStaInfo[STAId].wmm_tx_queue[ac].lock);
+        VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_WARN,
+                   "%s: TX queue full for AC=%d Disable OS TX queue",
+                   __func__, ac );
+         return NETDEV_TX_BUSY;
+     }
+
+     /* If 3/4th of the max queue size is used then enable the flag.
+      * This flag indicates to place the DHCP packets in VOICE AC queue.*/
+    if (WLANTL_AC_BE == ac)
+    {
+       if (pPeerInfo->ibssStaInfo[STAId].wmm_tx_queue[ac].count >= HDD_TX_QUEUE_LOW_WATER_MARK)
+       {
+           VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_WARN,
+                      "%s: TX queue for Best Effort AC is 3/4th full", __func__);
+           pAdapter->isVosLowResource = VOS_TRUE;
+       }
+       else
+       {
+           pAdapter->isVosLowResource = VOS_FALSE;
+       }
+    }
+
+    spin_unlock_bh(&pPeerInfo->ibssStaInfo[STAId].wmm_tx_queue[ac].lock);
+
+    //Use the skb->cb field to hold the list node information
+    pktNode = (skb_list_node_t *)&skb->cb;
+
+    //Stick the OS packet inside this node.
+    pktNode->skb = skb;
+
+    //Stick the User Priority inside this node
+    pktNode->userPriority = up;
+
+    INIT_LIST_HEAD(&pktNode->anchor);
+
+    spin_lock_bh(&pPeerInfo->ibssStaInfo[STAId].wmm_tx_queue[ac].lock);
+    status = hdd_list_insert_back_size( &pPeerInfo->ibssStaInfo[STAId].wmm_tx_queue[ac],
+                                       &pktNode->anchor, &pktListSize );
+    spin_unlock_bh(&pPeerInfo->ibssStaInfo[STAId].wmm_tx_queue[ac].lock);
+    if ( !VOS_IS_STATUS_SUCCESS( status ) )
+    {
+       VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_WARN,
+                  "%s:Insert Tx queue failed. Pkt dropped", __func__);
+       ++pAdapter->hdd_stats.hddTxRxStats.txXmitDropped;
+       ++pAdapter->hdd_stats.hddTxRxStats.txXmitDroppedAC[ac];
+       ++pAdapter->stats.tx_dropped;
+       kfree_skb(skb);
+       return NETDEV_TX_OK;
+    }
+
+    ++pAdapter->hdd_stats.hddTxRxStats.txXmitQueued;
+    ++pAdapter->hdd_stats.hddTxRxStats.txXmitQueuedAC[ac];
+    ++pAdapter->hdd_stats.hddTxRxStats.pkt_tx_count;
+
+    if (1 == pktListSize)
+    {
+       //Let TL know we have a packet to send for this AC
+       status = WLANTL_STAPktPending( pHddCtx->pvosContext, STAId, ac );
+
+       if ( !VOS_IS_STATUS_SUCCESS( status ) )
+       {
+          VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_WARN,
+                   "%s: Failed to signal TL for AC=%d STAId =%d",
+                       __func__, ac, STAId );
+
+          /* Remove the packet from queue. It must be at the back of the queue, as TX thread
+           * cannot preempt us in the middle as we are in a soft irq context.
+           *  Also it must be the same packet that we just allocated.
+           */
+          spin_lock_bh(&pPeerInfo->ibssStaInfo[STAId].wmm_tx_queue[ac].lock);
+          status = hdd_list_remove_back( &pPeerInfo->ibssStaInfo[STAId].wmm_tx_queue[ac], &anchor);
+          spin_unlock_bh(&pPeerInfo->ibssStaInfo[STAId].wmm_tx_queue[ac].lock);
+          /* Free the skb only if we are able to remove it from the list.
+           * If we are not able to retrieve it from the list it means that
+           * the skb was pulled by TX Thread and is use so we should not free
+           * it here
+           */
+          if (VOS_IS_STATUS_SUCCESS(status))
+          {
+             pktNode = list_entry(anchor, skb_list_node_t, anchor);
+             skb1 = pktNode->skb;
+             kfree_skb(skb1);
+          }
+          ++pAdapter->stats.tx_dropped;
+          ++pAdapter->hdd_stats.hddTxRxStats.txXmitDropped;
+          ++pAdapter->hdd_stats.hddTxRxStats.txXmitDroppedAC[ac];
+          return NETDEV_TX_OK;
+       }
+    }
+
+    dev->trans_start = jiffies;
+
+    return NETDEV_TX_OK;
+ }
+
+/**============================================================================
   @brief hdd_hard_start_xmit() - Function registered with the Linux OS for
   transmitting packets. There are 2 versions of this function. One that uses
   locked queue and other that uses lockless queues. Both have been retained to
@@ -805,44 +995,6 @@ int hdd_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
       ac = hddWmmUpToAcMap[skb->priority];
    }
 
-   if (WLAN_HDD_IBSS == pAdapter->device_mode)
-   {
-      v_MACADDR_t *pDestMacAddress = (v_MACADDR_t*)skb->data;
-
-      if (eConnectionState_IbssDisconnected == pHddStaCtx->conn_info.connState)
-      {
-         VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_INFO,
-                   "%s: Tx frame in disconnected state in IBSS mode", __func__);
-         ++pAdapter->stats.tx_dropped;
-         ++pAdapter->hdd_stats.hddTxRxStats.txXmitDropped;
-         ++pAdapter->hdd_stats.hddTxRxStats.txXmitDroppedAC[qid];
-         kfree_skb(skb);
-         return NETDEV_TX_OK;
-      }
-
-      STAId = *(v_U8_t *)(((v_U8_t *)(skb->data)) - 1);
-
-      if ((STAId == HDD_WLAN_INVALID_STA_ID) &&
-          (vos_is_macaddr_broadcast( pDestMacAddress ) ||
-           vos_is_macaddr_group(pDestMacAddress)))
-      {
-         STAId = IBSS_BROADCAST_STAID;
-         VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_INFO_LOW,
-                    "%s: BC/MC packet", __func__);
-      }
-      else if (STAId == HDD_WLAN_INVALID_STA_ID)
-      {
-         VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_INFO,
-                    "%s: Received Unicast frame with invalid staID", __func__);
-         ++pAdapter->stats.tx_dropped;
-         ++pAdapter->hdd_stats.hddTxRxStats.txXmitDropped;
-         ++pAdapter->hdd_stats.hddTxRxStats.txXmitDroppedAC[qid];
-         kfree_skb(skb);
-         return NETDEV_TX_OK;
-      }
-   }
-   else
-   {
       if (eConnectionState_Associated != pHddStaCtx->conn_info.connState)
       {
          VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_INFO,
@@ -855,7 +1007,6 @@ int hdd_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
          return NETDEV_TX_OK;
       }
       STAId = pHddStaCtx->conn_info.staId[0];
-   }
 
    //user priority from IP header, which is already extracted and set from
    //select_queue call back function

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -127,12 +127,23 @@
   Type declarations
   -------------------------------------------------------------------------*/ 
  
-/*--------------------------------------------------------------------------- 
+/*---------------------------------------------------------------------------
   Function declarations and documenation
-  -------------------------------------------------------------------------*/ 
+  -------------------------------------------------------------------------*/
+/**============================================================================
+  @brief hdd_ibss_hard_start_xmit() - Function registered with the Linux OS for
+  transmitting packets in IBSS mode.
+
+  @param skb      : [in]  pointer to OS packet (sk_buff)
+  @param dev      : [in] pointer to network device
+
+  @return         : NET_XMIT_DROP if packets are dropped
+                  : NET_XMIT_SUCCESS if packet is enqueued succesfully
+  ===========================================================================*/
+extern int hdd_ibss_hard_start_xmit(struct sk_buff *skb, struct net_device *dev);
 
 /**============================================================================
-  @brief hdd_hard_start_xmit() - Function registered with the Linux OS for 
+  @brief hdd_hard_start_xmit() - Function registered with the Linux OS for
   transmitting packets
 
   @param skb      : [in]  pointer to OS packet (sk_buff)

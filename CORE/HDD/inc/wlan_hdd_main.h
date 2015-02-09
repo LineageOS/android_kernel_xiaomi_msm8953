@@ -644,6 +644,65 @@ typedef enum{
     HDD_SSR_DISABLED,
 }e_hdd_ssr_required;
 
+/*---------------------------------------------------------------------------
+  hdd_ibss_peer_info_params_t
+---------------------------------------------------------------------------*/
+typedef struct
+{
+    v_U8_t  staIdx;       //StaIdx
+    v_U32_t txRate;       //Current Tx Rate
+    v_U32_t mcsIndex;     //MCS Index
+    v_U32_t txRateFlags;  //TxRate Flags
+    v_S7_t  rssi;         //RSSI
+}hdd_ibss_peer_info_params_t;
+
+typedef struct {
+    /** The station entry is used or not  */
+    v_BOOL_t isUsed;
+
+    /** Station ID reported back from HAL. Broadcast
+     *  uses station ID zero by default. */
+    v_U8_t ucSTAId;
+
+    /** MAC address of the station */
+    v_MACADDR_t macAddrSTA;
+
+    /** Current Station state so HDD knows how to deal with packet
+     *  queue. Most recent states used to change TL STA state. */
+    WLANTL_STAStateType tlSTAState;
+
+   /** Transmit queues for each AC (VO,VI,BE etc). */
+   hdd_list_t wmm_tx_queue[NUM_TX_QUEUES];
+
+   /** Might need to differentiate queue depth in contention case */
+   v_U16_t aTxQueueDepth[NUM_TX_QUEUES];
+
+   /**Track whether OS TX queue has been disabled.*/
+   v_BOOL_t txSuspended[NUM_TX_QUEUES];
+
+   /** Track QoS status of station */
+   v_BOOL_t isQosEnabled;
+
+   /** The station entry for which Deauth is in progress  */
+   v_BOOL_t isDeauthInProgress;
+
+} hdd_ibss_station_info_t;
+
+typedef struct
+{
+    /** Request status */
+    v_U32_t                       status;
+
+    /** Number of peers */
+    v_U8_t                        numIBSSPeers;
+
+    /* IBSS Station table */
+    hdd_ibss_station_info_t ibssStaInfo[HDD_MAX_NUM_IBSS_STA];
+
+    /** Peer Info parameters */
+    hdd_ibss_peer_info_params_t  ibssPeerList[HDD_MAX_NUM_IBSS_STA];
+}hdd_ibss_peer_info_t;
+
 struct hdd_station_ctx
 {
   /** Handle to the Wireless Extension State */
@@ -671,6 +730,8 @@ struct hdd_station_ctx
 
    /*Save the wep/wpa-none keys*/
    tCsrRoamSetKey ibss_enc_key;
+
+   hdd_ibss_peer_info_t ibss_peer_info;
 
    v_BOOL_t hdd_ReassocScenario;
 
