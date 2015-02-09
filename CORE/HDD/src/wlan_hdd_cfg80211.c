@@ -10729,8 +10729,15 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
         /* Updating SelfSta Mac Addr in TL which will be used to get staidx
          * to fill TxBds for probe request during current scan
          */
-        WLANTL_updateSpoofMacAddr(pHddCtx->pvosContext,
+        status = WLANTL_updateSpoofMacAddr(pHddCtx->pvosContext,
             &pHddCtx->spoofMacAddr.randomMacAddr, &pAdapter->macAddressCurrent);
+
+        if(status != VOS_STATUS_SUCCESS)
+        {
+            hdd_allow_suspend();
+            status = -EFAULT;
+            goto free_mem;
+        }
     }
 
     status = sme_ScanRequest( WLAN_HDD_GET_HAL_CTX(pAdapter),
