@@ -1903,7 +1903,9 @@ eHalStatus csrChangeDefaultConfigParam(tpAniSirGlobal pMac, tCsrConfigParam *pPa
 #ifdef WLAN_FEATURE_AP_HT40_24G
         pMac->roam.configParam.apHT40_24GEnabled = pParam->apHT40_24GEnabled;
 #endif
-
+#ifdef DEBUG_ROAM_DELAY
+        pMac->roam.configParam.roamDelayStatsEnabled = pParam->roamDelayStatsEnabled;
+#endif //#ifdef DEBUG_ROAM_DELAY
     }
     
     return status;
@@ -7111,7 +7113,10 @@ eHalStatus csrRoamProcessDisassocDeauth( tpAniSirGlobal pMac, tSmeCmd *pCommand,
         {
             status = csrRoamIssueDisassociate( pMac, sessionId, NewSubstate, fMICFailure );
 #ifdef DEBUG_ROAM_DELAY
-            vos_record_roam_event(e_SME_DISASSOC_ISSUE, NULL, 0);
+            if (pMac->roam.configParam.roamDelayStatsEnabled)
+            {
+                vos_record_roam_event(e_SME_DISASSOC_ISSUE, NULL, 0);
+            }
 #endif /* DEBUG_ROAM_DELAY */
         }
         else
@@ -7569,9 +7574,11 @@ static eHalStatus csrRoamIssueReassociate( tpAniSirGlobal pMac, tANI_U32 session
      VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_INFO,
                FL(" calling csrSendJoinReqMsg (eWNI_SME_REASSOC_REQ)"));
 #ifdef DEBUG_ROAM_DELAY
-    //HACK usign buff len as Auth type
-    vos_record_roam_event(e_SME_ISSUE_REASSOC_REQ, NULL, pProfile->negotiatedAuthType);
-    vos_record_roam_event(e_CACHE_ROAM_PEER_MAC, (void *)pSirBssDesc->bssId, 6);
+     if (pMac->roam.configParam.roamDelayStatsEnabled)
+     {
+         vos_record_roam_event(e_SME_ISSUE_REASSOC_REQ, NULL, pProfile->negotiatedAuthType);
+         vos_record_roam_event(e_CACHE_ROAM_PEER_MAC, (void *)pSirBssDesc->bssId, 6);
+     }
 #endif
     // attempt to Join this BSS...
     return csrSendJoinReqMsg( pMac, sessionId, pSirBssDesc, pProfile, pIes, eWNI_SME_REASSOC_REQ);
@@ -8482,7 +8489,10 @@ void csrRoamingStateMsgProcessor( tpAniSirGlobal pMac, void *pMsgBuf )
                        pMac->roam.curSubState[pSmeRsp->sessionId]));
                 csrRoamRoamingStateDisassocRspProcessor( pMac, (tSirSmeDisassocRsp *)pSmeRsp );
 #ifdef DEBUG_ROAM_DELAY
-                vos_record_roam_event(e_SME_DISASSOC_COMPLETE, NULL, 0);
+                if (pMac->roam.configParam.roamDelayStatsEnabled)
+                {
+                    vos_record_roam_event(e_SME_DISASSOC_COMPLETE, NULL, 0);
+                }
 #endif
             }
             break;
@@ -17547,14 +17557,20 @@ void csrRoamFTPreAuthRspProcessor( tHalHandle hHal, tpSirFTPreAuthRsp pFTPreAuth
         sme_QosCsrEventInd(pMac, pMac->ft.ftSmeContext.smeSessionId, SME_QOS_CSR_PREAUTH_SUCCESS_IND, NULL);
     }
 #ifdef DEBUG_ROAM_DELAY
-    vos_record_roam_event(e_CACHE_ROAM_DELAY_DATA, NULL, 0);
+    if (pMac->roam.configParam.roamDelayStatsEnabled)
+    {
+        vos_record_roam_event(e_CACHE_ROAM_DELAY_DATA, NULL, 0);
+    }
 #endif
     /* Start the pre-auth reassoc interval timer with a period of 400ms. When this expires, 
      * actual transition from the current to handoff AP is triggered */
     status = vos_timer_start(&pMac->ft.ftSmeContext.preAuthReassocIntvlTimer,
                                                             60);
 #ifdef DEBUG_ROAM_DELAY
-    vos_record_roam_event(e_SME_PREAUTH_REASSOC_START, NULL, 0);
+    if (pMac->roam.configParam.roamDelayStatsEnabled)
+    {
+        vos_record_roam_event(e_SME_PREAUTH_REASSOC_START, NULL, 0);
+    }
 #endif
     if (eHAL_STATUS_SUCCESS != status)
     {

@@ -7191,18 +7191,19 @@ eHalStatus sme_QosAddTsSuccessFnp(tpAniSirGlobal pMac, tListElem *pEntry)
    }
 
 #ifdef DEBUG_ROAM_DELAY
-
-   if (pACInfo->curr_QoSInfo[pACInfo->tspec_pending - 1].ts_info.up ==  SME_QOS_WMM_UP_VO ||
-       pACInfo->curr_QoSInfo[pACInfo->tspec_pending - 1].ts_info.up ==  SME_QOS_WMM_UP_NC)
+   if (pMac->roam.configParam.roamDelayStatsEnabled)
    {
-      vos_record_roam_event(e_SME_VO_ADDTS_RSP, NULL, 0);
-   }
+       if (pACInfo->curr_QoSInfo[pACInfo->tspec_pending - 1].ts_info.up ==  SME_QOS_WMM_UP_VO ||
+           pACInfo->curr_QoSInfo[pACInfo->tspec_pending - 1].ts_info.up ==  SME_QOS_WMM_UP_NC)
+       {
+           vos_record_roam_event(e_SME_VO_ADDTS_RSP, NULL, 0);
+       }
 
-   if (pACInfo->curr_QoSInfo[pACInfo->tspec_pending - 1].ts_info.up ==  SME_QOS_WMM_UP_VI||
-       pACInfo->curr_QoSInfo[pACInfo->tspec_pending - 1].ts_info.up ==  SME_QOS_WMM_UP_CL)
-
-   {
-      vos_record_roam_event(e_SME_VI_ADDTS_RSP, NULL, 0);
+       if (pACInfo->curr_QoSInfo[pACInfo->tspec_pending - 1].ts_info.up ==  SME_QOS_WMM_UP_VI ||
+           pACInfo->curr_QoSInfo[pACInfo->tspec_pending - 1].ts_info.up ==  SME_QOS_WMM_UP_CL)
+       {
+           vos_record_roam_event(e_SME_VI_ADDTS_RSP, NULL, 0);
+       }
    }
 #endif
 

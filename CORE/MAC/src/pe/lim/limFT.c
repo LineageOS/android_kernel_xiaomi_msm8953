@@ -1336,7 +1336,10 @@ void limProcessMlmFTReassocReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf,
     // Dont need this anymore
     pMac->ft.ftPEContext.pAddBssReq = NULL;
 #ifdef DEBUG_ROAM_DELAY
-    vos_record_roam_event(e_LIM_ADD_BS_REQ, NULL, 0);
+    if (pMac->roam.configParam.roamDelayStatsEnabled)
+    {
+        vos_record_roam_event(e_LIM_ADD_BS_REQ, NULL, 0);
+    }
 #endif
     return;
 }

@@ -2257,3 +2257,40 @@ v_BOOL_t vos_is_wlan_in_badState(VOS_MODULE_ID moduleId,
     }
     return pVosWDCtx->isFatalError;
 }
+
+#ifdef DEBUG_ROAM_DELAY
+/**---------------------------------------------------------------------------
+
+  \brief vos_set_roam_delay_stats_enabled() -
+
+  API to set value of roamDelayStatsEnabled in vos context
+
+  \param  -  value to be updated
+
+  \return -  NONE
+
+  --------------------------------------------------------------------------*/
+
+v_VOID_t  vos_set_roam_delay_stats_enabled(v_U8_t value)
+{
+    gpVosContext->roamDelayStatsEnabled = value;
+}
+
+
+/**---------------------------------------------------------------------------
+
+  \brief vos_get_roam_delay_stats_enabled() -
+
+  API to get value of roamDelayStatsEnabled from vos context
+
+  \param  -  NONE
+
+  \return -  value of roamDelayStatsEnabled
+
+  --------------------------------------------------------------------------*/
+
+v_U8_t  vos_get_roam_delay_stats_enabled(v_VOID_t)
+{
+    return gpVosContext->roamDelayStatsEnabled;
+}
+#endif //#ifdef DEBUG_ROAM_DELAY

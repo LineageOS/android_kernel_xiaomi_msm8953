@@ -761,6 +761,12 @@ int hdd_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
    v_BOOL_t txSuspended = VOS_FALSE;
    struct sk_buff *skb1;
 
+   if (NULL == pHddCtx) {
+       VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
+                  "%s HDD context is NULL", __func__);
+       return NETDEV_TX_BUSY;
+   }
+
    ++pAdapter->hdd_stats.hddTxRxStats.txXmitCalled;
 
    if (unlikely(netif_subqueue_stopped(dev, skb))) {
@@ -837,13 +843,10 @@ int hdd_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 #endif // HDD_WMM_DEBUG
 
 #ifdef DEBUG_ROAM_DELAY
-   vos_record_roam_event(e_HDD_FIRST_XMIT_TIME, (void *)skb, 0);
-   //Should we check below global to avoid function call each time ??
-/*
-   if(gRoamDelayMetaInfo.hdd_monitor_tx)
+   if (pHddCtx->cfg_ini->gEnableRoamDelayStats)
    {
+       vos_record_roam_event(e_HDD_FIRST_XMIT_TIME, (void *)skb, 0);
    }
- */
 #endif
 
    spin_lock(&pAdapter->wmm_tx_queue[ac].lock);
@@ -1791,7 +1794,10 @@ VOS_STATUS hdd_tx_fetch_packet_cbk( v_VOID_t *vosContext,
    }
 
 #ifdef DEBUG_ROAM_DELAY
-   vos_record_roam_event(e_TL_FIRST_XMIT_TIME, NULL, 0);
+   if (pHddCtx->cfg_ini->gEnableRoamDelayStats)
+   {
+       vos_record_roam_event(e_TL_FIRST_XMIT_TIME, NULL, 0);
+   }
 #endif
 
    pPktMetaInfo->ucType = 0;          //FIXME Don't know what this is
@@ -2105,13 +2111,10 @@ VOS_STATUS hdd_rx_packet_cbk( v_VOID_t *vosContext,
       }
 
 #ifdef DEBUG_ROAM_DELAY
-      vos_record_roam_event(e_HDD_RX_PKT_CBK_TIME, (void *)skb, 0);
-      //Should we check below global to avoid function call each time ??
-      /*
-         if(gRoamDelayMetaInfo.hdd_monitor_rx)
-         {
-         }
-       */
+   if (pHddCtx->cfg_ini->gEnableRoamDelayStats)
+   {
+       vos_record_roam_event(e_HDD_RX_PKT_CBK_TIME, (void *)skb, 0);
+   }
 #endif
       if (( NULL != pHddCtx ) &&
          (pHddCtx->cfg_ini->gEnableDebugLog & VOS_PKT_PROTO_TYPE_DHCP))

@@ -510,6 +510,7 @@ typedef enum
     eCSR_ROAM_ESE_ADJ_AP_REPORT_IND,
     eCSR_ROAM_ESE_BCN_REPORT_IND,
 #endif /* FEATURE_WLAN_ESE && FEATURE_WLAN_ESE_UPLOAD */
+    eCSR_ROAM_UPDATE_MAX_RATE_IND,
 }eRoamCmdStatus;
 
 
@@ -1190,6 +1191,9 @@ typedef struct tagCsrConfigParam
     tANI_U32 channelBondingAPMode24GHz; // Use for SAP/P2P GO 2.4GHz channel Bonding
 #endif
     tANI_U32 nOBSSScanWidthTriggerInterval;
+#ifdef DEBUG_ROAM_DELAY
+    tANI_U8 roamDelayStatsEnabled;
+#endif //#ifdef DEBUG_ROAM_DELAY
 }tCsrConfigParam;
 
 //Tush

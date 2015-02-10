@@ -5679,4 +5679,10 @@ typedef enum eSirAbortScanStatus
 /* Max number of rates allowed in Supported Rates IE */
 #define MAX_NUM_SUPPORTED_RATES (8)
 
+typedef struct sSirSmeUpdateMaxRateParams
+{
+    tANI_U32        maxRateFlag;
+    tANI_U8         smeSessionId;
+}tSirSmeUpdateMaxRateParams, *tpSirSmeUpdateMaxRateParams;
+
 #endif /* __SIR_API_H */

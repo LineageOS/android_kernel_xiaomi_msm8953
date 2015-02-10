@@ -389,6 +389,7 @@ enum eWniMsgTypes
 #endif
     eWNI_SME_MAC_SPOOF_ADDR_IND,
     eWNI_SME_ENCRYPT_MSG_RSP,
+    eWNI_SME_UPDATE_MAX_RATE_IND,
     eWNI_SME_MSG_TYPES_END
 };
 

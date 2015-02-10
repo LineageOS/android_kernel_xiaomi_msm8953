@@ -8399,3 +8399,26 @@ void limParseBeaconForTim(tpAniSirGlobal pMac,tANI_U8* pRxPacketInfo, tpPESessio
     }
     return;
 }
+
+void limUpdateMaxRateFlag(tpAniSirGlobal pMac,
+                          tANI_U8 smeSessionId,
+                          tANI_U32 maxRateFlag)
+{
+    tpSirSmeUpdateMaxRateParams  pRsp;
+    tSirMsgQ                     msg;
+
+    pRsp = vos_mem_malloc(sizeof(tSirSmeUpdateMaxRateParams));
+    if (NULL == pRsp)
+    {
+        limLog(pMac, LOGP, FL("Memory allocation failed"));
+        return;
+    }
+    vos_mem_set((tANI_U8*)pRsp, sizeof(tSirSmeUpdateMaxRateParams), 0);
+    pRsp->maxRateFlag = maxRateFlag;
+    pRsp->smeSessionId = smeSessionId;
+    msg.type = eWNI_SME_UPDATE_MAX_RATE_IND;
+    msg.bodyptr = pRsp;
+    msg.bodyval = 0;
+    limSysProcessMmhMsgApi(pMac, &msg,  ePROT);
+    return;
+}

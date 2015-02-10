@@ -1249,6 +1249,13 @@ typedef enum
 #define CFG_BCN_EARLY_TERM_WAKE_MAX                  ( 255 )
 #define CFG_BCN_EARLY_TERM_WAKE_DEFAULT              ( 3 )
 
+#ifdef DEBUG_ROAM_DELAY
+#define CFG_ENABLE_ROAM_DELAY_STATS                  "gEnableRoamDelayStats"
+#define CFG_ENABLE_ROAM_DELAY_STATS_MIN              ( 0 )
+#define CFG_ENABLE_ROAM_DELAY_STATS_MAX              ( 1 )
+#define CFG_ENABLE_ROAM_DELAY_STATS_DEFAULT          ( 0 )
+#endif//#ifdef DEBUG_ROAM_DELAY
+
 #ifdef WLAN_FEATURE_NEIGHBOR_ROAMING
 #define CFG_NEIGHBOR_SCAN_TIMER_PERIOD_NAME             "gNeighborScanTimerPeriod"
 #define CFG_NEIGHBOR_SCAN_TIMER_PERIOD_MIN              (3)
@@ -2536,6 +2543,9 @@ typedef struct
    v_BOOL_t      fFTResourceReqSupported;
 #endif
 
+#ifdef DEBUG_ROAM_DELAY
+   v_BOOL_t      gEnableRoamDelayStats;
+#endif//#ifdef DEBUG_ROAM_DELAY
 #ifdef WLAN_FEATURE_NEIGHBOR_ROAMING
    v_U16_t       nNeighborScanPeriod;
    v_U8_t        nNeighborReassocRssiThreshold;
