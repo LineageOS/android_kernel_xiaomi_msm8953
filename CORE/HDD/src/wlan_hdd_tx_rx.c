@@ -1705,6 +1705,242 @@ VOS_STATUS hdd_tx_complete_cbk( v_VOID_t *vosContext,
    return status;
 }
 
+/**============================================================================
+  @brief hdd_ibss_tx_fetch_packet_cbk() - Callback function invoked by TL to
+  fetch a packet for transmission.
+
+  @param vosContext   : [in] pointer to VOS context
+  @param staId        : [in] Station for which TL is requesting a pkt
+  @param ac           : [in] access category requested by TL
+  @param pVosPacket   : [out] pointer to VOS packet packet pointer
+  @param pPktMetaInfo : [out] pointer to meta info for the pkt
+
+  @return             : VOS_STATUS_E_EMPTY if no packets to transmit
+                      : VOS_STATUS_E_FAILURE if any errors encountered
+                      : VOS_STATUS_SUCCESS otherwise
+ ===========================================================================*/
+VOS_STATUS hdd_ibss_tx_fetch_packet_cbk( v_VOID_t *vosContext,
+                                    v_U8_t *pStaId,
+                                    WLANTL_ACEnumType  ac,
+                                    vos_pkt_t **ppVosPacket,
+                                    WLANTL_MetaInfoType *pPktMetaInfo )
+{
+   VOS_STATUS status = VOS_STATUS_E_FAILURE;
+   hdd_adapter_t *pAdapter = NULL;
+   hdd_list_node_t *anchor = NULL;
+   skb_list_node_t *pktNode = NULL;
+   struct sk_buff *skb = NULL;
+   vos_pkt_t *pVosPacket = NULL;
+   v_MACADDR_t* pDestMacAddress = NULL;
+   v_TIME_t timestamp;
+   v_SIZE_t size = 0;
+   v_U8_t STAId = WLAN_MAX_STA_COUNT;
+   hdd_context_t *pHddCtx = NULL;
+   hdd_station_ctx_t *pHddStaCtx = NULL;
+   hdd_ibss_peer_info_t *pPeerInfo = NULL;
+   v_U8_t proto_type = 0;
+
+   //Sanity check on inputs
+   if ( ( NULL == vosContext ) ||
+        ( NULL == pStaId ) ||
+        ( NULL == ppVosPacket ) ||
+        ( NULL == pPktMetaInfo ) )
+   {
+      VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
+                 "%s: Null Params being passed", __func__);
+      return VOS_STATUS_E_FAILURE;
+   }
+
+   //Get the HDD context.
+   pHddCtx = (hdd_context_t *)vos_get_context( VOS_MODULE_ID_HDD, vosContext );
+   if ( NULL == pHddCtx )
+   {
+      VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
+                 "%s: HDD adapter context is Null", __func__);
+      return VOS_STATUS_E_FAILURE;
+   }
+
+   STAId = *pStaId;
+   pAdapter = pHddCtx->sta_to_adapter[STAId];
+   if ((NULL == pAdapter) || (WLAN_HDD_ADAPTER_MAGIC != pAdapter->magic))
+   {
+      VOS_ASSERT(0);
+      return VOS_STATUS_E_FAILURE;
+   }
+
+  pHddStaCtx = &pAdapter->sessionCtx.station;
+  pPeerInfo = &pHddStaCtx->ibss_peer_info;
+
+  if (FALSE == pPeerInfo->ibssStaInfo[STAId].isUsed )
+   {
+      VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
+                 "%s: Unregistered STAId %d passed by TL", __func__, STAId);
+      return VOS_STATUS_E_FAILURE;
+   }
+
+   ++pAdapter->hdd_stats.hddTxRxStats.txFetched;
+
+   *ppVosPacket = NULL;
+
+   //Make sure the AC being asked for is sane
+   if( ac > WLANTL_MAX_AC || ac < 0)
+   {
+      VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
+                 "%s: Invalid AC %d passed by TL", __func__, ac);
+      return VOS_STATUS_E_FAILURE;
+   }
+
+   ++pAdapter->hdd_stats.hddTxRxStats.txFetchedAC[ac];
+
+   VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_FATAL,
+                              "%s: AC %d passed by TL", __func__, ac);
+
+   //Get the vos packet before so that we are prepare for VOS low reseurce condition
+   //This simplifies the locking and unlocking of Tx queue
+   status = vos_pkt_wrap_data_packet( &pVosPacket,
+                                      VOS_PKT_TYPE_TX_802_3_DATA,
+                                      NULL, //OS Pkt is not being passed
+                                      hdd_tx_low_resource_cbk,
+                                      pAdapter );
+
+   if ((status == VOS_STATUS_E_ALREADY) || (status == VOS_STATUS_E_RESOURCES))
+   {
+      //Remember VOS is in a low resource situation
+      pAdapter->isVosOutOfResource = VOS_TRUE;
+      ++pAdapter->hdd_stats.hddTxRxStats.txFetchLowResources;
+      VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_WARN,
+                 "%s: VOSS in Low Resource scenario", __func__);
+      //TL needs to handle this case. VOS_STATUS_E_EMPTY is returned when the queue is empty.
+      return VOS_STATUS_E_FAILURE;
+   }
+
+   /* Only fetch this station and this AC. Return VOS_STATUS_E_EMPTY if nothing there.
+      Do not get next AC as the other branch does.
+   */
+   spin_lock_bh(&pPeerInfo->ibssStaInfo[STAId].wmm_tx_queue[ac].lock);
+   hdd_list_size(&pPeerInfo->ibssStaInfo[STAId].wmm_tx_queue[ac], &size);
+
+   if (0 == size)
+   {
+      spin_unlock_bh(&pPeerInfo->ibssStaInfo[STAId].wmm_tx_queue[ac].lock);
+      vos_pkt_return_packet(pVosPacket);
+      return VOS_STATUS_E_EMPTY;
+   }
+
+   status = hdd_list_remove_front( &pPeerInfo->ibssStaInfo[STAId].wmm_tx_queue[ac], &anchor );
+   spin_unlock_bh(&pPeerInfo->ibssStaInfo[STAId].wmm_tx_queue[ac].lock);
+
+   VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_INFO,
+                       "%s: AC %d has packets pending", __func__, ac);
+
+   if(VOS_STATUS_SUCCESS == status)
+   {
+      //If success then we got a valid packet from some AC
+      pktNode = list_entry(anchor, skb_list_node_t, anchor);
+      skb = pktNode->skb;
+   }
+   else
+   {
+      ++pAdapter->hdd_stats.hddTxRxStats.txFetchDequeueError;
+      VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
+                 "%s: Error in de-queuing skb from Tx queue status = %d",
+                 __func__, status );
+      vos_pkt_return_packet(pVosPacket);
+      return VOS_STATUS_E_FAILURE;
+   }
+
+   //Attach skb to VOS packet.
+   status = vos_pkt_set_os_packet( pVosPacket, skb );
+   if (status != VOS_STATUS_SUCCESS)
+   {
+      VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
+                 "%s: Error attaching skb", __func__);
+      vos_pkt_return_packet(pVosPacket);
+      ++pAdapter->stats.tx_dropped;
+      ++pAdapter->hdd_stats.hddTxRxStats.txFetchDequeueError;
+      kfree_skb(skb);
+      return VOS_STATUS_E_FAILURE;
+   }
+
+   //Return VOS packet to TL;
+   *ppVosPacket = pVosPacket;
+
+   //Fill out the meta information needed by TL
+   vos_pkt_get_timestamp( pVosPacket, &timestamp );
+   pPktMetaInfo->usTimeStamp = (v_U16_t)timestamp;
+   if ( 1 < size )
+   {
+       pPktMetaInfo->bMorePackets = 1; //HDD has more packets to send
+   }
+   else
+   {
+       pPktMetaInfo->bMorePackets = 0;
+   }
+
+   if(pAdapter->sessionCtx.station.conn_info.uIsAuthenticated == VOS_TRUE)
+      pPktMetaInfo->ucIsEapol = 0;
+   else
+      pPktMetaInfo->ucIsEapol = hdd_IsEAPOLPacket( pVosPacket ) ? 1 : 0;
+
+   if ((NULL != pHddCtx) &&
+       (pHddCtx->cfg_ini->gEnableDebugLog))
+   {
+      proto_type = vos_pkt_get_proto_type(skb,
+                                          pHddCtx->cfg_ini->gEnableDebugLog);
+      if (VOS_PKT_PROTO_TYPE_EAPOL & proto_type)
+      {
+         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                   "IBSS STA TX EAPOL");
+      }
+      else if (VOS_PKT_PROTO_TYPE_DHCP & proto_type)
+      {
+         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                   "IBSS STA TX DHCP");
+      }
+   }
+
+   pPktMetaInfo->ucUP = pktNode->userPriority;
+   pPktMetaInfo->ucTID = pPktMetaInfo->ucUP;
+   pPktMetaInfo->ucType = 0;
+
+   //Extract the destination address from ethernet frame
+   pDestMacAddress = (v_MACADDR_t*)skb->data;
+
+   // we need 802.3 to 802.11 frame translation
+   // (note that Bcast/Mcast will be translated in SW, unicast in HW)
+   pPktMetaInfo->ucDisableFrmXtl = 0;
+   pPktMetaInfo->ucBcast = vos_is_macaddr_broadcast( pDestMacAddress ) ? 1 : 0;
+   pPktMetaInfo->ucMcast = vos_is_macaddr_group( pDestMacAddress ) ? 1 : 0;
+
+   if ( (pPeerInfo->ibssStaInfo[STAId].txSuspended[ac]) &&
+        (size <= ((pAdapter->aTxQueueLimit[ac]*3)/4) ))
+   {
+      VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_INFO,
+                 "%s: TX queue re-enabled", __func__);
+      pPeerInfo->ibssStaInfo[STAId].txSuspended[ac] = VOS_FALSE;
+      netif_wake_subqueue(pAdapter->dev, skb_get_queue_mapping(skb));
+   }
+
+   // We're giving the packet to TL so consider it transmitted from
+   // a statistics perspective.  We account for it here instead of
+   // when the packet is returned for two reasons.  First, TL will
+   // manipulate the skb to the point where the len field is not
+   // accurate, leading to inaccurate byte counts if we account for
+   // it later.  Second, TL does not provide any feedback as to
+   // whether or not the packet was successfully sent over the air,
+   // so the packet counts will be the same regardless of where we
+   // account for them
+   pAdapter->stats.tx_bytes += skb->len;
+   ++pAdapter->stats.tx_packets;
+   ++pAdapter->hdd_stats.hddTxRxStats.txFetchDequeued;
+   ++pAdapter->hdd_stats.hddTxRxStats.txFetchDequeuedAC[ac];
+   pAdapter->hdd_stats.hddTxRxStats.continuousTxTimeoutCount = 0;
+
+   VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_INFO,
+              "%s: Valid VOS PKT returned to TL", __func__);
+
+   return status;
+}
 
 /**============================================================================
   @brief hdd_tx_fetch_packet_cbk() - Callback function invoked by TL to 
