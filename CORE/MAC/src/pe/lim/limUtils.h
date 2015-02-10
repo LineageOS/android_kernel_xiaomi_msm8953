@@ -103,6 +103,7 @@ typedef enum offset {
     BW20,
     BW40PLUS,
     BW40MINUS,
+    BW80,
     BWALL
 } offset_t;
 
@@ -110,7 +111,7 @@ typedef struct op_class_map {
     tANI_U8 op_class;
     tANI_U8 ch_spacing;
     offset_t    offset;
-    tANI_U8 channels[15];
+    tANI_U8 channels[25];
 }op_class_map_t;
 // LIM utility functions
 tANI_BOOLEAN limCheck11BRateBitmap(tANI_U16 RateBitmap);
