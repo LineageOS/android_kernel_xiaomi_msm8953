@@ -9829,7 +9829,7 @@ v_BOOL_t hdd_isConnectionInProgress( hdd_context_t *pHddCtx)
                 return VOS_TRUE;
             }
             if ((WLAN_HDD_INFRA_STATION == pAdapter->device_mode) &&
-                 smeNeighborRoamIsHandoffInProgress(WLAN_HDD_GET_HAL_CTX(pAdapter)))
+                 smeNeighborMiddleOfRoaming(WLAN_HDD_GET_HAL_CTX(pAdapter)))
             {
                 hddLog(VOS_TRACE_LEVEL_ERROR,
                        "%s: %p(%d) Reassociation is in progress", __func__,
@@ -10167,13 +10167,15 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
                                         pAdapter);
 
                 hddLog(VOS_TRACE_LEVEL_WARN,
-                    "Return old cached scan as all channels"
-                    "and no of channles are same");
+                    "Return old cached scan as all channels and no of channels are same");
+
                 if (0 > ret)
                     hddLog(VOS_TRACE_LEVEL_INFO, "%s: NO SCAN result", __func__);
 
                 cfg80211_scan_done(request, eCSR_SCAN_SUCCESS);
-                return eHAL_STATUS_SUCCESS ;
+
+                status = eHAL_STATUS_SUCCESS;
+                goto free_mem;
             }
         }
     }

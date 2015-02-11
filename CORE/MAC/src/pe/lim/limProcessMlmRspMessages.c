@@ -2883,7 +2883,10 @@ limProcessStaMlmAddBssRspFT(tpAniSirGlobal pMac, tpSirMsgQ limMsgQ, tpPESession 
         goto end;
     }
 #ifdef DEBUG_ROAM_DELAY
-    vos_record_roam_event(e_LIM_ADD_BS_RSP, NULL, 0);
+    if (pMac->roam.configParam.roamDelayStatsEnabled)
+    {
+        vos_record_roam_event(e_LIM_ADD_BS_RSP, NULL, 0);
+    }
 #endif
     // Prepare and send Reassociation request frame
     // start reassoc timer.
@@ -2955,7 +2958,10 @@ limProcessStaMlmAddBssRspFT(tpAniSirGlobal pMac, tpSirMsgQ limMsgQ, tpPESession 
 #endif
     limSendReassocReqWithFTIEsMgmtFrame(pMac, psessionEntry->pLimMlmReassocReq, psessionEntry);
 #ifdef DEBUG_ROAM_DELAY
-    vos_record_roam_event(e_LIM_SEND_REASSOC_REQ, NULL, 0);
+    if (pMac->roam.configParam.roamDelayStatsEnabled)
+    {
+        vos_record_roam_event(e_LIM_SEND_REASSOC_REQ, NULL, 0);
+    }
 #endif
     psessionEntry->limPrevMlmState = psessionEntry->limMlmState;
     psessionEntry->limMlmState = eLIM_MLM_WT_FT_REASSOC_RSP_STATE;

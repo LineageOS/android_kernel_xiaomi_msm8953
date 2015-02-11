@@ -337,10 +337,13 @@ eHalStatus sme_FTUpdateKey( tHalHandle hHal, tCsrRoamSetKey * pFTKeyInfo )
     {
     case eFT_SET_KEY_WAIT:
 #ifdef DEBUG_ROAM_DELAY
-    //store the PTK send event
-    vos_record_roam_event(e_HDD_SET_PTK_REQ, NULL, 0);
+      if (pMac->roam.configParam.roamDelayStatsEnabled)
+      {
+          //store the PTK send event
+          vos_record_roam_event(e_HDD_SET_PTK_REQ, NULL, 0);
+      }
 #endif
-    if (sme_GetFTPreAuthState (hHal) == TRUE)
+      if (sme_GetFTPreAuthState (hHal) == TRUE)
       {
           status = sme_FTSendUpdateKeyInd(pMac, pFTKeyInfo);
           if (status != 0 )
@@ -478,7 +481,10 @@ void sme_PreauthReassocIntvlTimerCallback(void *context)
     csrNeighborRoamRequestHandoff(pMac);
 #endif
 #ifdef DEBUG_ROAM_DELAY
-    vos_record_roam_event(e_SME_PREAUTH_CALLBACK_HIT, NULL, 0);
+    if (pMac->roam.configParam.roamDelayStatsEnabled)
+    {
+        vos_record_roam_event(e_SME_PREAUTH_CALLBACK_HIT, NULL, 0);
+    }
 #endif
     return;
 }
