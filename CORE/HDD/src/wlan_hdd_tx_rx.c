@@ -245,70 +245,33 @@ static VOS_STATUS hdd_flush_tx_queues( hdd_adapter_t *pAdapter )
 void hdd_flush_ibss_tx_queues( hdd_adapter_t *pAdapter, v_U8_t STAId)
 {
    v_U8_t i;
-   v_SIZE_t size = 0;
-   v_U8_t skbStaIdx;
+   hdd_list_node_t *anchor = NULL;
    skb_list_node_t *pktNode = NULL;
-   hdd_list_node_t *tmp = NULL, *next = NULL;
-   struct netdev_queue *txq;
    struct sk_buff *skb = NULL;
+   hdd_station_ctx_t *pHddStaCtx = &pAdapter->sessionCtx.station;
+   hdd_ibss_peer_info_t *pPeerInfo = &pHddStaCtx->ibss_peer_info;
 
-   if (NULL == pAdapter)
+   for (i = 0; i < NUM_TX_QUEUES; i ++)
    {
-       VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
-              FL("pAdapter is NULL %u"), STAId);
-       VOS_ASSERT(0);
-       return;
-   }
-
-   for (i = 0; i < NUM_TX_QUEUES; i++)
-   {
-      spin_lock_bh(&pAdapter->wmm_tx_queue[i].lock);
-
-      if ( list_empty( &pAdapter->wmm_tx_queue[i].anchor ) )
+      spin_lock_bh(&pPeerInfo->ibssStaInfo[STAId].wmm_tx_queue[i].lock);
+      while (true)
       {
-         spin_unlock_bh(&pAdapter->wmm_tx_queue[i].lock);
-         continue;
-      }
-
-      /* Iterate through the queue and identify the data for STAId */
-      list_for_each_safe(tmp, next, &pAdapter->wmm_tx_queue[i].anchor)
-      {
-         pktNode = list_entry(tmp, skb_list_node_t, anchor);
-         if (pktNode != NULL)
+         if (VOS_STATUS_E_EMPTY !=
+              hdd_list_remove_front(&pPeerInfo->ibssStaInfo[STAId].wmm_tx_queue[i],
+                                    &anchor))
          {
+            //If success then we got a valid packet from some AC
+            pktNode = list_entry(anchor, skb_list_node_t, anchor);
             skb = pktNode->skb;
-
-            /* Get the STAId from data */
-            skbStaIdx = *(v_U8_t *)(((v_U8_t *)(skb->data)) - 1);
-            if (skbStaIdx == STAId)
-            {
-               /* Data for STAId is freed along with the queue node */
-               list_del(tmp);
-               kfree_skb(skb);
-
-               ++pAdapter->hdd_stats.hddTxRxStats.txFlushed;
-               ++pAdapter->hdd_stats.hddTxRxStats.txFlushedAC[i];
-               pAdapter->wmm_tx_queue[i].count--;
-            }
+            ++pAdapter->stats.tx_dropped;
+            ++pAdapter->hdd_stats.hddTxRxStats.txFlushed;
+            ++pAdapter->hdd_stats.hddTxRxStats.txFlushedAC[i];
+            kfree_skb(skb);
+            continue;
          }
+         break;
       }
-
-      /* Restart the queue only-if suspend and the queue was flushed */
-      hdd_list_size( &pAdapter->wmm_tx_queue[i], &size );
-      txq = netdev_get_tx_queue(pAdapter->dev, i);
-
-      if (VOS_TRUE == pAdapter->isTxSuspended[i] &&
-          size <= HDD_TX_QUEUE_LOW_WATER_MARK &&
-          netif_tx_queue_stopped(txq) )
-      {
-         hddLog(VOS_TRACE_LEVEL_INFO, FL("Enabling queue for queue %d"),i);
-         netif_tx_start_queue(txq);
-         pAdapter->isTxSuspended[i] = VOS_FALSE;
-         ++pAdapter->hdd_stats.hddTxRxStats.txDequeDePressured;
-         ++pAdapter->hdd_stats.hddTxRxStats.txDequeDePressuredAC[i];
-      }
-
-      spin_unlock_bh(&pAdapter->wmm_tx_queue[i].lock);
+      spin_unlock_bh(&pPeerInfo->ibssStaInfo[STAId].wmm_tx_queue[i].lock);
    }
 }
 
