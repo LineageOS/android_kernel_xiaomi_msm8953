@@ -863,7 +863,6 @@ int wlan_hdd_sta_tdls_init(hdd_adapter_t *pAdapter)
         if (NULL == pHddTdlsCtx) {
             hddLog(VOS_TRACE_LEVEL_ERROR, "%s malloc failed!", __func__);
             pAdapter->sessionCtx.station.pHddTdlsCtx = NULL;
-            mutex_unlock(&pHddCtx->tdls_lock);
             return -1;
         }
         /* initialize TDLS pAdater context */
