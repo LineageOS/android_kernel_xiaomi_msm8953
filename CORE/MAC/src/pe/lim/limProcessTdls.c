@@ -1010,24 +1010,28 @@ static void PopulateDot11fTdlsHtVhtCap(tpAniSirGlobal pMac, uint32 selfDot11Mode
     {
         /* Include HT Capability IE */
         PopulateDot11fHTCaps( pMac, NULL, htCap );
+        /* Advertize ht capability and max supported channel
+         * bandwidth when populating HT IE in TDLS Setup Request/
+         * Setup Response/Setup Confirmation frames.
+         * 11.21.6.2 Setting up a 40 MHz direct link: A 40 MHz off-channel
+         * direct link may be started if both TDLS peer STAs indicated
+         * 40 MHz support in the Supported Channel Width Set field of the
+         * HT Capabilities element (which is included in the TDLS Setup Request
+         * frame and the TDLS Setup Response frame). Switching to a 40 MHz
+         * off-channel direct link is achieved by including the following
+         * information in the TDLS Channel Switch Request
+         * 11.21.1 General: The channel width of the TDLS direct link on the
+         * base channel shall not exceed the channel width of the BSS to which
+         * the TDLS peer STAs are associated.*/
         htCap->present = 1;
-        if (psessionEntry->currentOperChannel <= SIR_11B_CHANNEL_END)
-        {
-            /* hardcode NO channel bonding in 2.4Ghz */
-            htCap->supportedChannelWidthSet = 0;
-        }
-        else
-        {
-            //Placeholder to support different channel bonding mode of TDLS than AP.
-            //wlan_cfgGetInt(pMac,WNI_CFG_TDLS_CHANNEL_BONDING_MODE,&tdlsChannelBondingMode);
-            //htCap->supportedChannelWidthSet = tdlsChannelBondingMode ? 1 : 0;
-            htCap->supportedChannelWidthSet = 1; // hardcode it to max
-        }
+        htCap->supportedChannelWidthSet = 1; // hardcode it to max
     }
     else
     {
         htCap->present = 0;
     }
+    limLog(pMac, LOG1, FL("HT present = %hu, Chan Width = %hu"),
+            htCap->present, htCap->supportedChannelWidthSet);
 #ifdef WLAN_FEATURE_11AC
     if (IS_DOT11_MODE_VHT(selfDot11Mode) &&
         IS_FEATURE_SUPPORTED_BY_FW(DOT11AC))
@@ -1039,6 +1043,8 @@ static void PopulateDot11fTdlsHtVhtCap(tpAniSirGlobal pMac, uint32 selfDot11Mode
     {
         vhtCap->present = 0;
     }
+    limLog(pMac, LOG1, FL("VHT present = %hu"),
+            vhtCap->present);
 #endif
 }
 
@@ -2885,11 +2891,21 @@ static void limTdlsUpdateHashNodeInfo(tpAniSirGlobal pMac, tDphHashNode *pStaDs,
     {
         pStaDs->mlmStaContext.vhtCapability = 1 ;
 
-        if ((psessionEntry->currentOperChannel <= SIR_11B_CHANNEL_END) &&
-            pMac->roam.configParam.enableVhtFor24GHz)
+        if (psessionEntry->currentOperChannel <= SIR_11B_CHANNEL_END)
         {
+            /* if the channel is 2G then update the min channel widthset in
+             * pStaDs. These values are used when sending a AddSta request to
+             * firmware
+             * 11.21.1 General: The channel width of the TDLS direct link on the
+             * base channel shall not exceed the channel width of the BSS to which
+             * the TDLS peer STAs are associated.*/
             pStaDs->vhtSupportedChannelWidthSet = WNI_CFG_VHT_CHANNEL_WIDTH_20_40MHZ;
             pStaDs->htSupportedChannelWidthSet = eHT_CHANNEL_WIDTH_20MHZ;
+            limLog(pMac, LOG1,
+                    FL("vhtSupportedChannelWidthSet = %hu,"
+                        " htSupportedChannelWidthSet %hu"),
+                    pStaDs->vhtSupportedChannelWidthSet,
+                    pStaDs->htSupportedChannelWidthSet) ;
         }
         else
         {
@@ -6125,13 +6141,16 @@ tSirRetStatus limProcesSmeTdlsChanSwitchReq(tpAniSirGlobal pMac,
     {
 
         VOS_TRACE(VOS_MODULE_ID_PE, VOS_TRACE_LEVEL_INFO,
-              "%s: TDLS Channel Switch params: staIdx %d class %d ch %d bw %d mode %d",
+              "%s: TDLS Channel Switch params: staIdx %d class %d ch %d bw %d"
+              " mode %d country code %c%c",
                __func__,
                pMsgTdlsChanSwitch->staIdx,
                pMsgTdlsChanSwitch->operClass,
                pMsgTdlsChanSwitch->tdlsOffCh,
                pMsgTdlsChanSwitch->tdlsOffChBwOffset,
-               pMsgTdlsChanSwitch->tdlsSwMode);
+               pMsgTdlsChanSwitch->tdlsSwMode,
+               pMac->scan.countryCodeCurrent[0],
+               pMac->scan.countryCodeCurrent[1]);
     }
 
     msg.type = WDA_SET_TDLS_CHAN_SWITCH_REQ;
