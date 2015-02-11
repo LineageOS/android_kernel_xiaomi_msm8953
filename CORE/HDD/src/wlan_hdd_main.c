@@ -5892,11 +5892,28 @@ VOS_STATUS hdd_read_cfg_file(v_VOID_t *pCtx, char *pFileName,
 
 static int __hdd_set_mac_address(struct net_device *dev, void *addr)
 {
-   hdd_adapter_t *pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
+   hdd_adapter_t *pAdapter;
+   hdd_context_t *pHddCtx;
    struct sockaddr *psta_mac_addr = addr;
    eHalStatus halStatus = eHAL_STATUS_SUCCESS;
+   int ret = 0;
 
    ENTER();
+   pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
+   if (NULL == pAdapter)
+   {
+       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                 "%s: Adapter is NULL",__func__);
+       return -EINVAL;
+   }
+   pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+   ret = wlan_hdd_validate_context(pHddCtx);
+   if (0 != ret)
+   {
+       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                 "%s: HDD context is not valid",__func__);
+       return ret;
+   }
 
    memcpy(&pAdapter->macAddressCurrent, psta_mac_addr->sa_data, ETH_ALEN);
    memcpy(dev->dev_addr, psta_mac_addr->sa_data, ETH_ALEN);
@@ -5986,7 +6003,18 @@ void wlan_hdd_release_intf_addr(hdd_context_t* pHddCtx, tANI_U8* releaseAddr)
       .ndo_do_ioctl = hdd_ioctl,
       .ndo_set_mac_address = hdd_set_mac_address,
  };
-
+ static struct net_device_ops nullify_netdev_ops = {
+      .ndo_open = NULL,
+      .ndo_stop = NULL,
+      .ndo_uninit = NULL,
+      .ndo_start_xmit = NULL,
+      .ndo_tx_timeout = NULL,
+      .ndo_get_stats = NULL,
+      .ndo_set_mac_address = NULL,
+      .ndo_do_ioctl = NULL,
+      .ndo_change_mtu = NULL,
+      .ndo_select_queue = NULL,
+ };
 #endif
 
 void hdd_set_station_ops( struct net_device *pWlanDev )
@@ -7137,8 +7165,13 @@ VOS_STATUS hdd_stop_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter,
                {
                   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                             "%s: ROC completion is not received.!!!", __func__);
-                  sme_CancelRemainOnChannel(WLAN_HDD_GET_HAL_CTX(pAdapter),
-                                            pAdapter->sessionId);
+                  if (eHAL_STATUS_SUCCESS !=
+                      sme_CancelRemainOnChannel( WLAN_HDD_GET_HAL_CTX( pAdapter),
+                                                     pAdapter->sessionId ))
+                  {
+                      VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                              FL("Failed to Cancel Remain on Channel"));
+                  }
                   wait_for_completion_interruptible_timeout(
                                        &pAdapter->cancel_rem_on_chan_var,
                                        msecs_to_jiffies(WAIT_CANCEL_REM_CHAN));
@@ -7885,30 +7918,39 @@ v_U8_t hdd_get_operating_channel( hdd_context_t *pHddCtx, device_mode_t mode )
 
   \param  - dev - Pointer to the WLAN device.
   - skb - Pointer to OS packet (sk_buff).
-  \return - success/fail 
+  \return - success/fail
 
   --------------------------------------------------------------------------*/
 static void __hdd_set_multicast_list(struct net_device *dev)
 {
-   hdd_adapter_t *pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
+   hdd_adapter_t *pAdapter;
+   hdd_context_t *pHddCtx;
    int mc_count;
-   int i = 0;
+   int i = 0, ret = 0;
    struct netdev_hw_addr *ha;
 
+   pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
    if (NULL == pAdapter)
    {
       hddLog(VOS_TRACE_LEVEL_ERROR,
             "%s: Adapter context is Null", __func__);
       return;
    }
-
+   pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+   ret = wlan_hdd_validate_context(pHddCtx);
+   if (0 != ret)
+   {
+      hddLog(VOS_TRACE_LEVEL_ERROR,
+                 "%s: HDD context is not valid",__func__);
+       return;
+   }
    if (dev->flags & IFF_ALLMULTI)
    {
       hddLog(VOS_TRACE_LEVEL_INFO,
             "%s: allow all multicast frames", __func__);
       pAdapter->mc_addr_list.mc_cnt = 0;
    }
-   else 
+   else
    {
       mc_count = netdev_mc_count(dev);
       hddLog(VOS_TRACE_LEVEL_INFO,
@@ -7929,7 +7971,7 @@ static void __hdd_set_multicast_list(struct net_device *dev)
          memset(&(pAdapter->mc_addr_list.addr[i][0]), 0, ETH_ALEN);
          memcpy(&(pAdapter->mc_addr_list.addr[i][0]), ha->addr, ETH_ALEN);
          hddLog(VOS_TRACE_LEVEL_INFO, "%s: mlist[%d] = "MAC_ADDRESS_STR,
-               __func__, i, 
+               __func__, i,
                MAC_ADDR_ARRAY(pAdapter->mc_addr_list.addr[i]));
          i++;
       }
@@ -8141,15 +8183,6 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
          pAdapter = pAdapterNode->pAdapter;
          if (NULL != pAdapter)
          {
-            /* Disable TX on the interface, after this hard_start_xmit() will
-             * not be called on that interface
-             */
-            hddLog(VOS_TRACE_LEVEL_INFO, FL("Disabling queues"));
-            netif_tx_disable(pAdapter->dev);
-
-            /* Mark the interface status as "down" for outside world */
-            netif_carrier_off(pAdapter->dev);
-
             /* DeInit the adapter. This ensures that all data packets
              * are freed.
              */
@@ -9096,9 +9129,7 @@ int hdd_wlan_startup(struct device *dev )
    }
 
 #endif
-#ifdef DEBUG_ROAM_DELAY
    vos_set_roam_delay_stats_enabled(pHddCtx->cfg_ini->gEnableRoamDelayStats);
-#endif //#ifdef DEBUG_ROAM_DELAY
    status = vos_open( &pVosContext, pHddCtx->parent_dev);
    if ( !VOS_IS_STATUS_SUCCESS( status ))
    {
@@ -9945,6 +9976,9 @@ static void hdd_driver_exit(void)
          hddLog(VOS_TRACE_LEVEL_ERROR, FL("WD context is invalid"));
          goto done;
       }
+      rtnl_lock();
+      hdd_nullify_netdev_ops(pHddCtx);
+      rtnl_unlock();
       spin_lock_irqsave(&pVosWDCtx->wdLock, flags);
       if (!pHddCtx->isLogpInProgress || (TRUE ==
                vos_is_wlan_in_badState(VOS_MODULE_ID_HDD, NULL)))
@@ -10848,6 +10882,33 @@ VOS_STATUS wlan_hdd_cancel_remain_on_channel(hdd_context_t *pHddCtx)
     }
     return VOS_STATUS_SUCCESS;
 }
+
+void hdd_nullify_netdev_ops(hdd_context_t *pHddCtx)
+{
+   VOS_STATUS status;
+   hdd_adapter_list_node_t *pAdapterNode = NULL, *pNext = NULL;
+   hdd_adapter_t      *pAdapter;
+
+   status = hdd_get_front_adapter ( pHddCtx, &pAdapterNode );
+   while ( NULL != pAdapterNode && VOS_STATUS_SUCCESS == status )
+   {
+      pAdapter = pAdapterNode->pAdapter;
+      if (NULL != pAdapter)
+      {
+          /* Disable TX on the interface, after this hard_start_xmit() will
+           * not be called on that interface
+           */
+          hddLog(VOS_TRACE_LEVEL_INFO, FL("Disabling queues"));
+          netif_tx_disable(pAdapter->dev);
+          /* Mark the interface status as "down" for outside world */
+          netif_carrier_off(pAdapter->dev);
+          pAdapter->dev->netdev_ops = &nullify_netdev_ops;
+      }
+      status = hdd_get_next_adapter ( pHddCtx, pAdapterNode, &pNext );
+      pAdapterNode = pNext;
+   }
+}
+
 //Register the module init/exit functions
 module_init(hdd_module_init);
 module_exit(hdd_module_exit);

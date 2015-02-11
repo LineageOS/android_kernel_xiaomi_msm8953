@@ -676,9 +676,7 @@ typedef struct tagCsrConfig
     tANI_U32 channelBondingAPMode24GHz; // Use for SAP/P2P GO 2.4GHz channel Bonding
 #endif
     tANI_U32 nOBSSScanWidthTriggerInterval;
-#ifdef DEBUG_ROAM_DELAY
     tANI_U8 roamDelayStatsEnabled;
-#endif //#ifdef DEBUG_ROAM_DELAY
 }tCsrConfig;
 
 typedef struct tagCsrChannelPowerInfo

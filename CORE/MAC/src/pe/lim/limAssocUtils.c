@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1031,6 +1031,7 @@ limRejectAssociation(tpAniSirGlobal pMac, tSirMacAddr peerAddr, tANI_U8 subType,
             pAuthNode->fTimerStarted = 0;
             pAuthNode->mlmState = eLIM_MLM_AUTHENTICATED_STATE;
             pAuthNode->authType = (tAniAuthType) authType;
+            pAuthNode->timestamp = vos_timer_get_system_ticks();
             limAddPreAuthNode(pMac, pAuthNode);
         }
     }

@@ -1077,9 +1077,7 @@ typedef struct sAniSirGlobal
     v_BOOL_t isCoexScoIndSet;
     v_U8_t miracast_mode;
     v_U8_t fBtcEnableIndTimerVal;
-#ifdef DEBUG_ROAM_DELAY
     v_U8_t roamDelayStatsEnabled;
-#endif //#ifdef DEBUG_ROAM_DELAY
 } tAniSirGlobal;
 
 #ifdef FEATURE_WLAN_TDLS

@@ -46,10 +46,7 @@
 #include "wlan_qct_wdi_dts.h"
 #include "wlan_qct_wdi_dp.h"
 #include "wlan_qct_wdi_sta.h"
-
-#ifdef DEBUG_ROAM_DELAY
 #include "vos_utils.h"
-#endif
 
 static WDTS_TransportDriverTrype gTransportDriver = {
   WLANDXE_Open, 
@@ -728,12 +725,10 @@ wpt_status WDTS_RxPacket (void *pContext, wpt_packet *pFrame, WDTS_ChannelType c
       WPAL_PACKET_SET_BD_POINTER(pFrame, pBDHeader);
       WPAL_PACKET_SET_BD_LENGTH(pFrame, sizeof(WDI_RxBdType));
 
-#ifdef DEBUG_ROAM_DELAY
       if (((WDI_ControlBlockType *)pClientData->pcontext)->roamDelayStatsEnabled)
       {
           vos_record_roam_event(e_DXE_RX_PKT_TIME, (void *)pFrame, pRxMetadata->type);
       }
-#endif
       // Invoke Rx complete callback
       pClientData->receiveFrameCB(pClientData->pCallbackContext, pFrame);  
   }
@@ -927,12 +922,10 @@ wpt_status WDTS_TxPacket(void *pContext, wpt_packet *pFrame)
 #endif
   // Send packet to  Transport Driver. 
   status =  gTransportDriver.xmit(pDTDriverContext, pFrame, channel);
-#ifdef DEBUG_ROAM_DELAY
   if (((WDI_ControlBlockType *)pContext)->roamDelayStatsEnabled)
   {
       vos_record_roam_event(e_DXE_FIRST_XMIT_TIME, (void *)pFrame, pTxMetadata->frmType);
   }
-#endif
   return status;
 }
 
