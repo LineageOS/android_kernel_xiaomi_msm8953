@@ -1852,7 +1852,7 @@ tANI_U16 wlan_hdd_tdlsConnectedPeers(hdd_adapter_t *pAdapter)
     return pHddCtx->connected_peer_count;
 }
 
-hddTdlsPeer_t *wlan_hdd_tdls_get_first_connected_peer(hdd_adapter_t *pAdapter)
+hddTdlsPeer_t *wlan_hdd_tdls_get_connected_peer(hdd_adapter_t *pAdapter)
 {
     int i;
     struct list_head *head;
@@ -2626,7 +2626,7 @@ int wlan_hdd_tdls_scan_callback (hdd_adapter_t *pAdapter,
              (connectedTdlsPeers == 1) )
         {
             /* get connected peer information */
-            connected_peer = wlan_hdd_tdls_get_first_connected_peer(pAdapter);
+            connected_peer = wlan_hdd_tdls_get_connected_peer(pAdapter);
             if (NULL == connected_peer) {
                 VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_FATAL,
                     "%s: Invalid connected_peer, Continue Scanning", __func__);

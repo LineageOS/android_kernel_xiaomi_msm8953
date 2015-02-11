@@ -712,6 +712,8 @@ static v_BOOL_t put_wifi_peer_info( tpSirWifiPeerInfo stats,
 
     rateInfo = nla_nest_start(vendor_event,
                             QCA_WLAN_VENDOR_ATTR_LL_STATS_PEER_INFO_RATE_INFO);
+    if(!rateInfo)
+        return FALSE;
     for (i = 0; i < stats->numRate; i++)
     {
         struct nlattr *rates;
@@ -719,6 +721,8 @@ static v_BOOL_t put_wifi_peer_info( tpSirWifiPeerInfo stats,
                                             stats->rateStats +
                                        (i * sizeof(tSirWifiRateStat)));
         rates = nla_nest_start(vendor_event, i);
+        if(!rates)
+            return FALSE;
 
         if (FALSE == put_wifi_rate_stat(pRateStats, vendor_event))
         {
@@ -957,10 +961,20 @@ static v_BOOL_t put_wifi_iface_stats(hdd_adapter_t *pAdapter,
 
     wmmInfo = nla_nest_start(vendor_event,
                             QCA_WLAN_VENDOR_ATTR_LL_STATS_WMM_INFO);
+    if(!wmmInfo)
+    {
+        vos_mem_free(pWifiIfaceStatTL);
+        return FALSE;
+    }
     for (i = 0; i < WIFI_AC_MAX; i++)
     {
         struct nlattr *wmmStats;
         wmmStats = nla_nest_start(vendor_event, i);
+        if(!wmmStats)
+        {
+            vos_mem_free(pWifiIfaceStatTL);
+            return FALSE;
+        }
         if (FALSE == put_wifi_wmm_ac_stat(
                                 &pWifiIfaceStat->AccessclassStats[i],
                                 vendor_event))
@@ -1183,15 +1197,31 @@ static v_VOID_t hdd_link_layer_process_peer_stats(hdd_adapter_t *pAdapter,
 
     peerInfo = nla_nest_start(vendor_event,
             QCA_WLAN_VENDOR_ATTR_LL_STATS_PEER_INFO);
+    if(!peerInfo)
+    {
+        hddLog(VOS_TRACE_LEVEL_ERROR,
+                "%s: QCA_WLAN_VENDOR_ATTR_LL_STATS_PEER_INFO put fail",
+                __func__);
+        kfree_skb(vendor_event);
+        return;
+    }
 
     pWifiPeerInfo = (tpSirWifiPeerInfo)  ((uint8 *)
                 pWifiPeerStat->peerInfo);
 
     for (i = 1; i <= pWifiPeerStat->numPeers; i++)
     {
-        struct nlattr *peers = nla_nest_start(vendor_event, i);
         int numRate = pWifiPeerInfo->numRate;
+        struct nlattr *peers = nla_nest_start(vendor_event, i);
 
+        if(!peers)
+        {
+            hddLog(VOS_TRACE_LEVEL_ERROR,
+                    "%s: peer stats put fail",
+                    __func__);
+            kfree_skb(vendor_event);
+            return;
+        }
         if (FALSE == put_wifi_peer_info(
                                      pWifiPeerInfo, vendor_event))
         {
@@ -1468,6 +1498,14 @@ static v_VOID_t hdd_link_layer_process_radio_stats(hdd_adapter_t *pAdapter,
 
     chList = nla_nest_start(vendor_event,
              QCA_WLAN_VENDOR_ATTR_LL_STATS_CH_INFO);
+    if(!chList)
+    {
+        hddLog(VOS_TRACE_LEVEL_ERROR,
+                "%s: QCA_WLAN_VENDOR_ATTR_LL_STATS_CH_INFO put fail",
+                __func__);
+        kfree_skb(vendor_event);
+        return;
+    }
     for (i = 0; i < pWifiRadioStat->numChannels; i++)
     {
         struct nlattr *chInfo;
@@ -1494,6 +1532,14 @@ static v_VOID_t hdd_link_layer_process_radio_stats(hdd_adapter_t *pAdapter,
 
 
         chInfo = nla_nest_start(vendor_event, i);
+        if(!chInfo)
+        {
+            hddLog(VOS_TRACE_LEVEL_ERROR,
+                    "%s: failed to put chInfo",
+                    __func__);
+            kfree_skb(vendor_event);
+            return;
+        }
 
         if (nla_put_u32(vendor_event,
                 QCA_WLAN_VENDOR_ATTR_LL_STATS_CHANNEL_INFO_WIDTH,
@@ -4341,6 +4387,7 @@ static int wlan_hdd_cfg80211_exttdls_enable(struct wiphy *wiphy,
 
     return (wlan_hdd_tdls_extctrl_config_peer(pAdapter,
                                  peer,
+                                 &pReqMsg,
                                  wlan_hdd_cfg80211_exttdls_callback));
 }
 
@@ -7488,7 +7535,7 @@ int __wlan_hdd_cfg80211_change_iface( struct wiphy *wiphy,
                     if (pP2pAdapter)
                     {
                         hdd_stop_adapter(pHddCtx, pP2pAdapter, VOS_TRUE);
-                        hdd_deinit_adapter(pHddCtx, pP2pAdapter);
+                        hdd_deinit_adapter(pHddCtx, pP2pAdapter, TRUE);
                         hdd_close_adapter(pHddCtx, pP2pAdapter, VOS_TRUE);
                     }
                 }
@@ -7511,7 +7558,7 @@ int __wlan_hdd_cfg80211_change_iface( struct wiphy *wiphy,
                 mutex_lock(&pHddCtx->tdls_lock);
 #endif
                 //De-init the adapter.
-                hdd_deinit_adapter( pHddCtx, pAdapter );
+                hdd_deinit_adapter( pHddCtx, pAdapter, TRUE);
                 memset(&pAdapter->sessionCtx, 0, sizeof(pAdapter->sessionCtx));
                 pAdapter->device_mode = (type == NL80211_IFTYPE_AP) ?
                                    WLAN_HDD_SOFTAP : WLAN_HDD_P2P_GO;
@@ -7630,7 +7677,7 @@ int __wlan_hdd_cfg80211_change_iface( struct wiphy *wiphy,
                  */
                 mutex_lock(&pHddCtx->tdls_lock);
 #endif
-                hdd_deinit_adapter( pHddCtx, pAdapter );
+                hdd_deinit_adapter( pHddCtx, pAdapter, TRUE);
                 wdev->iftype = type;
                 //Check for sub-string p2p to confirm its a p2p interface
                 if (NULL != strstr(ndev->name,"p2p"))
@@ -14266,10 +14313,11 @@ static int wlan_hdd_cfg80211_tdls_mgmt(struct wiphy *wiphy, struct net_device *d
 
 int wlan_hdd_tdls_extctrl_config_peer(hdd_adapter_t *pAdapter,
                                       u8 *peer,
+                                      tdls_req_params_t *tdls_peer_params,
                                       cfg80211_exttdls_callback callback)
 {
 
-    hddTdlsPeer_t *pTdlsPeer;
+    hddTdlsPeer_t *pTdlsPeer = NULL;
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
     VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
               " %s : NL80211_TDLS_SETUP for " MAC_ADDRESS_STR,
@@ -14293,6 +14341,38 @@ int wlan_hdd_tdls_extctrl_config_peer(hdd_adapter_t *pAdapter,
                   "%s: peer " MAC_ADDRESS_STR " not existing",
                   __func__, MAC_ADDR_ARRAY(peer));
         return -EINVAL;
+    }
+
+    if (NULL != tdls_peer_params)
+    {
+        pTdlsPeer->peerParams.channel = tdls_peer_params->channel;
+        pTdlsPeer->peerParams.global_operating_class =
+                         tdls_peer_params->global_operating_class;
+        pTdlsPeer->peerParams.max_latency_ms = tdls_peer_params->max_latency_ms;
+        pTdlsPeer->peerParams.min_bandwidth_kbps =
+                                          tdls_peer_params->min_bandwidth_kbps;
+        /* check configured channel is valid and non dfs */
+        if (sme_IsTdlsOffChannelValid(WLAN_HDD_GET_HAL_CTX(pAdapter),
+                                      tdls_peer_params->channel))
+        {
+            pTdlsPeer->isOffChannelConfigured = TRUE;
+        }
+        else
+        {
+            pTdlsPeer->isOffChannelConfigured = FALSE;
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                      "%s: Configured Tdls Off Channel is not valid", __func__);
+
+        }
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                  "%s: tdls_off_channel %d isOffChannelConfigured %d",
+                  __func__, pTdlsPeer->peerParams.channel,
+                  pTdlsPeer->isOffChannelConfigured);
+    }
+    else
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                      "%s: Invalid TDLS Peer Params", __func__);
     }
 
     if ( 0 != wlan_hdd_tdls_set_force_peer(pAdapter, peer, TRUE) ) {
@@ -14345,6 +14425,13 @@ int wlan_hdd_tdls_extctrl_deconfig_peer(hdd_adapter_t *pAdapter, u8 *peer)
     else {
         wlan_hdd_tdls_indicate_teardown(pAdapter, pTdlsPeer,
                            eSIR_MAC_TDLS_TEARDOWN_UNSPEC_REASON);
+        /* if channel switch is configured, reset
+           the channel for this peer */
+        if (TRUE == pTdlsPeer->isOffChannelConfigured)
+        {
+            pTdlsPeer->peerParams.channel = 0;
+            pTdlsPeer->isOffChannelConfigured = FALSE;
+        }
     }
 
     if ( 0 != wlan_hdd_tdls_set_force_peer(pAdapter, peer, FALSE) )
@@ -14406,6 +14493,8 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                 long ret;
                 tCsrTdlsLinkEstablishParams tdlsLinkEstablishParams;
                 WLAN_STADescType         staDesc;
+                tANI_U16 numCurrTdlsPeers = 0;
+                hddTdlsPeer_t *connPeer = NULL;
 
                 pTdlsPeer = wlan_hdd_tdls_find_peer(pAdapter, peer, TRUE);
                 memset(&staDesc, 0, sizeof(staDesc));
@@ -14427,6 +14516,36 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                            MAC_ADDRESS_STR " failed",
                            __func__, pTdlsPeer->staId, MAC_ADDR_ARRAY(peer));
                     return -EINVAL;
+                }
+
+                /* TDLS Off Channel, Disable tdls channel switch,
+                   when there are more than one tdls link */
+                numCurrTdlsPeers = wlan_hdd_tdlsConnectedPeers(pAdapter);
+                if (numCurrTdlsPeers == 1)
+                {
+                    /* get connected peer and send disable tdls off chan */
+                    connPeer = wlan_hdd_tdls_get_connected_peer(pAdapter);
+                    if (connPeer && (connPeer->isOffChannelConfigured == TRUE))
+                    {
+                        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                                  "%s: More then one peer connected, Disable "
+                                  "TDLS channel switch", __func__);
+
+                        sme_SendTdlsChanSwitchReq(WLAN_HDD_GET_HAL_CTX(pAdapter),
+                                           pAdapter->sessionId,
+                                           connPeer->peerMac,
+                                           connPeer->peerParams.channel,
+                                           TDLS_OFF_CHANNEL_BW_OFFSET,
+                                           TDLS_CHANNEL_SWITCH_DISABLE);
+                    }
+                    else
+                    {
+                        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                                  "%s: No TDLS Connected Peer or "
+                                  "isOffChannelConfigured %d",
+                                  __func__,
+                                  (connPeer ? connPeer->isOffChannelConfigured : -1));
+                    }
                 }
 
                 if (eTDLS_LINK_CONNECTED != pTdlsPeer->link_status)
@@ -14484,6 +14603,36 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                                                    &staId, NULL);
                         }
                         wlan_hdd_tdls_increment_peer_count(pAdapter);
+
+                        /* TDLS Off Channel, Enable tdls channel switch,
+                           when their is only one tdls link and it supports */
+                        numCurrTdlsPeers = wlan_hdd_tdlsConnectedPeers(pAdapter);
+                        if ((numCurrTdlsPeers == 1) &&
+                            (TRUE == pTdlsPeer->isOffChannelSupported) &&
+                            (TRUE == pTdlsPeer->isOffChannelConfigured))
+                        {
+                            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                                  "%s: Send TDLS channel switch request for channel %d",
+                                  __func__, pTdlsPeer->peerParams.channel);
+                            ret = sme_SendTdlsChanSwitchReq(WLAN_HDD_GET_HAL_CTX(pAdapter),
+                                                           pAdapter->sessionId,
+                                                           pTdlsPeer->peerMac,
+                                                           pTdlsPeer->peerParams.channel,
+                                                           TDLS_OFF_CHANNEL_BW_OFFSET,
+                                                           TDLS_CHANNEL_SWITCH_ENABLE);
+                        }
+                        else
+                        {
+                            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                                      "%s: TDLS channel switch request not sent"
+                                      " numCurrTdlsPeers %d "
+                                      "isOffChannelSupported %d "
+                                      "isOffChannelConfigured %d",
+                                      __func__, numCurrTdlsPeers,
+                                      pTdlsPeer->isOffChannelSupported,
+                                      pTdlsPeer->isOffChannelConfigured);
+                        }
+
                     }
                     wlan_hdd_tdls_check_bmps(pAdapter);
 
@@ -14511,6 +14660,9 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
             break;
         case NL80211_TDLS_DISABLE_LINK:
             {
+                tANI_U16 numCurrTdlsPeers = 0;
+                hddTdlsPeer_t *connPeer = NULL;
+
                 pTdlsPeer = wlan_hdd_tdls_find_peer(pAdapter, peer, TRUE);
 
                 if ( NULL == pTdlsPeer ) {
@@ -14552,6 +14704,39 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                                   __func__, status);
                         return -EPERM;
                     }
+
+                    /* TDLS Off Channel, Enable tdls channel switch,
+                       when their is only one tdls link and it supports */
+                    numCurrTdlsPeers = wlan_hdd_tdlsConnectedPeers(pAdapter);
+                    if (numCurrTdlsPeers == 1)
+                    {
+                        connPeer = wlan_hdd_tdls_get_connected_peer(pAdapter);
+                        if ((connPeer) &&
+                            (connPeer->isOffChannelSupported == TRUE) &&
+                            (connPeer->isOffChannelConfigured == TRUE))
+                        {
+                            sme_SendTdlsChanSwitchReq(WLAN_HDD_GET_HAL_CTX(pAdapter),
+                                                           pAdapter->sessionId,
+                                                           connPeer->peerMac,
+                                                           connPeer->peerParams.channel,
+                                                           TDLS_OFF_CHANNEL_BW_OFFSET,
+                                                           TDLS_CHANNEL_SWITCH_ENABLE);
+                        }
+                        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                                  "%s: TDLS channel switch "
+                                  "isOffChannelSupported %d "
+                                  "isOffChannelConfigured %d",
+                                  __func__,
+                                  (connPeer ? connPeer->isOffChannelSupported : -1),
+                                  (connPeer ? connPeer->isOffChannelConfigured : -1));
+                    }
+                    else
+                    {
+                        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                                  "%s: TDLS channel switch request not sent "
+                                  "numCurrTdlsPeers %d ",
+                                  __func__, numCurrTdlsPeers);
+                    }
                 }
                 else
                 {
@@ -14576,6 +14761,7 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
             {
                 status = wlan_hdd_tdls_extctrl_config_peer(pAdapter,
                                                            peer,
+                                                           NULL,
                                                            NULL);
 
                 if (0 != status)

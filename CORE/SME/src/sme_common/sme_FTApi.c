@@ -229,10 +229,8 @@ eHalStatus sme_FTSendUpdateKeyInd(tHalHandle hHal, tCsrRoamSetKey * pFTKeyInfo)
       smsLog(pMac, LOG1, FL("%02x"), pFTKeyInfo->Key[i]);
 #endif
 
-    msgLen  = sizeof( tANI_U16) + sizeof( tANI_U16 ) + 
-       sizeof( pMsg->keyMaterial.length ) + sizeof( pMsg->keyMaterial.edType ) + 
-       sizeof( pMsg->keyMaterial.numKeys ) + sizeof( pMsg->keyMaterial.key );
-                     
+    msgLen = sizeof(tSirFTUpdateKeyInfo);
+
     pMsg = vos_mem_malloc(msgLen);
     if ( NULL == pMsg )
     {

@@ -2413,7 +2413,13 @@ limAddSta(
      */
     if((STA_ENTRY_TDLS_PEER == pStaDs->staType) &&
       (true == updateEntry))
+    {
         pAddStaParams->staIdx = pStaDs->staIndex;
+        /* In 2.4GHz mode, Max supported Oper Rate Mode is 11n */
+        if ((pAddStaParams->currentOperChan >= 1) &&
+            (pAddStaParams->currentOperChan <= 14))
+            pStaDs->supportedRates.opRateMode = eSTA_11n;
+    }
     else
 #endif
         pAddStaParams->staIdx = HAL_STA_INVALID_IDX;
