@@ -60,9 +60,7 @@
 #include "wlan_hdd_tdls.h"
 #endif
 
-#ifdef DEBUG_ROAM_DELAY
 #include "vos_utils.h"
-#endif
 #include  "sapInternal.h"
 #include  "wlan_hdd_trace.h"
 /*--------------------------------------------------------------------------- 
@@ -379,6 +377,8 @@ void hdd_mon_tx_mgmt_pkt(hdd_adapter_t* pAdapter)
    struct sk_buff* skb;
    hdd_adapter_t* pMonAdapter = NULL;
    struct ieee80211_hdr *hdr;
+   hdd_context_t *pHddCtx;
+   int ret = 0;
 
    if (pAdapter == NULL)
    {
@@ -387,7 +387,14 @@ void hdd_mon_tx_mgmt_pkt(hdd_adapter_t* pAdapter)
       VOS_ASSERT(0);
       return;
    }
-
+   pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+   ret = wlan_hdd_validate_context(pHddCtx);
+   if (0 != ret)
+   {
+       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                 "%s: HDD context is not valid, ret =%d",__func__, ret);
+       return;
+   }
    pMonAdapter = hdd_get_adapter( pAdapter->pHddCtx, WLAN_HDD_MONITOR );
    if (pMonAdapter == NULL)
    {
@@ -473,10 +480,17 @@ fail:
    return;
 }
 
-void hdd_mon_tx_work_queue(struct work_struct *work)
+void __hdd_mon_tx_work_queue(struct work_struct *work)
 {
    hdd_adapter_t* pAdapter = container_of(work, hdd_adapter_t, monTxWorkQueue);
    hdd_mon_tx_mgmt_pkt(pAdapter);
+}
+
+void hdd_mon_tx_work_queue(struct work_struct *work)
+{
+   vos_ssr_protect(__func__);
+   __hdd_mon_tx_work_queue(work);
+   vos_ssr_unprotect(__func__);
 }
 
 int hdd_mon_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
@@ -842,12 +856,10 @@ int hdd_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
               "%s: Classified as ac %d up %d", __func__, ac, up);
 #endif // HDD_WMM_DEBUG
 
-#ifdef DEBUG_ROAM_DELAY
    if (pHddCtx->cfg_ini->gEnableRoamDelayStats)
    {
        vos_record_roam_event(e_HDD_FIRST_XMIT_TIME, (void *)skb, 0);
    }
-#endif
 
    spin_lock(&pAdapter->wmm_tx_queue[ac].lock);
    /*CR 463598,384996*/
@@ -1793,12 +1805,10 @@ VOS_STATUS hdd_tx_fetch_packet_cbk( v_VOID_t *vosContext,
                 pktNode->userPriority, pPktMetaInfo->ucUP);
    }
 
-#ifdef DEBUG_ROAM_DELAY
    if (pHddCtx->cfg_ini->gEnableRoamDelayStats)
    {
        vos_record_roam_event(e_TL_FIRST_XMIT_TIME, NULL, 0);
    }
-#endif
 
    pPktMetaInfo->ucType = 0;          //FIXME Don't know what this is
    pPktMetaInfo->ucDisableFrmXtl = 0; //802.3 frame so we need to xlate
@@ -2110,12 +2120,10 @@ VOS_STATUS hdd_rx_packet_cbk( v_VOID_t *vosContext,
          }
       }
 
-#ifdef DEBUG_ROAM_DELAY
-   if (pHddCtx->cfg_ini->gEnableRoamDelayStats)
-   {
-       vos_record_roam_event(e_HDD_RX_PKT_CBK_TIME, (void *)skb, 0);
-   }
-#endif
+      if (pHddCtx->cfg_ini->gEnableRoamDelayStats)
+      {
+          vos_record_roam_event(e_HDD_RX_PKT_CBK_TIME, (void *)skb, 0);
+      }
       if (( NULL != pHddCtx ) &&
          (pHddCtx->cfg_ini->gEnableDebugLog & VOS_PKT_PROTO_TYPE_DHCP))
       {

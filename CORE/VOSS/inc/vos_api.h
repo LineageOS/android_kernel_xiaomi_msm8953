@@ -331,9 +331,7 @@ VOS_STATUS vos_randomize_n_bytes(void *mac_addr, tANI_U32 n);
 
 v_BOOL_t vos_is_wlan_in_badState(VOS_MODULE_ID moduleId,
                                  v_VOID_t *moduleContext);
-#ifdef DEBUG_ROAM_DELAY
 v_VOID_t  vos_set_roam_delay_stats_enabled(v_U8_t value);
 v_U8_t    vos_get_roam_delay_stats_enabled(v_VOID_t);
-#endif //#ifdef DEBUG_ROAM_DELAY
 
 #endif // if !defined __VOS_NVITEM_H

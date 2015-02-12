@@ -53,9 +53,7 @@
 #include <csrEse.h>
 #endif
 
-#ifdef DEBUG_ROAM_DELAY
 #include "vos_utils.h"
-#endif
 
 #ifndef WLAN_MDM_CODE_REDUCTION_OPT
 /* TODO : 6Mbps as Cisco APs seem to like only this value; analysis req.   */
@@ -7190,7 +7188,6 @@ eHalStatus sme_QosAddTsSuccessFnp(tpAniSirGlobal pMac, tListElem *pEntry)
       }
    }
 
-#ifdef DEBUG_ROAM_DELAY
    if (pMac->roam.configParam.roamDelayStatsEnabled)
    {
        if (pACInfo->curr_QoSInfo[pACInfo->tspec_pending - 1].ts_info.up ==  SME_QOS_WMM_UP_VO ||
@@ -7205,7 +7202,6 @@ eHalStatus sme_QosAddTsSuccessFnp(tpAniSirGlobal pMac, tListElem *pEntry)
            vos_record_roam_event(e_SME_VI_ADDTS_RSP, NULL, 0);
        }
    }
-#endif
 
    if(delete_entry)
    {

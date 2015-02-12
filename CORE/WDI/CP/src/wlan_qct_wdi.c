@@ -91,9 +91,7 @@
 #include "pttMsgApi.h"
 #include "vos_trace.h"
 
-#ifdef DEBUG_ROAM_DELAY
 #include "vos_api.h"
-#endif //#ifdef DEBUG_ROAM_DELAY
 
 /*===========================================================================
    WLAN DAL Control Path Internal Data Definitions and Declarations
@@ -1717,9 +1715,7 @@ WDI_Init
 
   /*The WDI is initialized - set state to init */
   gWDICb.uGlobalState = WDI_INIT_ST;
-#ifdef DEBUG_ROAM_DELAY
   gWDICb.roamDelayStatsEnabled = vos_get_roam_delay_stats_enabled();
-#endif //#ifdef DEBUG_ROAM_DELAY
   /*Send the context as a ptr to the global WDI Control Block*/
   *ppWDIGlobalCtx = &gWDICb;
 
