@@ -227,6 +227,7 @@ typedef struct tagSmeCmd
         tTdlsCmd  tdlsCmd;
 #endif
         tSirPNOScanReq pnoInfo;
+        tSirSpoofMacAddrReq macAddrSpoofCmd;
     }u;
 }tSmeCmd;
 
@@ -280,6 +281,7 @@ eHalStatus oemData_ProcessOemDataReqCommand(tpAniSirGlobal pMac, tSmeCmd *pComma
 eHalStatus csrProcessAddStaSessionCommand( tpAniSirGlobal pMac, tSmeCmd *pCommand );
 eHalStatus csrProcessAddStaSessionRsp( tpAniSirGlobal pMac, tANI_U8 *pMsg);
 eHalStatus csrProcessDelStaSessionCommand( tpAniSirGlobal pMac, tSmeCmd *pCommand );
+eHalStatus csrProcessMacAddrSpoofCommand( tpAniSirGlobal pMac, tSmeCmd *pCommand );
 eHalStatus csrProcessDelStaSessionRsp( tpAniSirGlobal pMac, tANI_U8 *pMsg);
 
 #ifdef WLAN_NS_OFFLOAD
