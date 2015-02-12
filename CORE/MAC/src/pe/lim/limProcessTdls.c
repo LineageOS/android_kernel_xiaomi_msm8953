@@ -2017,13 +2017,8 @@ tSirRetStatus limSendTdlsLinkSetupCnfFrame(tpAniSirGlobal pMac, tSirMacAddr peer
     tdlsSetupCnf.Action.action     = SIR_MAC_TDLS_SETUP_CNF ;
     tdlsSetupCnf.DialogToken.token = dialog ;
 
-#if 1
     PopulateDot11fLinkIden( pMac, psessionEntry, &tdlsSetupCnf.LinkIdentifier,
                       peerMac, TDLS_INITIATOR) ;
-#else
-    vos_mem_copy( (tANI_U8 *)&tdlsSetupCnf.LinkIdentifier,
-                  (tANI_U8 *)&setupRsp->LinkIdentifier, sizeof(tDot11fIELinkIdentifier)) ;
-#endif
 
     /* 
      * TODO: we need to see if we have to support conditions where we have
@@ -3461,7 +3456,6 @@ static tSirRetStatus limProcessTdlsSetupReqFrame(tpAniSirGlobal pMac,
             
                 break ;
             }
-#if 1
             case TDLS_LINK_SETUP_DONE_STATE:
             {
                 tpDphHashNode pStaDs = NULL ;
@@ -3512,7 +3506,6 @@ static tSirRetStatus limProcessTdlsSetupReqFrame(tpAniSirGlobal pMac,
                         ("link Setup is Recieved in unknown state" )) ;
                 break ;
             }
-#endif
         }
         if(tdlsStateStatus == TDLS_LINK_SETUP_START_STATE) 
             return eSIR_FAILURE ;
@@ -4441,12 +4434,11 @@ static tSirRetStatus limTdlsLinkEstablish(tpAniSirGlobal pMac, tSirMacAddr peerM
     tdlsPtiTemplate.Category.category = SIR_MAC_ACTION_TDLS;
     tdlsPtiTemplate.Action.action     = SIR_MAC_TDLS_PEER_TRAFFIC_IND;
     tdlsPtiTemplate.DialogToken.token = 0 ; /* filled by firmware at the time of transmission */
-#if 1 
     /* CHECK_PTI_LINK_IDENTIFIER_INITIATOR_ADDRESS: initator address should be TDLS link setup's initiator address, 
     then below code makes such an way */
     PopulateDot11fLinkIden( pMac, psessionEntry, &tdlsPtiTemplate.LinkIdentifier,
         peerMac, !setupPeer->tdls_bIsResponder) ;
-#else
+#if 0
    /* below code will make PTI's linkIdentifier's initiator address be selfAddr */
     PopulateDot11fLinkIden( pMac, psessionEntry, &tdlsPtiTemplate.LinkIdentifier,
         peerMac, TDLS_INITIATOR) ;
