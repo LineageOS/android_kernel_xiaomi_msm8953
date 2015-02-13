@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -335,24 +335,34 @@ static void hdd_wmm_disable_tl_uapsd (hdd_wmm_qos_context_t* pQosContext)
 */
 static void hdd_wmm_free_context (hdd_wmm_qos_context_t* pQosContext)
 {
-   hdd_adapter_t* pAdapter;
+   v_CONTEXT_t pVosContext = vos_get_global_context( VOS_MODULE_ID_HDD, NULL );
+   hdd_context_t *pHddCtx;
+
+   if (NULL != pVosContext)
+   {
+      pHddCtx = vos_get_context( VOS_MODULE_ID_HDD, pVosContext);
+      if (NULL == pHddCtx)
+      {
+         VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+                   FL("HddCtx is NULL"));
+         return;
+      }
+   }
 
    VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_INFO_LOW,
              "%s: Entered, context %p",
              __func__, pQosContext);
 
+   // take the wmmLock since we're manipulating the context list
+   mutex_lock(&pHddCtx->wmmLock);
+
    if (unlikely((NULL == pQosContext) ||
                 (HDD_WMM_CTX_MAGIC != pQosContext->magic)))
    {
       // must have been freed in another thread
+      mutex_unlock(&pHddCtx->wmmLock);
       return;
    }
-
-   // get pointer to the adapter context
-   pAdapter = pQosContext->pAdapter;
-
-   // take the wmmLock since we're manipulating the context list
-   mutex_lock(&pAdapter->hddWmmStatus.wmmLock);
 
    // make sure nobody thinks this is a valid context
    pQosContext->magic = 0;
@@ -361,7 +371,7 @@ static void hdd_wmm_free_context (hdd_wmm_qos_context_t* pQosContext)
    list_del(&pQosContext->node);
 
    // done manipulating the list
-   mutex_unlock(&pAdapter->hddWmmStatus.wmmLock);
+   mutex_unlock(&pHddCtx->wmmLock);
 
    // reclaim memory
    kfree(pQosContext);
@@ -384,20 +394,36 @@ static void hdd_wmm_notify_app (hdd_wmm_qos_context_t* pQosContext)
    hdd_adapter_t* pAdapter;
    union iwreq_data wrqu;
    char buf[MAX_NOTIFY_LEN+1];
+   v_CONTEXT_t pVosContext = vos_get_global_context( VOS_MODULE_ID_HDD, NULL );
+   hdd_context_t *pHddCtx;
+
+   if (NULL != pVosContext)
+   {
+      pHddCtx = vos_get_context( VOS_MODULE_ID_HDD, pVosContext);
+      if (NULL == pHddCtx)
+      {
+         VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+                   FL("HddCtx is NULL"));
+         return;
+      }
+   }
 
    VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_INFO_LOW,
              "%s: Entered, context %p",
              __func__, pQosContext);
-
+   mutex_lock(&pHddCtx->wmmLock);
    if (unlikely((NULL == pQosContext) ||
                 (HDD_WMM_CTX_MAGIC != pQosContext->magic)))
    {
       VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
                 "%s: Invalid QoS Context",
                 __func__);
+      mutex_unlock(&pHddCtx->wmmLock);
       return;
    }
-
+   // get pointer to the adapter
+   pAdapter = pQosContext->pAdapter;
+   mutex_unlock(&pHddCtx->wmmLock);
 
    // create the event
    memset(&wrqu, 0, sizeof(wrqu));
@@ -410,8 +436,7 @@ static void hdd_wmm_notify_app (hdd_wmm_qos_context_t* pQosContext)
    wrqu.data.pointer = buf;
    wrqu.data.length = strlen(buf);
 
-   // get pointer to the adapter
-   pAdapter = pQosContext->pAdapter;
+
 
    // send the event
    VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_INFO,
@@ -493,8 +518,33 @@ void hdd_wmm_inactivity_timer_cb( v_PVOID_t pUserData )
     hdd_wlan_wmm_status_e status;
     VOS_STATUS vos_status;
     v_U32_t currentTrafficCnt = 0;
-    WLANTL_ACEnumType acType = pQosContext->acType;
+    WLANTL_ACEnumType acType = 0;
+    v_CONTEXT_t pVosContext = vos_get_global_context( VOS_MODULE_ID_HDD, NULL );
+    hdd_context_t *pHddCtx;
+    if (NULL != pVosContext)
+    {
+        pHddCtx = vos_get_context( VOS_MODULE_ID_HDD, pVosContext);
+        if (NULL == pHddCtx)
+        {
+            VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+                      FL("HddCtx is NULL"));
+            return;
+        }
+    }
 
+    mutex_lock(&pHddCtx->wmmLock);
+    if (unlikely((NULL == pQosContext) ||
+                (HDD_WMM_CTX_MAGIC != pQosContext->magic)))
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+                  "%s: Invalid QoS Context",
+                  __func__);
+        mutex_unlock(&pHddCtx->wmmLock);
+        return;
+    }
+    mutex_unlock(&pHddCtx->wmmLock);
+
+    acType = pQosContext->acType;
     pAdapter = pQosContext->pAdapter;
     pAc = &pAdapter->hddWmmStatus.wmmAcStatus[acType];
 
@@ -641,19 +691,36 @@ static eHalStatus hdd_wmm_sme_callback (tHalHandle hHal,
    WLANTL_ACEnumType acType;
    hdd_wmm_ac_status_t *pAc;
    VOS_STATUS status;
+   v_CONTEXT_t pVosContext = vos_get_global_context( VOS_MODULE_ID_HDD, NULL );
+   hdd_context_t *pHddCtx;
+
+   if (NULL != pVosContext)
+   {
+      pHddCtx = vos_get_context( VOS_MODULE_ID_HDD, pVosContext);
+      if (NULL == pHddCtx)
+      {
+         VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+                   FL("HddCtx is NULL"));
+         return eHAL_STATUS_FAILURE;
+      }
+   }
+
 
    VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_INFO_LOW,
              "%s: Entered, context %p",
              __func__, pQosContext);
 
+   mutex_lock(&pHddCtx->wmmLock);
    if (unlikely((NULL == pQosContext) ||
                 (HDD_WMM_CTX_MAGIC != pQosContext->magic)))
    {
       VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
                 "%s: Invalid QoS Context",
                 __func__);
+      mutex_unlock(&pHddCtx->wmmLock);
       return eHAL_STATUS_FAILURE;
    }
+   mutex_unlock(&pHddCtx->wmmLock);
 
    pAdapter = pQosContext->pAdapter;
    acType = pQosContext->acType;
@@ -1315,18 +1382,34 @@ static void hdd_wmm_do_implicit_qos(struct work_struct *work)
    sme_QosStatusType smeStatus;
 #endif
    sme_QosWmmTspecInfo qosInfo;
+   v_CONTEXT_t pVosContext = vos_get_global_context( VOS_MODULE_ID_HDD, NULL );
+   hdd_context_t *pHddCtx;
+
+   if (NULL != pVosContext)
+   {
+      pHddCtx = vos_get_context( VOS_MODULE_ID_HDD, pVosContext);
+      if (NULL == pHddCtx)
+      {
+         VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+                   FL("HddCtx is NULL"));
+         return;
+      }
+   }
 
    VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_INFO_LOW,
              "%s: Entered, context %p",
              __func__, pQosContext);
 
+   mutex_lock(&pHddCtx->wmmLock);
    if (unlikely(HDD_WMM_CTX_MAGIC != pQosContext->magic))
    {
       VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
                 "%s: Invalid QoS Context",
                 __func__);
+      mutex_unlock(&pHddCtx->wmmLock);
       return;
    }
+   mutex_unlock(&pHddCtx->wmmLock);
 
    pAdapter = pQosContext->pAdapter;
    acType = pQosContext->acType;
@@ -1453,9 +1536,9 @@ static void hdd_wmm_do_implicit_qos(struct work_struct *work)
      }
    }
 
-   mutex_lock(&pAdapter->hddWmmStatus.wmmLock);
+   mutex_lock(&pHddCtx->wmmLock);
    list_add(&pQosContext->node, &pAdapter->hddWmmStatus.wmmContextList);
-   mutex_unlock(&pAdapter->hddWmmStatus.wmmLock);
+   mutex_unlock(&pHddCtx->wmmLock);
 
 #ifndef WLAN_MDM_CODE_REDUCTION_OPT
    smeStatus = sme_QosSetupReq(WLAN_HDD_GET_HAL_CTX(pAdapter),
@@ -1587,7 +1670,6 @@ VOS_STATUS hdd_wmm_adapter_init( hdd_adapter_t *pAdapter )
 
    pAdapter->hddWmmStatus.wmmQap = VOS_FALSE;
    INIT_LIST_HEAD(&pAdapter->hddWmmStatus.wmmContextList);
-   mutex_init(&pAdapter->hddWmmStatus.wmmLock);
 
    for (acType = 0; acType < WLANTL_MAX_AC; acType++)
    {
@@ -1651,6 +1733,19 @@ VOS_STATUS hdd_wmm_adapter_clear( hdd_adapter_t *pAdapter )
 VOS_STATUS hdd_wmm_adapter_close ( hdd_adapter_t* pAdapter )
 {
    hdd_wmm_qos_context_t* pQosContext;
+   v_CONTEXT_t pVosContext = vos_get_global_context( VOS_MODULE_ID_HDD, NULL );
+   hdd_context_t *pHddCtx;
+
+   if (NULL != pVosContext)
+   {
+      pHddCtx = vos_get_context( VOS_MODULE_ID_HDD, pVosContext);
+      if (NULL == pHddCtx)
+      {
+         VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+                   FL("HddCtx is NULL"));
+         return VOS_STATUS_E_FAILURE;
+      }
+   }
 
    VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_INFO_LOW,
              "%s: Entered", __func__);
@@ -1664,12 +1759,14 @@ VOS_STATUS hdd_wmm_adapter_close ( hdd_adapter_t* pAdapter )
       hdd_wmm_disable_inactivity_timer(pQosContext);
 #endif
 #ifdef WLAN_OPEN_SOURCE
+   mutex_lock(&pHddCtx->wmmLock);
    if (pQosContext->handle == HDD_WMM_HANDLE_IMPLICIT
        && pQosContext->magic == HDD_WMM_CTX_MAGIC)
    {
 
       cancel_work_sync(&pQosContext->wmmAcSetupImplicitQos);
    }
+   mutex_unlock(&pHddCtx->wmmLock);
 #endif
       hdd_wmm_free_context(pQosContext);
    }
@@ -2509,12 +2606,25 @@ hdd_wlan_wmm_status_e hdd_wmm_addts( hdd_adapter_t* pAdapter,
    sme_QosStatusType smeStatus;
 #endif
    v_BOOL_t found = VOS_FALSE;
+   v_CONTEXT_t pVosContext = vos_get_global_context( VOS_MODULE_ID_HDD, NULL );
+   hdd_context_t *pHddCtx;
+   if (NULL != pVosContext)
+   {
+      pHddCtx = vos_get_context( VOS_MODULE_ID_HDD, pVosContext);
+      if (NULL == pHddCtx)
+      {
+         VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+                   FL("HddCtx is NULL"));
+         return HDD_WLAN_WMM_STATUS_SETUP_FAILED;
+      }
+   }
+
 
    VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_INFO_LOW,
              "%s: Entered with handle 0x%x", __func__, handle);
 
    // see if a context already exists with the given handle
-   mutex_lock(&pAdapter->hddWmmStatus.wmmLock);
+   mutex_lock(&pHddCtx->wmmLock);
    list_for_each_entry(pQosContext,
                        &pAdapter->hddWmmStatus.wmmContextList,
                        node)
@@ -2525,7 +2635,7 @@ hdd_wlan_wmm_status_e hdd_wmm_addts( hdd_adapter_t* pAdapter,
          break;
       }
    }
-   mutex_unlock(&pAdapter->hddWmmStatus.wmmLock);
+   mutex_unlock(&pHddCtx->wmmLock);
    if (found)
    {
       // record with that handle already exists
@@ -2567,12 +2677,12 @@ hdd_wlan_wmm_status_e hdd_wmm_addts( hdd_adapter_t* pAdapter,
           return HDD_WLAN_WMM_STATUS_MODIFY_FAILED;
       }
 
-      mutex_lock(&pAdapter->hddWmmStatus.wmmLock);
+      mutex_lock(&pHddCtx->wmmLock);
       if (pQosContext->magic == HDD_WMM_CTX_MAGIC)
       {
           pQosContext->lastStatus = status;
       }
-      mutex_unlock(&pAdapter->hddWmmStatus.wmmLock);
+      mutex_unlock(&pHddCtx->wmmLock);
       return status;
    }
 
@@ -2598,17 +2708,18 @@ hdd_wlan_wmm_status_e hdd_wmm_addts( hdd_adapter_t* pAdapter,
                 HDD_WMM_UP_TO_AC_MAP_SIZE - 1, hddWmmUpToAcMap[0]);
       pQosContext->acType = hddWmmUpToAcMap[0];
    }
+
    pQosContext->pAdapter = pAdapter;
    pQosContext->qosFlowId = 0;
-   pQosContext->magic = HDD_WMM_CTX_MAGIC;
 
    VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_INFO,
              "%s: Setting up QoS, context %p",
              __func__, pQosContext);
 
-   mutex_lock(&pAdapter->hddWmmStatus.wmmLock);
+   mutex_lock(&pHddCtx->wmmLock);
+   pQosContext->magic = HDD_WMM_CTX_MAGIC;
    list_add(&pQosContext->node, &pAdapter->hddWmmStatus.wmmContextList);
-   mutex_unlock(&pAdapter->hddWmmStatus.wmmLock);
+   mutex_unlock(&pHddCtx->wmmLock);
 
 #ifndef WLAN_MDM_CODE_REDUCTION_OPT
    smeStatus = sme_QosSetupReq(WLAN_HDD_GET_HAL_CTX(pAdapter),
@@ -2660,12 +2771,12 @@ hdd_wlan_wmm_status_e hdd_wmm_addts( hdd_adapter_t* pAdapter,
 #endif
 
    // we were successful, save the status
-   mutex_lock(&pAdapter->hddWmmStatus.wmmLock);
+   mutex_lock(&pHddCtx->wmmLock);
    if (pQosContext->magic == HDD_WMM_CTX_MAGIC)
    {
          pQosContext->lastStatus = status;
    }
-   mutex_unlock(&pAdapter->hddWmmStatus.wmmLock);
+   mutex_unlock(&pHddCtx->wmmLock);
 
    return status;
 }
@@ -2690,12 +2801,25 @@ hdd_wlan_wmm_status_e hdd_wmm_delts( hdd_adapter_t* pAdapter,
 #ifndef WLAN_MDM_CODE_REDUCTION_OPT
    sme_QosStatusType smeStatus;
 #endif
+   v_CONTEXT_t pVosContext = vos_get_global_context( VOS_MODULE_ID_HDD, NULL );
+   hdd_context_t *pHddCtx;
+
+   if (NULL != pVosContext)
+   {
+      pHddCtx = vos_get_context( VOS_MODULE_ID_HDD, pVosContext);
+      if (NULL == pHddCtx)
+      {
+         VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+                   FL("HddCtx is NULL"));
+         return HDD_WLAN_WMM_STATUS_RELEASE_FAILED;
+      }
+   }
 
    VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_INFO_LOW,
              "%s: Entered with handle 0x%x", __func__, handle);
 
    // locate the context with the given handle
-   mutex_lock(&pAdapter->hddWmmStatus.wmmLock);
+   mutex_lock(&pHddCtx->wmmLock);
    list_for_each_entry(pQosContext,
                        &pAdapter->hddWmmStatus.wmmContextList,
                        node)
@@ -2708,7 +2832,7 @@ hdd_wlan_wmm_status_e hdd_wmm_delts( hdd_adapter_t* pAdapter,
          break;
       }
    }
-   mutex_unlock(&pAdapter->hddWmmStatus.wmmLock);
+   mutex_unlock(&pHddCtx->wmmLock);
 
    if (VOS_FALSE == found)
    {
@@ -2775,12 +2899,12 @@ hdd_wlan_wmm_status_e hdd_wmm_delts( hdd_adapter_t* pAdapter,
    }
 
 #endif
-   mutex_lock(&pAdapter->hddWmmStatus.wmmLock);
+   mutex_lock(&pHddCtx->wmmLock);
    if (pQosContext->magic == HDD_WMM_CTX_MAGIC)
    {
          pQosContext->lastStatus = status;
    }
-   mutex_unlock(&pAdapter->hddWmmStatus.wmmLock);
+   mutex_unlock(&pHddCtx->wmmLock);
    return status;
 }
 
@@ -2798,12 +2922,25 @@ hdd_wlan_wmm_status_e hdd_wmm_checkts( hdd_adapter_t* pAdapter,
 {
    hdd_wmm_qos_context_t *pQosContext;
    hdd_wlan_wmm_status_e status = HDD_WLAN_WMM_STATUS_LOST;
+   v_CONTEXT_t pVosContext = vos_get_global_context( VOS_MODULE_ID_HDD, NULL );
+   hdd_context_t *pHddCtx;
+
+   if (NULL != pVosContext)
+   {
+      pHddCtx = vos_get_context( VOS_MODULE_ID_HDD, pVosContext);
+      if (NULL == pHddCtx)
+      {
+         VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+                   FL("HddCtx is NULL"));
+         return HDD_WLAN_WMM_STATUS_LOST;
+      }
+   }
 
    VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_INFO_LOW,
              "%s: Entered with handle 0x%x", __func__, handle);
 
    // locate the context with the given handle
-   mutex_lock(&pAdapter->hddWmmStatus.wmmLock);
+   mutex_lock(&pHddCtx->wmmLock);
    list_for_each_entry(pQosContext,
                        &pAdapter->hddWmmStatus.wmmContextList,
                        node)
@@ -2818,6 +2955,6 @@ hdd_wlan_wmm_status_e hdd_wmm_checkts( hdd_adapter_t* pAdapter,
          break;
       }
    }
-   mutex_unlock(&pAdapter->hddWmmStatus.wmmLock);
+   mutex_unlock(&pHddCtx->wmmLock);
    return status;
 }
