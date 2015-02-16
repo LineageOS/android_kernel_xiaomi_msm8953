@@ -745,6 +745,10 @@ void hdd_connRemoveConnectInfo( hdd_station_ctx_t *pHddStaCtx )
 
 VOS_STATUS hdd_ibss_deinit_tx_rx_sta ( hdd_adapter_t *pAdapter, v_U8_t STAId )
 {
+   v_U8_t ac;
+   /**Track whether OS TX queue has been disabled.*/
+   v_BOOL_t txSuspended[NUM_TX_QUEUES];
+   v_U8_t tlAC;
    v_U8_t i;
    hdd_station_ctx_t *pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
    hdd_ibss_peer_info_t *pPeerInfo;
@@ -755,6 +759,7 @@ VOS_STATUS hdd_ibss_deinit_tx_rx_sta ( hdd_adapter_t *pAdapter, v_U8_t STAId )
                    "%s: HDD station context NULL ",__func__);
         return VOS_STATUS_E_FAILURE;
    }
+
    pPeerInfo = &pHddStaCtx->ibss_peer_info;
    if (FALSE == pPeerInfo->ibssStaInfo[STAId].isUsed)
    {
@@ -764,8 +769,33 @@ VOS_STATUS hdd_ibss_deinit_tx_rx_sta ( hdd_adapter_t *pAdapter, v_U8_t STAId )
    }
 
    hdd_flush_ibss_tx_queues(pAdapter, STAId);
+
+   for (ac = HDD_LINUX_AC_VO; ac <= HDD_LINUX_AC_BK; ac++)
+   {
+      tlAC = hdd_QdiscAcToTlAC[ac];
+      txSuspended[ac] = pPeerInfo->ibssStaInfo[STAId].txSuspended[tlAC];
+   }
+
    vos_mem_zero(&pPeerInfo->ibssStaInfo[STAId], sizeof(hdd_ibss_station_info_t));
 
+   /* re-init hdd list, since netdev can still open adapter until
+    * driver gets unloaded
+    */
+   for (i = 0; i < NUM_TX_QUEUES; i ++)
+   {
+      hdd_list_init(&pPeerInfo->ibssStaInfo[STAId].wmm_tx_queue[i],
+                    HDD_TX_QUEUE_MAX_LEN);
+   }
+
+   for (ac = HDD_LINUX_AC_VO; ac <= HDD_LINUX_AC_BK; ac++)
+   {
+      if (txSuspended[ac])
+      {
+         VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_INFO,
+                    "%s: TX queue re-enabled", __func__);
+         netif_wake_subqueue(pAdapter->dev, ac);
+      }
+   }
    return VOS_STATUS_SUCCESS;
 }
 

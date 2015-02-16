@@ -1496,6 +1496,7 @@ VOS_STATUS hdd_issta_p2p_clientconnected(hdd_context_t *pHddCtx);
 VOS_STATUS hdd_is_any_session_connected(hdd_context_t *pHddCtx);
 void hdd_ipv4_notifier_work_queue(struct work_struct *work);
 v_BOOL_t hdd_isConnectionInProgress( hdd_context_t *pHddCtx);
+void hdd_set_ibss_ops(hdd_adapter_t *pAdapter);
 #ifdef WLAN_FEATURE_PACKET_FILTERING
 int wlan_hdd_setIPv6Filter(hdd_context_t *pHddCtx, tANI_U8 filterType, tANI_U8 sessionId);
 #endif

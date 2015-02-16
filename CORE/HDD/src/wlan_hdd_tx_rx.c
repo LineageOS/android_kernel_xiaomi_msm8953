@@ -1381,6 +1381,105 @@ struct net_device_stats* hdd_stats(struct net_device *dev)
 }
 
 /**============================================================================
+  @brief hdd_ibss_init_tx_rx() - Init function to initialize Tx/RX
+  modules in HDD
+
+  @param pAdapter : [in] pointer to adapter context
+  @return         : VOS_STATUS_E_FAILURE if any errors encountered
+                  : VOS_STATUS_SUCCESS otherwise
+  ===========================================================================*/
+void hdd_ibss_init_tx_rx( hdd_adapter_t *pAdapter )
+{
+   v_U8_t i;
+   v_U8_t STAId = 0;
+   hdd_station_ctx_t *pHddStaCtx = &pAdapter->sessionCtx.station;
+   hdd_ibss_peer_info_t *pPeerInfo = &pHddStaCtx->ibss_peer_info;
+   v_U8_t pACWeights[] = {
+                           HDD_SOFTAP_BK_WEIGHT_DEFAULT,
+                           HDD_SOFTAP_BE_WEIGHT_DEFAULT,
+                           HDD_SOFTAP_VI_WEIGHT_DEFAULT,
+                           HDD_SOFTAP_VO_WEIGHT_DEFAULT
+                         };
+
+   pAdapter->isVosOutOfResource = VOS_FALSE;
+   pAdapter->isVosLowResource = VOS_FALSE;
+
+   // Since SAP model is used for IBSS also. Using same queue length as in SAP.
+   pAdapter->aTxQueueLimit[WLANTL_AC_BK] = HDD_SOFTAP_TX_BK_QUEUE_MAX_LEN;
+   pAdapter->aTxQueueLimit[WLANTL_AC_BE] = HDD_SOFTAP_TX_BE_QUEUE_MAX_LEN;
+   pAdapter->aTxQueueLimit[WLANTL_AC_VI] = HDD_SOFTAP_TX_VI_QUEUE_MAX_LEN;
+   pAdapter->aTxQueueLimit[WLANTL_AC_VO] = HDD_SOFTAP_TX_VO_QUEUE_MAX_LEN;
+
+   for (STAId = 0; STAId < HDD_MAX_NUM_IBSS_STA; STAId++)
+   {
+      vos_mem_zero(&pPeerInfo->ibssStaInfo[STAId], sizeof(hdd_ibss_station_info_t));
+      for (i = 0; i < NUM_TX_QUEUES; i ++)
+      {
+         hdd_list_init(&pPeerInfo->ibssStaInfo[STAId].wmm_tx_queue[i], HDD_TX_QUEUE_MAX_LEN);
+      }
+   }
+
+   /* Update the AC weights suitable for SoftAP mode of operation */
+   WLANTL_SetACWeights((WLAN_HDD_GET_CTX(pAdapter))->pvosContext, pACWeights);
+}
+
+/**============================================================================
+  @brief hdd_ibss_deinit_tx_rx() - Deinit function to clean up Tx/RX
+  modules in HDD
+
+  @param pAdapter : [in] pointer to adapter context..
+  @return         : VOS_STATUS_E_FAILURE if any errors encountered.
+                  : VOS_STATUS_SUCCESS otherwise
+  ===========================================================================*/
+VOS_STATUS hdd_ibss_deinit_tx_rx( hdd_adapter_t *pAdapter )
+{
+   VOS_STATUS status = VOS_STATUS_SUCCESS;
+   v_U8_t STAId = 0;
+   hdd_station_ctx_t *pHddStaCtx = &pAdapter->sessionCtx.station;
+   hdd_ibss_peer_info_t * pPeerInfo = &pHddStaCtx->ibss_peer_info;
+   hdd_list_node_t *anchor = NULL;
+   skb_list_node_t *pktNode = NULL;
+   struct sk_buff *skb = NULL;
+   v_SINT_t i = -1;
+
+   for (STAId = 0; STAId < HDD_MAX_NUM_IBSS_STA; STAId++)
+   {
+      if (VOS_FALSE == pPeerInfo->ibssStaInfo[STAId].isUsed)
+      {
+         continue;
+      }
+      for (i = 0; i < NUM_TX_QUEUES; i ++)
+      {
+         spin_lock_bh(&pPeerInfo->ibssStaInfo[STAId].wmm_tx_queue[i].lock);
+         while (true)
+         {
+            status = hdd_list_remove_front ( &pPeerInfo->ibssStaInfo[STAId].wmm_tx_queue[i], &anchor);
+
+            if (VOS_STATUS_E_EMPTY != status)
+            {
+               //If success then we got a valid packet from some AC
+               pktNode = list_entry(anchor, skb_list_node_t, anchor);
+               skb = pktNode->skb;
+               ++pAdapter->stats.tx_dropped;
+               ++pAdapter->hdd_stats.hddTxRxStats.txFlushed;
+               ++pAdapter->hdd_stats.hddTxRxStats.txFlushedAC[i];
+               kfree_skb(skb);
+               continue;
+            }
+
+            //current list is empty
+            break;
+         }
+         pPeerInfo->ibssStaInfo[STAId].txSuspended[i] = VOS_FALSE;
+         spin_unlock_bh(&pPeerInfo->ibssStaInfo[STAId].wmm_tx_queue[i].lock);
+      }
+   }
+   pAdapter->isVosLowResource = VOS_FALSE;
+
+   return status;
+}
+
+/**============================================================================
   @brief hdd_init_tx_rx() - Init function to initialize Tx/RX
   modules in HDD
 

@@ -6884,6 +6884,8 @@ void hdd_wmm_tx_snapshot(hdd_adapter_t *pAdapter)
     int i = 0, j = 0;
     v_CONTEXT_t pVosContext = ( WLAN_HDD_GET_CTX(pAdapter))->pvosContext;
     ptSapContext pSapCtx = VOS_GET_SAP_CB(pVosContext);
+    hdd_station_ctx_t *pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
+    hdd_ibss_peer_info_t *pPeerInfo;
 
     for ( i=0; i< NUM_TX_QUEUES; i++)
     {
@@ -6918,6 +6920,37 @@ void hdd_wmm_tx_snapshot(hdd_adapter_t *pAdapter)
         }
     }
     spin_unlock_bh(&pSapCtx->staInfo_lock);
+
+    if(pHddStaCtx == NULL){
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  FL("pHddStaCtx is NULL"));
+        return;
+    }
+
+    pPeerInfo = &pHddStaCtx->ibss_peer_info;
+    if(pPeerInfo == NULL){
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  FL("ppeerinfo is NULL"));
+        return;
+    }
+
+    for(i =0; i< HDD_MAX_NUM_IBSS_STA; i++)
+   {
+        if(pPeerInfo->ibssStaInfo[i].isUsed)
+        {
+             hddLog(LOGE, "******IBSS STAIndex: %d*********", i);
+             for ( j=0; j< NUM_TX_QUEUES; j++)
+             {
+                spin_lock_bh(&pPeerInfo->ibssStaInfo[i].wmm_tx_queue[j].lock);
+                hddLog(LOGE, "HDD TxQueue Info For AC: %d Count: %d PrevAdress:%p, NextAddress:%p",
+                       j, pPeerInfo->ibssStaInfo[i].wmm_tx_queue[j].count,
+                       pPeerInfo->ibssStaInfo[i].wmm_tx_queue[j].anchor.prev,
+                       pPeerInfo->ibssStaInfo[i].wmm_tx_queue[j].anchor.next);
+                spin_unlock_bh(&pPeerInfo->ibssStaInfo[i].wmm_tx_queue[j].lock);
+             }
+        }
+    }
+
 
 }
 static int __iw_set_var_ints_getnone(struct net_device *dev,

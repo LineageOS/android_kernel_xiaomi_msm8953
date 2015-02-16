@@ -7915,6 +7915,8 @@ int __wlan_hdd_cfg80211_change_iface( struct wiphy *wiphy,
                     hdd_cfg_xlate_to_csr_phy_mode(pConfig->dot11Mode);
                 pAdapter->device_mode = WLAN_HDD_IBSS;
                 wdev->iftype = type;
+                hdd_set_ibss_ops( pAdapter );
+                hdd_ibss_init_tx_rx( pAdapter );
                 break;
 
             case NL80211_IFTYPE_AP:

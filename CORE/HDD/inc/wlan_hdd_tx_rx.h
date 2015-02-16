@@ -176,6 +176,26 @@ extern void hdd_tx_timeout(struct net_device *dev);
 extern struct net_device_stats* hdd_stats(struct net_device *dev);
 
 /**============================================================================
+  @brief hdd_ibss_init_tx_rx() - Init function to initialize Tx/RX
+  modules in HDD
+
+  @param pAdapter : [in] pointer to adapter context
+  @return         : VOS_STATUS_E_FAILURE if any errors encountered
+                  : VOS_STATUS_SUCCESS otherwise
+  ===========================================================================*/
+extern void hdd_ibss_init_tx_rx( hdd_adapter_t *pAdapter );
+
+/**============================================================================
+  @brief hdd_ibss_deinit_tx_rx() - Deinit function to clean up Tx/RX
+  modules in HDD
+
+  @param pAdapter : [in] pointer to adapter context..
+  @return         : VOS_STATUS_E_FAILURE if any errors encountered.
+                  : VOS_STATUS_SUCCESS otherwise
+  ===========================================================================*/
+extern VOS_STATUS hdd_ibss_deinit_tx_rx( hdd_adapter_t *pAdapter );
+
+/**============================================================================
   @brief hdd_init_tx_rx() - Init function to initialize Tx/RX
   modules in HDD
 
