@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -8979,6 +8979,8 @@ int hdd_wlan_startup(struct device *dev )
    mutex_init(&pHddCtx->tdls_lock);
 #endif
    mutex_init(&pHddCtx->spoofMacAddr.macSpoofingLock);
+   mutex_init(&pHddCtx->wmmLock);
+
    /* By default Strict Regulatory For FCC should be false */
 
    pHddCtx->nEnableStrictRegulatoryForFCC = FALSE;
