@@ -1328,6 +1328,8 @@ struct hdd_context_s
      * IP
      */
     struct notifier_block ipv4_notifier;
+    //Lock to avoid race condition during wmm operations
+    struct mutex   wmmLock;
 };
 
 
