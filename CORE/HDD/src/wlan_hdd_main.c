@@ -9961,10 +9961,8 @@ static void hdd_driver_exit(void)
 {
    hdd_context_t *pHddCtx = NULL;
    v_CONTEXT_t pVosContext = NULL;
-   pVosWatchdogContext pVosWDCtx = NULL;
    v_REGDOMAIN_t regId;
    unsigned long rc = 0;
-   unsigned long flags;
 
    pr_info("%s: unloading driver v%s\n", WLAN_MODULE_NAME, QWLAN_VERSIONSTR);
 
@@ -9986,34 +9984,19 @@ static void hdd_driver_exit(void)
    }
    else
    {
-      pVosWDCtx = get_vos_watchdog_ctxt();
-      if(pVosWDCtx == NULL)
-      {
-         hddLog(VOS_TRACE_LEVEL_ERROR, FL("WD context is invalid"));
-         goto done;
-      }
+      /* We wait for active entry threads to exit from driver
+       * by waiting until rtnl_lock is available.
+       */
       rtnl_lock();
       hdd_nullify_netdev_ops(pHddCtx);
       rtnl_unlock();
-      spin_lock_irqsave(&pVosWDCtx->wdLock, flags);
-      if (!pHddCtx->isLogpInProgress || (TRUE ==
-               vos_is_wlan_in_badState(VOS_MODULE_ID_HDD, NULL)))
-      {
-         //SSR isn't in progress OR last wlan reinit wasn't successful
-         pHddCtx->isLoadUnloadInProgress = WLAN_HDD_UNLOAD_IN_PROGRESS;
-         vos_set_load_unload_in_progress(VOS_MODULE_ID_VOSS, TRUE);
-         spin_unlock_irqrestore(&pVosWDCtx->wdLock, flags);
-      }
-      else
-      {
-         INIT_COMPLETION(pHddCtx->ssr_comp_var);
 
-         pHddCtx->isLoadUnloadInProgress = WLAN_HDD_UNLOAD_IN_PROGRESS;
-         vos_set_load_unload_in_progress(VOS_MODULE_ID_VOSS, TRUE);
-         spin_unlock_irqrestore(&pVosWDCtx->wdLock, flags);
-
+      INIT_COMPLETION(pHddCtx->ssr_comp_var);
+      if ((pHddCtx->isLogpInProgress) && (FALSE ==
+                  vos_is_wlan_in_badState(VOS_MODULE_ID_HDD, NULL)))
+      {
          VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-              "%s:SSR is in Progress; block rmmod !!!", __func__);
+              "%s:SSR  in Progress; block rmmod !!!", __func__);
          rc = wait_for_completion_timeout(&pHddCtx->ssr_comp_var,
                                           msecs_to_jiffies(30000));
          if(!rc)
@@ -10024,11 +10007,8 @@ static void hdd_driver_exit(void)
          }
       }
 
-      /* We wait for active entry threads to exit from driver
-       * by waiting until rtnl_lock is available.
-       */
-      rtnl_lock();
-      rtnl_unlock();
+      pHddCtx->isLoadUnloadInProgress = WLAN_HDD_UNLOAD_IN_PROGRESS;
+      vos_set_load_unload_in_progress(VOS_MODULE_ID_VOSS, TRUE);
 
        /* Driver Need to send country code 00 in below condition
         * 1) If gCountryCodePriority is set to 1; and last country
