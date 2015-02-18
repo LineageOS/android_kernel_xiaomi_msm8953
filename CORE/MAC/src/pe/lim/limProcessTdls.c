@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -5067,7 +5067,7 @@ void PopulateDot11fTdlsOffchannelParams(tpAniSirGlobal pMac,
 {
     tANI_U32   numChans = WNI_CFG_VALID_CHANNEL_LIST_LEN;
     tANI_U8    validChan[WNI_CFG_VALID_CHANNEL_LIST_LEN];
-    tANI_U8    i;
+    tANI_U8    i, j;
     tANI_U8    op_class;
     if (wlan_cfgGetStr(pMac, WNI_CFG_VALID_CHANNEL_LIST,
                           validChan, &numChans) != eSIR_SUCCESS)
@@ -5080,11 +5080,17 @@ void PopulateDot11fTdlsOffchannelParams(tpAniSirGlobal pMac,
     }
     suppChannels->num_bands = (tANI_U8) numChans;
 
-    for ( i = 0U; i < suppChannels->num_bands; i++)
+    for ( i = 0U, j = 0U; i < suppChannels->num_bands; i++)
     {
-        suppChannels->bands[i][0] = validChan[i];
-        suppChannels->bands[i][1] = 1;
+        /* don't populate dfs channels in supported channels ie */
+        if (!LIM_IS_CHANNEL_DFS(validChan[i])) {
+            suppChannels->bands[j][0] = validChan[i];
+            suppChannels->bands[j][1] = 1;
+            j++;
+        }
     }
+    /* update the channel list with new length */
+    suppChannels->num_bands = j;
     suppChannels->present = 1 ;
     /*Get present operating class based on current operating channel*/
     op_class = limGetOPClassFromChannel(
