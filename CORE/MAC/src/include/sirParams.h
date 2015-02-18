@@ -104,9 +104,7 @@ typedef enum {
    UPDATE_CHANNEL_LIST    = 35,
    WLAN_MCADDR_FLT        = 36,
    WLAN_CH144             = 37,
-#ifdef WLAN_FEATURE_NAN
    NAN = 38,
-#endif
 #ifdef FEATURE_WLAN_TDLS
    TDLS_SCAN_COEXISTENCE  = 39,
 #endif
@@ -706,6 +704,8 @@ typedef struct sSirMbMsgP2p
 
 #define SIR_HAL_MGMT_LOGGING_INIT_REQ         (SIR_HAL_ITC_MSG_TYPES_BEGIN + 265)
 #define SIR_HAL_GET_FRAME_LOG_REQ             (SIR_HAL_ITC_MSG_TYPES_BEGIN + 266)
+
+#define SIR_HAL_NAN_REQUEST                   (SIR_HAL_ITC_MSG_TYPES_BEGIN + 267)
 
 #define SIR_HAL_MSG_TYPES_END              (SIR_HAL_MSG_TYPES_BEGIN + 0x1FF)
 // CFG message types

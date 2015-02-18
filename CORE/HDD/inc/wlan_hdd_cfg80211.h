@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -192,6 +192,7 @@ enum qca_nl80211_vendor_subcmds_index {
     QCA_NL80211_VENDOR_SUBCMD_EXTSCAN_RESET_SIGNIFICANT_CHANGE_INDEX,
     /*EXT TDLS*/
     QCA_NL80211_VENDOR_SUBCMD_TDLS_STATE_CHANGE_INDEX,
+    QCA_NL80211_VENDOR_SUBCMD_NAN_INDEX,
 };
 
 enum qca_wlan_vendor_attr
@@ -975,5 +976,7 @@ int wlan_hdd_send_avoid_freq_event(hdd_context_t *pHddCtx,
 void wlan_hdd_cfg80211_extscan_callback(void *ctx, const tANI_U16 evType,
                                       void *pMsg);
 #endif /* WLAN_FEATURE_EXTSCAN */
+
+void wlan_hdd_cfg80211_nan_init(hdd_context_t *pHddCtx);
 
 #endif
