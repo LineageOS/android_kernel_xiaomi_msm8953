@@ -6621,9 +6621,8 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
     tSmeConfigParams *psmeConfig;
     v_BOOL_t MFPCapable = VOS_FALSE;
     v_BOOL_t MFPRequired = VOS_FALSE;
-    eHddDot11Mode sapDot11Mode =
-            (WLAN_HDD_GET_CTX(pHostapdAdapter))->cfg_ini->sapDot11Mode;
-
+    v_BOOL_t sapEnable11AC =
+             (WLAN_HDD_GET_CTX(pHostapdAdapter))->cfg_ini->sapEnable11AC;
     ENTER();
 
     iniConfig = pHddCtx->cfg_ini;
@@ -6917,17 +6916,14 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
 
 #ifdef WLAN_FEATURE_11AC
     /* Overwrite the hostapd setting for HW mode only for 11ac.
-     * This is valid only if mode is set to 11n in hostapd, either AUTO or
-     * 11ac in .ini and 11ac is supported by both host and firmware.
+     * This is valid only if mode is set to 11n in hostapd, sapEnable11AC
+     * is set in .ini and 11ac is supported by both host and firmware.
      * Otherwise, leave whatever is set in hostapd (a OR b OR g OR n mode)
      */
     if( ((pConfig->SapHw_mode == eSAP_DOT11_MODE_11n) ||
          (pConfig->SapHw_mode == eSAP_DOT11_MODE_11n_ONLY)) &&
-        (( sapDot11Mode == eHDD_DOT11_MODE_AUTO ) ||
-         ( sapDot11Mode == eHDD_DOT11_MODE_11ac ) ||
-         ( sapDot11Mode == eHDD_DOT11_MODE_11ac_ONLY ) ) &&
-         (sme_IsFeatureSupportedByDriver(DOT11AC)) &&
-          (sme_IsFeatureSupportedByFW(DOT11AC)) )
+         (sapEnable11AC) && (sme_IsFeatureSupportedByDriver(DOT11AC)) &&
+         (sme_IsFeatureSupportedByFW(DOT11AC)) )
     {
         v_U32_t operatingBand = 0;
         pConfig->SapHw_mode = eSAP_DOT11_MODE_11ac;
