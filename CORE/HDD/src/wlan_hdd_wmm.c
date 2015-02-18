@@ -130,13 +130,21 @@ static void hdd_wmm_enable_tl_uapsd (hdd_wmm_qos_context_t* pQosContext)
 {
    hdd_adapter_t* pAdapter = pQosContext->pAdapter;
    WLANTL_ACEnumType acType = pQosContext->acType;
-   hdd_wmm_ac_status_t *pAc = &pAdapter->hddWmmStatus.wmmAcStatus[acType];
+   hdd_wmm_ac_status_t *pAc = NULL;
    VOS_STATUS status;
    v_U32_t service_interval;
    v_U32_t suspension_interval;
    sme_QosWmmDirType direction;
    v_BOOL_t psb;
 
+   if (acType >= WLANTL_MAX_AC)
+   {
+      VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+                "%s: Invalid AC: %d", __func__, acType);
+      return;
+   }
+
+   pAc = &pAdapter->hddWmmStatus.wmmAcStatus[acType];
 
    // The TSPEC must be valid
    if (pAc->wmmAcTspecValid == VOS_FALSE)
@@ -250,12 +258,21 @@ static void hdd_wmm_disable_tl_uapsd (hdd_wmm_qos_context_t* pQosContext)
 {
    hdd_adapter_t* pAdapter = pQosContext->pAdapter;
    WLANTL_ACEnumType acType = pQosContext->acType;
-   hdd_wmm_ac_status_t *pAc = &pAdapter->hddWmmStatus.wmmAcStatus[acType];
+   hdd_wmm_ac_status_t *pAc = NULL;
    VOS_STATUS status;
    v_U32_t service_interval;
    v_U32_t suspension_interval;
    v_U8_t uapsd_mask;
    v_U8_t ActiveTspec = INVALID_TSPEC;
+
+   if (acType >= WLANTL_MAX_AC)
+   {
+      VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+                "%s: Invalid AC: %d", __func__, acType);
+      return;
+   }
+
+   pAc = &pAdapter->hddWmmStatus.wmmAcStatus[acType];
 
    // have we previously enabled UAPSD?
    if (pAc->wmmAcUapsdInfoValid == VOS_TRUE)
@@ -293,6 +310,10 @@ static void hdd_wmm_disable_tl_uapsd (hdd_wmm_qos_context_t* pQosContext)
             service_interval = (WLAN_HDD_GET_CTX(pAdapter))->cfg_ini->InfraUapsdBkSrvIntv;
             suspension_interval = (WLAN_HDD_GET_CTX(pAdapter))->cfg_ini->InfraUapsdBkSuspIntv;
             break;
+         default:
+            VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+                    "%s: Invalid AC %d", __func__, acType );
+            return;
          }
 
          status = WLANTL_EnableUAPSDForAC((WLAN_HDD_GET_CTX(pAdapter))->pvosContext,
@@ -1480,7 +1501,6 @@ static void __hdd_wmm_do_implicit_qos(struct work_struct *work)
       qosInfo.surplus_bw_allowance = (WLAN_HDD_GET_CTX(pAdapter))->cfg_ini->InfraSbaAcVi;
       qosInfo.suspension_interval = (WLAN_HDD_GET_CTX(pAdapter))->cfg_ini->InfraUapsdViSuspIntv;
       break;
-   default:
    case WLANTL_AC_BE:
       qosInfo.ts_info.up = SME_QOS_WMM_UP_BE;
       /* Check if there is any valid configuration from framework */
@@ -1515,6 +1535,10 @@ static void __hdd_wmm_do_implicit_qos(struct work_struct *work)
       qosInfo.surplus_bw_allowance = (WLAN_HDD_GET_CTX(pAdapter))->cfg_ini->InfraSbaAcBk;
       qosInfo.suspension_interval = (WLAN_HDD_GET_CTX(pAdapter))->cfg_ini->InfraUapsdBkSuspIntv;
       break;
+   default:
+      VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+                "%s: Invalid AC %d", __func__, acType );
+      return;
    }
 #ifdef FEATURE_WLAN_ESE
    qosInfo.inactivity_interval = (WLAN_HDD_GET_CTX(pAdapter))->cfg_ini->InfraInactivityInterval;
@@ -1790,20 +1814,42 @@ VOS_STATUS hdd_wmm_adapter_close ( hdd_adapter_t* pAdapter )
 }
 
 /**============================================================================
-  @brief is_dhcp_packet() - Function which will check OS packet for
+  @brief hdd_is_dhcp_packet() - Function which will check OS packet for
   DHCP packet
 
   @param skb      : [in]  pointer to OS packet (sk_buff)
   @return         : VOS_TRUE if the OS packet is DHCP packet
                   : otherwise VOS_FALSE
   ===========================================================================*/
-v_BOOL_t is_dhcp_packet(struct sk_buff *skb)
+v_BOOL_t hdd_is_dhcp_packet(struct sk_buff *skb)
 {
    if (*((u16*)((u8*)skb->data+34)) == DHCP_SOURCE_PORT ||
        *((u16*)((u8*)skb->data+34)) == DHCP_DESTINATION_PORT)
       return VOS_TRUE;
 
    return VOS_FALSE;
+}
+
+/**============================================================================
+  @brief hdd_skb_is_eapol_or_wai_packet() - Function which will check OS packet
+  for Eapol/Wapi packet
+
+  @param skb      : [in]  pointer to OS packet (sk_buff)
+  @return         : VOS_TRUE if the OS packet is an Eapol or a Wapi packet
+                  : otherwise VOS_FALSE
+  ===========================================================================*/
+v_BOOL_t hdd_skb_is_eapol_or_wai_packet(struct sk_buff *skb)
+{
+    if ((*((u16*)((u8*)skb->data+HDD_ETHERTYPE_802_1_X_FRAME_OFFSET))
+         == vos_cpu_to_be16(HDD_ETHERTYPE_802_1_X))
+#ifdef FEATURE_WLAN_WAPI
+         || (*((u16*)((u8*)skb->data+HDD_ETHERTYPE_802_1_X_FRAME_OFFSET))
+         == vos_cpu_to_be16(HDD_ETHERTYPE_WAI))
+#endif
+       )
+       return VOS_TRUE;
+
+    return VOS_FALSE;
 }
 
 /**============================================================================
@@ -2045,7 +2091,7 @@ v_U16_t hdd_hostapd_select_queue(struct net_device * dev, struct sk_buff *skb)
       /* Get the user priority from IP header & corresponding AC */
       hdd_wmm_classify_pkt (pAdapter, skb, &ac, &up);
       //If 3/4th of Tx queue is used then place the DHCP packet in VOICE AC queue
-      if (pSapCtx->aStaInfo[STAId].vosLowResource && is_dhcp_packet(skb))
+      if (pSapCtx->aStaInfo[STAId].vosLowResource && hdd_is_dhcp_packet(skb))
       {
          VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_WARN,
                     "%s: Making priority of DHCP packet as VOICE", __func__);
@@ -2120,10 +2166,14 @@ v_U16_t hdd_wmm_select_queue(struct net_device * dev, struct sk_buff *skb)
    /* All traffic will get equal opportuniy to transmit data frames. */
    /* Get the user priority from IP header & corresponding AC */
    hdd_wmm_classify_pkt (pAdapter, skb, &ac, &up);
+
    /* If 3/4th of BE AC Tx queue is full,
-    * then place the DHCP packet in VOICE AC queue
+    * then place the DHCP packet in VOICE AC queue.
+    * Doing this for IBSS alone, since for STA interface
+    * types, these packets will be queued to the new queue.
     */
-   if (pAdapter->isVosLowResource && is_dhcp_packet(skb))
+   if ((WLAN_HDD_IBSS == pAdapter->device_mode) &&
+       pAdapter->isVosLowResource && hdd_is_dhcp_packet(skb))
    {
       VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_WARN,
                 "%s: BestEffort Tx Queue is 3/4th full"
@@ -2131,6 +2181,7 @@ v_U16_t hdd_wmm_select_queue(struct net_device * dev, struct sk_buff *skb)
       up = SME_QOS_WMM_UP_VO;
       ac = hddWmmUpToAcMap[up];
    }
+
 done:
    skb->priority = up;
    if(skb->priority < SME_QOS_WMM_UP_MAX)
@@ -2140,6 +2191,19 @@ done:
        VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_INFO,
                  "%s: up=%d is going beyond max value", __func__, up);
       queueIndex = hddLinuxUpToAcMap[SME_QOS_WMM_UP_BE];
+   }
+
+   if ((WLAN_HDD_IBSS != pAdapter->device_mode) &&
+       (hdd_is_dhcp_packet(skb) ||
+        hdd_skb_is_eapol_or_wai_packet(skb)))
+   {
+       /* If the packet is a DHCP packet or a Eapol packet or
+        * a Wapi packet, then queue it to the new queue for
+        * STA interfaces alone.
+        */
+       queueIndex = WLANTL_AC_HIGH_PRIO;
+       VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_INFO_LOW,
+                 "%s: up=%d QIndex:%d", __func__, up, queueIndex);
    }
 
    return queueIndex;
