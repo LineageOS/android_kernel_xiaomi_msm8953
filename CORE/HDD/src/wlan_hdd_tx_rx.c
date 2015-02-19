@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -85,6 +85,7 @@ const v_U8_t hdd_QdiscAcToTlAC[] = {
 #define HDD_TX_TIMEOUT_RATELIMIT_INTERVAL 20*HZ
 #define HDD_TX_TIMEOUT_RATELIMIT_BURST    1
 #define HDD_TX_STALL_SSR_THRESHOLD        5
+#define HDD_TX_STALL_SSR_THRESHOLD_HIGH   13
 #define HDD_TX_STALL_RECOVERY_THRESHOLD HDD_TX_STALL_SSR_THRESHOLD - 2
 
 static DEFINE_RATELIMIT_STATE(hdd_tx_timeout_rs,                 \
@@ -1058,7 +1059,9 @@ VOS_STATUS hdd_Ibss_GetStaId(hdd_station_ctx_t *pHddStaCtx, v_MACADDR_t *pMacAdd
 void __hdd_tx_timeout(struct net_device *dev)
 {
    hdd_adapter_t *pAdapter =  WLAN_HDD_GET_PRIV_PTR(dev);
+   hdd_context_t *pHddCtx;
    struct netdev_queue *txq;
+   hdd_remain_on_chan_ctx_t *pRemainChanCtx;
    int i = 0;
    v_ULONG_t diff_in_jiffies = 0;
 
@@ -1070,6 +1073,15 @@ void __hdd_tx_timeout(struct net_device *dev)
    {
       VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
               FL("pAdapter is NULL"));
+      VOS_ASSERT(0);
+      return;
+   }
+
+   pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+   if (NULL == pHddCtx)
+   {
+      VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
+              FL("HDD context is NULL"));
       VOS_ASSERT(0);
       return;
    }
@@ -1095,7 +1107,7 @@ void __hdd_tx_timeout(struct net_device *dev)
               pAdapter->isTxSuspended[2],
               pAdapter->isTxSuspended[3]);
 
-   for (i = 0; i < 8; i++)
+   for (i = 0; i < dev->num_tx_queues; i++)
    {
       txq = netdev_get_tx_queue(dev, i);
       VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
@@ -1142,15 +1154,41 @@ void __hdd_tx_timeout(struct net_device *dev)
       WLANTL_TLDebugMessage(WLANTL_DEBUG_FW_CLEANUP);
    }
 
-   if (pAdapter->hdd_stats.hddTxRxStats.continuousTxTimeoutCount >
-       HDD_TX_STALL_SSR_THRESHOLD)
+   pRemainChanCtx = hdd_get_remain_on_channel_ctx(pHddCtx);
+   if (!pRemainChanCtx)
    {
-       // Driver could not recover, issue SSR
-       VOS_TRACE(VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
-                 "%s: Cannot recover from Data stall Issue SSR",
-                   __func__);
-       WLANTL_FatalError();
-       return;
+      if (pAdapter->hdd_stats.hddTxRxStats.continuousTxTimeoutCount >
+          HDD_TX_STALL_SSR_THRESHOLD)
+      {
+          // Driver could not recover, issue SSR
+          VOS_TRACE(VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
+                    "%s: Cannot recover from Data stall Issue SSR",
+                      __func__);
+          WLANTL_FatalError();
+          return;
+      }
+   }
+   else
+   {
+      VOS_TRACE(VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
+                "Remain on channel in progress");
+      /* The supplicant can retry "P2P Invitation Request" for 120 times
+       * and so there is a possbility that we can remain off channel for
+       * the entire duration of these retries(which can be max 60sec).
+       * If we encounter such a case, let us not trigger SSR after 30sec
+       * but wait for 60sec to let the device go on home channel and start
+       * tx. If tx does not start within 70sec we will issue SSR.
+       */
+      if (pAdapter->hdd_stats.hddTxRxStats.continuousTxTimeoutCount >
+          HDD_TX_STALL_SSR_THRESHOLD_HIGH)
+      {
+          // Driver could not recover, issue SSR
+          VOS_TRACE(VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
+                    "%s: Cannot recover from Data stall Issue SSR",
+                      __func__);
+          WLANTL_FatalError();
+          return;
+      }
    }
 
    /* If Tx stalled for a long time then *hdd_tx_timeout* is called

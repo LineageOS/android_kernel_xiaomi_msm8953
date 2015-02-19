@@ -14646,6 +14646,7 @@ int wlan_hdd_tdls_extctrl_config_peer(hdd_adapter_t *pAdapter,
 
     hddTdlsPeer_t *pTdlsPeer = NULL;
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+    hdd_station_ctx_t *pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
     VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
               " %s : NL80211_TDLS_SETUP for " MAC_ADDRESS_STR,
               __func__, MAC_ADDR_ARRAY(peer));
@@ -14678,9 +14679,13 @@ int wlan_hdd_tdls_extctrl_config_peer(hdd_adapter_t *pAdapter,
         pTdlsPeer->peerParams.max_latency_ms = tdls_peer_params->max_latency_ms;
         pTdlsPeer->peerParams.min_bandwidth_kbps =
                                           tdls_peer_params->min_bandwidth_kbps;
-        /* check configured channel is valid and non dfs */
-        if (sme_IsTdlsOffChannelValid(WLAN_HDD_GET_HAL_CTX(pAdapter),
-                                      tdls_peer_params->channel))
+        /* check configured channel is valid, non dfs and
+         * not current operating channel */
+        if ((sme_IsTdlsOffChannelValid(WLAN_HDD_GET_HAL_CTX(pAdapter),
+                                      tdls_peer_params->channel)) &&
+            (pHddStaCtx) &&
+            (tdls_peer_params->channel !=
+                              pHddStaCtx->conn_info.operationChannel))
         {
             pTdlsPeer->isOffChannelConfigured = TRUE;
         }
@@ -14692,9 +14697,11 @@ int wlan_hdd_tdls_extctrl_config_peer(hdd_adapter_t *pAdapter,
 
         }
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-                  "%s: tdls_off_channel %d isOffChannelConfigured %d",
+                  "%s: tdls_off_channel %d isOffChannelConfigured %d "
+                  "current operating channel %d",
                   __func__, pTdlsPeer->peerParams.channel,
-                  pTdlsPeer->isOffChannelConfigured);
+                  pTdlsPeer->isOffChannelConfigured,
+                  (pHddStaCtx ? pHddStaCtx->conn_info.operationChannel : 0));
     }
     else
     {
