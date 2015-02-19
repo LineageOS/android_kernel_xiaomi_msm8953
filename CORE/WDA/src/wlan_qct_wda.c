@@ -256,6 +256,73 @@ v_VOID_t WDA_ProcessFWStatsGetReq(tWDA_CbContext *pWDA,
 VOS_STATUS WDA_ProcessEncryptMsgReq(tWDA_CbContext *pWDA,
                                       u8 *wdaRequest);
 
+
+/*
+ * FUNCTION: WDA_ProcessNanRequest
+ * Process NAN request
+ */
+VOS_STATUS WDA_ProcessNanRequest(tWDA_CbContext *pWDA,
+                                 tNanRequest *wdaRequest)
+{
+   WDI_Status status = WDI_STATUS_SUCCESS;
+   tWDA_ReqParams *pWdaParams;
+   WDI_NanRequestType *wdiRequest = NULL;
+   size_t wdiReqLength =  sizeof(WDI_NanRequestType)
+                            - sizeof(wdiRequest->request_data)
+                            + wdaRequest->request_data_len;
+
+   wdiRequest = (WDI_NanRequestType *)vos_mem_malloc(wdiReqLength);
+
+   if (NULL == wdiRequest)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                 "%s: VOS MEM Alloc Failure, size : %zu", __func__,
+                 wdiReqLength);
+      vos_mem_free(wdaRequest);
+      return VOS_STATUS_E_NOMEM;
+   }
+
+   VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+           "WDA: Process Nan Request length: %zu", wdiReqLength);
+
+   pWdaParams = (tWDA_ReqParams *)vos_mem_malloc(sizeof(tWDA_ReqParams)) ;
+   if (NULL == pWdaParams)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                 "%s: VOS MEM Alloc Failure for tWDA_ReqParams", __func__);
+      VOS_ASSERT(0);
+      vos_mem_free(wdaRequest);
+      vos_mem_free(wdiRequest);
+      return VOS_STATUS_E_NOMEM;
+   }
+
+   wdiRequest->request_data_len = wdaRequest->request_data_len;
+
+   vos_mem_copy( wdiRequest->request_data,
+                 wdaRequest->request_data,
+                 wdaRequest->request_data_len);
+
+   vos_mem_free(wdaRequest);
+
+   pWdaParams->pWdaContext = pWDA;
+   pWdaParams->wdaMsgParam = NULL;
+   pWdaParams->wdaWdiApiMsgParam = wdiRequest;
+
+   status = WDI_NanRequest(wdiRequest, pWdaParams);
+
+   if (IS_WDI_STATUS_FAILURE(status))
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                 "Failure to request.  Free all the memory " );
+      vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
+      vos_mem_free(pWdaParams);
+   }
+
+   return CONVERT_WDI2VOS_STATUS(status) ;
+}
+
+
+
 /*
  * FUNCTION: WDA_open
  * Allocate the WDA context 
@@ -14013,6 +14080,13 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
          WDA_ProcessEncryptMsgReq(pWDA, (u8 *)pMsg->bodyptr);
          break;
       }
+
+      case WDA_NAN_REQUEST:
+      {
+         WDA_ProcessNanRequest( pWDA, (tNanRequest *)pMsg->bodyptr);
+         break;
+      }
+
       default:
       {
          VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
@@ -14860,6 +14934,51 @@ void WDA_lowLevelIndCallback(WDI_LowLevelIndType *wdiLowLevelInd,
 
          WDA_SendMsg(pWDA, SIR_LIM_DEL_BA_IND,
                                (void *)pDelBAInd , 0) ;
+         break;
+      }
+      case WDI_NAN_EVENT_IND:
+      {
+         vos_msg_t vosMsg;
+         tpSirNanEvent pSirNanEvent = NULL;
+
+         VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                   "Received WDI_NAN_EVENT");
+
+         pSirNanEvent = (tpSirNanEvent)vos_mem_malloc( sizeof( tSirNanEvent )
+              - sizeof( pSirNanEvent->event_data)
+              + wdiLowLevelInd->wdiIndicationData.wdiNanEvent.event_data_len);
+
+         if (NULL == pSirNanEvent)
+         {
+            VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                       "%s: VOS MEM Alloc Failure", __func__);
+            VOS_ASSERT(0) ;
+            break;
+         }
+
+         pSirNanEvent->event_data_len =
+             wdiLowLevelInd->wdiIndicationData.wdiNanEvent.event_data_len;
+
+         if (wdiLowLevelInd->wdiIndicationData.wdiNanEvent.event_data_len)
+         {
+            vos_mem_copy( pSirNanEvent->event_data,
+                wdiLowLevelInd->wdiIndicationData.wdiNanEvent.event_data,
+                wdiLowLevelInd->wdiIndicationData.wdiNanEvent.event_data_len);
+         }
+
+         /* VOS message wrapper */
+         vosMsg.type = eWNI_SME_NAN_EVENT;
+         vosMsg.bodyptr = pSirNanEvent;
+         vosMsg.bodyval = 0;
+
+         /* Send message to SME */
+         if (VOS_STATUS_SUCCESS
+             != vos_mq_post_message(VOS_MQ_ID_SME, (vos_msg_t*)&vosMsg))
+         {
+            VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_WARN,
+                      "post eWNI_SME_NAN_EVENT to SME Failed");
+            vos_mem_free(pSirNanEvent);
+         }
          break;
       }
 

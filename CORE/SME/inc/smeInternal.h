@@ -169,6 +169,7 @@ typedef struct tagSmeStruct
 #endif /* WLAN_FEATURE_EXTSCAN */
    tSmeEncMsgHddCbkInfo pEncMsgInfoParams;
    void (*pBtCoexTDLSNotification) (void *pAdapter, int);
+   void (*nanCallback) (void*, tSirNanEvent*);
 
 } tSmeStruct, *tpSmeStruct;
 

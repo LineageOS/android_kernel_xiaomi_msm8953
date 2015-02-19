@@ -300,6 +300,9 @@ SME_P2P_OBJS = $(SME_SRC_DIR)/p2p/p2p_Api.o
 
 SME_RRM_OBJS := $(SME_SRC_DIR)/rrm/sme_rrm.o
 
+SME_NAN_OBJS = $(SME_SRC_DIR)/nan/nan_Api.o
+
+
 SME_OBJS :=	$(SME_BTC_OBJS) \
 		$(SME_CCM_OBJS) \
 		$(SME_CMN_OBJS) \
@@ -308,7 +311,8 @@ SME_OBJS :=	$(SME_BTC_OBJS) \
 		$(SME_P2P_OBJS) \
 		$(SME_PMC_OBJS) \
 		$(SME_QOS_OBJS) \
-		$(SME_RRM_OBJS)
+		$(SME_RRM_OBJS) \
+		$(SME_NAN_OBJS)
 
 ############ SVC ############
 SVC_DIR :=	CORE/SVC
