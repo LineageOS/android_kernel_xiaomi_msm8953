@@ -10067,10 +10067,7 @@ allow_suspend:
     hdd_prevent_suspend_timeout(1000);
 
 #ifdef FEATURE_WLAN_TDLS
-    if (!(eTDLS_SUPPORT_NOT_ENABLED == pHddCtx->tdls_mode))
-    {
-        wlan_hdd_tdls_scan_done_callback(pAdapter);
-    }
+    wlan_hdd_tdls_scan_done_callback(pAdapter);
 #endif
 
     EXIT();
@@ -10278,29 +10275,6 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
         hddLog(VOS_TRACE_LEVEL_ERROR, "%s: Remain On Channel Pending", __func__);
         return -EBUSY;
     }
-#ifdef FEATURE_WLAN_TDLS
-    /* if tdls disagree scan right now, return immediately.
-       tdls will schedule the scan when scan is allowed. (return SUCCESS)
-       or will reject the scan if any TDLS is in progress. (return -EBUSY)
-    */
-    status = wlan_hdd_tdls_scan_callback (pAdapter,
-                                          wiphy,
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
-                                          dev,
-#endif
-                                          request);
-    if(status <= 0)
-    {
-        if(!status)
-            hddLog(VOS_TRACE_LEVEL_ERROR, "%s: TDLS in progress."
-                  "scan rejected  %d", __func__, status);
-        else
-            hddLog(VOS_TRACE_LEVEL_ERROR, "%s: TDLS teardown is ongoing %d",
-                                          __func__, status);
-
-        return status;
-    }
-#endif
 
     if (mutex_lock_interruptible(&pHddCtx->tmInfo.tmOperationLock))
     {
@@ -10581,6 +10555,30 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
 
     INIT_COMPLETION(pScanInfo->scan_req_completion_event);
 
+#ifdef FEATURE_WLAN_TDLS
+    /* if tdls disagree scan right now, return immediately.
+       tdls will schedule the scan when scan is allowed. (return SUCCESS)
+       or will reject the scan if any TDLS is in progress. (return -EBUSY)
+     */
+    status = wlan_hdd_tdls_scan_callback (pAdapter,
+                                          wiphy,
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
+                                          dev,
+#endif
+                                          request);
+    if(status <= 0)
+    {
+       if(!status)
+           hddLog(VOS_TRACE_LEVEL_ERROR, "%s: TDLS in progress."
+                  "scan rejected  %d", __func__, status);
+       else
+           hddLog(VOS_TRACE_LEVEL_ERROR, "%s: TDLS teardown is ongoing %d",
+                                          __func__, status);
+
+       return status;
+    }
+#endif
+
     /* acquire the wakelock to avoid the apps suspend during the scan. To
      * address the following issues.
      * 1) Disconnected scenario: we are not allowing the suspend as WLAN is not in
@@ -10627,6 +10625,10 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
                 status = -EIO;
         }
         hdd_allow_suspend();
+
+#ifdef FEATURE_WLAN_TDLS
+        wlan_hdd_tdls_scan_done_callback(pAdapter);
+#endif
         goto free_mem;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -2735,8 +2735,10 @@ void wlan_hdd_tdls_scan_done_callback(hdd_adapter_t *pAdapter)
         return;
     }
 
-    if (pHddCtx->is_tdls_btc_enabled == FALSE)
-        return;
+    /* if tdls is not enabled or BtCoex is on then don't revert tdls mode */
+    if ((eTDLS_SUPPORT_NOT_ENABLED == pHddCtx->tdls_mode) ||
+        (pHddCtx->is_tdls_btc_enabled == FALSE))
+            return;
 
     /* free allocated memory at scan time */
     wlan_hdd_tdls_free_scan_request (&pHddCtx->tdls_scan_ctxt);
