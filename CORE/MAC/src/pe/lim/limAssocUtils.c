@@ -2416,10 +2416,6 @@ limAddSta(
       (true == updateEntry))
     {
         pAddStaParams->staIdx = pStaDs->staIndex;
-        /* In 2.4GHz mode, Max supported Oper Rate Mode is 11n */
-        if ((pAddStaParams->currentOperChan >= 1) &&
-            (pAddStaParams->currentOperChan <= 14))
-            pStaDs->supportedRates.opRateMode = eSTA_11n;
     }
     else
 #endif

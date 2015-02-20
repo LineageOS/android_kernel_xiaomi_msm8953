@@ -3104,13 +3104,11 @@ void limSendRetryReassocReqFrame(tpAniSirGlobal     pMac,
            FL("Invalid pMlmReassocReq"));
         goto end;
     }
-    if(NULL == pTmpMlmReassocReq)
-    {
-        pTmpMlmReassocReq = vos_mem_malloc(sizeof(tLimMlmReassocReq));
-        if ( NULL == pTmpMlmReassocReq ) goto end;
-        vos_mem_set( pTmpMlmReassocReq, sizeof(tLimMlmReassocReq), 0);
-        vos_mem_copy( pTmpMlmReassocReq, pMlmReassocReq, sizeof(tLimMlmReassocReq));
-    }
+
+    pTmpMlmReassocReq = vos_mem_malloc(sizeof(tLimMlmReassocReq));
+    if ( NULL == pTmpMlmReassocReq ) goto end;
+    vos_mem_set( pTmpMlmReassocReq, sizeof(tLimMlmReassocReq), 0);
+    vos_mem_copy( pTmpMlmReassocReq, pMlmReassocReq, sizeof(tLimMlmReassocReq));
 
     // Prepare and send Reassociation request frame
     // start reassoc timer.
