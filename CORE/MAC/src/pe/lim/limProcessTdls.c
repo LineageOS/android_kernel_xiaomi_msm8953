@@ -5076,6 +5076,7 @@ void PopulateDot11fTdlsOffchannelParams(tpAniSirGlobal pMac,
          * Log error.
          */
          limLog(pMac, LOGE, FL("could not retrieve valid channel list"));
+         return;
     }
     suppChannels->num_bands = (tANI_U8) numChans;
 
