@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -279,7 +279,13 @@ eHalStatus sme_EXTScanRegisterCallback (tHalHandle hHal,
                           void *);
 
 #endif /* WLAN_FEATURE_EXTSCAN */
-tANI_BOOLEAN  sme_SpoofMacAddrReq(tHalHandle hHal, v_MACADDR_t *macaddr);
+/* ---------------------------------------------------------------------------
+    \fn sme_SpoofMacAddrReq
+    \brief  SME API to send Spoof Mac Addr req to HAL
+    \param  macaddr: mac address to be sent
+    \- return eHalStatus
+    -------------------------------------------------------------------------*/
+eHalStatus  sme_SpoofMacAddrReq(tHalHandle hHal, v_MACADDR_t *macaddr);
 
 typedef enum
 {

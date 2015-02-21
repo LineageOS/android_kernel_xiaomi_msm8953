@@ -918,6 +918,17 @@ sme_process_cmd:
                             csrLLUnlock( &pMac->sme.smeCmdActiveList );
                             csrProcessDelStaSessionCommand( pMac, pCommand );
                             break;
+                        case eSmeCommandMacSpoofRequest:
+                            csrLLUnlock( &pMac->sme.smeCmdActiveList );
+                            csrProcessMacAddrSpoofCommand( pMac, pCommand );
+                            // No Rsp expected, free cmd from active list
+                            if( csrLLRemoveEntry( &pMac->sme.smeCmdActiveList,
+                                        &pCommand->Link, LL_ACCESS_LOCK ) )
+                            {
+                               csrReleaseCommand( pMac, pCommand );
+                            }
+
+                            break;
 
 #ifdef FEATURE_OEM_DATA_SUPPORT
                         case eSmeCommandOemDataReq:
@@ -11462,34 +11473,36 @@ tANI_BOOLEAN  sme_Is11dCountrycode(tHalHandle hHal)
     }
 }
 
-tANI_BOOLEAN sme_SpoofMacAddrReq(tHalHandle hHal, v_MACADDR_t *macaddr)
+eHalStatus sme_SpoofMacAddrReq(tHalHandle hHal, v_MACADDR_t *macaddr)
 {
-    eHalStatus status   = eHAL_STATUS_SUCCESS;
-    tpAniSirGlobal pMac = PMAC_STRUCT(hHal);
-    tANI_U16 len;
+   tpAniSirGlobal pMac = PMAC_STRUCT(hHal);
+   eHalStatus status = eHAL_STATUS_SUCCESS;
+   tSmeCmd *pMacSpoofCmd;
 
-    if ( eHAL_STATUS_SUCCESS == ( status = sme_AcquireGlobalLock( &pMac->sme ) ) )
-    {
-        tpSirSpoofMacAddrReq pMsg;
+   pMacSpoofCmd = csrGetCommandBuffer(pMac);
+   if (pMacSpoofCmd)
+   {
+       pMacSpoofCmd->command = eSmeCommandMacSpoofRequest;
+       vos_mem_set(&pMacSpoofCmd->u.macAddrSpoofCmd,
+                                                sizeof(tSirSpoofMacAddrReq), 0);
+       vos_mem_copy(pMacSpoofCmd->u.macAddrSpoofCmd.macAddr,
+                                           macaddr->bytes, VOS_MAC_ADDRESS_LEN);
 
-        /* Create the message and send to lim */
-        len = sizeof(tSirSpoofMacAddrReq);
-        pMsg = vos_mem_malloc(len);
-        if ( NULL == pMsg )
-           status = eHAL_STATUS_FAILURE;
-        else
-        {
-            vos_mem_set(pMsg, sizeof(tSirSpoofMacAddrReq), 0);
-            pMsg->messageType     = eWNI_SME_MAC_SPOOF_ADDR_IND;
-            pMsg->length          = len;
-            /* Data starts from here */
-            vos_mem_copy(pMsg->macAddr, macaddr->bytes, VOS_MAC_ADDRESS_LEN);
+       status = csrQueueSmeCommand(pMac, pMacSpoofCmd, eANI_BOOLEAN_TRUE);
+       if ( !HAL_STATUS_SUCCESS( status ) )
+       {
+           smsLog( pMac, LOGE, FL("fail to send msg status = %d\n"), status );
+           csrReleaseCommandScan(pMac, pMacSpoofCmd);
+       }
+   }
+   else
+   {
+       //log error
+       smsLog(pMac, LOGE, FL("can not obtain a common buffer\n"));
+       status = eHAL_STATUS_RESOURCES;
+   }
 
-            status = palSendMBMessage(pMac->hHdd, pMsg);
-        }
-        sme_ReleaseGlobalLock( &pMac->sme );
-    }
-    return status;
+   return (status);
 }
 
 #ifdef WLAN_FEATURE_EXTSCAN
