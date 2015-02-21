@@ -12149,12 +12149,24 @@ tANI_BOOLEAN sme_IsTdlsOffChannelValid(tHalHandle hHal, tANI_U8 channel)
    if ( HAL_STATUS_SUCCESS( status ) )
    {
       /* check whether off channel is valid and non DFS */
-      if (csrRoamIsChannelValid(pMac, channel) &&
-          (!CSR_IS_CHANNEL_DFS(channel)))
+      if (csrRoamIsChannelValid(pMac, channel))
       {
-          valid = TRUE;
+          if (!CSR_IS_CHANNEL_DFS(channel))
+              valid = TRUE;
+          else {
+              VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+                        "%s: configured channel is DFS", __func__);
+          }
+      }
+      else {
+          VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+                    "%s: configured channel is not valid", __func__);
       }
       sme_ReleaseGlobalLock( &pMac->sme );
    }
+    VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_INFO,
+              "%s: current country code %c%c channel %d valid %d",
+              __func__, pMac->scan.countryCodeCurrent[0],
+              pMac->scan.countryCodeCurrent[1], channel, valid);
    return (valid);
 }
