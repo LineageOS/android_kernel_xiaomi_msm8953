@@ -74,6 +74,12 @@ typedef enum
     *pCurVal = (tLimBAState)(((pSta->baState >> tid*2) & 0x3));\
 }
 
+#define LIM_DFS_START_CHANNEL 52
+#define LIM_DFS_END_CHANNEL   144
+
+#define LIM_IS_CHANNEL_DFS(chnNum) \
+     (((chnNum) >= LIM_DFS_START_CHANNEL) && ((chnNum) <= LIM_DFS_END_CHANNEL))
+
 typedef struct sAddBaInfo
 {
     tANI_U16 fBaEnable : 1;

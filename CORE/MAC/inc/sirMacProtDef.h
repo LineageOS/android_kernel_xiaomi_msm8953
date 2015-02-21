@@ -1298,7 +1298,6 @@ typedef __ani_attr_pre_packed struct sSirMacEdcaParamSetIE
     tSirMacEdcaParamRecord acvo; // voice
 } __ani_attr_packed tSirMacEdcaParamSetIE;
 
-#if 1
 typedef __ani_attr_pre_packed struct sSirMacQoSParams
 {
     tANI_U8        count;
@@ -1306,7 +1305,6 @@ typedef __ani_attr_pre_packed struct sSirMacQoSParams
     tANI_U8        CWmin[8];
     tANI_U8        AIFS[8];
 } __ani_attr_packed tSirMacQoSParams;
-#endif
 
 typedef __ani_attr_pre_packed struct sSirMacQbssLoadIE
 {
