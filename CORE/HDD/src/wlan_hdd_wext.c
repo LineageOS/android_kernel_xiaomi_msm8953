@@ -6912,6 +6912,7 @@ void hdd_wmm_tx_snapshot(hdd_adapter_t *pAdapter)
         return;
     }
 
+    spin_lock_bh(&pSapCtx->staInfo_lock);
     for(i =0; i<WLAN_MAX_STA_COUNT; i++)
     {
         if(pSapCtx->aStaInfo[i].isUsed)
@@ -6928,6 +6929,7 @@ void hdd_wmm_tx_snapshot(hdd_adapter_t *pAdapter)
              }
         }
     }
+    spin_unlock_bh(&pSapCtx->staInfo_lock);
 
 }
 static int __iw_set_var_ints_getnone(struct net_device *dev,
