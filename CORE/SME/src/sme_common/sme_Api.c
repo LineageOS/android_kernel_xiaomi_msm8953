@@ -7940,6 +7940,10 @@ eHalStatus sme_HandleChangeCountryCodeByUser(tpAniSirGlobal pMac,
         is11dCountry = VOS_TRUE;
     }
 
+   smsLog( pMac, LOG1, FL("pMsg->countryCode : %c%c,"
+                "pMac->scan.countryCode11d : %c%c\n"),
+                pMsg->countryCode[0], pMsg->countryCode[1],
+                pMac->scan.countryCode11d[0], pMac->scan.countryCode11d[1]);
     /* Set the country code given by userspace when 11dOriginal is FALSE
      * when 11doriginal is True,is11dCountry =0 and
      * fSupplicantCountryCodeHasPriority = 0, then revert the country code,
@@ -7961,16 +7965,21 @@ eHalStatus sme_HandleChangeCountryCodeByUser(tpAniSirGlobal pMac,
             return eHAL_STATUS_FAILURE;
         }
     }
-    pMac->roam.configParam.fEnforceCountryCode = eANI_BOOLEAN_FALSE;
     /* if Supplicant country code has priority, disable 11d */
-    if (!is11dCountry && pMac->roam.configParam.fSupplicantCountryCodeHasPriority)
+    if ((!is11dCountry) &&
+         (pMac->roam.configParam.fSupplicantCountryCodeHasPriority) &&
+        (!pMac->roam.configParam.fEnforceCountryCode))
     {
         pMac->roam.configParam.Is11dSupportEnabled = eANI_BOOLEAN_FALSE;
         smsLog( pMac, LOG1, FL(" 11d is being  disabled"));
     }
 
+    pMac->roam.configParam.fEnforceCountryCode = eANI_BOOLEAN_FALSE;
     vos_mem_copy(pMac->scan.countryCodeCurrent, pMsg->countryCode,
                   WNI_CFG_COUNTRY_CODE_LEN);
+    vos_mem_copy(pMac->scan.countryCode11d, pMsg->countryCode,
+                  WNI_CFG_COUNTRY_CODE_LEN);
+
 
     status = csrSetRegulatoryDomain(pMac, reg_domain_id, NULL);
     if (status != eHAL_STATUS_SUCCESS)
