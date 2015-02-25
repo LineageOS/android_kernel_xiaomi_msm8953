@@ -673,6 +673,8 @@ tSirRetStatus limSendHT40OBSSScanInd(tpAniSirGlobal pMac,
     {
         limLog(pMac, LOGE,
                    FL("could not retrieve Valid channel list"));
+        vos_mem_free(ht40OBSSScanInd);
+        return eSIR_FAILURE;
     }
     /* Extract 24G channel list */
     channel24GNum = 0;

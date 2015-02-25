@@ -5023,7 +5023,7 @@ tSirRetStatus PopulateDot11fWscInProbeRes(tpAniSirGlobal pMac,
     else
     {
         pDot11f->Manufacturer.num_name = (tANI_U8) (cfgStrLen & 0x000000FF);
-        pDot11f->Manufacturer.name[cfgStrLen] = '\0';
+        pDot11f->Manufacturer.name[cfgStrLen - 1] = '\0';
     }
 
     pDot11f->ModelName.present = 1;
@@ -5039,7 +5039,7 @@ tSirRetStatus PopulateDot11fWscInProbeRes(tpAniSirGlobal pMac,
     else
     {
         pDot11f->ModelName.num_text = (tANI_U8) (cfgStrLen & 0x000000FF);
-        pDot11f->ModelName.text[cfgStrLen] = '\0';
+        pDot11f->ModelName.text[cfgStrLen - 1] = '\0';
     }
 
     pDot11f->ModelNumber.present = 1;
@@ -5055,7 +5055,7 @@ tSirRetStatus PopulateDot11fWscInProbeRes(tpAniSirGlobal pMac,
     else
     {
         pDot11f->ModelNumber.num_text = (tANI_U8) (cfgStrLen & 0x000000FF);
-        pDot11f->ModelNumber.text[cfgStrLen] = '\0';
+        pDot11f->ModelNumber.text[cfgStrLen - 1] = '\0';
     }
 
     pDot11f->SerialNumber.present = 1;
@@ -5071,7 +5071,7 @@ tSirRetStatus PopulateDot11fWscInProbeRes(tpAniSirGlobal pMac,
     else
     {
         pDot11f->SerialNumber.num_text = (tANI_U8) (cfgStrLen & 0x000000FF);
-        pDot11f->SerialNumber.text[cfgStrLen] = '\0';
+        pDot11f->SerialNumber.text[cfgStrLen - 1] = '\0';
     }
 
     pDot11f->PrimaryDeviceType.present = 1;
@@ -5115,7 +5115,7 @@ tSirRetStatus PopulateDot11fWscInProbeRes(tpAniSirGlobal pMac,
     else
     {
         pDot11f->DeviceName.num_text = (tANI_U8) (cfgStrLen & 0x000000FF);
-        pDot11f->DeviceName.text[cfgStrLen] = '\0';
+        pDot11f->DeviceName.text[cfgStrLen - 1] = '\0';
     }
 
     if (wlan_cfgGetInt(pMac,
