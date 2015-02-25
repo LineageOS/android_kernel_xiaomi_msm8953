@@ -3772,14 +3772,14 @@ typedef struct sSirPNOScanReq
   void                *callbackContext;
   eSirPNOMode         modePNO;
   tANI_U8             ucNetworksCount; 
-  tSirNetworkType     aNetworks[SIR_PNO_MAX_SUPP_NETWORKS];
+  tSirNetworkType     *aNetworks;
   tSirScanTimersType  scanTimers;
   
   /*added by SME*/
   tANI_U16  us24GProbeTemplateLen; 
-  tANI_U8   p24GProbeTemplate[SIR_PNO_MAX_PB_REQ_SIZE];
+  tANI_U8   *p24GProbeTemplate;
   tANI_U16  us5GProbeTemplateLen; 
-  tANI_U8   p5GProbeTemplate[SIR_PNO_MAX_PB_REQ_SIZE]; 
+  tANI_U8   *p5GProbeTemplate;
 } tSirPNOScanReq, *tpSirPNOScanReq;
 
 typedef struct sSirSetRSSIFilterReq

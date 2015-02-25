@@ -312,15 +312,10 @@ typedef enum
 #define CFG_DOT11_MODE_DEFAULT                 eHDD_DOT11_MODE_11n
 #endif
 
-#define CFG_SAP_DOT11_MODE_NAME                "gSapDot11Mode"
-#define CFG_SAP_DOT11_MODE_MIN                 eHDD_DOT11_MODE_AUTO
-#ifdef WLAN_FEATURE_11AC
-#define CFG_SAP_DOT11_MODE_MAX                 eHDD_DOT11_MODE_11ac
-#define CFG_SAP_DOT11_MODE_DEFAULT             eHDD_DOT11_MODE_11ac
-#else
-#define CFG_SAP_DOT11_MODE_MAX                 eHDD_DOT11_MODE_11b_ONLY
-#define CFG_SAP_DOT11_MODE_DEFAULT             eHDD_DOT11_MODE_11n
-#endif
+#define CFG_SAP_ENABLE_11AC_NAME               "gSapEnable11AC"
+#define CFG_SAP_ENABLE_11AC_MIN                ( 0 )
+#define CFG_SAP_ENABLE_11AC_MAX                ( 1 )
+#define CFG_SAP_ENABLE_11AC_DEFAULT            ( 1 )
 
 #define CFG_CHANNEL_BONDING_MODE_24GHZ_NAME    "gChannelBondingMode24GHz"
 #define CFG_CHANNEL_BONDING_MODE_MIN           WNI_CFG_CHANNEL_BONDING_MODE_STAMIN 
@@ -2859,7 +2854,7 @@ typedef struct
    v_BOOL_t                    gEnableStrictRegulatoryForFCC;
    v_BOOL_t                    advertiseConcurrentOperation;
    v_U32_t                     defaultRateIndex24Ghz;
-   eHddDot11Mode               sapDot11Mode;
+   v_BOOL_t                    sapEnable11AC;
    v_BOOL_t                    cfgRAFilterEnable;
    v_U16_t                     cfgRARateLimitInterval;
    v_U8_t                      allowDFSChannelRoam;

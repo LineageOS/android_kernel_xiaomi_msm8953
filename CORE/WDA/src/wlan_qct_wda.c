@@ -15128,6 +15128,15 @@ void WDA_PNOScanRespCallback(WDI_Status status, void* pUserData)
                            VOS_STATUS_SUCCESS : VOS_STATUS_E_FAILURE);
    }
 
+   if (pPNOScanReqParams->enable == 1)
+   {
+       if (pPNOScanReqParams->aNetworks)
+           vos_mem_free(pPNOScanReqParams->aNetworks);
+       if (pPNOScanReqParams->p24GProbeTemplate)
+           vos_mem_free(pPNOScanReqParams->p24GProbeTemplate);
+       if (pPNOScanReqParams->p5GProbeTemplate)
+           vos_mem_free(pPNOScanReqParams->p5GProbeTemplate);
+   }
    vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
    vos_mem_free(pWdaParams->wdaMsgParam);
    vos_mem_free(pWdaParams);
@@ -15304,9 +15313,18 @@ VOS_STATUS WDA_ProcessSetPrefNetworkReq(tWDA_CbContext *pWDA,
          pPNOScanReqParams->statusCallback(pPNOScanReqParams->callbackContext,
                                            VOS_STATUS_E_FAILURE);
       }
-
+      if (pPNOScanReqParams->enable == 1)
+      {
+          if (pPNOScanReqParams->aNetworks)
+              vos_mem_free(pPNOScanReqParams->aNetworks);
+          if (pPNOScanReqParams->p24GProbeTemplate)
+              vos_mem_free(pPNOScanReqParams->p24GProbeTemplate);
+          if (pPNOScanReqParams->p5GProbeTemplate)
+              vos_mem_free(pPNOScanReqParams->p5GProbeTemplate);
+      }
       vos_mem_free(pWdaParams->wdaWdiApiMsgParam) ;
       vos_mem_free(pWdaParams->wdaMsgParam);
+
       pWdaParams->wdaWdiApiMsgParam = NULL;
       pWdaParams->wdaMsgParam = NULL;
    }
