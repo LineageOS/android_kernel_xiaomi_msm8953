@@ -2311,6 +2311,16 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_ENABLE_MAC_ADDR_SPOOFING_MAX                     (1)
 #define CFG_ENABLE_MAC_ADDR_SPOOFING_DEFAULT                 (0)
 
+#define CFG_ENABLE_MGMT_LOGGING                         "gEnableMgmtLogging"
+#define CFG_ENABLE_MGMT_LOGGING_MIN                     (0)
+#define CFG_ENABLE_MGMT_LOGGING_MAX                     (1)
+#define CFG_ENABLE_MGMT_LOGGING_DEFAULT                 (1)
+
+#define CFG_ENABLE_BMUHW_TRACING                         "gEnableBMUHWtracing"
+#define CFG_ENABLE_BMUHW_TRACING_MIN                     (0)
+#define CFG_ENABLE_BMUHW_TRACING_MAX                     (1)
+#define CFG_ENABLE_BMUHW_TRACING_DEFAULT                 (0)
+
 #define CFG_ENABLE_CH_AVOID                                  "gEnableChannelAvoidance"
 #define CFG_ENABLE_CH_AVOID_MIN                              ( 0 )
 #define CFG_ENABLE_CH_AVOID_MAX                              ( 1 )
@@ -2901,6 +2911,8 @@ typedef struct
    v_U32_t                     deferImpsTime;
    v_BOOL_t                    sendDeauthBeforeCon;
    v_BOOL_t                    enableMacSpoofing;
+   v_BOOL_t                    enableMgmtLogging;
+   v_BOOL_t                    enableBMUHWtracing;
    v_BOOL_t                    fenableCHAvoidance;
    v_U8_t                      gMaxConcurrentActiveSessions;
 
