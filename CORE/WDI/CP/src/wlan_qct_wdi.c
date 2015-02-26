@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -194,6 +194,13 @@ static placeHolderInCapBitmap supportEnabledFeatures[] =
    ,FW_STATS                       //47
    ,WPS_PRBRSP_TMPL                //48
    ,BCN_IE_FLT_DELTA               //49
+   ,FEATURE_NOT_SUPPORTED          //50
+#ifdef FEATURE_WLAN_TDLS
+    ,TDLS_OFF_CHANNEL              //51
+#else
+    ,FEATURE_NOT_SUPPORTED         //51
+#endif
+
 };
 
 /*-------------------------------------------------------------------------- 
@@ -1424,6 +1431,10 @@ void WDI_TraceHostFWCapabilities(tANI_U32 *capabilityBitmap)
 
                      case DISA: snprintf(pCapStr, sizeof("DISA"), "%s", "DISA");
                           pCapStr += strlen("DISA");
+                          break;
+
+                     case TDLS_OFF_CHANNEL: snprintf(pCapStr, sizeof("TDLS_OFF_CHANNEL"), "%s", "TDLS_OFF_CHANNEL");
+                          pCapStr += strlen("TDLS_OFF_CHANNEL");
                           break;
 
                  }
