@@ -2134,6 +2134,24 @@ eHalStatus sme_DeregisterMgmtFrame(tHalHandle hHal, tANI_U8 sessionId,
 
 /* ---------------------------------------------------------------------------
 
+  \fn    sme_InitMgmtFrameLogging
+
+  \brief
+    SME will pass this request to lower mac to initialize Frame Logging.
+
+  \param
+
+    hHal - The handle returned by macOpen.
+
+    wlanMgmtLoggingInitParam - Params to initialize frame logging
+
+  \return eHalStatus
+--------------------------------------------------------------------------- */
+eHalStatus sme_InitMgmtFrameLogging( tHalHandle hHal,
+                            tpSirMgmtLoggingInitParam wlanMgmtLoggingInitParam);
+
+/* ---------------------------------------------------------------------------
+
   \fn    sme_ConfigureRxpFilter
 
   \brief 

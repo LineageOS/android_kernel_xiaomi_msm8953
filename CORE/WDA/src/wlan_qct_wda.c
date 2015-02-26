@@ -5077,6 +5077,57 @@ void WDA_RemoveBssKeyReqCallback(WDI_Status status, void* pUserData)
 }
 
 /*
+ * FUNCTION: WDA_MgmtLoggingInitRspCallback
+ * recieves Mgmt Logging init response from FW
+ */
+void WDA_MgmtLoggingInitRspCallback(WDI_MgmtLoggingRspParamType* wdiRsp,
+                                                            void* pUserData)
+{
+   tWDA_ReqParams *pWdaParams = (tWDA_ReqParams *)pUserData;
+   tSirMgmtLoggingInitParam *pMgmtLoggingInitParams;
+
+   VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                                          "<------ %s " ,__func__);
+
+   if(NULL == pWdaParams)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: pWdaParams received NULL", __func__);
+      VOS_ASSERT(0);
+      return ;
+   }
+
+   if(NULL == pWdaParams->wdaMsgParam)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: pWdaParams->wdaMsgParam is NULL", __func__);
+      VOS_ASSERT(0);
+      vos_mem_free(pWdaParams);
+      return ;
+   }
+
+   pMgmtLoggingInitParams = (tSirMgmtLoggingInitParam *)pWdaParams->wdaMsgParam;
+
+   if(pMgmtLoggingInitParams->mgmtlogInitCallback)
+   {
+      pMgmtLoggingInitParams->mgmtlogInitCallback(
+                               pMgmtLoggingInitParams->mgmtlogInitCbContext,
+                               CONVERT_WDI2VOS_STATUS(wdiRsp->wdiStatus));
+   }
+   else
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: pMgmtLoggingInitParams callback is NULL", __func__);
+   }
+
+   vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
+   vos_mem_free(pWdaParams->wdaMsgParam);
+   vos_mem_free(pWdaParams);
+
+   return;
+}
+
+/*
  * FUNCTION: WDA_SpoofMacAddrRspCallback
  * recieves spoof mac addr response from FW
  */
@@ -9435,6 +9486,82 @@ VOS_STATUS WDA_ProcessConfigureRxpFilterReq(tWDA_CbContext *pWDA,
    }
    return status;
 }
+
+/*
+ * FUNCTION: WDA_ProcessMgmtLoggingInitReq
+ *
+ */
+VOS_STATUS WDA_ProcessMgmtLoggingInitReq(tWDA_CbContext *pWDA,
+                                tSirMgmtLoggingInitParam *pMgmtLoggingInitParam)
+{
+   VOS_STATUS status = VOS_STATUS_SUCCESS;
+   WDI_Status wstatus;
+   WDI_MgmtLoggingInitReqInfoType *wdiMgmtLoggingInitInfo;
+   tWDA_ReqParams *pWdaParams ;
+
+   VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                                          "------> %s " ,__func__);
+
+   /* Sanity Check*/
+   if(NULL == pMgmtLoggingInitParam)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                           "%s: pMgmtLoggingInitParam received NULL", __func__);
+      VOS_ASSERT(0) ;
+      return VOS_STATUS_E_FAULT;
+   }
+
+   wdiMgmtLoggingInitInfo = (WDI_MgmtLoggingInitReqInfoType *)vos_mem_malloc(
+                                       sizeof(WDI_MgmtLoggingInitReqInfoType));
+   if(NULL == wdiMgmtLoggingInitInfo)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                           "%s: VOS MEM Alloc Failure", __func__);
+      VOS_ASSERT(0);
+      vos_mem_free(pMgmtLoggingInitParam);
+      return VOS_STATUS_E_NOMEM;
+   }
+
+   pWdaParams = (tWDA_ReqParams *)vos_mem_malloc(sizeof(tWDA_ReqParams)) ;
+   if(NULL == pWdaParams)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                           "%s: VOS MEM Alloc Failure", __func__);
+      VOS_ASSERT(0);
+      vos_mem_free(wdiMgmtLoggingInitInfo);
+      vos_mem_free(pMgmtLoggingInitParam);
+      return VOS_STATUS_E_NOMEM;
+   }
+
+   wdiMgmtLoggingInitInfo->enableFlag=
+                                 pMgmtLoggingInitParam->enableFlag;
+   wdiMgmtLoggingInitInfo->frameType=
+                                 pMgmtLoggingInitParam->frameType;
+   wdiMgmtLoggingInitInfo->frameSize=
+                                 pMgmtLoggingInitParam->frameSize;
+   wdiMgmtLoggingInitInfo->bufferMode=
+                                 pMgmtLoggingInitParam->bufferMode;
+
+   pWdaParams->pWdaContext = pWDA;
+   pWdaParams->wdaMsgParam = pMgmtLoggingInitParam;
+   pWdaParams->wdaWdiApiMsgParam = (void *)wdiMgmtLoggingInitInfo;
+
+   wstatus = WDI_MgmtLoggingInitReq(wdiMgmtLoggingInitInfo,
+                       (WDI_MgmtLoggingInitRspCb)WDA_MgmtLoggingInitRspCallback,
+                        pWdaParams);
+   if(IS_WDI_STATUS_FAILURE(wstatus))
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "Failure in Mgmt Logging init REQ WDI API, free all the memory" );
+      status = CONVERT_WDI2VOS_STATUS(wstatus);
+      vos_mem_free(pWdaParams->wdaWdiApiMsgParam) ;
+      vos_mem_free(pWdaParams->wdaMsgParam);
+      vos_mem_free(pWdaParams);
+   }
+
+   return status;
+}
+
 /*
  * FUNCTION: WDA_WdiIndicationCallback
  * 
@@ -13296,6 +13423,12 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
       {
          WDA_ProcessConfigureRxpFilterReq(pWDA, 
                              (tSirWlanSetRxpFilters *)pMsg->bodyptr);
+         break;
+      }
+      case WDA_MGMT_LOGGING_INIT_REQ:
+      {
+         WDA_ProcessMgmtLoggingInitReq(pWDA,
+                                 (tSirMgmtLoggingInitParam *)pMsg->bodyptr);
          break;
       }
       case WDA_SET_HOST_OFFLOAD:

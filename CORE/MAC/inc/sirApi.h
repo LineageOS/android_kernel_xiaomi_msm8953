@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -3713,6 +3713,18 @@ typedef struct sSirWlanSetRxpFilters
     tANI_U8 setMcstBcstFilter;
 }tSirWlanSetRxpFilters,*tpSirWlanSetRxpFilters;
 
+typedef void(*MgmtLoggingInitReqCb)(void *mgmtlogInitCbContext,
+                                                       VOS_STATUS status);
+
+typedef struct sSirMgmtLoggingInitParam
+{
+    tANI_U8                enableFlag;
+    tANI_U8                frameType;
+    tANI_U8                frameSize;
+    tANI_U8                bufferMode;
+    MgmtLoggingInitReqCb   mgmtlogInitCallback;
+    void                   *mgmtlogInitCbContext;
+}tSirMgmtLoggingInitParam,*tpSirMgmtLoggingInitParam;
 
 #ifdef FEATURE_WLAN_SCAN_PNO
 //

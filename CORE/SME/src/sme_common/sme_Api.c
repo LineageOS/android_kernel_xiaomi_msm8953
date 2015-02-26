@@ -7371,6 +7371,46 @@ eHalStatus sme_p2pSetPs(tHalHandle hHal, tP2pPsConfig * data)
   return(status);
 }
 
+/* ---------------------------------------------------------------------------
+
+  \fn    sme_InitMgmtFrameLogging
+
+  \brief
+    SME will pass this request to lower mac to initialize Frame Logging.
+
+  \param
+
+    hHal - The handle returned by macOpen.
+
+    wlanMgmtLoggingInitParam - Params to initialize frame logging
+
+  \return eHalStatus
+
+
+--------------------------------------------------------------------------- */
+eHalStatus sme_InitMgmtFrameLogging( tHalHandle hHal,
+                            tSirMgmtLoggingInitParam *wlanMgmtLoggingInitParam)
+{
+    eHalStatus status = eHAL_STATUS_SUCCESS;
+    VOS_STATUS vosStatus = VOS_STATUS_SUCCESS;
+    tpAniSirGlobal pMac = PMAC_STRUCT(hHal);
+    vos_msg_t       vosMessage;
+
+    if ( eHAL_STATUS_SUCCESS == ( status =
+                                        sme_AcquireGlobalLock( &pMac->sme ) ) )
+    {
+        /* serialize the req through MC thread */
+        vosMessage.bodyptr = wlanMgmtLoggingInitParam;
+        vosMessage.type         = WDA_MGMT_LOGGING_INIT_REQ;
+        vosStatus = vos_mq_post_message( VOS_MQ_ID_WDA, &vosMessage );
+        if ( !VOS_IS_STATUS_SUCCESS(vosStatus) )
+        {
+           status = eHAL_STATUS_FAILURE;
+        }
+        sme_ReleaseGlobalLock( &pMac->sme );
+    }
+    return(status);
+}
 
 /* ---------------------------------------------------------------------------
 

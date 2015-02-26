@@ -470,6 +470,8 @@ typedef enum
   /* Send command to encrypt the given message */
   WDI_ENCRYPT_MSG_REQ                            = 103,
 
+  WDI_MGMT_LOGGING_INIT_REQ                      = 104,
+
   WDI_MAX_REQ,
 
   /*Send a suspend Indication down to HAL*/
@@ -799,6 +801,8 @@ typedef enum
 
   /* Send command to encrypt the given message */
   WDI_ENCRYPT_MSG_RSP                            = 103,
+
+  WDI_MGMT_LOGGING_INIT_RSP                      = 104,
   /*-------------------------------------------------------------------------
     Indications
      !! Keep these last in the enum if possible
@@ -6098,6 +6102,20 @@ WDI_ProcessSpoofMacAddrReq
 );
 WDI_Status
 WDI_ProcessSpoofMacAddrRsp
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessMgmtLoggingInitReq
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessMgmtFrameLoggingInitRsp
 (
   WDI_ControlBlockType*  pWDICtx,
   WDI_EventInfoType*     pEventData
