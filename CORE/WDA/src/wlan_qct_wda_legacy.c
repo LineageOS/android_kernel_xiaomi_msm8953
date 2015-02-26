@@ -175,6 +175,7 @@ tSirRetStatus uMacPostCtrlMsg(void* pSirGlobal, tSirMbMsg* pMb)
    switch (msg.type & HAL_MMH_MB_MSG_TYPE_MASK)
    {
    case WDA_MSG_TYPES_BEGIN:    // Posts a message to the HAL MsgQ
+   case WDA_EXT_MSG_TYPES_BEGIN:
       wdaPostCtrlMsg(pMac, &msg);
       break;
 

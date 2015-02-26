@@ -937,6 +937,18 @@ sme_process_cmd:
                             }
 
                             break;
+                        case eSmeCommandGetFrameLogRequest:
+                            csrLLUnlock( &pMac->sme.smeCmdActiveList );
+                            csrProcessGetFrameLogCommand( pMac, pCommand );
+                            //We need to re-run the command
+                            fContinue = eANI_BOOLEAN_TRUE;
+                            // No Rsp expected, free cmd from active list
+                            if( csrLLRemoveEntry( &pMac->sme.smeCmdActiveList,
+                                        &pCommand->Link, LL_ACCESS_LOCK ) )
+                            {
+                               csrReleaseCommand( pMac, pCommand );
+                            }
+                            break;
 
 #ifdef FEATURE_OEM_DATA_SUPPORT
                         case eSmeCommandOemDataReq:
@@ -7369,6 +7381,48 @@ eHalStatus sme_p2pSetPs(tHalHandle hHal, tP2pPsConfig * data)
     sme_ReleaseGlobalLock( &pMac->sme );
   }
   return(status);
+}
+
+/* ---------------------------------------------------------------------------
+    \fn sme_GetFramesLog
+    \brief a wrapper function that client calls to register a callback to get
+           mgmt frames logged
+    \param callback - SME sends back the context using the callback
+    \param flag - flag tells to clear OR send the frame log buffer
+    \param pContext - user context to be passed back along with the callback
+    \return eHalStatus
+  ---------------------------------------------------------------------------*/
+eHalStatus sme_GetFramesLog(tHalHandle hHal,
+                             tGetFrameLogCallback callback,
+                             tANI_U8 flag, void *pContext)
+{
+   tpAniSirGlobal pMac = PMAC_STRUCT(hHal);
+   eHalStatus status = eHAL_STATUS_SUCCESS;
+   tSmeCmd *pGetFrameLogCmd;
+
+   pGetFrameLogCmd = csrGetCommandBuffer(pMac);
+   if (pGetFrameLogCmd)
+   {
+       pGetFrameLogCmd->command = eSmeCommandGetFrameLogRequest;
+       pGetFrameLogCmd->u.getFramelogCmd.pDevContext= pContext;
+       pGetFrameLogCmd->u.getFramelogCmd.getFramelogCallback= callback;
+       pGetFrameLogCmd->u.getFramelogCmd.getFrameLogCmdFlag= flag;
+
+       status = csrQueueSmeCommand(pMac, pGetFrameLogCmd, eANI_BOOLEAN_TRUE);
+       if ( !HAL_STATUS_SUCCESS( status ) )
+       {
+           smsLog( pMac, LOGE, FL("fail to send msg status = %d\n"), status );
+           csrReleaseCommandScan(pMac, pGetFrameLogCmd);
+       }
+   }
+   else
+   {
+       //log error
+       smsLog(pMac, LOGE, FL("can not obtain a common buffer\n"));
+       status = eHAL_STATUS_RESOURCES;
+   }
+
+   return (status);
 }
 
 /* ---------------------------------------------------------------------------

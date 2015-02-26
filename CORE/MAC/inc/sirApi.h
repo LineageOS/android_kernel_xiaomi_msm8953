@@ -176,6 +176,7 @@ enum eSirHostMsgTypes
 enum {
     SIR_BOOT_MODULE_ID = 1,
     SIR_HAL_MODULE_ID  = 0x10,
+    SIR_HAL_EXT_MODULE_ID  = 0x11,
     SIR_CFG_MODULE_ID = 0x12,
     SIR_LIM_MODULE_ID,
     SIR_ARQ_MODULE_ID,
@@ -3715,6 +3716,18 @@ typedef struct sSirWlanSetRxpFilters
 
 typedef void(*MgmtLoggingInitReqCb)(void *mgmtlogInitCbContext,
                                                        VOS_STATUS status);
+typedef void ( *tGetFrameLogCallback) (void *pContext);
+
+typedef struct sAniGetFrameLogReq
+{
+    tANI_U16               msgType;
+    tANI_U16               msgLen;
+    tGetFrameLogCallback   getFramelogCallback;
+    void                   *pDevContext;       //device context
+    tANI_U8                getFrameLogCmdFlag;
+    tANI_U32               rspStatus;
+} tAniGetFrameLogReq,      *tpAniGetFrameLogReq;
+
 
 typedef struct sSirMgmtLoggingInitParam
 {

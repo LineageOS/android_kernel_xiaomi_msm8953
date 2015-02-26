@@ -471,6 +471,7 @@ WDI_ReqProcFuncType  pfnReqProcTbl[WDI_MAX_UMAC_IND] =
   WDI_ProcessEncryptMsgReq,         /* WDI_ENCRYPT_MSG_REQ*/
 
   WDI_ProcessMgmtLoggingInitReq,        /* WDI_MGMT_LOGGING_INIT_REQ*/
+  WDI_ProcessGetFrameLogReq,            /* WDI_GET_FRAME_LOG_REQ*/
   /*-------------------------------------------------------------------------
     Indications
   -------------------------------------------------------------------------*/
@@ -735,6 +736,7 @@ WDI_RspProcFuncType  pfnRspProcTbl[WDI_MAX_RESP] =
 
     WDI_ProcessEncryptMsgRsp,                  /* WDI_ENCRYPT_MSG_RSP*/
     WDI_ProcessMgmtFrameLoggingInitRsp,        /* WDI_MGMT_LOGGING_INIT_RSP*/
+    WDI_ProcessGetFrameLogRsp,                 /* WDI_GET_FRAME_LOG_RSP*/
 
   /*---------------------------------------------------------------------
     Indications
@@ -1157,6 +1159,7 @@ static char *WDI_getReqMsgString(wpt_uint16 wdiReqMsgId)
     CASE_RETURN_STRING( WDI_GET_FW_STATS_REQ);
     CASE_RETURN_STRING( WDI_ENCRYPT_MSG_REQ);
     CASE_RETURN_STRING( WDI_MGMT_LOGGING_INIT_REQ);
+    CASE_RETURN_STRING( WDI_GET_FRAME_LOG_REQ);
     default:
         return "Unknown WDI MessageId";
   }
@@ -1291,6 +1294,7 @@ static char *WDI_getRespMsgString(wpt_uint16 wdiRespMsgId)
     CASE_RETURN_STRING( WDI_GET_FW_STATS_RSP);
     CASE_RETURN_STRING( WDI_ENCRYPT_MSG_RSP);
     CASE_RETURN_STRING( WDI_MGMT_LOGGING_INIT_RSP);
+    CASE_RETURN_STRING( WDI_GET_FRAME_LOG_RSP);
     default:
         return "Unknown WDI MessageId";
   }
@@ -4185,6 +4189,62 @@ WDI_SetUapsdAcParamsReq
 
 }/*WDI_SetUapsdAcParamsReq*/
 
+/**
+ @brief WDI_GetFrameLogReq will be called when the upper
+        MAC wants to initialize frame logging. Upon the call of
+        this API the WLAN DAL will pack and send a HAL
+        Frame logging init request message to
+        the lower RIVA sub-system.
+
+        In state BUSY this request will be queued. Request won't
+        be allowed in any other state.
+
+
+ @param pwdiGetFrameLogReqInfo: the Frame Logging params
+                      as specified by the Device Interface
+
+        wdiGetFrameLogRspCb: callback for passing back the
+        response of the frame logging init operation received
+        from the device
+
+        pUserData: user data will be passed back with the
+        callback
+
+ @return Result of the function call
+*/
+WDI_Status
+WDI_GetFrameLogReq
+(
+   WDI_GetFrameLogReqInfoType    *pwdiGetFrameLogReqInfo,
+   WDI_GetFrameLogRspCb             wdiGetFrameLogRspCb,
+   void*                                pUserData
+)
+{
+   WDI_EventInfoType      wdiEventData;
+   /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+   /*------------------------------------------------------------------------
+     Sanity Check
+   ------------------------------------------------------------------------*/
+   if ( eWLAN_PAL_FALSE == gWDIInitialized )
+   {
+     WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+               "WDI API call before module is initialized - Fail request");
+
+     return WDI_STATUS_E_NOT_ALLOWED;
+   }
+
+   /*------------------------------------------------------------------------
+     Fill in Event data and post to the Main FSM
+   ------------------------------------------------------------------------*/
+   wdiEventData.wdiRequest      = WDI_GET_FRAME_LOG_REQ;
+   wdiEventData.pEventData      = pwdiGetFrameLogReqInfo;
+   wdiEventData.uEventDataSize  = sizeof(*pwdiGetFrameLogReqInfo);
+   wdiEventData.pCBfnc          = wdiGetFrameLogRspCb;
+   wdiEventData.pUserData       = pUserData;
+
+   return WDI_PostMainEvent(&gWDICb, WDI_REQUEST_EVENT, &wdiEventData);
+}
 /**
  @brief WDI_MgmtLoggingInitReq will be called when the upper
         MAC wants to initialize frame logging. Upon the call of
@@ -24044,6 +24104,8 @@ WDI_2_HAL_REQ_TYPE
        return WLAN_HAL_ENCRYPT_DATA_REQ;
   case WDI_MGMT_LOGGING_INIT_REQ:
        return WLAN_HAL_MGMT_LOGGING_INIT_REQ;
+  case WDI_GET_FRAME_LOG_REQ:
+       return WLAN_HAL_GET_FRAME_LOG_REQ;
 
   default:
     return WLAN_HAL_MSG_MAX;
@@ -24364,6 +24426,8 @@ case WLAN_HAL_DEL_STA_SELF_RSP:
        return WDI_ENCRYPT_MSG_RSP;
   case WLAN_HAL_MGMT_LOGGING_INIT_RSP:
        return WDI_MGMT_LOGGING_INIT_RSP;
+  case WLAN_HAL_GET_FRAME_LOG_RSP:
+       return WDI_GET_FRAME_LOG_RSP;
 
   default:
     return eDRIVER_TYPE_MAX;
@@ -33822,6 +33886,132 @@ WDI_ProcessSpoofMacAddrRsp
   return WDI_STATUS_SUCCESS;
 }
 
+/**
+ @brief Process Get Frame Log Rsp function
+        (called when a response is being received over the bus from HAL)
+
+ @param  pWDICtx:         pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+WDI_Status
+WDI_ProcessGetFrameLogRsp
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+)
+{
+  tGetFrameLogResp            halRsp;
+  WDI_GetFrameLogRspCb        wdiGetFrameLogRspCb;
+  WDI_GetFrameLogRspParamType wdiGetFrameLogRsp;
+
+  VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
+                  "%s: %d Enter",__func__, __LINE__);
+
+  /*-------------------------------------------------------------------------
+    Sanity check
+  -------------------------------------------------------------------------*/
+  if (( NULL == pWDICtx ) || ( NULL == pEventData ) ||
+      ( NULL == pEventData->pEventData))
+  {
+     WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
+                 "%s: Invalid parameters", __func__);
+     WDI_ASSERT(0);
+     return WDI_STATUS_E_FAILURE;
+  }
+
+  wdiGetFrameLogRspCb = (WDI_GetFrameLogRspCb)pWDICtx->pfncRspCB;
+
+  /*-------------------------------------------------------------------------
+    Extract response and send it to UMAC
+  -------------------------------------------------------------------------*/
+  wpalMemoryCopy( &halRsp,
+                  pEventData->pEventData, sizeof(halRsp));
+
+  wdiGetFrameLogRsp.wdiStatus = WDI_HAL_2_WDI_STATUS(halRsp.status);
+
+  /*Notify UMAC*/
+  wdiGetFrameLogRspCb( &wdiGetFrameLogRsp, pWDICtx->pRspCBUserData );
+
+  return WDI_STATUS_SUCCESS;
+}
+/**
+ @brief Process MgmtLoggingInit Request
+
+ @param  pWDICtx:         pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+WDI_Status
+WDI_ProcessGetFrameLogReq
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+)
+{
+    WDI_GetFrameLogReqInfoType*    wdiGetFrameLogReq;
+    wpt_uint8*                     pSendBuffer  = NULL;
+    wpt_uint16                     usDataOffset = 0;
+    wpt_uint16                     usSendSize   = 0;
+    WDI_Status                     wdiStatus;
+    tGetFrameLogReqMsg             halGetFrameLogReq;
+    WDI_MgmtLoggingInitRspCb       wdiGetFrameLogRspCb;
+
+
+    VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
+                                          "%s: %d Enter",__func__, __LINE__);
+
+    /*-------------------------------------------------------------------------
+      Sanity check
+      ------------------------------------------------------------------------*/
+    if (( NULL == pWDICtx ) || ( NULL == pEventData ) ||
+            ( NULL == pEventData->pEventData))
+    {
+        WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
+                "%s: Invalid parameters", __func__);
+        WDI_ASSERT(0);
+        return WDI_STATUS_E_FAILURE;
+    }
+
+    wdiGetFrameLogReq = (WDI_GetFrameLogReqInfoType *)pEventData->pEventData;
+
+    /*-----------------------------------------------------------------------
+      Get message buffer
+      -----------------------------------------------------------------------*/
+    if (( WDI_STATUS_SUCCESS != WDI_GetMessageBuffer( pWDICtx,
+                    WDI_GET_FRAME_LOG_REQ,
+                    sizeof(halGetFrameLogReq.tGetFrameLogReqParams),
+                    &pSendBuffer, &usDataOffset, &usSendSize))||
+            (usSendSize < (usDataOffset +
+            sizeof(halGetFrameLogReq.tGetFrameLogReqParams))))
+    {
+        WPAL_TRACE( eWLAN_MODULE_DAL_CTRL,  eWLAN_PAL_TRACE_LEVEL_FATAL,
+                "Unable to get send buffer in GetFrameLog Req");
+        WDI_ASSERT(0);
+        return WDI_STATUS_E_FAILURE;
+    }
+
+    halGetFrameLogReq.tGetFrameLogReqParams.flags =
+                       wdiGetFrameLogReq->flags;
+
+    wdiGetFrameLogRspCb = (WDI_MgmtLoggingInitRspCb)pEventData->pCBfnc;
+
+    wpalMemoryCopy( pSendBuffer+usDataOffset,
+                                    &halGetFrameLogReq.tGetFrameLogReqParams,
+                              sizeof(halGetFrameLogReq.tGetFrameLogReqParams));
+
+    /*-------------------------------------------------------------------------
+      Send Suspend Request to HAL
+      ------------------------------------------------------------------------*/
+    wdiStatus = WDI_SendMsg( pWDICtx, pSendBuffer, usSendSize,
+    wdiGetFrameLogRspCb, pEventData->pUserData, WDI_GET_FRAME_LOG_RSP);
+
+    return  wdiStatus;
+}
 /**
  @brief Process MgmtFrame Logging Init Rsp function
         (called when a response is being received over the bus from HAL)

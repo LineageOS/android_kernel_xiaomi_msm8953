@@ -103,6 +103,7 @@
 /** Maximum time(ms)to wait for disconnect to complete **/
 #define WLAN_WAIT_TIME_DISCONNECT  2000
 #define WLAN_WAIT_TIME_STATS       800
+#define WLAN_WAIT_TIME_FRAME_LOG   2000
 #define WLAN_WAIT_TIME_POWER       800
 #define WLAN_WAIT_TIME_COUNTRY     1000
 #define WLAN_WAIT_TIME_CHANNEL_UPDATE   600
@@ -272,6 +273,13 @@ struct statsContext
    unsigned int magic;
 };
 
+struct getFrameLogCtx
+{
+   struct completion completion;
+   hdd_adapter_t *pAdapter;
+   unsigned int magic;
+};
+
 extern spinlock_t hdd_context_lock;
 
 #define STATS_CONTEXT_MAGIC 0x53544154   //STAT
@@ -280,6 +288,7 @@ extern spinlock_t hdd_context_lock;
 #define SNR_CONTEXT_MAGIC   0x534E5200   //SNR
 #define BCN_MISS_RATE_CONTEXT_MAGIC 0x513F5753
 #define FW_STATS_CONTEXT_MAGIC  0x5022474E //FW STATS
+#define GET_FRAME_LOG_MAGIC   0x464c4f47   //FLOG
 
 /*
  * Driver miracast parameters 0-Disabled

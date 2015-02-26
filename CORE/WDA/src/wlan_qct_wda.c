@@ -5077,6 +5077,74 @@ void WDA_RemoveBssKeyReqCallback(WDI_Status status, void* pUserData)
 }
 
 /*
+ * FUNCTION: WDA_GetFrameLogRspCallback
+ * recieves get frame log response from FW
+ */
+void WDA_GetFrameLogRspCallback(WDI_GetFrameLogRspParamType* wdiRsp,
+                                                               void* pUserData)
+{
+   tWDA_ReqParams *pWdaParams = (tWDA_ReqParams *)pUserData;
+   tWDA_CbContext *pWDA = NULL;
+   tAniGetFrameLogReq  *pGetFrameLogReqParams = NULL;
+
+   VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                                          "<------ Entering: %s " ,__func__);
+   if(NULL == pWdaParams)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: pWdaParams received NULL", __func__);
+      VOS_ASSERT(0) ;
+      return ;
+   }
+
+   pWDA = (tWDA_CbContext *) pWdaParams->pWdaContext;
+   if (NULL == pWDA)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               "%s:pWDA is NULL", __func__);
+      VOS_ASSERT(0);
+      vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
+      vos_mem_free(pWdaParams);
+      return ;
+   }
+
+   pGetFrameLogReqParams = (tAniGetFrameLogReq *)pWdaParams->wdaMsgParam;
+   if(NULL == pGetFrameLogReqParams)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                  "%s: pGetFrameLogReqParams received NULL", __func__);
+      VOS_ASSERT(0);
+      vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
+      vos_mem_free(pWdaParams);
+      return;
+   }
+
+   pGetFrameLogReqParams->rspStatus = wdiRsp->wdiStatus;
+   if (wdiRsp->wdiStatus != WDI_STATUS_SUCCESS) {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s:GetFrameLog with rsp status %d", __func__, wdiRsp->wdiStatus);
+   }
+
+   if(pGetFrameLogReqParams->getFramelogCallback)
+   {
+      pGetFrameLogReqParams->getFramelogCallback(
+                                       pGetFrameLogReqParams->pDevContext);
+   }
+   else
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                  "%s: pGetFrameLogReqParams callback is NULL", __func__);
+   }
+
+   /* free WDI command buffer only */
+   vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
+   vos_mem_free(pWdaParams->wdaMsgParam);
+   vos_mem_free(pWdaParams);
+
+   return ;
+
+}
+/*
  * FUNCTION: WDA_MgmtLoggingInitRspCallback
  * recieves Mgmt Logging init response from FW
  */
@@ -9488,6 +9556,73 @@ VOS_STATUS WDA_ProcessConfigureRxpFilterReq(tWDA_CbContext *pWDA,
 }
 
 /*
+ * FUNCTION: WDA_ProcessGetFrameLogReq
+ * Request to WDI to get the Frame Log.
+ */
+VOS_STATUS WDA_ProcessGetFrameLogReq(tWDA_CbContext *pWDA,
+                                  tAniGetFrameLogReq *pGetFrameLog)
+{
+   VOS_STATUS status = VOS_STATUS_SUCCESS;
+   WDI_Status wstatus;
+   WDI_GetFrameLogReqInfoType *wdiGetFrameLogInfo;
+   tWDA_ReqParams *pWdaParams ;
+
+   /* Sanity Check*/
+   if(NULL == pGetFrameLog)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                           "%s: pMgmtLoggingInitParam received NULL", __func__);
+      VOS_ASSERT(0) ;
+      return VOS_STATUS_E_FAULT;
+   }
+
+   wdiGetFrameLogInfo = (WDI_GetFrameLogReqInfoType *)vos_mem_malloc(
+         sizeof(WDI_GetFrameLogReqInfoType));
+   VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                                          "------> %s " ,__func__);
+
+   if(NULL == wdiGetFrameLogInfo)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                           "%s: VOS MEM Alloc Failure", __func__);
+      VOS_ASSERT(0);
+      vos_mem_free(pGetFrameLog);
+      return VOS_STATUS_E_NOMEM;
+   }
+
+   pWdaParams = (tWDA_ReqParams *)vos_mem_malloc(sizeof(tWDA_ReqParams));
+   if(NULL == pWdaParams)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                           "%s: VOS MEM Alloc Failure", __func__);
+      VOS_ASSERT(0);
+      vos_mem_free(wdiGetFrameLogInfo);
+      vos_mem_free(pGetFrameLog);
+      return VOS_STATUS_E_NOMEM;
+   }
+
+   wdiGetFrameLogInfo->flags = pGetFrameLog->getFrameLogCmdFlag;
+
+   pWdaParams->pWdaContext = pWDA;
+   pWdaParams->wdaMsgParam = pGetFrameLog;
+   pWdaParams->wdaWdiApiMsgParam = (void *)wdiGetFrameLogInfo;
+
+   wstatus = WDI_GetFrameLogReq(wdiGetFrameLogInfo,
+                           (WDI_GetFrameLogRspCb)WDA_GetFrameLogRspCallback,
+                           pWdaParams);
+   if(IS_WDI_STATUS_FAILURE(wstatus))
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "Failure in get frame log REQ WDI API, free all the memory" );
+      status = CONVERT_WDI2VOS_STATUS(wstatus);
+      vos_mem_free(pWdaParams->wdaWdiApiMsgParam) ;
+      vos_mem_free(pWdaParams->wdaMsgParam);
+      vos_mem_free(pWdaParams);
+   }
+   return status;
+}
+
+/*
  * FUNCTION: WDA_ProcessMgmtLoggingInitReq
  *
  */
@@ -13429,6 +13564,12 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
       {
          WDA_ProcessMgmtLoggingInitReq(pWDA,
                                  (tSirMgmtLoggingInitParam *)pMsg->bodyptr);
+         break;
+      }
+      case WDA_GET_FRAME_LOG_REQ:
+      {
+         WDA_ProcessGetFrameLogReq(pWDA,
+                                        (tAniGetFrameLogReq *)pMsg->bodyptr);
          break;
       }
       case WDA_SET_HOST_OFFLOAD:

@@ -905,6 +905,7 @@ tSirRetStatus uMacPostCtrlMsg(void* pSirGlobal, tSirMbMsg* pMb);
 #define WDA_TL_FLUSH_AC_RSP SIR_HAL_TL_FLUSH_AC_RSP
 
 #define WDA_MSG_TYPES_BEGIN            SIR_HAL_MSG_TYPES_BEGIN
+#define WDA_EXT_MSG_TYPES_BEGIN        SIR_HAL_EXT_MSG_TYPES_BEGIN
 #define WDA_ITC_MSG_TYPES_BEGIN        SIR_HAL_ITC_MSG_TYPES_BEGIN
 #define WDA_RADAR_DETECTED_IND         SIR_HAL_RADAR_DETECTED_IND
 #define WDA_WDT_KAM_RSP                SIR_HAL_WDT_KAM_RSP 
@@ -1274,6 +1275,7 @@ eHalStatus WDA_SetRegDomain(void * clientCtxt, v_REGDOMAIN_t regId,
 #define WDA_SPOOF_MAC_ADDR_RSP               SIR_HAL_SPOOF_MAC_ADDR_RSP
 
 #define WDA_MGMT_LOGGING_INIT_REQ               SIR_HAL_MGMT_LOGGING_INIT_REQ
+#define WDA_GET_FRAME_LOG_REQ                   SIR_HAL_GET_FRAME_LOG_REQ
 
 #define HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME 0x40 // Bit 6 will be used to control BD rate for Management frames
 
