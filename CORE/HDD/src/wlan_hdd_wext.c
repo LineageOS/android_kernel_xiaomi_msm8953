@@ -165,7 +165,7 @@ static const hdd_freq_chan_map_t freq_chan_map[] = { {2412, 1}, {2417, 2},
 #endif
 #define  WE_SET_SCAN_BAND_PREFERENCE     17
 #define  WE_SET_MIRACAST_VENDOR_CONFIG     18
-
+#define WE_GET_FRAME_LOG                 19
 
 /* Private ioctls and their sub-ioctls */
 #define WLAN_PRIV_SET_NONE_GET_INT    (SIOCIWFIRSTPRIV + 1)
@@ -5833,9 +5833,19 @@ static int __iw_setint_getnone(struct net_device *dev,
                  FL("Invalid value %d in WE_SET_MIRACAST_VENDOR_CONFIG IOCTL"), set_value);
                 ret = -EINVAL;
             }
-
             break;
         }
+
+        case WE_GET_FRAME_LOG:
+        {
+            if (wlan_hdd_get_frame_logs(pAdapter, set_value)
+                         != VOS_STATUS_SUCCESS)
+            {
+                ret = -EINVAL;
+            }
+            break;
+        }
+
         default:
         {
             hddLog(LOGE, "Invalid IOCTL setvalue command %d value %d",
@@ -10063,6 +10073,11 @@ static const struct iw_priv_args we_private_args[] = {
     {   WE_SET_SCAN_BAND_PREFERENCE,
         IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
         0, "set_scan_pref" },
+    {
+        WE_GET_FRAME_LOG,
+        IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
+        0,
+        "getFrameLogs" },
 
     {   WE_SET_MIRACAST_VENDOR_CONFIG,
         IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
