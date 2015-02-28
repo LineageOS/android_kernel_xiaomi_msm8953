@@ -1382,8 +1382,24 @@ tSirRetStatus limSendTdlsLinkSetupReqFrame(tpAniSirGlobal pMac,
 
     if ( 1 == pMac->lim.gLimTDLSWmmMode )
     {
+        tANI_U32  val = 0;
+
         /* include WMM IE */
-        PopulateDot11fWMMInfoStation( pMac, &tdlsSetupReq.WMMInfoStation );
+        tdlsSetupReq.WMMInfoStation.version = SIR_MAC_OUI_VERSION_1;
+        tdlsSetupReq.WMMInfoStation.acvo_uapsd =
+                     (pMac->lim.gLimTDLSUapsdMask & 0x01);
+        tdlsSetupReq.WMMInfoStation.acvi_uapsd =
+                     ((pMac->lim.gLimTDLSUapsdMask & 0x02) >> 1);
+        tdlsSetupReq.WMMInfoStation.acbk_uapsd =
+                     ((pMac->lim.gLimTDLSUapsdMask & 0x04) >> 2);
+        tdlsSetupReq.WMMInfoStation.acbe_uapsd =
+                     ((pMac->lim.gLimTDLSUapsdMask & 0x08) >> 3);
+
+        if(wlan_cfgGetInt(pMac, WNI_CFG_MAX_SP_LENGTH, &val) != eSIR_SUCCESS)
+           limLog(pMac, LOGE, FL("could not retrieve Max SP Length \n"));
+
+        tdlsSetupReq.WMMInfoStation.max_sp_length = (tANI_U8)val;
+        tdlsSetupReq.WMMInfoStation.present = 1;
     }
     else
     {
@@ -1822,8 +1838,24 @@ static tSirRetStatus limSendTdlsSetupRspFrame(tpAniSirGlobal pMac,
 
     if ( 1 == pMac->lim.gLimTDLSWmmMode )
     {
+        tANI_U32  val = 0;
+
         /* include WMM IE */
-        PopulateDot11fWMMInfoStation( pMac, &tdlsSetupRsp.WMMInfoStation );
+        tdlsSetupRsp.WMMInfoStation.version = SIR_MAC_OUI_VERSION_1;
+        tdlsSetupRsp.WMMInfoStation.acvo_uapsd =
+                     (pMac->lim.gLimTDLSUapsdMask & 0x01);
+        tdlsSetupRsp.WMMInfoStation.acvi_uapsd =
+                     ((pMac->lim.gLimTDLSUapsdMask & 0x02) >> 1);
+        tdlsSetupRsp.WMMInfoStation.acbk_uapsd =
+                     ((pMac->lim.gLimTDLSUapsdMask & 0x04) >> 2);
+        tdlsSetupRsp.WMMInfoStation.acbe_uapsd =
+                     ((pMac->lim.gLimTDLSUapsdMask & 0x08) >> 3);
+
+        if(wlan_cfgGetInt(pMac, WNI_CFG_MAX_SP_LENGTH, &val) != eSIR_SUCCESS)
+           limLog(pMac, LOGE, FL("could not retrieve Max SP Length \n"));
+
+        tdlsSetupRsp.WMMInfoStation.max_sp_length = (tANI_U8)val;
+        tdlsSetupRsp.WMMInfoStation.present = 1;
     }
     else
     {
