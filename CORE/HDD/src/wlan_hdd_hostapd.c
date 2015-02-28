@@ -258,16 +258,29 @@ associated with the device
 static void __hdd_hostapd_uninit (struct net_device *dev)
 {
    hdd_adapter_t *pHostapdAdapter = netdev_priv(dev);
+   hdd_context_t *pHddCtx;
 
    ENTER();
 
-   if (pHostapdAdapter && pHostapdAdapter->pHddCtx)
+   if (WLAN_HDD_ADAPTER_MAGIC != pHostapdAdapter->magic)
    {
-      hdd_deinit_adapter(pHostapdAdapter->pHddCtx, pHostapdAdapter, TRUE);
-
-      /* after uninit our adapter structure will no longer be valid */
-      pHostapdAdapter->dev = NULL;
+      hddLog(VOS_TRACE_LEVEL_ERROR,
+             FL("Invalid magic"));
+      return;
    }
+   pHddCtx = WLAN_HDD_GET_CTX(pHostapdAdapter);
+   if (NULL == pHddCtx)
+   {
+      hddLog(VOS_TRACE_LEVEL_ERROR,
+             FL("NULL pHddCtx"));
+      return;
+   }
+
+   hdd_deinit_adapter(pHostapdAdapter->pHddCtx, pHostapdAdapter, TRUE);
+
+   /* after uninit our adapter structure will no longer be valid */
+   pHostapdAdapter->dev = NULL;
+   pHostapdAdapter->magic = 0;
 
    EXIT();
 }
