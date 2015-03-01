@@ -9080,6 +9080,7 @@ int hdd_setBand(struct net_device *dev, u8 ui_band)
     hdd_context_t *pHddCtx;
     hdd_scaninfo_t *pScanInfo = NULL;
     eCsrBand band;
+    int wait_result;
     eCsrBand currBand = eCSR_BAND_MAX;
     eCsrBand connectedBand;
     v_U8_t ret = SEND_CHANNEL_CHANGE_EVENT;
@@ -9192,29 +9193,73 @@ int hdd_setBand(struct net_device *dev, u8 ui_band)
         }
         if(currBand == eCSR_BAND_24 || currBand == eCSR_BAND_5G)
         {
-             v_COUNTRYCODE_t curr_country;
+             tANI_U8 curr_country[WNI_CFG_COUNTRY_CODE_LEN];
              curr_country[0]=pMac->scan.countryCodeCurrent[0];
              curr_country[1]=pMac->scan.countryCodeCurrent[1];
-
+             INIT_COMPLETION(pHddCtx->linux_reg_req);
              /* As currunt band is already set to 2.4Ghz/5Ghz we dont have all channel
               * information available in NV so to get the channel information from kernel
               * we need to send regulatory hint for the currunt country
               * And to set the same country again we need to set the dummy country
               * first and then the actual country.
               */
-
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,9,0))
              regulatory_hint_user("00", NL80211_USER_REG_HINT_USER);
 #else
              regulatory_hint_user("00");
 #endif
+             wait_result = wait_for_completion_interruptible_timeout(
+                               &pHddCtx->linux_reg_req,
+                               msecs_to_jiffies(LINUX_REG_WAIT_TIME));
+
+             /* if the country information does not exist with the kernel,
+               then the driver callback would not be called */
+
+             if (wait_result >= 0)
+             {
+                 VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_INFO,
+                           "runtime country code is found in kernel db");
+             }
+             else
+             {
+                 VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_WARN,
+                           "runtime country code is not found"
+                           " in kernel db");
+             }
 
              pMac->roam.configParam.fEnforceCountryCode = eANI_BOOLEAN_TRUE;
+
+             /*
+              * Update 11dcountry and current country here as the hint
+              * with 00 results in 11d and current country with 00
+              */
+             vos_mem_copy(pMac->scan.countryCode11d, curr_country,
+                      WNI_CFG_COUNTRY_CODE_LEN);
+             vos_mem_copy(pMac->scan.countryCodeCurrent, curr_country,
+                      WNI_CFG_COUNTRY_CODE_LEN);
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,9,0))
              regulatory_hint_user(curr_country, NL80211_USER_REG_HINT_USER);
 #else
              regulatory_hint_user(curr_country);
 #endif
+             wait_result = wait_for_completion_interruptible_timeout(
+                               &pHddCtx->linux_reg_req,
+                               msecs_to_jiffies(LINUX_REG_WAIT_TIME));
+
+             /* if the country information does not exist with the kernel,
+               then the driver callback would not be called */
+             if (wait_result >= 0)
+             {
+                 VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_INFO,
+                           "runtime country code is found in kernel db");
+             }
+             else
+             {
+                 VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_WARN,
+                           "runtime country code is not found"
+                           " in kernel db");
+             }
+
              ret = DO_NOT_SEND_CHANNEL_CHANGE_EVENT;
         }
         else
