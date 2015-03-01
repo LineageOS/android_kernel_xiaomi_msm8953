@@ -921,6 +921,9 @@ sme_process_cmd:
                         case eSmeCommandMacSpoofRequest:
                             csrLLUnlock( &pMac->sme.smeCmdActiveList );
                             csrProcessMacAddrSpoofCommand( pMac, pCommand );
+                            //We need to re-run the command
+                            fContinue = eANI_BOOLEAN_TRUE;
+
                             // No Rsp expected, free cmd from active list
                             if( csrLLRemoveEntry( &pMac->sme.smeCmdActiveList,
                                         &pCommand->Link, LL_ACCESS_LOCK ) )

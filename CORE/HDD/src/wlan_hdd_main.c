@@ -8161,6 +8161,10 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
 
    if (VOS_FTM_MODE != hdd_get_conparam())
    {
+      /* This will issue a dump command which will clean up
+         BTQM queues and unblock MC thread */
+      WLANTL_TLDebugMessage(WLANTL_DEBUG_FW_CLEANUP);
+
       // Unloading, restart logic is no more required.
       wlan_hdd_restart_deinit(pHddCtx);
 
