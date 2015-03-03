@@ -1852,7 +1852,6 @@ enum {
 #define CFG_PARAM_MAX_NUM        346
 #define CFG_STA_IBUF_MAX_SIZE    280
 #define CFG_STA_SBUF_MAX_SIZE    3389
-#define CFG_SEM_MAX_NUM          19
 
 #define CFG_STA_MAGIC_DWORD    0xbeefbeef
 
