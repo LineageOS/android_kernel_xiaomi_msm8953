@@ -2709,8 +2709,8 @@ limTdlsPopulateMatchingRateSet(tpAniSirGlobal pMac,
                 if ((tempRateSet2.rate[i] & 0x7F) ==
                     (tempRateSet.rate[j] & 0x7F))
                 {
-                    if ((bRateIndex > SIR_NUM_11B_RATES) ||
-                        (aRateIndex > SIR_NUM_11A_RATES))
+                    if ((bRateIndex >= SIR_NUM_11B_RATES) ||
+                        (aRateIndex >= SIR_NUM_11A_RATES))
                     {
                         limLog(pMac, LOGE, FL("Invalid number of rates"
                                               "(11b->%d, 11a->%d)"),
@@ -5080,7 +5080,8 @@ void PopulateDot11fTdlsOffchannelParams(tpAniSirGlobal pMac,
     }
     suppChannels->num_bands = (tANI_U8) numChans;
 
-    for ( i = 0U, j = 0U; i < suppChannels->num_bands; i++)
+    for ( i = 0U, j = 0U; i < suppChannels->num_bands &&
+                          j < LIM_MAX_BANDS; i++)
     {
         /* don't populate dfs channels in supported channels ie */
         if (!LIM_IS_CHANNEL_DFS(validChan[i])) {

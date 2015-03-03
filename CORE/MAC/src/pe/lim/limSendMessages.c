@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -678,7 +678,8 @@ tSirRetStatus limSendHT40OBSSScanInd(tpAniSirGlobal pMac,
     }
     /* Extract 24G channel list */
     channel24GNum = 0;
-    for( count =0 ;count < validChannelNum ;count++)
+    for( count =0 ;count < validChannelNum &&
+                   (channel24GNum < SIR_ROAM_MAX_CHANNELS);count++)
     {
        if ((validChanList[count]> RF_CHAN_1) &&
            (validChanList[count] < RF_CHAN_14))
