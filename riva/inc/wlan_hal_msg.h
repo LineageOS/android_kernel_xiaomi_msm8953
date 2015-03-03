@@ -1,5 +1,5 @@
 
-/* Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
 * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
 
 *
@@ -6707,6 +6707,7 @@ typedef enum {
     FW_STATS               = 47,
     WPS_PRBRSP_TMPL        = 48,
     BCN_IE_FLT_DELTA       = 49,
+    TDLS_OFF_CHANNEL       = 51,
     MAX_FEATURE_SUPPORTED  = 128,
 } placeHolderInCapBitmap;
 

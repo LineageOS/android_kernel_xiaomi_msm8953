@@ -1370,7 +1370,7 @@ int hdd_wmmps_helper(hdd_adapter_t *pAdapter, tANI_U8 *ptr)
 
   @return         : void
   ===========================================================================*/
-static void hdd_wmm_do_implicit_qos(struct work_struct *work)
+static void __hdd_wmm_do_implicit_qos(struct work_struct *work)
 {
    hdd_wmm_qos_context_t* pQosContext =
       container_of(work, hdd_wmm_qos_context_t, wmmAcSetupImplicitQos);
@@ -1384,6 +1384,7 @@ static void hdd_wmm_do_implicit_qos(struct work_struct *work)
    sme_QosWmmTspecInfo qosInfo;
    v_CONTEXT_t pVosContext = vos_get_global_context( VOS_MODULE_ID_HDD, NULL );
    hdd_context_t *pHddCtx;
+   int ret = 0;
 
    if (NULL != pVosContext)
    {
@@ -1394,6 +1395,13 @@ static void hdd_wmm_do_implicit_qos(struct work_struct *work)
                    FL("HddCtx is NULL"));
          return;
       }
+   }
+
+   ret = wlan_hdd_validate_context(pHddCtx);
+   if (0 != ret)
+   {
+       hddLog(LOGE, FL("HDD context is invalid"));
+       return;
    }
 
    VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_INFO_LOW,
@@ -1613,6 +1621,13 @@ static void hdd_wmm_do_implicit_qos(struct work_struct *work)
    }
 #endif
 
+}
+
+static void hdd_wmm_do_implicit_qos(struct work_struct *work)
+{
+    vos_ssr_protect(__func__);
+    __hdd_wmm_do_implicit_qos( work );
+    vos_ssr_unprotect(__func__);
 }
 
 /**============================================================================
