@@ -14145,7 +14145,8 @@ static int __wlan_hdd_cfg80211_sched_scan_start(struct wiphy *wiphy,
     vos_mem_zero(pnoRequest.p24GProbeTemplate, SIR_PNO_MAX_PB_REQ_SIZE);
     vos_mem_zero(pnoRequest.p5GProbeTemplate, SIR_PNO_MAX_PB_REQ_SIZE);
 
-    if ((0 < request->ie_len) && (NULL != request->ie))
+    if ((0 < request->ie_len) && (request->ie_len <= SIR_PNO_MAX_PB_REQ_SIZE) &&
+        (NULL != request->ie))
     {
         pnoRequest.us24GProbeTemplateLen = request->ie_len;
         memcpy(pnoRequest.p24GProbeTemplate, request->ie,
@@ -14220,7 +14221,6 @@ static int __wlan_hdd_cfg80211_sched_scan_start(struct wiphy *wiphy,
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                   FL("Timed out waiting for PNO to be Enabled"));
         ret = 0;
-        goto error;
     }
 
     ret = pAdapter->pno_req_status;

@@ -39,7 +39,7 @@
 #include "wniApi.h"
 
 #include "sirCommon.h"
-#include "wniCfgSta.h"
+#include "wniCfg.h"
 #include "cfgApi.h"
 
 

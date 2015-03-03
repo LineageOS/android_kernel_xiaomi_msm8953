@@ -38,7 +38,7 @@
  */
 
 #include "palTypes.h"
-#include "wniCfgSta.h"
+#include "wniCfg.h"
 
 #include "cfgApi.h"
 #include "pmmApi.h"

@@ -77,7 +77,7 @@
 #include <bap_hdd_main.h>
 #include "wlan_hdd_p2p.h"
 #include "cfgApi.h"
-#include "wniCfgAp.h"
+#include "wniCfg.h"
 
 #ifdef FEATURE_WLAN_CH_AVOID
 #include "wcnss_wlan.h"
