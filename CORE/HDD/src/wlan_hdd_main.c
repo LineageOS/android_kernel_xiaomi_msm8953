@@ -3523,7 +3523,60 @@ static int hdd_driver_command(hdd_adapter_t *pAdapter,
            pHddCtx->cfg_ini->isFastTransitionEnabled = ft;
            sme_UpdateFastTransitionEnabled((tHalHandle)(pHddCtx->hHal), ft);
        }
+       else if (strncmp(command, "SETDFSSCANMODE", 14) == 0)
+       {
+           tANI_U8 *value = command;
+           tANI_U8 dfsScanMode = DFS_CHNL_SCAN_ENABLED_NORMAL;
 
+           /* Move pointer to ahead of SETDFSSCANMODE<delimiter> */
+           value = value + 15;
+           /* Convert the value from ascii to integer */
+           ret = kstrtou8(value, 10, &dfsScanMode);
+           if (ret < 0)
+           {
+               /* If the input value is greater than max value of
+                               datatype, then also kstrtou8 fails
+                          */
+               VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                      "%s: kstrtou8 failed range [%d - %d]", __func__,
+                      CFG_ENABLE_DFS_CHNL_SCAN_MIN,
+                      CFG_ENABLE_DFS_CHNL_SCAN_MAX);
+               ret = -EINVAL;
+               goto exit;
+           }
+
+           if ((dfsScanMode < CFG_ENABLE_DFS_CHNL_SCAN_MIN) ||
+               (dfsScanMode > CFG_ENABLE_DFS_CHNL_SCAN_MAX))
+           {
+               VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                      "dfsScanMode value %d is out of range"
+                      " (Min: %d Max: %d)", dfsScanMode,
+                      CFG_ENABLE_DFS_CHNL_SCAN_MIN,
+                      CFG_ENABLE_DFS_CHNL_SCAN_MAX);
+               ret = -EINVAL;
+               goto exit;
+           }
+           VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                      "%s: Received Command to Set DFS Scan Mode = %d",
+                      __func__, dfsScanMode);
+
+           ret = wlan_hdd_handle_dfs_chan_scan(pHddCtx, dfsScanMode);
+       }
+       else if (strncmp(command, "GETDFSSCANMODE", 14) == 0)
+       {
+           tANI_U8 dfsScanMode = sme_GetDFSScanMode(pHddCtx->hHal);
+           char extra[32];
+           tANI_U8 len = 0;
+
+           len = scnprintf(extra, sizeof(extra), "%s %d", command, dfsScanMode);
+           if (copy_to_user(priv_data.buf, &extra, len + 1))
+           {
+               VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  "%s: failed to copy data to user buffer", __func__);
+               ret = -EFAULT;
+               goto exit;
+           }
+       }
        else if (strncmp(command, "FASTREASSOC", 11) == 0)
        {
            tANI_U8 *value = command;
@@ -11071,6 +11124,94 @@ hdd_remain_on_chan_ctx_t *hdd_get_remain_on_channel_ctx(hdd_context_t *pHddCtx)
         pAdapterNode = pNext;
     }
     return pRemainChanCtx;
+}
+
+/**
+ * wlan_hdd_handle_dfs_chan_scan () - handles disable/enable DFS channels
+ *
+ * @pHddCtx: HDD context within host driver
+ * @dfsScanMode: dfsScanMode passed from ioctl
+ *
+ */
+
+VOS_STATUS wlan_hdd_handle_dfs_chan_scan(hdd_context_t *pHddCtx,
+                                   tANI_U8 dfsScanMode)
+{
+    hdd_adapter_list_node_t *pAdapterNode = NULL, *pNext = NULL;
+    hdd_adapter_t *pAdapter;
+    VOS_STATUS vosStatus;
+    hdd_station_ctx_t *pHddStaCtx;
+    eHalStatus status = eHAL_STATUS_SUCCESS;
+
+    if(!pHddCtx)
+    {
+       hddLog(LOGE, FL("HDD context is Null"));
+       return eHAL_STATUS_FAILURE;
+    }
+
+    if (pHddCtx->scan_info.mScanPending)
+    {
+        hddLog(LOG1, FL("Aborting scan for sessionId: %d"),
+               pHddCtx->scan_info.sessionId);
+        hdd_abort_mac_scan(pHddCtx,
+                           pHddCtx->scan_info.sessionId,
+                           eCSR_SCAN_ABORT_DEFAULT);
+    }
+
+    if (!dfsScanMode)
+    {
+        vosStatus = hdd_get_front_adapter( pHddCtx, &pAdapterNode);
+        while ((NULL != pAdapterNode) &&
+               (VOS_STATUS_SUCCESS == vosStatus))
+        {
+            pAdapter = pAdapterNode->pAdapter;
+
+            if (WLAN_HDD_INFRA_STATION == pAdapter->device_mode)
+            {
+                pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
+
+                if(!pHddStaCtx)
+                {
+                   hddLog(LOGE, FL("HDD STA context is Null"));
+                   return eHAL_STATUS_FAILURE;
+                }
+
+                /* if STA is already connected on DFS channel,
+                                disconnect immediately*/
+                if (hdd_connIsConnected(pHddStaCtx) &&
+                    (NV_CHANNEL_DFS ==
+                     vos_nv_getChannelEnabledState(
+                         pHddStaCtx->conn_info.operationChannel)))
+                {
+                    status = sme_RoamDisconnect(pHddCtx->hHal,
+                             pAdapter->sessionId,
+                             eCSR_DISCONNECT_REASON_UNSPECIFIED);
+                    hddLog(LOG1, FL("Client connected on DFS channel %d,"
+                           "sme_RoamDisconnect returned with status: %d"
+                           "for sessionid: %d"), pHddStaCtx->conn_info.
+                            operationChannel, status, pAdapter->sessionId);
+                }
+            }
+
+            vosStatus = hdd_get_next_adapter(pHddCtx, pAdapterNode,
+                                              &pNext);
+            pAdapterNode = pNext;
+        }
+    }
+
+    sme_UpdateDFSScanMode(pHddCtx->hHal, dfsScanMode);
+    sme_UpdateDFSRoamMode(pHddCtx->hHal,
+                         (dfsScanMode != DFS_CHNL_SCAN_DISABLED));
+
+    status = sme_HandleDFSChanScan(pHddCtx->hHal);
+    if (!HAL_STATUS_SUCCESS(status))
+    {
+         hddLog(LOGE,
+                FL("Failed in sme_HandleDFSChanScan (err=%d)"), status);
+         return status;
+    }
+
+    return status;
 }
 
 //Register the module init/exit functions

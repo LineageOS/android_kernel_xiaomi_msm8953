@@ -496,6 +496,14 @@ eHalStatus csrScanFlushResult(tpAniSirGlobal);
  */
 eHalStatus csrScanFilterResults(tpAniSirGlobal pMac);
 
+/* ---------------------------------------------------------------------------
+ *  \fn csrScanFilterDFSResults
+ *  \brief Filter BSSIDs on DFS channels from the scan results.
+ *  \return eHalStatus
+ *-------------------------------------------------------------------------------
+ */
+eHalStatus csrScanFilterDFSResults(tpAniSirGlobal pMac);
+
 eHalStatus csrScanFlushSelectiveResult(tpAniSirGlobal, v_BOOL_t flushP2P);
 
 eHalStatus csrScanFlushSelectiveResultForBand(tpAniSirGlobal, v_BOOL_t flushP2P, tSirRFBand band);
