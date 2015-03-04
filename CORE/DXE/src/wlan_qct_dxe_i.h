@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -547,9 +547,6 @@ typedef struct
    WLANDXE_DescType                *linkedDesc;
    wpt_uint32                       linkedDescPhyAddr;
    wpt_uint32                       ctrlBlkOrder;
-#ifdef FEATURE_R33D
-   wpt_uint32                       shadowBufferVa;
-#endif /* FEATURE_R33D */
 } WLANDXE_DescCtrlBlkType;
 
 typedef struct
@@ -628,7 +625,7 @@ typedef struct
    WDTS_ChannelType                channelType;
    WLANDXE_DescCtrlBlkType        *headCtrlBlk;
    WLANDXE_DescCtrlBlkType        *tailCtrlBlk;
-#if !(defined(FEATURE_R33D) || defined(WLANDXE_TEST_CHANNEL_ENABLE))
+#if !(defined(WLANDXE_TEST_CHANNEL_ENABLE))
    WLANDXE_DescType               *descriptorAllocation;
 #endif
    WLANDXE_DescType               *DescBottomLoc;

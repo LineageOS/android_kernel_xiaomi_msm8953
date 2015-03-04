@@ -64,9 +64,6 @@ when           who        what, where, why
 #include "wlan_qct_dxe.h"
 #include "wlan_qct_dxe_i.h"
 #include "wlan_qct_pal_device.h"
-#ifdef FEATURE_R33D
-#include "wlan_qct_pal_bus.h"
-#endif /* FEATURE_R33D */
 
 /*----------------------------------------------------------------------------
  * Local Definitions
@@ -1157,7 +1154,7 @@ static wpt_status dxeDescAllocAndLink
 
    currentCtrlBlk = channelEntry->headCtrlBlk;
 
-#if !(defined(FEATURE_R33D) || defined(WLANDXE_TEST_CHANNEL_ENABLE))
+#if !(defined (WLANDXE_TEST_CHANNEL_ENABLE))
    /* allocate all DXE descriptors for this channel in one chunk */
    channelEntry->descriptorAllocation = (WLANDXE_DescType *)
       wpalDmaMemoryAllocate(sizeof(WLANDXE_DescType)*channelEntry->numDesc,
@@ -1175,7 +1172,6 @@ static wpt_status dxeDescAllocAndLink
    /* Allocate pre asigned number of descriptor */
    for(idx = 0; idx < channelEntry->numDesc; idx++)
    {
-#ifndef FEATURE_R33D
 #ifndef WLANDXE_TEST_CHANNEL_ENABLE
       // descriptors were allocated in a chunk -- use the current one
       memset((wpt_uint8 *)currentDesc, 0, sizeof(WLANDXE_DescType));
@@ -1197,30 +1193,6 @@ static wpt_status dxeDescAllocAndLink
          currDescCtrlBlk = (WLANDXE_DescCtrlBlkType *)currDescCtrlBlk->nextCtrlBlk;
       }
 #endif /* WLANDXE_TEST_CHANNEL_ENABLE */
-#else
-#ifndef WLANDXE_TEST_CHANNEL_ENABLE
-      currentDesc = (WLANDXE_DescType *)wpalAcpuDdrDxeDescMemoryAllocate(&physAddressAlloc);
-      memset((wpt_uint8 *)currentDesc, 0, sizeof(WLANDXE_DescType));
-      HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO_LOW,
-               "Allocated Descriptor VA %p, PA %p", currentDesc, physAddressAlloc);
-      physAddress = (wpt_uint32) (uintptr_t)(physAddressAlloc);
-#else
-      if(WDTS_CHANNEL_H2H_TEST_RX != channelEntry->channelType)
-      {
-         currentDesc = (WLANDXE_DescType *)wpalAcpuDdrDxeDescMemoryAllocate(&physAddressAlloc);
-         memset((wpt_uint8 *)currentDesc, 0, sizeof(WLANDXE_DescType));
-         HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO_LOW,
-                  "Allocated Descriptor VA %p, PA %p", currentDesc, physAddressAlloc);
-         physAddress = (wpt_uint32) (uintptr_t)(physAddressAlloc);
-      }
-      else
-      {
-         currentDesc     = currDescCtrlBlk->linkedDesc;
-         physAddress     = currDescCtrlBlk->linkedDescPhyAddr;
-         currDescCtrlBlk = (WLANDXE_DescCtrlBlkType *)currDescCtrlBlk->nextCtrlBlk;
-      }
-#endif /* WLANDXE_TEST_CHANNEL_ENABLE */
-#endif /* FEATURE_R33D */
       if(NULL == currentDesc)
       {
          HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
@@ -1304,12 +1276,10 @@ static wpt_status dxeDescAllocAndLink
       currentCtrlBlk = currentCtrlBlk->nextCtrlBlk;
       prevDesc       = currentDesc;
 
-#ifndef FEATURE_R33D
 #ifndef WLANDXE_TEST_CHANNEL_ENABLE
       // advance to the next pre-allocated descriptor in the chunk
       currentDesc++;
       physAddress = (physAddress + sizeof(WLANDXE_DescType));
-#endif
 #endif
    }
 
@@ -1823,7 +1793,7 @@ static wpt_status dxeChannelClose
                   wpalPacketFree(currentCtrlBlk->xfrFrame);
                }
          }
-#if (defined(FEATURE_R33D) || defined(WLANDXE_TEST_CHANNEL_ENABLE))
+#if defined(WLANDXE_TEST_CHANNEL_ENABLE)
          // descriptors allocated individually so free them individually
          wpalDmaMemoryFree(currentDescriptor);
 #endif
@@ -1840,7 +1810,7 @@ static wpt_status dxeChannelClose
       }
    }
 
-#if !(defined(FEATURE_R33D) || defined(WLANDXE_TEST_CHANNEL_ENABLE))
+#if !(defined(WLANDXE_TEST_CHANNEL_ENABLE))
    // descriptors were allocated as a single chunk so free the chunk
    if(NULL != channelEntry->descriptorAllocation)
    {
@@ -2194,15 +2164,9 @@ static wpt_status dxeRXFrameSingleBufferAlloc
    wpt_status                status = eWLAN_PAL_STATUS_SUCCESS;
    wpt_packet               *currentPalPacketBuffer = NULL;
    WLANDXE_DescType         *currentDesc            = NULL;
-#ifdef FEATURE_R33D
-   wpt_uint32                virtualAddressPCIe;
-   wpt_uint32                physicalAddressPCIe;   
-#else
    wpt_iterator              iterator;
    wpt_uint32                allocatedSize          = 0;
    void                     *physAddress            = NULL;
-#endif /* FEATURE_R33D */
-
 
    currentDesc            = currentCtrlBlock->linkedDesc;
 
@@ -2264,31 +2228,8 @@ static wpt_status dxeRXFrameSingleBufferAlloc
    currentPalPacketBuffer->pBD      = NULL;
    currentPalPacketBuffer->pBDPhys  = NULL;
    currentPalPacketBuffer->BDLength = 0;
-#ifdef FEATURE_R33D
-   status = wpalAllocateShadowRxFrame(currentPalPacketBuffer,
-                                           &physicalAddressPCIe,
-                                           &virtualAddressPCIe);
-   if((0 == physicalAddressPCIe) || (0 = virtualAddressPCIe))
-   {
-       HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO_MED,
-               "RX NULL Shadow Memory");
-       HDXE_ASSERT(0);
-       return eWLAN_PAL_STATUS_E_FAULT;
-   }
-   HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO_MED,
-            "RX Shadow Memory Va 0x%x, Pa 0x%x",
-            virtualAddressPCIe, physicalAddressPCIe);
-   if(eWLAN_PAL_STATUS_SUCCESS != status)
-   {
-      HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
-               "dxeRXFrameBufferAlloc Shadow Mem Alloc fail");
-      return status;
-   }
-   currentCtrlBlock->shadowBufferVa = virtualAddressPCIe;
-   currentPalPacketBuffer->pBDPhys  = (void *)physicalAddressPCIe;
-   memset((wpt_uint8 *)currentCtrlBlock->shadowBufferVa, 0, WLANDXE_DEFAULT_RX_OS_BUFFER_SIZE);
-#else
    status = wpalLockPacketForTransfer(currentPalPacketBuffer);
+
    if(eWLAN_PAL_STATUS_SUCCESS != status)
    {
       HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
@@ -2315,7 +2256,6 @@ static wpt_status dxeRXFrameSingleBufferAlloc
       return status;
    }
    currentPalPacketBuffer->pBDPhys = physAddress;
-#endif /* FEATURE_R33D */
 
    /* DXE descriptor must have SWAPPED addres in it's structure
     * !!! SWAPPED !!! */
@@ -2450,36 +2390,15 @@ static wpt_int32 dxeRXFrameRouteUpperLayer
    {
       channelEntry->numTotalFrame++;
       channelEntry->numFreeDesc++;
-#ifdef FEATURE_R33D
-      /* Transfer Size should be */
-      currentDesc->xfrSize = WLANDXE_U32_SWAP_ENDIAN(WLANDXE_DEFAULT_RX_OS_BUFFER_SIZE);
-      status = wpalPrepareRxFrame(&currentCtrlBlk->xfrFrame,
-                                       (wpt_uint32)currentCtrlBlk->xfrFrame->pBDPhys,
-                                       currentCtrlBlk->shadowBufferVa,
-                                       WLANDXE_DEFAULT_RX_OS_BUFFER_SIZE);
-      if(eWLAN_PAL_STATUS_SUCCESS != status)
-      {
-         HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
-                  "dxeRXFrameReady Prepare RX Frame fail");
-         return ret_val;
-      }
-      status = wpalFreeRxFrame(currentCtrlBlk->shadowBufferVa);
-      if(eWLAN_PAL_STATUS_SUCCESS != status)
-      {
-         HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
-                  "dxeRXFrameReady Free Shadow RX Frame fail");
-         return ret_val;
-      }
-
-#else /* FEATURE_R33D */
       status = wpalUnlockPacket(currentCtrlBlk->xfrFrame);
+
       if (eWLAN_PAL_STATUS_SUCCESS != status)
       {
          HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
                   "dxeRXFrameReady unable to unlock packet");
          return ret_val;
       }
-#endif /* FEATURE_R33D */
+
       /* This Descriptor is valid, so linked Control block is also valid
        * Linked Control block has pre allocated packet buffer
        * So, just let upper layer knows preallocated frame pointer will be OK */
@@ -3239,25 +3158,6 @@ static void dxeRXISR
    wpt_status                status     = eWLAN_PAL_STATUS_SUCCESS;
    wpt_uint32                regValue;
 
-#ifdef FEATURE_R33D
-   status = wpalReadRegister(WLANDXE_INT_SRC_RAW_ADDRESS,
-                                  &regValue);
-   if(eWLAN_PAL_STATUS_SUCCESS != status)
-   {
-      HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
-               "dxeTXCompISR Read INT_SRC_RAW fail");
-      return;
-   }
-   HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_WARN,
-            "INT_SRC_RAW 0x%x", regValue);
-   if(0 == regValue)
-   {
-      HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_WARN,
-               "This is not DXE Interrupt, Reject it 0x%x", regValue);
-      return;
-   }
-#endif /* FEATURE_R33D */
-
    /* Set Interrupt processing bit
     * During this bit set, WLAN HW may not power collapse */
    wpalReadRegister(WLANDXE_INT_MASK_REG_ADDRESS, &regValue);
@@ -3325,13 +3225,7 @@ static wpt_status dxeTXPushFrame
    WLANDXE_DescType           *LastDesc       = NULL;
    void                       *sourcePhysicalAddress = NULL;
    wpt_uint32                  xferSize = 0;
-#ifdef FEATURE_R33D
-   tx_frm_pcie_vector_t        frameVector;
-   wpt_uint32                  Va;
-   wpt_uint32                  fragCount = 0;
-#else
    wpt_iterator                iterator;
-#endif /* FEATURE_R33D */
    wpt_uint32                  isEmpty = 0;
 
    HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO_LOW,
@@ -3348,12 +3242,6 @@ static wpt_status dxeTXPushFrame
    currentCtrlBlk = channelEntry->headCtrlBlk;
 
    /* Initialize interator, TX is fragmented */
-#ifdef FEATURE_R33D
-   memset(&frameVector, 0, sizeof(tx_frm_pcie_vector_t));
-   status = wpalPrepareTxFrame(palPacket,
-                                    &frameVector,
-                                    &Va);
-#else
    status = wpalLockPacketForTransfer(palPacket);
    if(eWLAN_PAL_STATUS_SUCCESS != status)
    {
@@ -3363,7 +3251,6 @@ static wpt_status dxeTXPushFrame
    }
 
    status = wpalIteratorInit(&iterator, palPacket);
-#endif /* FEATURE_R33D */
    if(eWLAN_PAL_STATUS_SUCCESS != status)
    {
       HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
@@ -3387,31 +3274,6 @@ static wpt_status dxeTXPushFrame
       /* Get next fragment physical address and fragment size
        * if this is the first trial, will get first physical address
        * if no more fragment, Descriptor src address will be set as NULL, OK??? */
-#ifdef FEATURE_R33D
-      if(fragCount == frameVector.num_frg)
-      {
-         break;
-      }
-      currentCtrlBlk->shadowBufferVa = frameVector.frg[0].va;
-      sourcePhysicalAddress          = (void *)frameVector.frg[fragCount].pa;
-      xferSize                       = frameVector.frg[fragCount].size;
-      fragCount++;
-      if(0 == xferSize)
-      {
-          HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
-                  "dxeTXPushFrame invalid transfer size");
-
-          HDXE_ASSERT(0);
-          return eWLAN_PAL_STATUS_E_FAILURE;
-      }
-      if(NULL == sourcePhysicalAddress)
-      {
-          HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
-              "dxeTXPushFrame invalid sourcePhysicalAddress");
-          HDXE_ASSERT(0);
-          return eWLAN_PAL_STATUS_E_FAILURE;
-      }
-#else
       status = wpalIteratorNext(&iterator,
                                 palPacket,
                                 &sourcePhysicalAddress,
@@ -3429,7 +3291,6 @@ static wpt_status dxeTXPushFrame
                   "dxeTXPushFrame Get next frame fail");
          return status;
       }
-#endif /* FEATURE_R33D */
 
       /* This is the LAST descriptor valid for this transaction */
       LastDesc    = currentCtrlBlk->linkedDesc;
@@ -3789,9 +3650,6 @@ static wpt_status dxeTXCompFrame
       if(WLANDXE_U32_SWAP_ENDIAN(descCtrlValue) & WLANDXE_DESC_CTRL_EOP)
       {
          hostCtxt->txCompletedFrames--;
-#ifdef FEATURE_R33D
-         wpalFreeTxFrame(currentCtrlBlk->shadowBufferVa);
-#else
          status = wpalUnlockPacket(currentCtrlBlk->xfrFrame);
          if (eWLAN_PAL_STATUS_SUCCESS != status)
          {
@@ -3805,7 +3663,6 @@ static wpt_status dxeTXCompFrame
             }
             return status;
          }
-#endif /* FEATURE_R33D */
          hostCtxt->txCompCB(hostCtxt->clientCtxt,
                             currentCtrlBlk->xfrFrame,
                             eWLAN_PAL_STATUS_SUCCESS);
@@ -4438,9 +4295,6 @@ static void dxeTXISR
 {
    WLANDXE_CtrlBlkType      *dxeCtxt    = (WLANDXE_CtrlBlkType *)hostCtxt;
    wpt_status                status  = eWLAN_PAL_STATUS_SUCCESS;
-#ifdef FEATURE_R33D
-   wpt_uint32                regValue;
-#endif /* FEATURE_R33D */
 
    HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO_LOW,
             "%s Enter", __func__);
@@ -4463,25 +4317,6 @@ static void dxeTXISR
          "%s Riva is in %d, return from here ", __func__, dxeCtxt->hostPowerState);
       return;
    }
-
-#ifdef FEATURE_R33D
-   status = wpalReadRegister(WLANDXE_INT_SRC_RAW_ADDRESS,
-                                  &regValue);
-   if(eWLAN_PAL_STATUS_SUCCESS != status)
-   {
-      HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
-               "dxeTXCompISR Read INT_SRC_RAW fail");
-      return;
-   }
-   HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO_LOW,
-            "INT_SRC_RAW 0x%x", regValue);
-   if(0 == regValue)
-   {
-      HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_WARN,
-               "This is not DXE Interrupt, Reject it");
-      return;
-   }
-#endif /* FEATURE_R33D */
 
    /* Disable TX Complete Interrupt at here */
    status = wpalDisableInterrupt(DXE_INTERRUPT_TX_COMPLE);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -177,14 +177,13 @@ wpt_packet * wpalPacketAlloc(wpt_packet_type pktType, wpt_uint32 nPktSize,
                                        nPktSize, 1, VOS_FALSE, 
                                        wpalPacketRXLowResourceCB, usrData);
 
-#ifndef FEATURE_R33D
       /* Reserve the entire raw rx buffer for DXE */
       if( vosStatus == VOS_STATUS_SUCCESS )
       {
         wpalPacketAvailableCB = NULL;
         vosStatus =  vos_pkt_reserve_head_fast( pVosPkt, &pData, nPktSize ); 
       }
-#endif /* FEATURE_R33D */
+
       if((NULL != pVosPkt) && (VOS_STATUS_E_RESOURCES != vosStatus))
       {
          vos_pkt_get_packet_length(pVosPkt, &allocLen);

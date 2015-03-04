@@ -633,9 +633,6 @@ tBssSystemRole wdaGetGlobalSystemRole(tpAniSirGlobal pMac);
 #define WDA_TL_TX_SUSPEND_SUCCESS   0
 #define WDA_TL_TX_SUSPEND_FAILURE   1
 
-// FIXME Temporary value for R33D integaration
-//#define WDA_TL_TX_FRAME_TIMEOUT  20000 /* in msec a very high upper limit */
-
 #define DPU_FEEDBACK_UNPROTECTED_ERROR 0x0F
 
 
