@@ -57,7 +57,7 @@
 #include "limSession.h"
 #include "vos_nvitem.h"
 #ifdef WLAN_FEATURE_11W
-#include "wniCfgAp.h"
+#include "wniCfg.h"
 #endif
 
 /* Static global used to mark situations where pMac->lim.gLimTriggerBackgroundScanDuringQuietBss is SET
