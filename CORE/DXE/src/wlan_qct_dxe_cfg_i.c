@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -252,59 +252,12 @@ WLANDXE_ChannelConfigType chanRXHighPriConfig =
    eWLAN_PAL_TRUE
 };
 
-#ifdef WLANDXE_TEST_CHANNEL_ENABLE
-WLANDXE_ChannelConfigType chanH2HTestConfig =
-{
-   /* Q handle type, Circular */
-   WLANDXE_CHANNEL_HANDLE_CIRCULA,
-
-   /* Number of Descriptor, NOT CLEAR YET !!! */
-   5,
-
-   /* MAX num RX Buffer, NOT CLEAR YET !!! */
-   0,
-
-   /* Reference WQ, NOT CLEAR YET !!! */
-   /* Temporary BMU Work Q 5 */
-   5,
-
-   /* USB Only, End point info */
-   0,
-
-   /* Transfer Type */
-   WLANDXE_DESC_CTRL_XTYPE_H2H,
-
-   /* Channel Priority 7(Highest) - 0(Lowest), NOT CLEAR YET !!! */
-   5,
-
-   /* BD attached to frames for this pipe */
-   eWLAN_PAL_FALSE,
-
-   /* chk_size, NOT CLEAR YET !!!*/
-   0,
-
-   /* bmuThdSel, NOT CLEAR YET !!! */
-   0,
-
-   /* Added in Gen5 for Prefetch, NOT CLEAR YET !!!*/
-   eWLAN_PAL_TRUE,
-
-   /* Use short Descriptor */
-   eWLAN_PAL_TRUE
-};
-#endif /* WLANDXE_TEST_CHANNEL_ENABLE */
-
 WLANDXE_ChannelMappingType channelList[WDTS_CHANNEL_MAX] =
 {
    {WDTS_CHANNEL_TX_LOW_PRI,  WLANDXE_DMA_CHANNEL_0, &chanTXLowPriConfig},
    {WDTS_CHANNEL_TX_HIGH_PRI, WLANDXE_DMA_CHANNEL_4, &chanTXHighPriConfig},
    {WDTS_CHANNEL_RX_LOW_PRI,  WLANDXE_DMA_CHANNEL_1, &chanRXLowPriConfig},
-#ifndef WLANDXE_TEST_CHANNEL_ENABLE
    {WDTS_CHANNEL_RX_HIGH_PRI, WLANDXE_DMA_CHANNEL_3, &chanRXHighPriConfig},
-#else
-   {WDTS_CHANNEL_H2H_TEST_TX,    WLANDXE_DMA_CHANNEL_2, &chanH2HTestConfig},
-   {WDTS_CHANNEL_H2H_TEST_RX,    WLANDXE_DMA_CHANNEL_2, &chanH2HTestConfig}
-#endif /* WLANDXE_TEST_CHANNEL_ENABLE */
 };
 
 WLANDXE_TxCompIntConfigType txCompInt = 

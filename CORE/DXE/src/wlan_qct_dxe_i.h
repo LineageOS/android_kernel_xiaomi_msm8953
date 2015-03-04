@@ -625,9 +625,7 @@ typedef struct
    WDTS_ChannelType                channelType;
    WLANDXE_DescCtrlBlkType        *headCtrlBlk;
    WLANDXE_DescCtrlBlkType        *tailCtrlBlk;
-#if !(defined(WLANDXE_TEST_CHANNEL_ENABLE))
    WLANDXE_DescType               *descriptorAllocation;
-#endif
    WLANDXE_DescType               *DescBottomLoc;
    wpt_uint32                      descBottomLocPhyAddr;
    wpt_uint32                      numDesc;
