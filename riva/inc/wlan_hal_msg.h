@@ -523,6 +523,10 @@ typedef enum
 
    WLAN_HAL_FW_STATS_REQ                    = 296,
    WLAN_HAL_FW_STATS_RSP                    = 297,
+   WLAN_HAL_MGMT_LOGGING_INIT_REQ           = 298,
+   WLAN_HAL_MGMT_LOGGING_INIT_RSP           = 299,
+   WLAN_HAL_GET_FRAME_LOG_REQ               = 300,
+   WLAN_HAL_GET_FRAME_LOG_RSP               = 301,
 
    WLAN_HAL_MSG_MAX = WLAN_HAL_MSG_TYPE_MAX_ENUM_SIZE
 }tHalHostMsgType;
@@ -8435,6 +8439,64 @@ typedef PACKED_PRE struct PACKED_POST
     tHalMsgHeader         header;
     tMacSpoofedScanResp tMacSpoofedScanRespParams;
 }  tMacSpoofedScanRespMsg,  * tpMacSpoofedScanRespMsg;
+/*---------------------------------------------------------------------------
+ *WLAN_HAL_GET_FRAME_LOG_REQ
+ *--------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+    tANI_U8 flags;
+}tGetFrameLogReqType, * tpGetFrameLogReqType;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tHalMsgHeader               header;
+    tGetFrameLogReqType         tGetFrameLogReqParams;
+} tGetFrameLogReqMsg, * tpGetFrameLogReqMsg;
+
+/*---------------------------------------------------------------------------
+ * WLAN_HAL_GET_FRAME_LOG_RSP
+ *-------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+    tANI_U32   status;
+} tGetFrameLogResp, * tpGetFrameLogResp;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tHalMsgHeader         header;
+    tGetFrameLogResp      tGetFrameLogRespParams;
+}  tGetFrameLogRespMsg,  * tpGetFrameLogRespMsg;
+
+/*---------------------------------------------------------------------------
+ *WLAN_HAL_MGMT_LOGGING_INIT_REQ
+ *--------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+    tANI_U8 enableFlag;
+    tANI_U8 frameType;
+    tANI_U8 frameSize;
+    tANI_U8 bufferMode;
+}tMgmtLoggingInitReqType, * tpMgmtLoggingInitReqType;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tHalMsgHeader             header;
+    tMgmtLoggingInitReqType   tMgmtLoggingInitReqParams;
+} tHalMgmtLoggingInitReqMsg, * tpHalMgmtLoggingInitReqMsg;
+
+/*---------------------------------------------------------------------------
+ * WLAN_HAL_MGMT_LOGGING_INIT_RSP
+ *-------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+    tANI_U32   status;
+} tMgmtLoggingInitResp, * tpMgmtLoggingInitReep;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tHalMsgHeader         header;
+    tMgmtLoggingInitResp  tMgmtLoggingInitRespParams;
+}  tMgmtLoggingInitRespMsg,  * tpMgmtLoggingInitRespMsg;
 
 #if defined(__ANI_COMPILER_PRAGMA_PACK_STACK)
 #pragma pack(pop)
