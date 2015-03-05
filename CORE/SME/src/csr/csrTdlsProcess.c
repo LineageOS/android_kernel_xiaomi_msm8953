@@ -979,7 +979,8 @@ eHalStatus csrTdlsProcessLinkEstablish( tpAniSirGlobal pMac, tSmeCmd *cmd )
     tdlsLinkEstablishReq->isResponder= tdlsLinkEstablishCmdInfo->isResponder;
     tdlsLinkEstablishReq->uapsdQueues= tdlsLinkEstablishCmdInfo->uapsdQueues;
     tdlsLinkEstablishReq->maxSp= tdlsLinkEstablishCmdInfo->maxSp;
-
+    tdlsLinkEstablishReq->isOffChannelSupported =
+        tdlsLinkEstablishCmdInfo->isOffChannelSupported;
 
     // Send the request to PE.
     smsLog( pMac, LOGE, "sending TDLS Link Establish Request to PE \n" );
