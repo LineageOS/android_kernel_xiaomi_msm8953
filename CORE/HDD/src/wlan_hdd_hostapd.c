@@ -2177,7 +2177,7 @@ static __iw_softap_getchannel(struct net_device *dev,
         return ret;
     }
 
-    *value = *(int *)extra;
+    value = (int *)extra;
 
     *value = (WLAN_HDD_GET_AP_CTX_PTR(pHostapdAdapter))->operatingChannel;
 
