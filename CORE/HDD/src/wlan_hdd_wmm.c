@@ -542,15 +542,19 @@ void hdd_wmm_inactivity_timer_cb( v_PVOID_t pUserData )
     WLANTL_ACEnumType acType = 0;
     v_CONTEXT_t pVosContext = vos_get_global_context( VOS_MODULE_ID_HDD, NULL );
     hdd_context_t *pHddCtx;
-    if (NULL != pVosContext)
+
+    ENTER();
+    if (NULL == pVosContext)
     {
-        pHddCtx = vos_get_context( VOS_MODULE_ID_HDD, pVosContext);
-        if (NULL == pHddCtx)
-        {
-            VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
-                      FL("HddCtx is NULL"));
-            return;
-        }
+        VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+                  "%s: Invalid VOS Context", __func__);
+        return;
+    }
+
+    pHddCtx = vos_get_context(VOS_MODULE_ID_HDD, pVosContext);
+    if (0 != (wlan_hdd_validate_context(pHddCtx)))
+    {
+        return;
     }
 
     mutex_lock(&pHddCtx->wmmLock);
@@ -610,6 +614,7 @@ void hdd_wmm_inactivity_timer_cb( v_PVOID_t pUserData )
         }
     }
 
+    EXIT();
     return;
 }
 

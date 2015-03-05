@@ -628,9 +628,10 @@ void hdd_hostapd_inactivity_timer_cb(v_PVOID_t usrDataForCallback)
     struct net_device *dev = (struct net_device *)usrDataForCallback;
     v_BYTE_t we_custom_event[64];
     union iwreq_data wrqu;
-#ifdef DISABLE_CONCURRENCY_AUTOSAVE    
-    VOS_STATUS vos_status;
     hdd_adapter_t *pHostapdAdapter;
+    hdd_context_t *pHddCtx;
+#ifdef DISABLE_CONCURRENCY_AUTOSAVE
+    VOS_STATUS vos_status;
     hdd_ap_ctx_t *pHddApCtx;
 #endif /*DISABLE_CONCURRENCY_AUTOSAVE */
 
@@ -641,9 +642,21 @@ void hdd_hostapd_inactivity_timer_cb(v_PVOID_t usrDataForCallback)
 
     ENTER();
 
+    pHostapdAdapter = netdev_priv(dev);
+    if ((NULL == pHostapdAdapter) ||
+        (WLAN_HDD_ADAPTER_MAGIC != pHostapdAdapter->magic))
+    {
+         hddLog(LOGE, FL("invalid adapter: %p"), pHostapdAdapter);
+         return;
+    }
+    pHddCtx = WLAN_HDD_GET_CTX(pHostapdAdapter);
+    if (0 != (wlan_hdd_validate_context(pHddCtx)))
+    {
+        return;
+    }
 #ifdef DISABLE_CONCURRENCY_AUTOSAVE
     if (vos_concurrent_open_sessions_running())
-    {  
+    {
        /*
               This timer routine is going to be called only when AP
               persona is up.
@@ -652,13 +665,6 @@ void hdd_hostapd_inactivity_timer_cb(v_PVOID_t usrDataForCallback)
               that if Autosave is enabled next time and other session
               was down only then we bring down AP 
              */
-        pHostapdAdapter = netdev_priv(dev);
-        if ((NULL == pHostapdAdapter) ||
-            (WLAN_HDD_ADAPTER_MAGIC != pHostapdAdapter->magic))
-        {
-            hddLog(LOGE, FL("invalid adapter: %p"), pHostapdAdapter);
-            return;
-        }
         pHddApCtx = WLAN_HDD_GET_AP_CTX_PTR(pHostapdAdapter);
         vos_status = vos_timer_start(
          &pHddApCtx->hdd_ap_inactivity_timer, 

@@ -114,11 +114,10 @@ void hdd_softap_traffic_monitor_timeout_handler( void *pUsrData )
    hdd_context_t *pHddCtx = (hdd_context_t *)pUsrData;
    v_TIME_t       currentTS;
 
-   if (NULL == pHddCtx)
+   ENTER();
+   if (0 != (wlan_hdd_validate_context(pHddCtx)))
    {
-      VOS_TRACE( VOS_MODULE_ID_HDD_SAP_DATA, VOS_TRACE_LEVEL_ERROR,
-              "%s: Invalid user data, context", __func__);
-      return;
+       return;
    }
 
    currentTS = vos_timer_get_system_time();
@@ -136,6 +135,7 @@ void hdd_softap_traffic_monitor_timeout_handler( void *pUsrData )
                       pHddCtx->cfg_ini->trafficIdleTimeout);
    }
 
+   EXIT();
    return;
 }
 

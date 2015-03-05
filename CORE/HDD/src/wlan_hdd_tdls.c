@@ -586,6 +586,7 @@ static v_VOID_t wlan_hdd_tdls_initiator_wait_cb( v_PVOID_t userData )
     hddTdlsPeer_t *curr_peer = (hddTdlsPeer_t *)userData;
     tdlsCtx_t   *pHddTdlsCtx;
 
+    ENTER();
     if ( NULL == curr_peer )
     {
        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -601,9 +602,14 @@ static v_VOID_t wlan_hdd_tdls_initiator_wait_cb( v_PVOID_t userData )
                  FL("pHddTdlsCtx is NULL"));
         return;
     }
-
+    if (0 != (wlan_hdd_validate_context(
+              WLAN_HDD_GET_CTX(pHddTdlsCtx->pAdapter))))
+    {
+        return;
+    }
     WLANTL_ResumeDataTx( (WLAN_HDD_GET_CTX(pHddTdlsCtx->pAdapter))->pvosContext,
                            (v_U8_t *)&curr_peer->staId);
+    EXIT();
 }
 
 static void wlan_hdd_tdls_free_list(tdlsCtx_t *pHddTdlsCtx)
