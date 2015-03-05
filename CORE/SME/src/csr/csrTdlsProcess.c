@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -738,11 +738,7 @@ eHalStatus csrTdlsProcessDelSta( tpAniSirGlobal pMac, tSmeCmd *cmd )
             tdlsDelStaCmdInfo->peerMac, sizeof(tSirMacAddr)) ;
 
     // Send the request to PE.
-#ifdef WLAN_FEATURE_TDLS_DEBUG
-    smsLog( pMac, LOGE,
-#else
     smsLog( pMac, LOG1,
-#endif
         "sending TDLS Del Sta "MAC_ADDRESS_STR" req to PE",
          MAC_ADDR_ARRAY(tdlsDelStaCmdInfo->peerMac));
     status = tdlsSendMessage(pMac, eWNI_SME_TDLS_DEL_STA_REQ, 
