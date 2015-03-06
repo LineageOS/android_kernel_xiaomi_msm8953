@@ -7423,10 +7423,10 @@ static int __wlan_hdd_cfg80211_start_ap(struct wiphy *wiphy,
 
     ENTER();
 
-    if (NULL == dev)
+    if (NULL == dev || NULL == params)
     {
         VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                   "%s: Device is Null", __func__);
+                   "%s: Device or params is Null", __func__);
         return -ENODEV;
     }
 
@@ -7478,7 +7478,16 @@ static int __wlan_hdd_cfg80211_start_ap(struct wiphy *wiphy,
             return -EALREADY;
         }
 
-        status = wlan_hdd_cfg80211_alloc_new_beacon(pAdapter, &new, &params->beacon, params->dtim_period);
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,4,0))
+        status = wlan_hdd_cfg80211_alloc_new_beacon(pAdapter,
+                                                    &new,
+                                                    &params->beacon);
+#else
+        status = wlan_hdd_cfg80211_alloc_new_beacon(pAdapter,
+                                                    &new,
+                                                    &params->beacon,
+                                                    params->dtim_period);
+#endif
 
         if (status != 0)
         {
