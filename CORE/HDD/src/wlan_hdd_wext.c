@@ -355,13 +355,6 @@ static const hdd_freq_chan_map_t freq_chan_map[] = { {2412, 1}, {2417, 2},
 #define WLAN_ADAPTER 0
 #define P2P_ADAPTER  1
 
-#define HDD_IOCTL_RATELIMIT_INTERVAL 20*HZ
-#define HDD_IOCTL_RATELIMIT_BURST 1
-
-static DEFINE_RATELIMIT_STATE(hdd_ioctl_timeout_rs, \
-        HDD_IOCTL_RATELIMIT_INTERVAL,     \
-        HDD_IOCTL_RATELIMIT_BURST);
-
 /*
  * When supplicant sends SETBAND ioctl it queries for channels from
  * cfg80211 layer by sending itself EVENT_CHANNEL_LIST_CHANGED command.
@@ -553,8 +546,6 @@ int hdd_wlan_get_rts_threshold(hdd_adapter_t *pAdapter, union iwreq_data *wrqu)
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid",__func__);
         return ret;
     }
 
@@ -602,8 +593,6 @@ int hdd_wlan_get_frag_threshold(hdd_adapter_t *pAdapter, union iwreq_data *wrqu)
     status = wlan_hdd_validate_context(pHddCtx);
     if (0 != status)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid",__func__);
         return status;
     }
 
@@ -910,6 +899,8 @@ VOS_STATUS wlan_hdd_get_snr(hdd_adapter_t *pAdapter, v_S7_t *snr)
    long lrc;
    int valid;
 
+   ENTER();
+
    if (NULL == pAdapter)
    {
        hddLog(VOS_TRACE_LEVEL_ERROR,
@@ -922,7 +913,6 @@ VOS_STATUS wlan_hdd_get_snr(hdd_adapter_t *pAdapter, v_S7_t *snr)
    valid = wlan_hdd_validate_context(pHddCtx);
    if (0 != valid)
    {
-       hddLog(VOS_TRACE_LEVEL_ERROR, FL("HDD context is not valid"));
        return VOS_STATUS_E_FAULT;
    }
 
@@ -977,6 +967,7 @@ VOS_STATUS wlan_hdd_get_snr(hdd_adapter_t *pAdapter, v_S7_t *snr)
 
    *snr = pAdapter->snr;
 
+   EXIT();
    return VOS_STATUS_SUCCESS;
 }
 #if defined WLAN_FEATURE_VOWIFI_11R || defined FEATURE_WLAN_ESE || defined(FEATURE_WLAN_LFR)
@@ -1382,6 +1373,9 @@ static int __iw_set_commit(struct net_device *dev, struct iw_request_info *info,
     hdd_adapter_t *pAdapter;
     hdd_context_t *pHddCtx;
     int ret = 0;
+
+    ENTER();
+
     pAdapter  = WLAN_HDD_GET_PRIV_PTR(dev);
     if (NULL == pAdapter)
     {
@@ -1393,12 +1387,12 @@ static int __iw_set_commit(struct net_device *dev, struct iw_request_info *info,
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is Null", __func__);
         return ret;
     }
-    hddLog( LOG1, "In %s", __func__);
+
     /* Do nothing for now */
+
+    EXIT();
     return ret;
 }
 
@@ -1421,6 +1415,7 @@ static int __iw_get_name(struct net_device *dev,
     hdd_adapter_t *pAdapter;
     hdd_context_t *pHddCtx;
     int ret = 0;
+
     ENTER();
     pAdapter  = WLAN_HDD_GET_PRIV_PTR(dev);
     if (NULL == pAdapter)
@@ -1433,8 +1428,6 @@ static int __iw_get_name(struct net_device *dev,
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is Null", __func__);
         return ret;
     }
     strlcpy(wrqu, "Qcom:802.11n", IFNAMSIZ);
@@ -1482,8 +1475,6 @@ static int __iw_set_mode(struct net_device *dev,
     status = wlan_hdd_validate_context(pHddCtx);
     if (0 != status)
     {
-        hddLog(VOS_TRACE_LEVEL_WARN,
-               "%s: HddCtx is Invalid", __func__);
         return status;
     }
 
@@ -1579,7 +1570,8 @@ static int __iw_get_mode(struct net_device *dev,
     hdd_context_t *pHddCtx;
     int ret = 0;
 
-    hddLog(LOG1, "In %s", __func__);
+    ENTER();
+
     pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
     if (NULL == pAdapter)
     {
@@ -1592,8 +1584,6 @@ static int __iw_get_mode(struct net_device *dev,
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        hddLog(VOS_TRACE_LEVEL_ERROR,
-               "%s: HDD context is not valid",__func__);
         return ret;
     }
     pWextState = WLAN_HDD_GET_WEXT_STATE_PTR(pAdapter);
@@ -1623,6 +1613,7 @@ static int __iw_get_mode(struct net_device *dev,
         break;
     }
 
+    EXIT();
     return 0;
 }
 
@@ -1655,6 +1646,7 @@ static int __iw_set_freq(struct net_device *dev,
     tHalHandle hHal;
     hdd_station_ctx_t *pHddStaCtx;
     tCsrRoamProfile * pRoamProfile;
+
     ENTER();
 
     pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
@@ -1669,8 +1661,6 @@ static int __iw_set_freq(struct net_device *dev,
     status = wlan_hdd_validate_context(pHddCtx);
     if (0 != status)
     {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 "%s:HDD context is NULL",__func__);
        return status;
     }
 
@@ -1814,8 +1804,6 @@ static int __iw_get_freq(struct net_device *dev,
    ret = wlan_hdd_validate_context(pHddCtx);
    if (0 != ret)
    {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 "%s: HddCtx is NULL", __func__);
        return ret;
    }
    hHal = WLAN_HDD_GET_HAL_CTX(pAdapter);
@@ -1870,7 +1858,9 @@ static int __iw_get_freq(struct net_device *dev,
        fwrq->m = 0;
        fwrq->e = MHZ;
     }
-   return ret;
+
+    EXIT();
+    return ret;
 }
 
 static int iw_get_freq(struct net_device *dev,
@@ -1896,6 +1886,8 @@ static int __iw_get_tx_power(struct net_device *dev,
    hdd_station_ctx_t *pHddStaCtx;
    int ret = 0;
 
+   ENTER();
+
    pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
    if (NULL == pAdapter)
    {
@@ -1907,8 +1899,6 @@ static int __iw_get_tx_power(struct net_device *dev,
    ret = wlan_hdd_validate_context(pHddCtx);
    if (0 != ret)
    {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 "%s: HDD context is not valid",__func__);
        return ret;
    }
 
@@ -1928,6 +1918,7 @@ static int __iw_get_tx_power(struct net_device *dev,
    wlan_hdd_get_classAstats(pAdapter);
    wrqu->txpower.value = pAdapter->hdd_stats.ClassA_stat.max_pwr;
 
+   EXIT();
    return 0;
 }
 
@@ -1966,8 +1957,6 @@ static int __iw_set_tx_power(struct net_device *dev,
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid",__func__);
         return ret;
     }
 
@@ -2029,8 +2018,6 @@ static int __iw_get_bitrate(struct net_device *dev,
    ret = wlan_hdd_validate_context(pHddCtx);
    if (0 != ret)
    {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 "%s: HDD context is not valid",__func__);
        return ret;
    }
 
@@ -2136,8 +2123,6 @@ static int __iw_set_bitrate(struct net_device *dev,
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid",__func__);
         return ret;
     }
 
@@ -2208,6 +2193,8 @@ static int __iw_set_bitrate(struct net_device *dev,
                 FL("failed to set ini parameter, WNI_CFG_FIXED_RATE"));
         return -EIO;
     }
+
+    EXIT();
     return 0;
 }
 
@@ -2252,8 +2239,6 @@ static int __iw_set_genie(struct net_device *dev,
    ret = wlan_hdd_validate_context(pHddCtx);
    if (0 != ret)
    {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 "%s: HDD context is not valid",__func__);
        return ret;
    }
 
@@ -2370,6 +2355,7 @@ static int __iw_set_genie(struct net_device *dev,
         genie += eLen;
         remLen -= eLen;
     }
+
     EXIT();
     kfree(base_genie);
     return 0;
@@ -2404,7 +2390,6 @@ static int __iw_get_genie(struct net_device *dev,
 
     ENTER();
 
-    hddLog(LOG1,"getGEN_IE ioctl");
     pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
     if (NULL == pAdapter)
     {
@@ -2416,8 +2401,6 @@ static int __iw_get_genie(struct net_device *dev,
     status = wlan_hdd_validate_context(pHddCtx);
     if (0 != status)
     {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 "%s: HDD context is not valid",__func__);
        return status;
     }
 
@@ -2509,8 +2492,6 @@ static int __iw_get_encode(struct net_device *dev,
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid",__func__);
         return ret;
     }
     pWextState = WLAN_HDD_GET_WEXT_STATE_PTR(pAdapter);
@@ -2644,8 +2625,6 @@ static int __iw_set_rts_threshold(struct net_device *dev,
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid",__func__);
         return ret;
     }
 
@@ -2734,8 +2713,6 @@ static int __iw_set_frag_threshold(struct net_device *dev,
    ret = wlan_hdd_validate_context(pHddCtx);
    if (0 != ret)
    {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 "%s: HDD context is not valid",__func__);
        return ret;
    }
 
@@ -2797,10 +2774,10 @@ static int __iw_get_power_mode(struct net_device *dev,
    ret = wlan_hdd_validate_context(pHddCtx);
    if (0 != ret)
    {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 "%s: HDD context is not valid",__func__);
        return ret;
    }
+
+   EXIT();
    return -EOPNOTSUPP;
 }
 
@@ -2836,10 +2813,10 @@ static int __iw_set_power_mode(struct net_device *dev,
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid",__func__);
         return ret;
     }
+
+    EXIT();
     return -EOPNOTSUPP;
 }
 
@@ -2888,8 +2865,6 @@ static int __iw_get_range(struct net_device *dev,
    ret =  wlan_hdd_validate_context(pHddCtx);
    if (0 != ret)
    {
-       hddLog(VOS_TRACE_LEVEL_ERROR,
-              "%s: HDD context is not valid",__func__);
        return ret;
    }
    hHal = WLAN_HDD_GET_HAL_CTX(pAdapter);
@@ -3384,6 +3359,7 @@ static int iw_get_linkspeed(struct net_device *dev,
    VOS_STATUS status;
    int rc, valid = 0;
 
+   ENTER();
    pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
    if (NULL == pAdapter)
    {
@@ -3394,10 +3370,8 @@ static int iw_get_linkspeed(struct net_device *dev,
 
    pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
    valid = wlan_hdd_validate_context(pHddCtx);
-
    if (0 != valid)
    {
-       hddLog(VOS_TRACE_LEVEL_ERROR, FL("HDD context is not valid %d"), valid);
        return valid;
    }
    pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
@@ -3451,6 +3425,7 @@ static int iw_get_linkspeed(struct net_device *dev,
        return -EIO;
    }
 
+   EXIT();
   /* a value is being successfully returned */
    return rc;
 }
@@ -3990,8 +3965,6 @@ static int __iw_set_priv(struct net_device *dev,
     rc = wlan_hdd_validate_context(pHddCtx);
     if (0 != rc)
     {
-        hddLog(VOS_TRACE_LEVEL_ERROR,
-               "%s: HDD context is not valid", __func__);
         return rc;
     }
 
@@ -4313,6 +4286,7 @@ done:
                __func__, cmd, wrqu->data.length, rc);
     }
     kfree(cmd);
+    EXIT();
     return rc;
 }
 
@@ -4335,6 +4309,7 @@ static int __iw_set_nick(struct net_device *dev,
    hdd_adapter_t *pAdapter;
    hdd_context_t *pHddCtx;
    int ret = 0;
+
    ENTER();
 
    pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
@@ -4349,10 +4324,9 @@ static int __iw_set_nick(struct net_device *dev,
    ret = wlan_hdd_validate_context(pHddCtx);
    if (0 != ret)
    {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 "%s: HDD context is not valid",__func__);
        return ret;
    }
+   EXIT();
    return 0;
 }
 
@@ -4391,10 +4365,9 @@ static int __iw_get_nick(struct net_device *dev,
    ret = wlan_hdd_validate_context(pHddCtx);
    if (0 != ret)
    {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 "%s: HDD context is not valid",__func__);
        return ret;
    }
+   EXIT();
    return 0;
 }
 
@@ -4460,8 +4433,6 @@ static int __iw_set_encode(struct net_device *dev,
    status = wlan_hdd_validate_context(pHddCtx);
    if (0 != status)
    {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 "%s: HDD context is not valid",__func__);
        return status;
    }
    pWextState = WLAN_HDD_GET_WEXT_STATE_PTR(pAdapter);
@@ -4606,7 +4577,7 @@ static int __iw_set_encode(struct net_device *dev,
           return status;
        }
    }
-
+   EXIT();
    return 0;
 }
 
@@ -4650,8 +4621,6 @@ static int __iw_get_encodeext(struct net_device *dev,
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid",__func__);
         return ret;
     }
     pWextState = WLAN_HDD_GET_WEXT_STATE_PTR(pAdapter);
@@ -4774,8 +4743,6 @@ static int __iw_set_encodeext(struct net_device *dev,
     status = wlan_hdd_validate_context(pHddCtx);
     if (0 != status)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid",__func__);
         return status;
     }
     pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
@@ -4959,8 +4926,8 @@ static int __iw_set_encodeext(struct net_device *dev,
 
        pHddStaCtx->roam_info.roamingState = HDD_ROAM_STATE_NONE;
     }
-
-   return halStatus;
+    EXIT();
+    return halStatus;
 }
 
 static int iw_set_encodeext(struct net_device *dev,
@@ -4999,8 +4966,6 @@ static int __iw_set_retry(struct net_device *dev,
    ret = wlan_hdd_validate_context(pHddCtx);
    if (0 != ret)
    {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 "%s: HDD context is not valid",__func__);
        return ret;
    }
 
@@ -5091,8 +5056,6 @@ static int __iw_get_retry(struct net_device *dev,
    ret = wlan_hdd_validate_context(pHddCtx);
    if (0 != ret)
    {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 "%s: HDD context is not valid",__func__);
        return ret;
    }
 
@@ -5178,8 +5141,6 @@ static int __iw_set_mlme(struct net_device *dev,
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                                  "%s HDD context is not valid",__func__);
         return ret;
     }
     pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
@@ -5275,6 +5236,7 @@ static int __iw_setint_getnone(struct net_device *dev,
     v_U8_t nEnableSuspendOld;
 #endif
 
+    ENTER();
     pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
     if (NULL == pAdapter)
     {
@@ -5286,7 +5248,6 @@ static int __iw_setint_getnone(struct net_device *dev,
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        hddLog(VOS_TRACE_LEVEL_ERROR, FL("HDD context is not valid"));
         return ret;
     }
     hHal = WLAN_HDD_GET_HAL_CTX(pAdapter);
@@ -5730,7 +5691,7 @@ static int __iw_setint_getnone(struct net_device *dev,
             break;
         }
     }
-
+    EXIT();
     return ret;
 }
 
@@ -5763,6 +5724,7 @@ static int __iw_setchar_getnone(struct net_device *dev,
     struct iw_point s_priv_data;
     tSirpkt80211 *pkt;
 
+    ENTER();
     pAdapter = (netdev_priv(dev));
     if (NULL == pAdapter)
     {
@@ -5775,8 +5737,6 @@ static int __iw_setchar_getnone(struct net_device *dev,
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid",__func__);
         return ret;
     }
 #ifdef WLAN_FEATURE_VOWIFI
@@ -5901,6 +5861,8 @@ static int __iw_setchar_getnone(struct net_device *dev,
        }
     }
     kfree(pBuffer);
+
+    EXIT();
     return ret;
 }
 
@@ -5929,6 +5891,8 @@ static int __iw_setnone_getint(struct net_device *dev,
     int ret = 0; /* success */
     tSmeConfigParams smeConfig;
 
+    ENTER();
+
     pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
     if (NULL == pAdapter)
     {
@@ -5940,11 +5904,6 @@ static int __iw_setnone_getint(struct net_device *dev,
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        if (__ratelimit(&hdd_ioctl_timeout_rs))
-        {
-            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_FATAL,
-                      "%s:Hdd context is not valid", __func__);
-        }
         return ret;
     }
     hHal = WLAN_HDD_GET_HAL_CTX(pAdapter);
@@ -6062,7 +6021,7 @@ static int __iw_setnone_getint(struct net_device *dev,
             break;
         }
     }
-
+    EXIT();
     return ret;
 }
 
@@ -6090,6 +6049,7 @@ int __iw_set_three_ints_getnone(struct net_device *dev,
     int sub_cmd = value[0];
     int ret = 0;
 
+    ENTER();
     pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
     if (NULL == pAdapter)
     {
@@ -6101,8 +6061,6 @@ int __iw_set_three_ints_getnone(struct net_device *dev,
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid",__func__);
         return ret;
     }
     switch(sub_cmd)
@@ -6129,6 +6087,7 @@ int __iw_set_three_ints_getnone(struct net_device *dev,
             break;
         }
     }
+    EXIT();
     return ret;
 }
 
@@ -6157,6 +6116,7 @@ static int __iw_get_char_setnone(struct net_device *dev,
     hdd_wext_state_t *pWextState;
 #endif
 
+    ENTER();
     pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
     if (pAdapter == NULL)
     {
@@ -6168,8 +6128,6 @@ static int __iw_get_char_setnone(struct net_device *dev,
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid",__func__);
         return ret;
     }
 #ifdef WLAN_FEATURE_11W
@@ -6609,7 +6567,6 @@ static int __iw_get_char_setnone(struct net_device *dev,
             status = wlan_hdd_validate_context(pHddCtx);
             if (0 != status)
             {
-                hddLog(LOGE, "%s: getSNR: HDD context is not valid", __func__);
                 return status;
             }
 
@@ -6639,7 +6596,7 @@ static int __iw_get_char_setnone(struct net_device *dev,
             break;
         }
     }
-
+    EXIT();
     return 0;
 }
 
@@ -6667,6 +6624,8 @@ static int __iw_setnone_getnone(struct net_device *dev,
     int ret = 0; /* success */
     struct iw_point s_priv_data;
 
+    ENTER();
+
     pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
     if (NULL == pAdapter)
     {
@@ -6678,8 +6637,6 @@ static int __iw_setnone_getnone(struct net_device *dev,
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid",__func__);
         return ret;
     }
     /* helper function to get iwreq_data with compat handling. */
@@ -6868,7 +6825,7 @@ static int __iw_setnone_getnone(struct net_device *dev,
             break;
         }
     }
-
+    EXIT();
     return ret;
 }
 
@@ -6947,6 +6904,7 @@ static int __iw_set_var_ints_getnone(struct net_device *dev,
     int staId = 0;
     int ret = 0;
 
+    ENTER();
     if (extra == NULL)
     {
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -6964,8 +6922,6 @@ static int __iw_set_var_ints_getnone(struct net_device *dev,
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                    "%s: HDD context is Null", __func__);
         return ret;
     }
     hHal = WLAN_HDD_GET_HAL_CTX(pAdapter);
@@ -7109,7 +7065,7 @@ static int __iw_set_var_ints_getnone(struct net_device *dev,
             }
             break;
     }
-
+    EXIT();
     return 0;
 }
 
@@ -7183,6 +7139,7 @@ static int __iw_add_tspec(struct net_device *dev,
    struct iw_point s_priv_data;
    int ret = 0;
 
+   ENTER();
    pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
    if (NULL == pAdapter)
    {
@@ -7194,8 +7151,6 @@ static int __iw_add_tspec(struct net_device *dev,
    ret = wlan_hdd_validate_context(pHddCtx);
    if (0 != ret)
    {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 "%s: HDD context is not valid",__func__);
        return ret;
    }
    pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
@@ -7346,6 +7301,8 @@ static int __iw_add_tspec(struct net_device *dev,
    }
 
    *pStatus = hdd_wmm_addts(pAdapter, handle, &tSpec);
+
+   EXIT();
    return 0;
 }
 
@@ -7374,6 +7331,8 @@ static int __iw_del_tspec(struct net_device *dev,
    v_U32_t handle;
    int ret = 0;
 
+   ENTER();
+
    pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
    if (NULL == pAdapter)
    {
@@ -7386,8 +7345,6 @@ static int __iw_del_tspec(struct net_device *dev,
    ret = wlan_hdd_validate_context(pHddCtx);
    if (0 != ret)
    {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 "%s: HDD context is not valid",__func__);
        return ret;
    }
    // make sure the application is sufficiently priviledged
@@ -7412,6 +7369,8 @@ static int __iw_del_tspec(struct net_device *dev,
    }
 
    *pStatus = hdd_wmm_delts(pAdapter, handle);
+
+   EXIT();
    return 0;
 }
 
@@ -7440,6 +7399,8 @@ static int __iw_get_tspec(struct net_device *dev,
    v_U32_t handle;
    int ret = 0;
 
+   ENTER();
+
    // although we are defined to be a "get" ioctl, the params we require
    // will fit in the iwreq_data, therefore unlike iw_add_tspec() there
    // is no need to copy the params from user space
@@ -7455,8 +7416,6 @@ static int __iw_get_tspec(struct net_device *dev,
    ret = wlan_hdd_validate_context(pHddCtx);
    if (0 != ret)
    {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 "%s: HDD context is not valid",__func__);
        return ret;
    }
    // validate the handle
@@ -7469,6 +7428,7 @@ static int __iw_get_tspec(struct net_device *dev,
    }
 
    *pStatus = hdd_wmm_checkts(pAdapter, handle);
+   EXIT();
    return 0;
 }
 
@@ -7502,6 +7462,7 @@ static int __iw_set_fties(struct net_device *dev,
     int ret = 0;
     //v_CONTEXT_t pVosContext;
 
+    ENTER();
     pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
     if (NULL == pAdapter)
     {
@@ -7513,8 +7474,6 @@ static int __iw_set_fties(struct net_device *dev,
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid",__func__);
         return ret;
     }
     pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
@@ -7551,6 +7510,7 @@ static int __iw_set_fties(struct net_device *dev,
     sme_SetFTIEs( WLAN_HDD_GET_HAL_CTX(pAdapter), pAdapter->sessionId, extra,
         wrqu->data.length);
 
+    EXIT();
     return 0;
 }
 
@@ -7581,6 +7541,8 @@ static int __iw_set_dynamic_mcbc_filter(struct net_device *dev,
     int idx;
     eHalStatus ret_val;
 
+    ENTER();
+
     pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
     if (NULL == pAdapter)
     {
@@ -7592,8 +7554,6 @@ static int __iw_set_dynamic_mcbc_filter(struct net_device *dev,
     ret_val = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret_val)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid",__func__);
         return ret_val;
     }
     hHal = WLAN_HDD_GET_HAL_CTX(pAdapter);
@@ -7695,6 +7655,7 @@ static int __iw_set_dynamic_mcbc_filter(struct net_device *dev,
         }
     }
 
+    EXIT();
     return 0;
 }
 
@@ -7720,7 +7681,7 @@ static int __iw_clear_dynamic_mcbc_filter(struct net_device *dev,
     tpSirWlanSetRxpFilters wlanRxpFilterParam;
     int ret = 0;
 
-    hddLog(VOS_TRACE_LEVEL_INFO_HIGH, "%s: ", __func__);
+    ENTER();
 
     pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
     if (NULL == pAdapter)
@@ -7734,8 +7695,6 @@ static int __iw_clear_dynamic_mcbc_filter(struct net_device *dev,
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid",__func__);
         return ret;
     }
     //Reset the filter to INI value as we have to clear the dynamic filter
@@ -7778,6 +7737,7 @@ static int __iw_clear_dynamic_mcbc_filter(struct net_device *dev,
         }
 
     }
+    EXIT();
     return 0;
 }
 
@@ -7805,6 +7765,8 @@ static int __iw_set_host_offload(struct net_device *dev,
     tSirHostOffloadReq offloadRequest;
     int ret = 0;
 
+    ENTER();
+
     pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
     if (NULL == pAdapter)
     {
@@ -7816,8 +7778,6 @@ static int __iw_set_host_offload(struct net_device *dev,
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid",__func__);
         return ret;
     }
 
@@ -7876,6 +7836,7 @@ static int __iw_set_host_offload(struct net_device *dev,
         return -EINVAL;
     }
 
+    EXIT();
     return 0;
 }
 
@@ -7902,6 +7863,7 @@ static int __iw_set_keepalive_params(struct net_device *dev,
     tSirKeepAliveReq keepaliveRequest;
     int ret = 0;
 
+    ENTER();
     pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
     if (NULL == pAdapter)
     {
@@ -7913,8 +7875,6 @@ static int __iw_set_keepalive_params(struct net_device *dev,
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid",__func__);
         return ret;
     }
     /* Debug display of request components. */
@@ -7964,7 +7924,7 @@ static int __iw_set_keepalive_params(struct net_device *dev,
                __func__);
         return -EINVAL;
     }
-
+    EXIT();
     return 0;
 }
 
@@ -8352,6 +8312,7 @@ static int __iw_set_packet_filter_params(struct net_device *dev,
     int ret = 0;
     struct iw_point s_priv_data;
 
+    ENTER();
     pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
     if (NULL == pAdapter)
     {
@@ -8363,8 +8324,6 @@ static int __iw_set_packet_filter_params(struct net_device *dev,
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid",__func__);
         return ret;
     }
     if (hdd_priv_get_data(&s_priv_data, wrqu))
@@ -8390,6 +8349,7 @@ static int __iw_set_packet_filter_params(struct net_device *dev,
     ret = wlan_hdd_set_filter(WLAN_HDD_GET_CTX(pAdapter), pRequest, pAdapter->sessionId);
     kfree(pRequest);
 
+    EXIT();
     return ret;
 }
 
@@ -8436,8 +8396,6 @@ static int __iw_get_statistics(struct net_device *dev,
   ret = wlan_hdd_validate_context(pHddCtx);
   if (0 != ret)
   {
-      VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                "%s: HDD context is not valid",__func__);
       return ret;
   }
   pStats = &(pAdapter->hdd_stats.summary_stat);
@@ -9033,7 +8991,9 @@ static int __iw_set_pno_priv(struct net_device *dev,
     hdd_adapter_t *pAdapter;
     hdd_context_t *pHddCtx;
     int ret = 0;
+    VOS_STATUS status;
 
+    ENTER();
     pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
     if (NULL == pAdapter)
     {
@@ -9046,8 +9006,6 @@ static int __iw_set_pno_priv(struct net_device *dev,
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid",__func__);
         return ret;
     }
 
@@ -9055,7 +9013,10 @@ static int __iw_set_pno_priv(struct net_device *dev,
     VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                 "Set PNO Private");
 
-    return iw_set_pno(dev,info,wrqu,extra,0);
+    status = iw_set_pno(dev,info,wrqu,extra,0);
+
+    EXIT();
+    return status;
 }
 
 static int iw_set_pno_priv(struct net_device *dev,
@@ -9087,6 +9048,7 @@ int hdd_setBand(struct net_device *dev, u8 ui_band)
     tpAniSirGlobal pMac;
     int retval = 0;
 
+    ENTER();
     pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
     if (NULL == pAdapter)
     {
@@ -9098,8 +9060,6 @@ int hdd_setBand(struct net_device *dev, u8 ui_band)
     retval = wlan_hdd_validate_context(pHddCtx);
     if (0 != retval)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid",__func__);
         return retval;
     }
     hHal = WLAN_HDD_GET_HAL_CTX(pAdapter);
@@ -9320,6 +9280,7 @@ int hdd_setBand(struct net_device *dev, u8 ui_band)
              }
         }
     }
+    EXIT();
     return ret;
 }
 
@@ -9405,8 +9366,8 @@ VOS_STATUS iw_set_power_params(struct net_device *dev, struct iw_request_info *i
   v_U8_t  ucType;
   v_U32_t  uTotalSize, uValue;
   int ret = 0;
-  /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+  ENTER();
   pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
   if (NULL == pAdapter)
   {
@@ -9419,8 +9380,6 @@ VOS_STATUS iw_set_power_params(struct net_device *dev, struct iw_request_info *i
   ret = wlan_hdd_validate_context(pHddCtx);
   if (0 != ret)
   {
-      VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                "%s: HDD context is not valid",__func__);
       return ret;
   }
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
@@ -9542,6 +9501,7 @@ VOS_STATUS iw_set_power_params(struct net_device *dev, struct iw_request_info *i
   /* put the device back to power save*/
   wlan_hdd_enter_bmps(pAdapter, DRIVER_POWER_MODE_AUTO);
 
+  EXIT();
   return VOS_STATUS_SUCCESS;
 }/*iw_set_power_params*/
 

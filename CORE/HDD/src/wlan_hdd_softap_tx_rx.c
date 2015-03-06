@@ -145,12 +145,10 @@ VOS_STATUS hdd_start_trafficMonitor( hdd_adapter_t *pAdapter )
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
     VOS_STATUS status = VOS_STATUS_SUCCESS;
 
+    ENTER();
     status = wlan_hdd_validate_context(pHddCtx);
-
     if (0 != status)
     {
-        VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                   "%s: HDD context is not valid", __func__);
         return status;
     }
 
@@ -177,6 +175,8 @@ VOS_STATUS hdd_start_trafficMonitor( hdd_adapter_t *pAdapter )
         VOS_TRACE( VOS_MODULE_ID_HDD_SAP_DATA, VOS_TRACE_LEVEL_INFO,
                   "%s  Traffic Monitor is not Enable in ini file", __func__);
     }
+
+    EXIT();
     return status;
 }
 
@@ -185,12 +185,10 @@ VOS_STATUS hdd_stop_trafficMonitor( hdd_adapter_t *pAdapter )
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
     VOS_STATUS status = VOS_STATUS_SUCCESS;
 
+    ENTER();
     status = wlan_hdd_validate_context(pHddCtx);
-
     if (-ENODEV == status)
     {
-        VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                   "%s: HDD context is not valid", __func__);
         return status;
     }
 
@@ -209,6 +207,7 @@ VOS_STATUS hdd_stop_trafficMonitor( hdd_adapter_t *pAdapter )
         vos_lock_destroy(&pHddCtx->traffic_monitor.trafficLock);
         pHddCtx->traffic_monitor.isInitialized = 0;
     }
+    EXIT();
     return VOS_STATUS_SUCCESS;
 }
 
