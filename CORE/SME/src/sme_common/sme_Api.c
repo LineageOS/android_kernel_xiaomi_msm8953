@@ -2830,6 +2830,7 @@ eHalStatus sme_ScanRequest(tHalHandle hHal, tANI_U8 sessionId, tCsrScanRequest *
         {
             smsLog(pMac, LOGE, FL("fScanEnable %d isCoexScoIndSet: %d "),
                      pMac->scan.fScanEnable, pMac->isCoexScoIndSet);
+            status = eHAL_STATUS_RESOURCES;
         }
     } while( 0 );
 
