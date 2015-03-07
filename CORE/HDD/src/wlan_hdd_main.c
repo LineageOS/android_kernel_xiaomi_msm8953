@@ -460,18 +460,17 @@ static void hdd_wdi_trace_enable(wpt_moduleid moduleId, v_U32_t bitmask)
  */
 int wlan_hdd_validate_context(hdd_context_t *pHddCtx)
 {
-    ENTER();
 
     if (NULL == pHddCtx || NULL == pHddCtx->cfg_ini)
     {
-        VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+        VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                 "%s: HDD context is Null", __func__);
         return -ENODEV;
     }
 
     if (pHddCtx->isLogpInProgress)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                   "%s: LOGP %s. Ignore!!", __func__,
                     vos_is_wlan_in_badState(VOS_MODULE_ID_HDD, NULL)
                     ?"failed":"in Progress");
@@ -480,7 +479,7 @@ int wlan_hdd_validate_context(hdd_context_t *pHddCtx)
 
     if (WLAN_HDD_IS_LOAD_UNLOAD_IN_PROGRESS(pHddCtx))
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                   "%s: Unloading/Loading in Progress. Ignore!!!", __func__);
         return -EAGAIN;
     }
@@ -4426,8 +4425,6 @@ int __hdd_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
    pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
    ret = wlan_hdd_validate_context(pHddCtx);
    if (ret) {
-      VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-                "%s: invalid context", __func__);
       ret = -EBUSY;
       goto exit;
    }
@@ -6004,18 +6001,7 @@ void wlan_hdd_release_intf_addr(hdd_context_t* pHddCtx, tANI_U8* releaseAddr)
       .ndo_do_ioctl = hdd_ioctl,
       .ndo_set_mac_address = hdd_set_mac_address,
  };
- static struct net_device_ops nullify_netdev_ops = {
-      .ndo_open = NULL,
-      .ndo_stop = NULL,
-      .ndo_uninit = NULL,
-      .ndo_start_xmit = NULL,
-      .ndo_tx_timeout = NULL,
-      .ndo_get_stats = NULL,
-      .ndo_set_mac_address = NULL,
-      .ndo_do_ioctl = NULL,
-      .ndo_change_mtu = NULL,
-      .ndo_select_queue = NULL,
- };
+
 #endif
 
 void hdd_set_station_ops( struct net_device *pWlanDev )
@@ -8188,6 +8174,15 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
          pAdapter = pAdapterNode->pAdapter;
          if (NULL != pAdapter)
          {
+            /* Disable TX on the interface, after this hard_start_xmit() will
+             * not be called on that interface
+             */
+            hddLog(VOS_TRACE_LEVEL_INFO, FL("Disabling queues"));
+            netif_tx_disable(pAdapter->dev);
+
+            /* Mark the interface status as "down" for outside world */
+            netif_carrier_off(pAdapter->dev);
+
             /* DeInit the adapter. This ensures that all data packets
              * are freed.
              */
@@ -10001,13 +9996,6 @@ static void hdd_driver_exit(void)
    }
    else
    {
-      /* We wait for active entry threads to exit from driver
-       * by waiting until rtnl_lock is available.
-       */
-      rtnl_lock();
-      hdd_nullify_netdev_ops(pHddCtx);
-      rtnl_unlock();
-
       INIT_COMPLETION(pHddCtx->ssr_comp_var);
       if ((pHddCtx->isLogpInProgress) && (FALSE ==
                   vos_is_wlan_in_badState(VOS_MODULE_ID_HDD, NULL)))
@@ -10024,8 +10012,10 @@ static void hdd_driver_exit(void)
          }
       }
 
+      rtnl_lock();
       pHddCtx->isLoadUnloadInProgress = WLAN_HDD_UNLOAD_IN_PROGRESS;
       vos_set_load_unload_in_progress(VOS_MODULE_ID_VOSS, TRUE);
+      rtnl_unlock();
 
        /* Driver Need to send country code 00 in below condition
         * 1) If gCountryCodePriority is set to 1; and last country
@@ -10919,32 +10909,6 @@ hdd_remain_on_chan_ctx_t *hdd_get_remain_on_channel_ctx(hdd_context_t *pHddCtx)
         pAdapterNode = pNext;
     }
     return pRemainChanCtx;
-}
-
-void hdd_nullify_netdev_ops(hdd_context_t *pHddCtx)
-{
-   VOS_STATUS status;
-   hdd_adapter_list_node_t *pAdapterNode = NULL, *pNext = NULL;
-   hdd_adapter_t      *pAdapter;
-
-   status = hdd_get_front_adapter ( pHddCtx, &pAdapterNode );
-   while ( NULL != pAdapterNode && VOS_STATUS_SUCCESS == status )
-   {
-      pAdapter = pAdapterNode->pAdapter;
-      if (NULL != pAdapter)
-      {
-          /* Disable TX on the interface, after this hard_start_xmit() will
-           * not be called on that interface
-           */
-          hddLog(VOS_TRACE_LEVEL_INFO, FL("Disabling queues"));
-          netif_tx_disable(pAdapter->dev);
-          /* Mark the interface status as "down" for outside world */
-          netif_carrier_off(pAdapter->dev);
-          pAdapter->dev->netdev_ops = &nullify_netdev_ops;
-      }
-      status = hdd_get_next_adapter ( pHddCtx, pAdapterNode, &pNext );
-      pAdapterNode = pNext;
-   }
 }
 
 //Register the module init/exit functions
