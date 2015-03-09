@@ -1132,10 +1132,10 @@ hddTdlsPeer_t *wlan_hdd_tdls_get_peer(hdd_adapter_t *pAdapter, u8 *mac)
 
     if (NULL == pHddTdlsCtx)
     {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-                 FL("pHddTdlsCtx is NULL"));
         vos_mem_free(peer);
         mutex_unlock(&pHddCtx->tdls_lock);
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                 FL("pHddTdlsCtx is NULL"));
         return NULL;
     }
 
@@ -2015,17 +2015,17 @@ void wlan_hdd_tdls_connection_callback(hdd_adapter_t *pAdapter)
 
     if (0 != wlan_hdd_sta_tdls_init(pAdapter))
     {
-        hddLog(VOS_TRACE_LEVEL_ERROR,"%s: wlan_hdd_sta_tdls_init failed",__func__);
         mutex_unlock(&pHddCtx->tdls_lock);
+        hddLog(VOS_TRACE_LEVEL_ERROR,"%s: wlan_hdd_sta_tdls_init failed",__func__);
         return;
     }
 
     pHddTdlsCtx = WLAN_HDD_GET_TDLS_CTX_PTR(pAdapter);
     if ((NULL == pHddTdlsCtx))
     {
+       mutex_unlock(&pHddCtx->tdls_lock);
        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_WARN,
                FL("pHddCtx or  pHddTdlsCtx points to NULL device mode = %d"), pAdapter->device_mode);
-       mutex_unlock(&pHddCtx->tdls_lock);
        return;
     }
     VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
@@ -2068,6 +2068,7 @@ void wlan_hdd_tdls_disconnection_callback(hdd_adapter_t *pAdapter)
 
     if (NULL == pHddTdlsCtx)
     {
+       mutex_unlock(&pHddCtx->tdls_lock);
        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                  FL("pHddTdlsCtx is NULL"));
         return;
@@ -2329,9 +2330,9 @@ void wlan_hdd_tdls_set_mode(hdd_context_t *pHddCtx,
 
     if (pHddCtx->tdls_mode == tdls_mode)
     {
+        mutex_unlock(&pHddCtx->tdls_lock);
         hddLog(VOS_TRACE_LEVEL_INFO, "%s already in mode %d", __func__,
                                      (int)tdls_mode);
-        mutex_unlock(&pHddCtx->tdls_lock);
         return;
     }
 

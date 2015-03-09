@@ -436,10 +436,10 @@ static void hdd_wmm_notify_app (hdd_wmm_qos_context_t* pQosContext)
    if (unlikely((NULL == pQosContext) ||
                 (HDD_WMM_CTX_MAGIC != pQosContext->magic)))
    {
+      mutex_unlock(&pHddCtx->wmmLock);
       VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
                 "%s: Invalid QoS Context",
                 __func__);
-      mutex_unlock(&pHddCtx->wmmLock);
       return;
    }
    // get pointer to the adapter
@@ -561,10 +561,10 @@ void hdd_wmm_inactivity_timer_cb( v_PVOID_t pUserData )
     if (unlikely((NULL == pQosContext) ||
                 (HDD_WMM_CTX_MAGIC != pQosContext->magic)))
     {
+        mutex_unlock(&pHddCtx->wmmLock);
         VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
                   "%s: Invalid QoS Context",
                   __func__);
-        mutex_unlock(&pHddCtx->wmmLock);
         return;
     }
     mutex_unlock(&pHddCtx->wmmLock);
@@ -747,10 +747,10 @@ static eHalStatus hdd_wmm_sme_callback (tHalHandle hHal,
    if (unlikely((NULL == pQosContext) ||
                 (HDD_WMM_CTX_MAGIC != pQosContext->magic)))
    {
+      mutex_unlock(&pHddCtx->wmmLock);
       VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
                 "%s: Invalid QoS Context",
                 __func__);
-      mutex_unlock(&pHddCtx->wmmLock);
       return eHAL_STATUS_FAILURE;
    }
    mutex_unlock(&pHddCtx->wmmLock);
@@ -1444,10 +1444,10 @@ static void __hdd_wmm_do_implicit_qos(struct work_struct *work)
    mutex_lock(&pHddCtx->wmmLock);
    if (unlikely(HDD_WMM_CTX_MAGIC != pQosContext->magic))
    {
+      mutex_unlock(&pHddCtx->wmmLock);
       VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
                 "%s: Invalid QoS Context",
                 __func__);
-      mutex_unlock(&pHddCtx->wmmLock);
       return;
    }
    mutex_unlock(&pHddCtx->wmmLock);

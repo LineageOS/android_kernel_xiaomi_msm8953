@@ -295,12 +295,12 @@ VOS_STATUS wlan_hdd_cancel_existing_remain_on_channel(hdd_adapter_t *pAdapter)
                                         msecs_to_jiffies(WAIT_REM_CHAN_READY));
             if (0 >= status)
             {
+                pRemainChanCtx->is_pending_roc_cancelled = TRUE;
+                mutex_unlock(&pHddCtx->roc_lock);
                 hddLog( LOGE,
                        "%s: timeout waiting for remain on channel"
                        " ready indication %d",
                         __func__, status);
-                pRemainChanCtx->is_pending_roc_cancelled = TRUE;
-                mutex_unlock(&pHddCtx->roc_lock);
                 return VOS_STATUS_E_FAILURE;
             }
 
@@ -919,10 +919,10 @@ int __wlan_hdd_cfg80211_cancel_remain_on_channel( struct wiphy *wiphy,
     if( (cfgState->remain_on_chan_ctx == NULL) ||
         (cfgState->remain_on_chan_ctx->cookie != cookie) )
     {
+        mutex_unlock(&pHddCtx->roc_lock);
         hddLog( LOGE,
             "%s: No Remain on channel pending with specified cookie value",
              __func__);
-        mutex_unlock(&pHddCtx->roc_lock);
         return -EINVAL;
     }
     if (TRUE != pRemainChanCtx->is_pending_roc_cancelled)
@@ -1269,15 +1269,17 @@ int __wlan_hdd_mgmt_tx( struct wiphy *wiphy, struct net_device *dev,
                 status = vos_timer_start(
                        &cfgState->remain_on_chan_ctx->hdd_remain_on_chan_timer,
                        wait);
-                if ( status != VOS_STATUS_SUCCESS )
-                {
-                    hddLog( LOGE, "Remain on Channel timer start failed");
-                }
+
+                mutex_unlock(&pHddCtx->roc_lock);
 
                 hddLog(VOS_TRACE_LEVEL_INFO,
                    "action frame: extending the wait time %u",
                    wait);
-                mutex_unlock(&pHddCtx->roc_lock);
+
+                if ( status != VOS_STATUS_SUCCESS )
+                {
+                    hddLog( LOGE, "Remain on Channel timer start failed");
+                }
                 goto send_frame;
             }
             else
