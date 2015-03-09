@@ -3621,6 +3621,8 @@ static void parse_Bufferforpkt(tSirpkt80211 *pkt, u8 *pBuffer, u16 len)
     }
 
     length = getByte(&temp);
+    if (length > sizeof(tSir80211Header))
+       length = sizeof(tSir80211Header);
 
     pHeader = temp;
     vos_mem_zero(&header, sizeof(tSir80211Header));

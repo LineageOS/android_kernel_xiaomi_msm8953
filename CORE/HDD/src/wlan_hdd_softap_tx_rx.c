@@ -1527,7 +1527,7 @@ VOS_STATUS hdd_softap_rx_packet_cbk( v_VOID_t *vosContext,
    vos_pkt_t* pNextVosPacket;   
    hdd_context_t *pHddCtx = NULL;   
    v_U8_t proto_type;
-   EAPOL_SubType eapolSubType;
+   EAPOL_SubType eapolSubType = EAPOL_UNKNOWN;
 
    //Sanity check on inputs
    if ( ( NULL == vosContext ) || 

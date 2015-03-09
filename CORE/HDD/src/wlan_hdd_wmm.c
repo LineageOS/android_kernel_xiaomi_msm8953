@@ -359,15 +359,19 @@ static void hdd_wmm_free_context (hdd_wmm_qos_context_t* pQosContext)
    v_CONTEXT_t pVosContext = vos_get_global_context( VOS_MODULE_ID_HDD, NULL );
    hdd_context_t *pHddCtx;
 
-   if (NULL != pVosContext)
+   if (NULL == pVosContext)
    {
-      pHddCtx = vos_get_context( VOS_MODULE_ID_HDD, pVosContext);
-      if (NULL == pHddCtx)
-      {
-         VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
-                   FL("HddCtx is NULL"));
-         return;
-      }
+      VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+                FL("pVosContext is NULL"));
+      return;
+   }
+
+   pHddCtx = vos_get_context( VOS_MODULE_ID_HDD, pVosContext);
+   if (NULL == pHddCtx)
+   {
+      VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+                FL("HddCtx is NULL"));
+      return;
    }
 
    VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_INFO_LOW,
@@ -418,20 +422,25 @@ static void hdd_wmm_notify_app (hdd_wmm_qos_context_t* pQosContext)
    v_CONTEXT_t pVosContext = vos_get_global_context( VOS_MODULE_ID_HDD, NULL );
    hdd_context_t *pHddCtx;
 
-   if (NULL != pVosContext)
+   if (NULL == pVosContext)
    {
-      pHddCtx = vos_get_context( VOS_MODULE_ID_HDD, pVosContext);
-      if (NULL == pHddCtx)
-      {
          VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
-                   FL("HddCtx is NULL"));
+                   FL("pVosContext is NULL"));
          return;
-      }
+   }
+
+   pHddCtx = vos_get_context( VOS_MODULE_ID_HDD, pVosContext);
+   if (NULL == pHddCtx)
+   {
+      VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+                   FL("HddCtx is NULL"));
+      return;
    }
 
    VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_INFO_LOW,
              "%s: Entered, context %p",
              __func__, pQosContext);
+
    mutex_lock(&pHddCtx->wmmLock);
    if (unlikely((NULL == pQosContext) ||
                 (HDD_WMM_CTX_MAGIC != pQosContext->magic)))
@@ -727,15 +736,19 @@ static eHalStatus hdd_wmm_sme_callback (tHalHandle hHal,
    v_CONTEXT_t pVosContext = vos_get_global_context( VOS_MODULE_ID_HDD, NULL );
    hdd_context_t *pHddCtx;
 
-   if (NULL != pVosContext)
+   if (NULL == pVosContext)
    {
-      pHddCtx = vos_get_context( VOS_MODULE_ID_HDD, pVosContext);
-      if (NULL == pHddCtx)
-      {
-         VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+      VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+                   FL("pVosContext is NULL"));
+      return eHAL_STATUS_FAILURE;
+   }
+
+   pHddCtx = vos_get_context( VOS_MODULE_ID_HDD, pVosContext);
+   if (NULL == pHddCtx)
+   {
+      VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
                    FL("HddCtx is NULL"));
-         return eHAL_STATUS_FAILURE;
-      }
+      return eHAL_STATUS_FAILURE;
    }
 
 
@@ -1419,16 +1432,14 @@ static void __hdd_wmm_do_implicit_qos(struct work_struct *work)
    hdd_context_t *pHddCtx;
    int ret = 0;
 
-   if (NULL != pVosContext)
+   if (NULL == pVosContext)
    {
-      pHddCtx = vos_get_context( VOS_MODULE_ID_HDD, pVosContext);
-      if (NULL == pHddCtx)
-      {
          VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
-                   FL("HddCtx is NULL"));
+                   FL("pVosContext is NULL"));
          return;
-      }
    }
+
+   pHddCtx = vos_get_context( VOS_MODULE_ID_HDD, pVosContext);
 
    ret = wlan_hdd_validate_context(pHddCtx);
    if (0 != ret)
@@ -1787,15 +1798,19 @@ VOS_STATUS hdd_wmm_adapter_close ( hdd_adapter_t* pAdapter )
    v_CONTEXT_t pVosContext = vos_get_global_context( VOS_MODULE_ID_HDD, NULL );
    hdd_context_t *pHddCtx;
 
-   if (NULL != pVosContext)
+   if (NULL == pVosContext)
    {
-      pHddCtx = vos_get_context( VOS_MODULE_ID_HDD, pVosContext);
-      if (NULL == pHddCtx)
-      {
-         VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+      VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+                   FL("pVosContext is NULL"));
+      return VOS_STATUS_E_FAILURE;
+   }
+
+   pHddCtx = vos_get_context( VOS_MODULE_ID_HDD, pVosContext);
+   if (NULL == pHddCtx)
+   {
+      VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
                    FL("HddCtx is NULL"));
-         return VOS_STATUS_E_FAILURE;
-      }
+      return VOS_STATUS_E_FAILURE;
    }
 
    VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_INFO_LOW,
@@ -2699,17 +2714,21 @@ hdd_wlan_wmm_status_e hdd_wmm_addts( hdd_adapter_t* pAdapter,
    v_BOOL_t found = VOS_FALSE;
    v_CONTEXT_t pVosContext = vos_get_global_context( VOS_MODULE_ID_HDD, NULL );
    hdd_context_t *pHddCtx;
-   if (NULL != pVosContext)
+
+   if (NULL == pVosContext)
    {
-      pHddCtx = vos_get_context( VOS_MODULE_ID_HDD, pVosContext);
-      if (NULL == pHddCtx)
-      {
-         VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
-                   FL("HddCtx is NULL"));
-         return HDD_WLAN_WMM_STATUS_SETUP_FAILED;
-      }
+      VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+                   FL("pVosContext is NULL"));
+      return HDD_WLAN_WMM_STATUS_SETUP_FAILED;
    }
 
+   pHddCtx = vos_get_context( VOS_MODULE_ID_HDD, pVosContext);
+   if (NULL == pHddCtx)
+   {
+      VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+                   FL("HddCtx is NULL"));
+      return HDD_WLAN_WMM_STATUS_SETUP_FAILED;
+   }
 
    VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_INFO_LOW,
              "%s: Entered with handle 0x%x", __func__, handle);
@@ -2895,15 +2914,19 @@ hdd_wlan_wmm_status_e hdd_wmm_delts( hdd_adapter_t* pAdapter,
    v_CONTEXT_t pVosContext = vos_get_global_context( VOS_MODULE_ID_HDD, NULL );
    hdd_context_t *pHddCtx;
 
-   if (NULL != pVosContext)
+   if (NULL == pVosContext)
    {
-      pHddCtx = vos_get_context( VOS_MODULE_ID_HDD, pVosContext);
-      if (NULL == pHddCtx)
-      {
-         VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+      VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+                   FL("pVosContext is NULL"));
+      return HDD_WLAN_WMM_STATUS_RELEASE_FAILED;
+   }
+
+   pHddCtx = vos_get_context( VOS_MODULE_ID_HDD, pVosContext);
+   if (NULL == pHddCtx)
+   {
+      VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
                    FL("HddCtx is NULL"));
-         return HDD_WLAN_WMM_STATUS_RELEASE_FAILED;
-      }
+      return HDD_WLAN_WMM_STATUS_RELEASE_FAILED;
    }
 
    VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_INFO_LOW,
@@ -3016,15 +3039,19 @@ hdd_wlan_wmm_status_e hdd_wmm_checkts( hdd_adapter_t* pAdapter,
    v_CONTEXT_t pVosContext = vos_get_global_context( VOS_MODULE_ID_HDD, NULL );
    hdd_context_t *pHddCtx;
 
-   if (NULL != pVosContext)
+   if (NULL == pVosContext)
    {
-      pHddCtx = vos_get_context( VOS_MODULE_ID_HDD, pVosContext);
-      if (NULL == pHddCtx)
-      {
-         VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+      VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
+                   FL("pVosContext is NULL"));
+      return HDD_WLAN_WMM_STATUS_LOST;
+   }
+
+   pHddCtx = vos_get_context( VOS_MODULE_ID_HDD, pVosContext);
+   if (NULL == pHddCtx)
+   {
+      VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_ERROR,
                    FL("HddCtx is NULL"));
-         return HDD_WLAN_WMM_STATUS_LOST;
-      }
+      return HDD_WLAN_WMM_STATUS_LOST;
    }
 
    VOS_TRACE(VOS_MODULE_ID_HDD, WMM_TRACE_LEVEL_INFO_LOW,
