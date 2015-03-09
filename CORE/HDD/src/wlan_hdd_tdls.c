@@ -92,6 +92,8 @@ static v_VOID_t wlan_hdd_tdls_start_peer_discover_timer(tdlsCtx_t *pHddTdlsCtx,
     hdd_station_ctx_t *pHddStaCtx;
     hdd_context_t *pHddCtx;
 
+    ENTER();
+
     if ((NULL == pHddTdlsCtx) || (NULL == pHddTdlsCtx->pAdapter) )
     {
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -103,8 +105,6 @@ static v_VOID_t wlan_hdd_tdls_start_peer_discover_timer(tdlsCtx_t *pHddTdlsCtx,
 
     if(0 != (wlan_hdd_validate_context(pHddCtx)))
     {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 FL("pHddCtx is not valid"));
         return;
     }
 
@@ -125,6 +125,7 @@ static v_VOID_t wlan_hdd_tdls_start_peer_discover_timer(tdlsCtx_t *pHddTdlsCtx,
     if ( mutexLock )
         mutex_unlock(&pHddCtx->tdls_lock);
 
+    EXIT();
     return;
 }
 
@@ -143,6 +144,8 @@ static v_VOID_t wlan_hdd_tdls_discover_peer_cb( v_PVOID_t userData )
     tANI_BOOLEAN doMutexLock = eANI_BOOLEAN_TRUE;
     v_CONTEXT_t pVosContext;
 
+    ENTER();
+
     pVosContext = vos_get_global_context(VOS_MODULE_ID_HDD, NULL);
     if (NULL == pVosContext)
     {
@@ -154,8 +157,6 @@ static v_VOID_t wlan_hdd_tdls_discover_peer_cb( v_PVOID_t userData )
     pHddCtx = vos_get_context(VOS_MODULE_ID_HDD, pVosContext);
     if (0 != (wlan_hdd_validate_context(pHddCtx)))
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 FL("pHddCtx is not valid"));
         return;
     }
 
@@ -258,6 +259,7 @@ done:
 
     if ( !doMutexLock )
         mutex_unlock(&pHddCtx->tdls_lock);
+    EXIT();
     return;
 }
 #endif
@@ -272,6 +274,7 @@ static v_VOID_t wlan_hdd_tdls_update_peer_cb( v_PVOID_t userData )
     hdd_context_t *pHddCtx;
     v_CONTEXT_t pVosContext;
 
+    ENTER();
     pVosContext = vos_get_global_context(VOS_MODULE_ID_HDD, NULL);
     if (NULL == pVosContext)
     {
@@ -282,8 +285,6 @@ static v_VOID_t wlan_hdd_tdls_update_peer_cb( v_PVOID_t userData )
     pHddCtx = vos_get_context(VOS_MODULE_ID_HDD, pVosContext);
     if (0 != (wlan_hdd_validate_context(pHddCtx)))
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 FL("pHddCtx is not valid"));
         return;
     }
     mutex_lock(&pHddCtx->tdls_lock);
@@ -445,6 +446,7 @@ next_peer:
                                 &pHddTdlsCtx->peerUpdateTimer,
                                 pHddTdlsCtx->threshold_config.tx_period_t);
     mutex_unlock(&pHddCtx->tdls_lock);
+    EXIT();
 }
 
 static v_VOID_t wlan_hdd_tdls_idle_cb( v_PVOID_t userData )
@@ -454,6 +456,8 @@ static v_VOID_t wlan_hdd_tdls_idle_cb( v_PVOID_t userData )
     tdlsCtx_t *pHddTdlsCtx;
     hdd_context_t *pHddCtx;
     v_CONTEXT_t pVosContext;
+
+    ENTER();
 
     pVosContext = vos_get_global_context(VOS_MODULE_ID_HDD, NULL);
     if (NULL == pVosContext)
@@ -465,8 +469,6 @@ static v_VOID_t wlan_hdd_tdls_idle_cb( v_PVOID_t userData )
     pHddCtx = vos_get_context(VOS_MODULE_ID_HDD, pVosContext);
     if (0 != (wlan_hdd_validate_context(pHddCtx)))
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 FL("pHddCtx is not valid"));
         return;
     }
 
@@ -519,6 +521,7 @@ static v_VOID_t wlan_hdd_tdls_idle_cb( v_PVOID_t userData )
                                       eSIR_MAC_TDLS_TEARDOWN_UNSPEC_REASON);
     }
     mutex_unlock(&pHddCtx->tdls_lock);
+    EXIT();
 #endif
 }
 
@@ -532,6 +535,7 @@ static v_VOID_t wlan_hdd_tdls_discovery_timeout_peer_cb(v_PVOID_t userData)
     hdd_context_t *pHddCtx;
     v_CONTEXT_t pVosContext;
 
+    ENTER();
     pVosContext = vos_get_global_context(VOS_MODULE_ID_HDD, NULL);
     if (NULL == pVosContext)
     {
@@ -543,8 +547,6 @@ static v_VOID_t wlan_hdd_tdls_discovery_timeout_peer_cb(v_PVOID_t userData)
     pHddCtx = vos_get_context(VOS_MODULE_ID_HDD, pVosContext);
     if (0 != (wlan_hdd_validate_context(pHddCtx)))
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 FL("pHddCtx is not valid"));
         return;
     }
 
@@ -582,7 +584,7 @@ static v_VOID_t wlan_hdd_tdls_discovery_timeout_peer_cb(v_PVOID_t userData)
     mutex_unlock(&pHddCtx->tdls_lock);
 
     wlan_hdd_tdls_check_bmps(pHddTdlsCtx->pAdapter);
-
+    EXIT();
     return;
 }
 
@@ -669,6 +671,7 @@ void wlan_hdd_tdls_btCoex_cb(void *data, int indType)
     hddTdlsPeer_t *currPeer;
     hdd_scaninfo_t *pScanInfo;
 
+    ENTER();
     if ((NULL == data) || (indType < 0))
     {
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -679,8 +682,6 @@ void wlan_hdd_tdls_btCoex_cb(void *data, int indType)
     pHddCtx     = (hdd_context_t *)data;
     if (0 != (wlan_hdd_validate_context(pHddCtx)))
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  FL("pHddCtx is not valid"));
         return;
     }
 
@@ -787,6 +788,7 @@ void wlan_hdd_tdls_btCoex_cb(void *data, int indType)
             wlan_hdd_tdls_set_mode(pHddCtx, pHddCtx->tdls_mode_last, FALSE);
         }
    }
+   EXIT();
    return;
 }
 
@@ -1076,10 +1078,9 @@ hddTdlsPeer_t *wlan_hdd_tdls_get_peer(hdd_adapter_t *pAdapter, u8 *mac)
     tdlsCtx_t *pHddTdlsCtx;
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
 
+    ENTER();
     if(0 != (wlan_hdd_validate_context(pHddCtx)))
     {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 FL("pHddCtx is not valid"));
         return 0;
     }
 
@@ -1130,6 +1131,7 @@ hddTdlsPeer_t *wlan_hdd_tdls_get_peer(hdd_adapter_t *pAdapter, u8 *mac)
     list_add_tail(&peer->node, head);
     mutex_unlock(&pHddCtx->tdls_lock);
 
+    EXIT();
     return peer;
 }
 
@@ -1236,6 +1238,8 @@ int wlan_hdd_tdls_recv_discovery_resp(hdd_adapter_t *pAdapter, u8 *mac)
     tdlsCtx_t *pHddTdlsCtx = WLAN_HDD_GET_TDLS_CTX_PTR(pAdapter);
     hdd_context_t *pHddCtx;
 
+    ENTER();
+
     if ( NULL == pHddTdlsCtx )
     {
        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -1247,8 +1251,6 @@ int wlan_hdd_tdls_recv_discovery_resp(hdd_adapter_t *pAdapter, u8 *mac)
 
     if(0 != (wlan_hdd_validate_context(pHddCtx)))
     {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 FL("pHddCtx is not valid"));
         return 0;
     }
 
@@ -1318,6 +1320,7 @@ int wlan_hdd_tdls_recv_discovery_resp(hdd_adapter_t *pAdapter, u8 *mac)
     }
 
     curr_peer->tdls_support = eTDLS_CAP_SUPPORTED;
+    EXIT();
     return 0;
 }
 
@@ -1673,10 +1676,9 @@ hddTdlsPeer_t *wlan_hdd_tdls_find_peer(hdd_adapter_t *pAdapter, u8 *mac,
     tdlsCtx_t *pHddTdlsCtx;
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
 
+    ENTER();
     if(0 != (wlan_hdd_validate_context(pHddCtx)))
     {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 FL("pHddCtx is not valid"));
         return 0;
     }
 
@@ -1708,6 +1710,8 @@ hddTdlsPeer_t *wlan_hdd_tdls_find_peer(hdd_adapter_t *pAdapter, u8 *mac,
     }
     if ( mutexLock )
         mutex_unlock(&pHddCtx->tdls_lock);
+
+    EXIT();
     return NULL;
 }
 
@@ -1850,13 +1854,12 @@ tANI_U16 wlan_hdd_tdlsConnectedPeers(hdd_adapter_t *pAdapter)
 {
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
 
+    ENTER();
     if(0 != (wlan_hdd_validate_context(pHddCtx)))
     {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 FL("pHddCtx is not valid"));
         return 0;
     }
-
+    EXIT();
     return pHddCtx->connected_peer_count;
 }
 
@@ -1869,10 +1872,9 @@ hddTdlsPeer_t *wlan_hdd_tdls_get_connected_peer(hdd_adapter_t *pAdapter)
     tdlsCtx_t *pHddTdlsCtx;
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
 
+    ENTER();
     if(0 != (wlan_hdd_validate_context(pHddCtx)))
     {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 FL("pHddCtx is not valid"));
         return NULL;
     }
 
@@ -1898,6 +1900,8 @@ hddTdlsPeer_t *wlan_hdd_tdls_get_connected_peer(hdd_adapter_t *pAdapter)
         }
     }
     mutex_unlock(&pHddCtx->tdls_lock);
+
+    EXIT();
     return NULL;
 }
 
@@ -1911,10 +1915,9 @@ int wlan_hdd_tdls_get_all_peers(hdd_adapter_t *pAdapter, char *buf, int buflen)
     tdlsCtx_t *pHddTdlsCtx;
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
 
+    ENTER();
     if(0 != (wlan_hdd_validate_context(pHddCtx)))
     {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 FL("pHddCtx is not valid"));
         return 0;
     }
 
@@ -1955,6 +1958,8 @@ int wlan_hdd_tdls_get_all_peers(hdd_adapter_t *pAdapter, char *buf, int buflen)
         }
     }
     mutex_unlock(&pHddCtx->tdls_lock);
+
+    EXIT();
     return init_len-buflen;
 }
 
@@ -2058,10 +2063,9 @@ void wlan_hdd_tdls_increment_peer_count(hdd_adapter_t *pAdapter)
 {
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
 
+    ENTER();
     if(0 != (wlan_hdd_validate_context(pHddCtx)))
     {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 FL("pHddCtx is not valid"));
         return;
     }
 
@@ -2074,16 +2078,17 @@ void wlan_hdd_tdls_increment_peer_count(hdd_adapter_t *pAdapter)
                __func__, pHddCtx->connected_peer_count);
 
     mutex_unlock(&pHddCtx->tdls_lock);
+
+    EXIT();
 }
 
 void wlan_hdd_tdls_decrement_peer_count(hdd_adapter_t *pAdapter)
 {
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
 
+    ENTER();
     if(0 != (wlan_hdd_validate_context(pHddCtx)))
     {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 FL("pHddCtx is not valid"));
         return;
     }
 
@@ -2098,6 +2103,7 @@ void wlan_hdd_tdls_decrement_peer_count(hdd_adapter_t *pAdapter)
 
     mutex_unlock(&pHddCtx->tdls_lock);
 
+    EXIT();
 }
 
 void wlan_hdd_tdls_check_bmps(hdd_adapter_t *pAdapter)
@@ -2267,12 +2273,11 @@ void wlan_hdd_tdls_set_mode(hdd_context_t *pHddCtx,
     hdd_adapter_t *pAdapter;
     tdlsCtx_t *pHddTdlsCtx;
 
+    ENTER();
     VOS_TRACE( VOS_MODULE_ID_HDD, TDLS_LOG_LEVEL,"%s mode %d", __func__, (int)tdls_mode);
 
     if(0 != (wlan_hdd_validate_context(pHddCtx)))
     {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 FL("pHddCtx is not valid"));
         return;
     }
 
@@ -2313,6 +2318,8 @@ void wlan_hdd_tdls_set_mode(hdd_context_t *pHddCtx,
     pHddCtx->tdls_mode = tdls_mode;
 
     mutex_unlock(&pHddCtx->tdls_lock);
+
+    EXIT();
 }
 
 static void __wlan_hdd_tdls_pre_setup(struct work_struct *work)
@@ -2324,6 +2331,7 @@ static void __wlan_hdd_tdls_pre_setup(struct work_struct *work)
     hddTdlsPeer_t *temp_peer;
     int status;
 
+    ENTER();
     if (NULL == pHddTdlsCtx)
     {
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -2342,8 +2350,6 @@ static void __wlan_hdd_tdls_pre_setup(struct work_struct *work)
 
     if(0 != (wlan_hdd_validate_context(pHddCtx)))
     {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 FL("pHddCtx is not valid"));
         return;
     }
 
@@ -2409,6 +2415,7 @@ static void __wlan_hdd_tdls_pre_setup(struct work_struct *work)
 done:
     pHddTdlsCtx->curr_candidate = NULL;
     pHddTdlsCtx->magic = 0;
+    EXIT();
     return;
 }
 
@@ -2493,10 +2500,9 @@ int wlan_hdd_tdls_copy_scan_context(hdd_context_t *pHddCtx,
 {
     tdls_scan_context_t *scan_ctx;
 
+    ENTER();
     if(0 != (wlan_hdd_validate_context(pHddCtx)))
     {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 FL("pHddCtx is not valid"));
         return 0;
     }
 
@@ -2508,6 +2514,8 @@ int wlan_hdd_tdls_copy_scan_context(hdd_context_t *pHddCtx,
 #endif
 
     scan_ctx->scan_request = request;
+
+    EXIT();
     return 0;
 }
 
@@ -2549,10 +2557,9 @@ int wlan_hdd_tdls_scan_callback (hdd_adapter_t *pAdapter,
     unsigned long delay;
     hdd_config_t  *cfg_param = pHddCtx->cfg_ini;
 
+    ENTER();
     if(0 != (wlan_hdd_validate_context(pHddCtx)))
     {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 FL("pHddCtx is not valid"));
         return 0;
     }
 
@@ -2730,6 +2737,7 @@ int wlan_hdd_tdls_scan_callback (hdd_adapter_t *pAdapter,
                 "%s: tdls_mode %d, and no tdls connection. scan allowed",
                  __func__, pHddCtx->tdls_mode);
     }
+    EXIT();
     return 1;
 }
 
@@ -2737,10 +2745,9 @@ void wlan_hdd_tdls_scan_done_callback(hdd_adapter_t *pAdapter)
 {
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
 
+    ENTER();
     if(0 != (wlan_hdd_validate_context(pHddCtx)))
     {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 FL("pHddCtx is not valid"));
         return;
     }
 
@@ -2762,6 +2769,8 @@ void wlan_hdd_tdls_scan_done_callback(hdd_adapter_t *pAdapter)
         wlan_hdd_tdls_set_mode(pHddCtx, pHddCtx->tdls_mode_last, FALSE);
     }
     wlan_hdd_tdls_check_bmps(pAdapter);
+
+    EXIT();
 }
 
 void wlan_hdd_tdls_timer_restart(hdd_adapter_t *pAdapter,
