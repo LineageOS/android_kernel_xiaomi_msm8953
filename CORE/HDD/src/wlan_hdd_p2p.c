@@ -458,6 +458,7 @@ static int wlan_hdd_p2p_start_remain_on_channel(
     rem_on_channel_request_type_t request_type;
     int ret = 0;
 
+    ENTER();
     if (NULL == pAdapter)
     {
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -468,8 +469,6 @@ static int wlan_hdd_p2p_start_remain_on_channel(
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid, ret = %d",__func__, ret);
         return ret;
     }
     cfgState = WLAN_HDD_GET_CFG_STATE_PTR( pAdapter );
@@ -575,6 +574,7 @@ static int wlan_hdd_p2p_start_remain_on_channel(
     }
 
     pAdapter->is_roc_inprogress = TRUE;
+    EXIT();
     return 0;
 }
 
@@ -596,6 +596,7 @@ static int wlan_hdd_request_remain_on_channel( struct wiphy *wiphy,
     hdd_adapter_t *pStaAdapter;
     int status = 0;
 
+    ENTER();
     if (NULL == pAdapter)
     {
         VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -605,11 +606,8 @@ static int wlan_hdd_request_remain_on_channel( struct wiphy *wiphy,
 
     pHddCtx = WLAN_HDD_GET_CTX( pAdapter );
     status = wlan_hdd_validate_context(pHddCtx);
-
     if (0 != status)
     {
-        VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                   "%s: HDD context is not valid", __func__);
         return status;
     }
 
@@ -697,7 +695,10 @@ static int wlan_hdd_request_remain_on_channel( struct wiphy *wiphy,
         }
     }
 
-    return wlan_hdd_p2p_start_remain_on_channel(pAdapter);
+    status = wlan_hdd_p2p_start_remain_on_channel(pAdapter);
+
+    EXIT();
+    return status;
 }
 
 int __wlan_hdd_cfg80211_remain_on_channel( struct wiphy *wiphy,
@@ -719,6 +720,7 @@ int __wlan_hdd_cfg80211_remain_on_channel( struct wiphy *wiphy,
     hdd_context_t *pHddCtx;
     int ret = 0;
 
+    ENTER();
     pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
     if (NULL == pAdapter)
     {
@@ -730,21 +732,21 @@ int __wlan_hdd_cfg80211_remain_on_channel( struct wiphy *wiphy,
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid",__func__);
         return ret;
     }
 
     MTRACE(vos_trace(VOS_MODULE_ID_HDD,
                      TRACE_CODE_HDD_REMAIN_ON_CHANNEL,
                      pAdapter->sessionId, REMAIN_ON_CHANNEL_REQUEST));
-    return wlan_hdd_request_remain_on_channel(wiphy, dev,
+    ret = wlan_hdd_request_remain_on_channel(wiphy, dev,
                                         chan,
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3,8,0))
                                         channel_type,
 #endif
                                         duration, cookie,
                                         REMAIN_ON_CHANNEL_REQUEST);
+    EXIT();
+    return ret;
 }
 
 int wlan_hdd_cfg80211_remain_on_channel( struct wiphy *wiphy,
@@ -892,6 +894,8 @@ int __wlan_hdd_cfg80211_cancel_remain_on_channel( struct wiphy *wiphy,
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX( pAdapter );
     int status;
     u64 cookie_dummy;
+
+    ENTER();
     cookie_dummy = cookie << 32;
     MTRACE(vos_trace(VOS_MODULE_ID_HDD,
                      TRACE_CODE_HDD_CFG80211_CANCEL_REMAIN_ON_CHANNEL,
@@ -902,8 +906,6 @@ int __wlan_hdd_cfg80211_cancel_remain_on_channel( struct wiphy *wiphy,
 
     if (0 != status)
     {
-        VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                   "%s: HDD context is not valid", __func__);
         return status;
     }
     hddLog( LOG1, "Cancel remain on channel req (cookie = %llu)", cookie);
@@ -1005,6 +1007,8 @@ int __wlan_hdd_cfg80211_cancel_remain_on_channel( struct wiphy *wiphy,
               "%s:wait on cancel_rem_on_chan_var failed %d", __func__, status);
     }
     hdd_allow_suspend();
+
+    EXIT();
     return 0;
 }
 
@@ -1080,15 +1084,14 @@ int __wlan_hdd_mgmt_tx( struct wiphy *wiphy, struct net_device *dev,
     hdd_adapter_t *goAdapter;
 #endif
 
-     MTRACE(vos_trace(VOS_MODULE_ID_HDD,
+    ENTER();
+    MTRACE(vos_trace(VOS_MODULE_ID_HDD,
                       TRACE_CODE_HDD_ACTION, pAdapter->sessionId,
                       pAdapter->device_mode ));
     status = wlan_hdd_validate_context(pHddCtx);
 
     if (0 != status)
     {
-        VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                   "%s: HDD context is not valid", __func__);
         return status;
     }
 
@@ -1432,6 +1435,7 @@ err_rem_channel:
                             pAdapter->dev,
 #endif
                             *cookie, buf, len, FALSE, GFP_KERNEL );
+    EXIT();
     return 0;
 }
 
@@ -1900,13 +1904,12 @@ int __wlan_hdd_add_virtual_intf( struct wiphy *wiphy, char *name,
     hdd_adapter_t *pAdapter = NULL;
     hdd_scaninfo_t *pScanInfo = NULL;
     int ret = 0;
+
     ENTER();
 
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                   "%s: HDD context is not valid", __func__);
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,38))
        return ERR_PTR(-EINVAL);
 #else
@@ -2035,6 +2038,7 @@ int __wlan_hdd_del_virtual_intf( struct wiphy *wiphy, struct net_device *dev )
     hdd_adapter_t *pAdapter = WLAN_HDD_GET_PRIV_PTR( dev );
     hdd_adapter_t *pVirtAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
     int status;
+
     ENTER();
 
     MTRACE(vos_trace(VOS_MODULE_ID_HDD,
@@ -2047,8 +2051,6 @@ int __wlan_hdd_del_virtual_intf( struct wiphy *wiphy, struct net_device *dev )
 
     if (0 != status)
     {
-        VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                   "%s: HDD context is not valid", __func__);
         return status;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -124,6 +124,7 @@ int __iw_get_oem_data_rsp(
     hdd_adapter_t *pAdapter;
     hdd_context_t *pHddCtx;
 
+    ENTER();
     pAdapter = (netdev_priv(dev));
     if (NULL == pAdapter)
     {
@@ -135,8 +136,6 @@ int __iw_get_oem_data_rsp(
     rc = wlan_hdd_validate_context(pHddCtx);
     if (0 != rc)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid",__func__);
         return rc;
     }
     do
@@ -165,6 +164,7 @@ int __iw_get_oem_data_rsp(
         }
     } while(0);
 
+    EXIT();
     return rc;
 }
 
@@ -214,6 +214,7 @@ int __iw_set_oem_data_req(
     hdd_context_t *pHddCtx;
     hdd_wext_state_t *pwextBuf;
 
+    ENTER();
     pAdapter = (netdev_priv(dev));
     if (NULL == pAdapter)
     {
@@ -225,8 +226,6 @@ int __iw_set_oem_data_req(
     rc = wlan_hdd_validate_context(pHddCtx);
     if (0 != rc)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid",__func__);
         return rc;
     }
 
@@ -282,6 +281,7 @@ int __iw_set_oem_data_req(
 
     } while(0);
 
+    EXIT();
     return rc;
 }
 

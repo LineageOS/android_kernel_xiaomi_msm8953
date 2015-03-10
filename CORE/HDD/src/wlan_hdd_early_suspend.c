@@ -459,7 +459,7 @@ void __hdd_ipv6_notifier_work_queue(struct work_struct *work)
     hdd_context_t *pHddCtx;
     int status;
 
-    hddLog(LOG1, FL("Reconfiguring NS Offload"));
+    ENTER();
     if (NULL == pAdapter)
     {
         hddLog(LOGE, FL("Adapter is invalid"));
@@ -470,7 +470,6 @@ void __hdd_ipv6_notifier_work_queue(struct work_struct *work)
     status = wlan_hdd_validate_context(pHddCtx);
     if (0 != status)
     {
-        hddLog(LOGE, FL("HDD context is invalid, status = %d"), status);
         return;
     }
 
@@ -503,8 +502,7 @@ void __hdd_ipv6_notifier_work_queue(struct work_struct *work)
      */
     wlan_hdd_set_mc_addr_list(pAdapter, TRUE);
 #endif
-
-
+    EXIT();
 }
 
 void hdd_ipv6_notifier_work_queue(struct work_struct *work)
@@ -523,11 +521,11 @@ int wlan_hdd_ipv6_changed(struct notifier_block *nb,
     VOS_STATUS vos_status;
     int status;
 
+    ENTER();
     pHddCtx = container_of(nb, hdd_context_t, ipv6_notifier);
     status = wlan_hdd_validate_context(pHddCtx);
     if (0 != status)
     {
-        hddLog(LOGE, FL("HDD context is invalid"));
         return NOTIFY_DONE;
     }
 
@@ -553,7 +551,7 @@ int wlan_hdd_ipv6_changed(struct notifier_block *nb,
         vos_status = hdd_get_next_adapter(pHddCtx, pAdapterNode, &pNext);
         pAdapterNode = pNext;
     }
-
+    EXIT();
     return NOTIFY_DONE;
 }
 
@@ -716,11 +714,8 @@ void hdd_conf_ns_offload(hdd_adapter_t *pAdapter, int fenable)
     pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
 
     ret = wlan_hdd_validate_context(pHddCtx);
-
     if (0 != ret)
     {
-        VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                   FL("HDD context is not valid"));
         return;
     }
 
@@ -937,6 +932,7 @@ end:
     {
        vos_mem_free(selfIPv6AddrValid);
     }
+    EXIT();
     return;
 }
 #endif
@@ -948,7 +944,7 @@ void __hdd_ipv4_notifier_work_queue(struct work_struct *work)
     hdd_context_t *pHddCtx;
     int status;
 
-    hddLog(LOG1, FL("Reconfiguring ARP Offload"));
+    ENTER();
     if (NULL == pAdapter)
     {
         hddLog(LOGE, FL("Adapter is invalid"));
@@ -958,7 +954,6 @@ void __hdd_ipv4_notifier_work_queue(struct work_struct *work)
     status = wlan_hdd_validate_context(pHddCtx);
     if (0 != status)
     {
-        hddLog(LOGE, FL("HDD context is invalid, status = %d"), status);
         return;
     }
 
@@ -980,6 +975,7 @@ void __hdd_ipv4_notifier_work_queue(struct work_struct *work)
         // of IPv4 notifier again.
         hdd_conf_arp_offload(pAdapter, 2);
     }
+    EXIT();
 }
 
 void hdd_ipv4_notifier_work_queue(struct work_struct *work)
@@ -1002,11 +998,11 @@ int wlan_hdd_ipv4_changed(struct notifier_block *nb,
     VOS_STATUS vos_status;
     int status;
 
+    ENTER();
     pHddCtx = container_of(nb, hdd_context_t, ipv4_notifier);
     status = wlan_hdd_validate_context(pHddCtx);
     if (0 != status)
     {
-        hddLog(LOGE, FL("HDD context is invalid"));
         return NOTIFY_DONE;
     }
 
@@ -1049,7 +1045,7 @@ int wlan_hdd_ipv4_changed(struct notifier_block *nb,
         vos_status = hdd_get_next_adapter(pHddCtx, pAdapterNode, &pNext);
         pAdapterNode = pNext;
     }
-
+    EXIT();
     return NOTIFY_DONE;
 }
 

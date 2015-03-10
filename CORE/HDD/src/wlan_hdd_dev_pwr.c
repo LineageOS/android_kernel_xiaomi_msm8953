@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -327,16 +327,14 @@ int __hddDevSuspendHdlr(struct device *dev)
    int ret = 0;
    hdd_context_t* pHddCtx = NULL;
 
-   pHddCtx =  (hdd_context_t*)wcnss_wlan_get_drvdata(dev);
+   ENTER();
 
-   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO, "%s: WLAN suspended by platform driver",__func__);
+   pHddCtx =  (hdd_context_t*)wcnss_wlan_get_drvdata(dev);
 
    /* Get the HDD context */
    ret = wlan_hdd_validate_context(pHddCtx);
    if (0 != ret)
    {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 "%s: HDD context is not valid",__func__);
        return ret;
    }
    if(pHddCtx->isWlanSuspended == TRUE)
@@ -360,6 +358,8 @@ int __hddDevSuspendHdlr(struct device *dev)
       suspend_notify_sent = true;
    }
 #endif
+
+   EXIT();
    return 0;
 }
 
@@ -389,14 +389,12 @@ int __hddDevResumeHdlr(struct device *dev)
    hdd_context_t* pHddCtx = NULL;
    int ret = 0;
 
-   VOS_TRACE(VOS_MODULE_ID_HDD,VOS_TRACE_LEVEL_INFO, "%s: WLAN being resumed by Android OS",__func__);
+   ENTER();
 
    pHddCtx =  (hdd_context_t*)wcnss_wlan_get_drvdata(dev);
    ret = wlan_hdd_validate_context(pHddCtx);
    if (0 != ret)
    {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 "%s: HDD context is not valid ",__func__);
        return ret;
    }
    if(pHddCtx->isWlanSuspended != TRUE)
@@ -414,7 +412,7 @@ int __hddDevResumeHdlr(struct device *dev)
       suspend_notify_sent = false;
    }
 #endif
-
+   EXIT();
    return 0;
 }
 

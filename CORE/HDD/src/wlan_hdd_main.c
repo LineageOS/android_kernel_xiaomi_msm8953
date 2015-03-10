@@ -1683,12 +1683,12 @@ int hdd_handle_batch_scan_ioctl
     int ret = 0;
     hdd_context_t *pHddCtx;
 
+    ENTER();
+
     pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
     ret = wlan_hdd_validate_context(pHddCtx);
     if (ret)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid!", __func__);
         goto exit;
     }
 
@@ -1911,7 +1911,7 @@ int hdd_handle_batch_scan_ioctl
     }
 
 exit:
-
+    EXIT();
     return ret;
 }
 
@@ -2187,6 +2187,8 @@ static int hdd_driver_command(hdd_adapter_t *pAdapter,
    hdd_scaninfo_t *pScanInfo = NULL;
    int ret = 0;
    int status;
+
+   ENTER();
    /*
     * Note that valid pointers are provided by caller
     */
@@ -2206,9 +2208,8 @@ static int hdd_driver_command(hdd_adapter_t *pAdapter,
    status = wlan_hdd_validate_context(pHddCtx);
    if (0 != status)
    {
-       VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid", __func__);
-       return status;
+       ret = -EINVAL;
+       goto exit;
    }
    /* Allocate +1 for '\0' */
    command = kmalloc(priv_data.total_len + 1, GFP_KERNEL);
@@ -4338,6 +4339,7 @@ static int hdd_driver_command(hdd_adapter_t *pAdapter,
        }
    }
 exit:
+   EXIT();
    if (command)
    {
        kfree(command);
@@ -4403,6 +4405,8 @@ int __hdd_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
    hdd_context_t *pHddCtx;
    int ret;
 
+   ENTER();
+
    pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
    if (NULL == pAdapter) {
       VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_FATAL,
@@ -4443,6 +4447,7 @@ int __hdd_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
       break;
    }
  exit:
+   EXIT();
    return ret;
 }
 
@@ -5435,8 +5440,6 @@ int __hdd_stop (struct net_device *dev)
    ret = wlan_hdd_validate_context(pHddCtx);
    if (ret)
    {
-      VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                "%s: HDD context is not valid!", __func__);
       return ret;
    }
 
@@ -5908,8 +5911,6 @@ static int __hdd_set_mac_address(struct net_device *dev, void *addr)
    ret = wlan_hdd_validate_context(pHddCtx);
    if (0 != ret)
    {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 "%s: HDD context is not valid",__func__);
        return ret;
    }
 
@@ -7916,6 +7917,8 @@ static void __hdd_set_multicast_list(struct net_device *dev)
    int i = 0, ret = 0;
    struct netdev_hw_addr *ha;
 
+   ENTER();
+
    pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
    if (NULL == pAdapter)
    {
@@ -7927,8 +7930,6 @@ static void __hdd_set_multicast_list(struct net_device *dev)
    ret = wlan_hdd_validate_context(pHddCtx);
    if (0 != ret)
    {
-      hddLog(VOS_TRACE_LEVEL_ERROR,
-                 "%s: HDD context is not valid",__func__);
        return;
    }
    if (dev->flags & IFF_ALLMULTI)
@@ -7963,6 +7964,8 @@ static void __hdd_set_multicast_list(struct net_device *dev)
          i++;
       }
    }
+
+   EXIT();
    return;
 }
 

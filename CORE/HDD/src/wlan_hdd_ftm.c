@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -4871,6 +4871,8 @@ static int __iw_ftm_setchar_getnone(struct net_device *dev, struct iw_request_in
     hdd_context_t *pHddCtx;
     struct iw_point s_priv_data;
 
+    ENTER();
+
     ret =0;
     /* helper function to get iwreq_data with compat handling. */
     if (hdd_priv_get_data(&s_priv_data, wrqu))
@@ -4895,8 +4897,6 @@ static int __iw_ftm_setchar_getnone(struct net_device *dev, struct iw_request_in
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid",__func__);
         return ret;
     }
     sub_cmd = s_priv_data.flags;
@@ -4967,6 +4967,7 @@ static int __iw_ftm_setchar_getnone(struct net_device *dev, struct iw_request_in
 
 OUT:
     kfree(param);
+    EXIT();
     return ret;
 }
 
@@ -4993,6 +4994,8 @@ static int __iw_ftm_setint_getnone(struct net_device *dev, struct iw_request_inf
     int ret = 0; /* success */
     VOS_STATUS status;
 
+    ENTER();
+
     pAdapter = (netdev_priv(dev));
     if (NULL == pAdapter)
     {
@@ -5003,7 +5006,6 @@ static int __iw_ftm_setint_getnone(struct net_device *dev, struct iw_request_inf
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        hddLog(VOS_TRACE_LEVEL_ERROR, "%s: HDD context is not valid",__func__);
         return ret;
     }
     switch(sub_cmd)
@@ -5169,6 +5171,7 @@ static int __iw_ftm_setint_getnone(struct net_device *dev, struct iw_request_inf
         }
     }
 
+    EXIT();
     return ret;
 }
 
@@ -5193,6 +5196,8 @@ static int __iw_ftm_setnone_getint(struct net_device *dev, struct iw_request_inf
     int ret = 0; /* success */
     VOS_STATUS status;
 
+    ENTER();
+
     pAdapter = (netdev_priv(dev));
     if (NULL == pAdapter)
     {
@@ -5203,7 +5208,6 @@ static int __iw_ftm_setnone_getint(struct net_device *dev, struct iw_request_inf
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        hddLog(VOS_TRACE_LEVEL_ERROR, "%s: HDD context is not valid",__func__);
         return ret;
     }
 
@@ -5249,6 +5253,7 @@ static int __iw_ftm_setnone_getint(struct net_device *dev, struct iw_request_inf
         }
     }
 
+    EXIT();
     return ret;
 }
 
@@ -5273,6 +5278,8 @@ static int __iw_ftm_get_char_setnone(struct net_device *dev, struct iw_request_i
     hdd_context_t *pHddCtx;
     int ret = 0;
 
+    ENTER();
+
     pAdapter = (netdev_priv(dev));
     if (NULL == pAdapter)
     {
@@ -5283,7 +5290,6 @@ static int __iw_ftm_get_char_setnone(struct net_device *dev, struct iw_request_i
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        hddLog(VOS_TRACE_LEVEL_ERROR, "%s: HDD context is not valid ",__func__);
         return ret;
     }
     switch(sub_cmd)
@@ -5346,6 +5352,7 @@ static int __iw_ftm_get_char_setnone(struct net_device *dev, struct iw_request_i
         }
     }
 
+    EXIT();
     return 0;
 }
 
@@ -5483,6 +5490,8 @@ static int __iw_ftm_set_var_ints_getnone(struct net_device *dev, struct iw_reque
     int *value = (int*)wrqu->data.pointer;
     int ret = 0;
 
+    ENTER();
+
     if(wrqu->data.length != 2)
     {
         hddLog(LOGE, "Invalid number of Arguments  %d  \n",  wrqu->data.length);
@@ -5499,8 +5508,6 @@ static int __iw_ftm_set_var_ints_getnone(struct net_device *dev, struct iw_reque
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
     {
-        hddLog(VOS_TRACE_LEVEL_ERROR,
-                  "%s: HDD context is not valid",__func__);
         return ret;
     }
     switch (sub_cmd)
@@ -5531,6 +5538,7 @@ static int __iw_ftm_set_var_ints_getnone(struct net_device *dev, struct iw_reque
         }
     }
 
+    EXIT();
     return 0;
 }
 

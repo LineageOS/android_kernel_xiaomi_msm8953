@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -697,8 +697,6 @@ int __iw_set_scan(struct net_device *dev, struct iw_request_info *info,
    ret = wlan_hdd_validate_context(pHddCtx);
    if (0 != ret)
    {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 "%s: HDD context is not valid",__func__);
        return ret;
    }
    pwextBuf = WLAN_HDD_GET_WEXT_STATE_PTR(pAdapter);
@@ -840,8 +838,6 @@ error:
        vos_mem_free(scanRequest.SSIDs.SSIDList);
 
    EXIT();
-
-   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO, "%s: exit !!!",__func__);
    return status;
 }
 
@@ -885,9 +881,9 @@ int __iw_get_scan(struct net_device *dev,
    tScanResultHandle pResult;
    int i = 0, ret = 0;
 
+   ENTER();
    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO, "%s: enter buffer length %d!!!",
        __func__, (wrqu->data.length)?wrqu->data.length:IW_SCAN_MAX_DATA);
-   ENTER();
 
    pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
    if (NULL == pAdapter)
@@ -901,8 +897,6 @@ int __iw_get_scan(struct net_device *dev,
    ret = wlan_hdd_validate_context(pHddCtx);
    if (0 != ret)
    {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 "%s: HDD context is not valid",__func__);
        return ret;
    }
    hHal = WLAN_HDD_GET_HAL_CTX(pAdapter);
@@ -955,8 +949,8 @@ int __iw_get_scan(struct net_device *dev,
 
    sme_ScanResultPurge(hHal, pResult);
 
-   EXIT();
    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO, "%s: exit total %d BSS reported !!!",__func__, i);
+   EXIT();
    return status;
 }
 
