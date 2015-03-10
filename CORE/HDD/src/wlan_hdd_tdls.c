@@ -929,7 +929,7 @@ int wlan_hdd_sta_tdls_init(hdd_adapter_t *pAdapter)
     return 0;
 }
 
-void wlan_hdd_tdls_exit(hdd_adapter_t *pAdapter)
+void wlan_hdd_tdls_exit(hdd_adapter_t *pAdapter, tANI_BOOLEAN mutexLock)
 {
     tdlsCtx_t *pHddTdlsCtx;
     hdd_context_t *pHddCtx;
@@ -965,7 +965,19 @@ void wlan_hdd_tdls_exit(hdd_adapter_t *pAdapter)
     }
 
 #ifdef WLAN_OPEN_SOURCE
+    if (mutexLock)
+    {
+        mutex_unlock(&pHddCtx->tdls_lock);
+    }
+    /* Holding mutex in tdls implicit_setup work queue and
+     * while cancelling it is leading to deadlock.
+     * So avoid holding mutex while cancelling the workqueue.
+     */
     cancel_work_sync(&pHddTdlsCtx->implicit_setup);
+    if (mutexLock)
+    {
+        mutex_lock(&pHddCtx->tdls_lock);
+    }
     cancel_delayed_work_sync(&pHddCtx->tdls_scan_ctxt.tdls_scan_work);
 #endif
 
@@ -2030,23 +2042,19 @@ void wlan_hdd_tdls_disconnection_callback(hdd_adapter_t *pAdapter)
 
     VOS_TRACE( VOS_MODULE_ID_HDD, TDLS_LOG_LEVEL,"%s", __func__);
 
-    mutex_lock(&pHddCtx->tdls_lock);
     if (NULL == pHddTdlsCtx)
     {
        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                  FL("pHddTdlsCtx is NULL"));
-        mutex_unlock(&pHddCtx->tdls_lock);
         return;
     }
 
-#ifdef WLAN_OPEN_SOURCE
-    cancel_work_sync(&pHddTdlsCtx->implicit_setup);
-#endif
+    mutex_lock(&pHddCtx->tdls_lock);
 
     pHddTdlsCtx->discovery_sent_cnt = 0;
     wlan_hdd_tdls_check_power_save_prohibited(pHddTdlsCtx->pAdapter);
 
-    wlan_hdd_tdls_exit(pAdapter);
+    wlan_hdd_tdls_exit(pAdapter, TRUE);
 
     mutex_unlock(&pHddCtx->tdls_lock);
 }
