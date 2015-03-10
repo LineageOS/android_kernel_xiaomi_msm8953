@@ -4435,6 +4435,11 @@ static int __wlan_hdd_cfg80211_exttdls_get_status(struct wiphy *wiphy,
 
     ENTER();
 
+    if (!pAdapter) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("HDD adpater is NULL"));
+        return -EINVAL;
+    }
+
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret) {
         return -EINVAL;
@@ -4529,13 +4534,19 @@ static int wlan_hdd_cfg80211_exttdls_callback(tANI_U8* mac,
                                               void *ctx)
 {
     hdd_adapter_t* pAdapter       = (hdd_adapter_t*)ctx;
-    hdd_context_t *pHddCtx        = WLAN_HDD_GET_CTX(pAdapter);
     struct sk_buff *skb           = NULL;
     tANI_S32 global_operating_class = 0;
     tANI_S32 channel = 0;
+    hdd_context_t *pHddCtx;
 
     ENTER();
 
+    if (!pAdapter) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("HDD adpater is NULL"));
+        return -EINVAL;
+    }
+
+    pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
     if (wlan_hdd_validate_context(pHddCtx)) {
         return -EINVAL;
     }
@@ -4600,14 +4611,25 @@ static int __wlan_hdd_cfg80211_exttdls_enable(struct wiphy *wiphy,
 {
     u8 peer[6]                                 = {0};
     struct net_device *dev                     = wdev->netdev;
-    hdd_adapter_t *pAdapter                    = WLAN_HDD_GET_PRIV_PTR(dev);
     hdd_context_t *pHddCtx                     = wiphy_priv(wiphy);
     struct nlattr *tb[QCA_WLAN_VENDOR_ATTR_TDLS_ENABLE_MAX + 1];
     eHalStatus status;
     tdls_req_params_t   pReqMsg = {0};
     int ret;
+    hdd_adapter_t *pAdapter;
 
     ENTER();
+
+    if (!dev) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("Dev pointer is NULL"));
+        return -EINVAL;
+    }
+
+    pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
+    if (!pAdapter) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("HDD adpater is NULL"));
+        return -EINVAL;
+    }
 
     status = wlan_hdd_validate_context(pHddCtx);
     if (0 != status) {
@@ -4705,13 +4727,24 @@ static int __wlan_hdd_cfg80211_exttdls_disable(struct wiphy *wiphy,
 {
     u8 peer[6]                                 = {0};
     struct net_device *dev                     = wdev->netdev;
-    hdd_adapter_t *pAdapter                    = WLAN_HDD_GET_PRIV_PTR(dev);
     hdd_context_t *pHddCtx                     = wiphy_priv(wiphy);
     struct nlattr *tb[QCA_WLAN_VENDOR_ATTR_TDLS_DISABLE_MAX + 1];
     eHalStatus status;
     int ret;
+    hdd_adapter_t *pAdapter;
 
     ENTER();
+
+    if (!dev) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("Dev pointer is NULL"));
+        return -EINVAL;
+    }
+
+    pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
+    if (!pAdapter) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("HDD adapter is NULL"));
+        return -EINVAL;
+    }
 
     status = wlan_hdd_validate_context(pHddCtx);
     if (0 != status) {
@@ -8185,14 +8218,25 @@ int wlan_hdd_cfg80211_change_iface( struct wiphy *wiphy,
 static int wlan_hdd_tdls_add_station(struct wiphy *wiphy,
           struct net_device *dev, u8 *mac, bool update, tCsrStaParams *StaParams)
 {
-    hdd_adapter_t *pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
     hdd_context_t *pHddCtx = wiphy_priv(wiphy);
     VOS_STATUS status;
     hddTdlsPeer_t *pTdlsPeer;
     long ret;
     tANI_U16 numCurrTdlsPeers;
+    hdd_adapter_t *pAdapter;
 
     ENTER();
+
+    if (!dev) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("Dev pointer is NULL"));
+        return -EINVAL;
+    }
+
+    pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
+    if (!pAdapter) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("HDD adapter is NULL"));
+        return -EINVAL;
+    }
 
     if (NULL == pHddCtx || NULL == pHddCtx->cfg_ini)
     {
@@ -9989,15 +10033,28 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
     struct net_device *dev = (struct net_device *) pContext;
     //struct wireless_dev *wdev = dev->ieee80211_ptr;
     hdd_adapter_t *pAdapter = WLAN_HDD_GET_PRIV_PTR( dev );
-    hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
-    hdd_scaninfo_t *pScanInfo = &pHddCtx->scan_info;
+    hdd_scaninfo_t *pScanInfo;
     struct cfg80211_scan_request *req = NULL;
     int ret = 0;
     bool aborted = false;
     long waitRet = 0;
     tANI_U8 i;
+    hdd_context_t *pHddCtx;
 
     ENTER();
+
+    if (!pAdapter) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("HDD adpater is NULL"));
+        goto allow_suspend;
+    }
+
+    pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+    if (0 != wlan_hdd_validate_context(pHddCtx)) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("Invalid HDD context"));
+        goto allow_suspend;
+    }
+
+    pScanInfo = &pHddCtx->scan_info;
 
     hddLog(VOS_TRACE_LEVEL_INFO,
             "%s called with halHandle = %p, pContext = %p,"
@@ -11986,16 +12043,35 @@ static int __wlan_hdd_cfg80211_disconnect( struct wiphy *wiphy,
                                          )
 {
     hdd_adapter_t *pAdapter = WLAN_HDD_GET_PRIV_PTR( dev );
-    tCsrRoamProfile  *pRoamProfile =
-                    &(WLAN_HDD_GET_WEXT_STATE_PTR(pAdapter))->roamProfile;
     int status;
-    hdd_station_ctx_t *pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
-    hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+    tCsrRoamProfile  *pRoamProfile;
+    hdd_station_ctx_t *pHddStaCtx;
+    hdd_context_t *pHddCtx;
 #ifdef FEATURE_WLAN_TDLS
     tANI_U8 staIdx;
 #endif
 
     ENTER();
+
+    if (!pAdapter) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("HDD adpater is NULL"));
+        return -EINVAL;
+    }
+
+    pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
+    if (!pHddStaCtx) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("HDD STA context is NULL"));
+        return -EINVAL;
+    }
+
+    pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+    status = wlan_hdd_validate_context(pHddCtx);
+    if (0 != status)
+    {
+        return status;
+    }
+
+    pRoamProfile = &(WLAN_HDD_GET_WEXT_STATE_PTR(pAdapter))->roamProfile;
 
     MTRACE(vos_trace(VOS_MODULE_ID_HDD,
                      TRACE_CODE_HDD_CFG80211_DISCONNECT,
@@ -12006,12 +12082,6 @@ static int __wlan_hdd_cfg80211_disconnect( struct wiphy *wiphy,
 
     hddLog(VOS_TRACE_LEVEL_INFO, "%s: Disconnect called with reason code %d",
             __func__, reason);
-
-    status = wlan_hdd_validate_context(pHddCtx);
-    if (0 != status)
-    {
-        return status;
-    }
 
     if (NULL != pRoamProfile)
     {
@@ -14795,6 +14865,11 @@ int wlan_hdd_tdls_extctrl_deconfig_peer(hdd_adapter_t *pAdapter, u8 *peer)
               " %s : NL80211_TDLS_TEARDOWN for " MAC_ADDRESS_STR,
               __func__, MAC_ADDR_ARRAY(peer));
 
+    if (0 != wlan_hdd_validate_context(pHddCtx)) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("HDD context is NULL"));
+        return -EINVAL;
+    }
+
     if ( (FALSE == pHddCtx->cfg_ini->fTDLSExternalControl) ||
          (FALSE == pHddCtx->cfg_ini->fEnableTDLSImplicitTrigger) ) {
 
@@ -14849,6 +14924,11 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
     hddTdlsPeer_t *pTdlsPeer;
 
     ENTER();
+
+    if (!pAdapter) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("HDD adpater is NULL"));
+        return -EINVAL;
+    }
 
     MTRACE(vos_trace(VOS_MODULE_ID_HDD,
                      TRACE_CODE_HDD_CFG80211_TDLS_OPER,

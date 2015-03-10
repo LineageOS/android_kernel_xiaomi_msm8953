@@ -930,6 +930,11 @@ void wlan_hdd_tdls_exit(hdd_adapter_t *pAdapter, tANI_BOOLEAN mutexLock)
     tdlsCtx_t *pHddTdlsCtx;
     hdd_context_t *pHddCtx;
 
+    if (!pAdapter) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("HDD adpater is NULL"));
+        return;
+    }
+
     /*
      * NOTE: The Callers of this function should ensure to acquire the
      * tdls_lock to avoid any concurrent access to the Adapter and logp
@@ -1084,10 +1089,17 @@ hddTdlsPeer_t *wlan_hdd_tdls_get_peer(hdd_adapter_t *pAdapter, u8 *mac)
     hddTdlsPeer_t *peer;
     u8 key;
     tdlsCtx_t *pHddTdlsCtx;
-    hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+    hdd_context_t *pHddCtx;
 
     ENTER();
-    if(0 != (wlan_hdd_validate_context(pHddCtx)))
+
+    if (!pAdapter) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("HDD adpater is NULL"));
+        return NULL;
+    }
+
+    pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+    if (0 != (wlan_hdd_validate_context(pHddCtx)))
     {
         return 0;
     }
@@ -2464,8 +2476,16 @@ tANI_U32 wlan_hdd_tdls_discovery_sent_cnt(hdd_context_t *pHddCtx)
 
 void wlan_hdd_tdls_check_power_save_prohibited(hdd_adapter_t *pAdapter)
 {
-    tdlsCtx_t *pHddTdlsCtx = WLAN_HDD_GET_TDLS_CTX_PTR(pAdapter);
-    hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+    tdlsCtx_t *pHddTdlsCtx;
+    hdd_context_t *pHddCtx;
+
+    if (!pAdapter) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("HDD adpater is NULL"));
+        return;
+    }
+
+    pHddTdlsCtx = WLAN_HDD_GET_TDLS_CTX_PTR(pAdapter);
+    pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
 
     if ((NULL == pHddTdlsCtx) || (NULL == pHddCtx))
     {
