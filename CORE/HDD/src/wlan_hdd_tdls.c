@@ -792,6 +792,7 @@ void wlan_hdd_tdls_btCoex_cb(void *data, int indType)
 void  wlan_hdd_tdls_init(hdd_context_t *pHddCtx )
 {
     v_U8_t staIdx;
+    eHalStatus status;
 
     pHddCtx->connected_peer_count = 0;
 
@@ -808,7 +809,11 @@ void  wlan_hdd_tdls_init(hdd_context_t *pHddCtx )
                                             sizeof(v_MACADDR_t)) ;
     }
     pHddCtx->is_tdls_btc_enabled = TRUE;
-    sme_RegisterBtCoexTDLSCallback(pHddCtx->hHal, wlan_hdd_tdls_btCoex_cb);
+    status = sme_RegisterBtCoexTDLSCallback(pHddCtx->hHal,
+                                            wlan_hdd_tdls_btCoex_cb);
+    if (status != eHAL_STATUS_SUCCESS) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("Failed to register BT Coex TDLS callback"));
+    }
 
     if (FALSE == pHddCtx->cfg_ini->fEnableTDLSImplicitTrigger)
     {
@@ -2782,8 +2787,11 @@ void wlan_hdd_tdls_scan_done_callback(hdd_adapter_t *pAdapter)
 
     /* if tdls is not enabled or BtCoex is on then don't revert tdls mode */
     if ((eTDLS_SUPPORT_NOT_ENABLED == pHddCtx->tdls_mode) ||
-        (pHddCtx->is_tdls_btc_enabled == FALSE))
+        (pHddCtx->is_tdls_btc_enabled == FALSE)) {
+            hddLog(VOS_TRACE_LEVEL_ERROR, FL("Failed to revert: Mode=%d, BTC enabled=%d"),
+                   pHddCtx->tdls_mode, pHddCtx->is_tdls_btc_enabled);
             return;
+    }
 
     /* free allocated memory at scan time */
     wlan_hdd_tdls_free_scan_request (&pHddCtx->tdls_scan_ctxt);

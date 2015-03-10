@@ -4442,10 +4442,11 @@ static int __wlan_hdd_cfg80211_exttdls_get_status(struct wiphy *wiphy,
 
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("Invalid HDD context"));
         return -EINVAL;
     }
     if (pHddCtx->cfg_ini->fTDLSExternalControl == FALSE) {
-
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("TDLS external control is disabled"));
         return -ENOTSUPP;
     }
     if (nla_parse(tb, QCA_WLAN_VENDOR_ATTR_TDLS_GET_STATUS_MAX,
@@ -4548,11 +4549,12 @@ static int wlan_hdd_cfg80211_exttdls_callback(tANI_U8* mac,
 
     pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
     if (wlan_hdd_validate_context(pHddCtx)) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("Invalid HDD context"));
         return -EINVAL;
     }
 
     if (pHddCtx->cfg_ini->fTDLSExternalControl == FALSE) {
-
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("TDLS external control is disabled"));
         return -ENOTSUPP;
     }
     skb = cfg80211_vendor_event_alloc(
@@ -4633,10 +4635,11 @@ static int __wlan_hdd_cfg80211_exttdls_enable(struct wiphy *wiphy,
 
     status = wlan_hdd_validate_context(pHddCtx);
     if (0 != status) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("Invalid HDD context"));
         return -EINVAL;
     }
     if (pHddCtx->cfg_ini->fTDLSExternalControl == FALSE) {
-
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("TDLS external control is disabled"));
         return -ENOTSUPP;
     }
     if (nla_parse(tb, QCA_WLAN_VENDOR_ATTR_TDLS_ENABLE_MAX,
@@ -4748,10 +4751,11 @@ static int __wlan_hdd_cfg80211_exttdls_disable(struct wiphy *wiphy,
 
     status = wlan_hdd_validate_context(pHddCtx);
     if (0 != status) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("Invalid HDD context"));
         return -EINVAL;
     }
     if (pHddCtx->cfg_ini->fTDLSExternalControl == FALSE) {
-
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("TDLS external control is disabled"));
         return -ENOTSUPP;
     }
     if (nla_parse(tb, QCA_WLAN_VENDOR_ATTR_TDLS_DISABLE_MAX,
@@ -8219,7 +8223,6 @@ static int wlan_hdd_tdls_add_station(struct wiphy *wiphy,
           struct net_device *dev, u8 *mac, bool update, tCsrStaParams *StaParams)
 {
     hdd_context_t *pHddCtx = wiphy_priv(wiphy);
-    VOS_STATUS status;
     hddTdlsPeer_t *pTdlsPeer;
     long ret;
     tANI_U16 numCurrTdlsPeers;
@@ -8384,13 +8387,21 @@ static int wlan_hdd_tdls_add_station(struct wiphy *wiphy,
 
     if (!update)
     {
-        status = sme_AddTdlsPeerSta(WLAN_HDD_GET_HAL_CTX(pAdapter),
+        ret = sme_AddTdlsPeerSta(WLAN_HDD_GET_HAL_CTX(pAdapter),
                 pAdapter->sessionId, mac);
+        if (ret != eHAL_STATUS_SUCCESS) {
+            hddLog(VOS_TRACE_LEVEL_ERROR, FL("Failed to add TDLS peer STA"));
+            return -EPERM;
+        }
     }
     else
     {
-        status = sme_ChangeTdlsPeerSta(WLAN_HDD_GET_HAL_CTX(pAdapter),
+        ret = sme_ChangeTdlsPeerSta(WLAN_HDD_GET_HAL_CTX(pAdapter),
                                        pAdapter->sessionId, mac, StaParams);
+        if (ret != eHAL_STATUS_SUCCESS) {
+            hddLog(VOS_TRACE_LEVEL_ERROR, FL("Failed to change TDLS peer STA params"));
+            return -EPERM;
+        }
     }
 
     ret = wait_for_completion_interruptible_timeout(&pAdapter->tdls_add_station_comp,
@@ -12136,9 +12147,14 @@ static int __wlan_hdd_cfg80211_disconnect( struct wiphy *wiphy,
                             "%s: call sme_DeleteTdlsPeerSta staId %d sessionId %d " MAC_ADDRESS_STR,
                             __func__, pHddCtx->tdlsConnInfo[staIdx].staId, pAdapter->sessionId,
                             MAC_ADDR_ARRAY(mac));
-                    sme_DeleteTdlsPeerSta(WLAN_HDD_GET_HAL_CTX(pAdapter),
-                                          pAdapter->sessionId,
-                                          mac);
+                    status = sme_DeleteTdlsPeerSta(
+                                              WLAN_HDD_GET_HAL_CTX(pAdapter),
+                                              pAdapter->sessionId,
+                                              mac);
+                    if (status != eHAL_STATUS_SUCCESS) {
+                        hddLog(VOS_TRACE_LEVEL_ERROR, FL("Failed to delete TDLS peer STA"));
+                        return -EPERM;
+                    }
                 }
             }
 #endif
@@ -14651,10 +14667,16 @@ static int __wlan_hdd_cfg80211_tdls_mgmt(struct wiphy *wiphy, struct net_device 
         {
             VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                        "%s: Sending frame action_code %u.Disable BMPS", __func__, action_code);
-            hdd_disable_bmps_imps(pHddCtx, WLAN_HDD_INFRA_STATION);
+            status = hdd_disable_bmps_imps(pHddCtx, WLAN_HDD_INFRA_STATION);
+            if (status != VOS_STATUS_SUCCESS) {
+                hddLog(VOS_TRACE_LEVEL_ERROR, FL("Failed to set BMPS/IMPS"));
+            }
         }
-        if (SIR_MAC_TDLS_DIS_REQ != action_code)
-            wlan_hdd_tdls_set_cap(pAdapter, peerMac, eTDLS_CAP_SUPPORTED);
+        if (SIR_MAC_TDLS_DIS_REQ != action_code) {
+            if (0 != wlan_hdd_tdls_set_cap(pAdapter, peerMac, eTDLS_CAP_SUPPORTED)) {
+                hddLog(VOS_TRACE_LEVEL_ERROR, FL("Failed to set TDLS capabilities"));
+            }
+        }
     }
 
     /* make sure doesn't call send_mgmt() while it is pending */
@@ -14711,11 +14733,15 @@ static int __wlan_hdd_cfg80211_tdls_mgmt(struct wiphy *wiphy, struct net_device 
 
     if (SIR_MAC_TDLS_SETUP_RSP == action_code)
     {
-        wlan_hdd_tdls_set_responder(pAdapter, peerMac, TRUE);
+        if (0 != wlan_hdd_tdls_set_responder(pAdapter, peerMac, TRUE)) {
+            hddLog(VOS_TRACE_LEVEL_ERROR, FL("Failed to set TDLS responder: Setup Response"));
+        }
     }
     else if (SIR_MAC_TDLS_SETUP_CNF == action_code)
     {
-        wlan_hdd_tdls_set_responder(pAdapter, peerMac, FALSE);
+        if (0 != wlan_hdd_tdls_set_responder(pAdapter, peerMac, FALSE)) {
+            hddLog(VOS_TRACE_LEVEL_ERROR, FL("Failed to set TDLS responder: Setup Response"));
+        }
     }
 
     return 0;
@@ -14778,8 +14804,9 @@ int wlan_hdd_tdls_extctrl_config_peer(hdd_adapter_t *pAdapter,
          (FALSE == pHddCtx->cfg_ini->fEnableTDLSImplicitTrigger) ) {
 
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-              " %s TDLS External control and Implicit Trigger not enabled ",
-              __func__);
+              " %s TDLS External control (%d) and Implicit Trigger (%d) not enabled ",
+              __func__, pHddCtx->cfg_ini->fTDLSExternalControl,
+              pHddCtx->cfg_ini->fEnableTDLSImplicitTrigger);
         return -ENOTSUPP;
     }
 
@@ -14874,8 +14901,9 @@ int wlan_hdd_tdls_extctrl_deconfig_peer(hdd_adapter_t *pAdapter, u8 *peer)
          (FALSE == pHddCtx->cfg_ini->fEnableTDLSImplicitTrigger) ) {
 
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-              " %s TDLS External control and Implicit Trigger not enabled ",
-              __func__);
+              " %s TDLS External control (%d) and Implicit Trigger (%d) not enabled ",
+              __func__, pHddCtx->cfg_ini->fTDLSExternalControl,
+              pHddCtx->cfg_ini->fEnableTDLSImplicitTrigger);
         return -ENOTSUPP;
     }
 
@@ -14900,8 +14928,10 @@ int wlan_hdd_tdls_extctrl_deconfig_peer(hdd_adapter_t *pAdapter, u8 *peer)
         }
     }
 
-    if ( 0 != wlan_hdd_tdls_set_force_peer(pAdapter, peer, FALSE) )
+    if ( 0 != wlan_hdd_tdls_set_force_peer(pAdapter, peer, FALSE) ) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("Failed to set force peer"));
         return -EINVAL;
+    }
 
     /*EXT TDLS*/
 
@@ -14951,8 +14981,10 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
         FALSE == sme_IsFeatureSupportedByFW(TDLS))
     {
         VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                "TDLS Disabled in INI OR not enabled in FW. "
-                "Cannot process TDLS commands");
+                "TDLS Disabled in INI (%d) OR not enabled in FW (%d) "
+                "Cannot process TDLS commands",
+                pHddCtx->cfg_ini->fEnableTDLSSupport,
+                sme_IsFeatureSupportedByFW(TDLS));
         return -ENOTSUPP;
     }
 
@@ -15001,12 +15033,16 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                                   "%s: More then one peer connected, Disable "
                                   "TDLS channel switch", __func__);
 
-                        sme_SendTdlsChanSwitchReq(WLAN_HDD_GET_HAL_CTX(pAdapter),
+                        ret = sme_SendTdlsChanSwitchReq(
+                                           WLAN_HDD_GET_HAL_CTX(pAdapter),
                                            pAdapter->sessionId,
                                            connPeer->peerMac,
                                            connPeer->peerParams.channel,
                                            TDLS_OFF_CHANNEL_BW_OFFSET,
                                            TDLS_CHANNEL_SWITCH_DISABLE);
+                        if (ret != VOS_STATUS_SUCCESS) {
+                             hddLog(VOS_TRACE_LEVEL_ERROR, FL("Failed to send TDLS switch channel request"));
+                        }
                     }
                     else
                     {
@@ -15024,12 +15060,18 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
 
                         if (0 != wlan_hdd_tdls_get_link_establish_params(
                                    pAdapter, peer,&tdlsLinkEstablishParams)) {
+                            hddLog(VOS_TRACE_LEVEL_ERROR, FL("Failed to get link establishment params"));
                             return -EINVAL;
                         }
                         INIT_COMPLETION(pAdapter->tdls_link_establish_req_comp);
 
-                        sme_SendTdlsLinkEstablishParams(WLAN_HDD_GET_HAL_CTX(pAdapter),
-                            pAdapter->sessionId, peer, &tdlsLinkEstablishParams);
+                        ret = sme_SendTdlsLinkEstablishParams(
+                                         WLAN_HDD_GET_HAL_CTX(pAdapter),
+                                         pAdapter->sessionId, peer,
+                                         &tdlsLinkEstablishParams);
+                        if (ret != VOS_STATUS_SUCCESS) {
+                            hddLog(VOS_TRACE_LEVEL_ERROR, FL("Failed to send link establishment params"));
+                        }
                         /* Send TDLS peer UAPSD capabilities to the firmware and
                          * register with the TL on after the response for this operation
                          * is received .
@@ -15050,9 +15092,12 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                                                        eTDLS_LINK_SUCCESS);
                     staDesc.ucSTAId = pTdlsPeer->staId;
                     staDesc.ucQosEnabled = tdlsLinkEstablishParams.qos;
-                    WLANTL_UpdateTdlsSTAClient(pHddCtx->pvosContext,
-                                                    &staDesc);
-
+                    ret = WLANTL_UpdateTdlsSTAClient(
+                                                pHddCtx->pvosContext,
+                                                &staDesc);
+                    if (ret != VOS_STATUS_SUCCESS) {
+                        hddLog(VOS_TRACE_LEVEL_ERROR, FL("Failed to update TDLS STA params"));
+                    }
 
                     /* Mark TDLS client Authenticated .*/
                     status = WLANTL_ChangeSTAState( pHddCtx->pvosContext,
@@ -15069,8 +15114,12 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                                                        WAIT_TIME_TDLS_INITIATOR);
                             /* suspend initiator TX until it receives direct packet from the
                             reponder or WAIT_TIME_TDLS_INITIATOR timer expires */
-                            WLANTL_SuspendDataTx( (WLAN_HDD_GET_CTX(pAdapter))->pvosContext,
-                                                   &staId, NULL);
+                            ret = WLANTL_SuspendDataTx(
+                                      (WLAN_HDD_GET_CTX(pAdapter))->pvosContext,
+                                      &staId, NULL);
+                            if (ret != VOS_STATUS_SUCCESS) {
+                                 hddLog(VOS_TRACE_LEVEL_ERROR, FL("Failed to suspend data tx"));
+                            }
                         }
                         wlan_hdd_tdls_increment_peer_count(pAdapter);
 
@@ -15090,6 +15139,9 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                                                            pTdlsPeer->peerParams.channel,
                                                            TDLS_OFF_CHANNEL_BW_OFFSET,
                                                            TDLS_CHANNEL_SWITCH_ENABLE);
+                            if (ret != VOS_STATUS_SUCCESS) {
+                                 hddLog(VOS_TRACE_LEVEL_ERROR, FL("TDLS offchannel: Failed to send TDLS switch channel req"));
+                            }
                         }
                         else
                         {
@@ -15122,6 +15174,9 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                                                                pTdlsPeer->staId, ucAc[ac],
                                                                tlTid[ac], tlTid[ac], 0, 0,
                                                                WLANTL_BI_DIR );
+                            if (status != VOS_STATUS_SUCCESS) {
+                                hddLog(VOS_TRACE_LEVEL_ERROR, FL("Failed to enable UAPSD for AC"));
+                            }
                         }
                     }
                 }
@@ -15159,8 +15214,12 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                               eTDLS_LINK_DROPPED_BY_REMOTE);
                     INIT_COMPLETION(pAdapter->tdls_del_station_comp);
 
-                    sme_DeleteTdlsPeerSta( WLAN_HDD_GET_HAL_CTX(pAdapter),
-                            pAdapter->sessionId, peer );
+                    status = sme_DeleteTdlsPeerSta(
+                                WLAN_HDD_GET_HAL_CTX(pAdapter),
+                                pAdapter->sessionId, peer );
+                    if (status != VOS_STATUS_SUCCESS) {
+                        hddLog(VOS_TRACE_LEVEL_ERROR, FL("Failed to delete TDLS peer STA"));
+                    }
 
                     status = wait_for_completion_interruptible_timeout(&pAdapter->tdls_del_station_comp,
                               msecs_to_jiffies(WAIT_TIME_TDLS_DEL_STA));
@@ -15185,12 +15244,16 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                             (connPeer->isOffChannelSupported == TRUE) &&
                             (connPeer->isOffChannelConfigured == TRUE))
                         {
-                            sme_SendTdlsChanSwitchReq(WLAN_HDD_GET_HAL_CTX(pAdapter),
-                                                           pAdapter->sessionId,
-                                                           connPeer->peerMac,
-                                                           connPeer->peerParams.channel,
-                                                           TDLS_OFF_CHANNEL_BW_OFFSET,
-                                                           TDLS_CHANNEL_SWITCH_ENABLE);
+                            status = sme_SendTdlsChanSwitchReq(
+                                         WLAN_HDD_GET_HAL_CTX(pAdapter),
+                                         pAdapter->sessionId,
+                                         connPeer->peerMac,
+                                         connPeer->peerParams.channel,
+                                         TDLS_OFF_CHANNEL_BW_OFFSET,
+                                         TDLS_CHANNEL_SWITCH_ENABLE);
+                            if (status != VOS_STATUS_SUCCESS) {
+                                hddLog(VOS_TRACE_LEVEL_ERROR, FL("Failed to send TDLS switch channel req"));
+                            }
                         }
                         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                                   "%s: TDLS channel switch "
