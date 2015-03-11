@@ -1277,10 +1277,10 @@ void wlan_hdd_ula_done_cb(v_VOID_t *callbackContext)
 {
     hdd_adapter_t *pAdapter = (hdd_adapter_t*)callbackContext;
 
-    if (WLAN_HDD_ADAPTER_MAGIC != pAdapter->magic)
+    if ( (pAdapter == NULL) || (WLAN_HDD_ADAPTER_MAGIC != pAdapter->magic))
     {
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: Invalid pAdapter magic", __func__);
+                  "%s: Invalid pAdapter magic/ pAdapter is NULL", __func__);
     }
     else
     {
