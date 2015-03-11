@@ -511,7 +511,7 @@ void hdd_ipv6_notifier_work_queue(struct work_struct *work)
      __hdd_ipv6_notifier_work_queue(work);
      vos_ssr_unprotect(__func__);
 }
-int wlan_hdd_ipv6_changed(struct notifier_block *nb,
+int __wlan_hdd_ipv6_changed(struct notifier_block *nb,
                             unsigned long data, void *arg)
 {
     struct inet6_ifaddr *ifa = (struct inet6_ifaddr *)arg;
@@ -553,6 +553,16 @@ int wlan_hdd_ipv6_changed(struct notifier_block *nb,
     }
     EXIT();
     return NOTIFY_DONE;
+}
+
+int wlan_hdd_ipv6_changed(struct notifier_block *nb,
+                            unsigned long data, void *arg)
+{
+    int ret;
+    vos_ssr_protect(__func__);
+    ret = __wlan_hdd_ipv6_changed( nb, data, arg);
+    vos_ssr_unprotect(__func__);
+    return ret;
 }
 
 /*
@@ -985,7 +995,7 @@ void hdd_ipv4_notifier_work_queue(struct work_struct *work)
     vos_ssr_unprotect(__func__);
 }
 
-int wlan_hdd_ipv4_changed(struct notifier_block *nb,
+int __wlan_hdd_ipv4_changed(struct notifier_block *nb,
                             unsigned long data, void *arg)
 {
     struct in_ifaddr *ifa = (struct in_ifaddr *)arg;
@@ -1047,6 +1057,16 @@ int wlan_hdd_ipv4_changed(struct notifier_block *nb,
     }
     EXIT();
     return NOTIFY_DONE;
+}
+
+int wlan_hdd_ipv4_changed(struct notifier_block *nb,
+                            unsigned long data, void *arg)
+{
+    int ret;
+    vos_ssr_protect(__func__);
+    ret = __wlan_hdd_ipv4_changed( nb, data, arg);
+    vos_ssr_unprotect(__func__);
+    return ret;
 }
 
 /**----------------------------------------------------------------------------

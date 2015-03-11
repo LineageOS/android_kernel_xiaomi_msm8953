@@ -3548,4 +3548,16 @@ tANI_BOOLEAN smeNeighborMiddleOfRoaming(tHalHandle hHal);
   -------------------------------------------------------------------------------*/
 tANI_BOOLEAN sme_IsTdlsOffChannelValid(tHalHandle hHal, tANI_U8 channel);
 
+/* --------------------------------------------------------------------------
+
+    \fn sme_IsCoexScoIndicationSet
+    \brief To check if the BTC module in fwr has sent the SCO
+           indication to host or not
+
+    \param hHal - The handle returned by macOpen.
+    \return TRUE - Sco call in progress FALSE- No SCO call in progress
+
+  --------------------------------------------------------------------------*/
+tANI_BOOLEAN sme_IsCoexScoIndicationSet(tHalHandle hHal);
+
 #endif //#if !defined( __SME_API_H )

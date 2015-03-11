@@ -248,7 +248,7 @@ const char * hdd_device_modetoString(v_U8_t device_mode)
    }
 }
 
-static int hdd_netdev_notifier_call(struct notifier_block * nb,
+static int __hdd_netdev_notifier_call(struct notifier_block * nb,
                                          unsigned long state,
                                          void *ndev)
 {
@@ -347,6 +347,17 @@ static int hdd_netdev_notifier_call(struct notifier_block * nb,
    }
 
    return NOTIFY_DONE;
+}
+
+static int hdd_netdev_notifier_call(struct notifier_block * nb,
+                                         unsigned long state,
+                                         void *ndev)
+{
+    int ret;
+    vos_ssr_protect(__func__);
+    ret = __hdd_netdev_notifier_call( nb, state, ndev);
+    vos_ssr_unprotect(__func__);
+    return ret;
 }
 
 struct notifier_block hdd_netdev_notifier = {
@@ -10428,6 +10439,19 @@ v_BOOL_t hdd_is_apps_power_collapse_allowed(hdd_context_t* pHddCtx)
                  (eANI_BOOLEAN_TRUE == scanRspPending) ||
                  (eANI_BOOLEAN_TRUE == inMiddleOfRoaming))
             {
+                if(pmcState == FULL_POWER &&
+                   sme_IsCoexScoIndicationSet(pHddCtx->hHal))
+                {
+                    /*
+                     * When SCO indication comes from Coex module , host will
+                     * enter in to full power mode, but this should not prevent
+                     * apps processor power collapse.
+                     */
+                    hddLog(LOG1,
+                       FL("Allow apps power collapse"
+                          "even when sco indication is set"));
+                    return TRUE;
+                }
                 hddLog( LOGE, "%s: do not allow APPS power collapse-"
                     "pmcState = %d scanRspPending = %d inMiddleOfRoaming = %d",
                     __func__, pmcState, scanRspPending, inMiddleOfRoaming );
