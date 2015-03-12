@@ -14434,60 +14434,37 @@ eHalStatus csrSendMBStopBssReqMsg( tpAniSirGlobal pMac, tANI_U32 sessionId )
         return eHAL_STATUS_FAILURE;
     }
     
-    do {
-        pMsg = vos_mem_malloc(sizeof(tSirSmeStopBssReq));
-        if ( NULL == pMsg ) return eHAL_STATUS_FAILURE;
-        vos_mem_set(pMsg, sizeof( tSirSmeStopBssReq ), 0);
-        pMsg->messageType = pal_cpu_to_be16((tANI_U16)eWNI_SME_STOP_BSS_REQ);
-        pBuf = &pMsg->sessionId;
-        //sessionId
-        *pBuf = (tANI_U8)sessionId;
-        pBuf++;
-        // transactionId
-        *pBuf = 0;
-        pBuf += sizeof(tANI_U16);
-        //reason code
-        *pBuf  = 0;
-        pBuf += sizeof(tSirResultCodes);
-        // bssid 
-        // if BSSType is WDS sta, use selfmacAddr as bssid, else use bssid in connectedProfile
-        if( CSR_IS_CONN_WDS_STA(&pSession->connectedProfile) )
-        {
-            vos_mem_copy(pBuf, (tANI_U8 *)&pSession->selfMacAddr,
-                         sizeof(tSirMacAddr));
-        }
-        else
-        {
-            vos_mem_copy(pBuf, (tANI_U8 *)&pSession->connectedProfile.bssid,
-                         sizeof(tSirMacAddr));
-        }
-       pBuf += sizeof(tSirMacAddr);
-       msgLen = sizeof(tANI_U16) + sizeof(tANI_U16) + 1 + sizeof(tANI_U16) + sizeof(tSirResultCodes) + sizeof(tSirMacAddr);
-       pMsg->length =  pal_cpu_to_be16(msgLen);
-       status =  palSendMBMessage( pMac->hHdd, pMsg );
-#if 0            
-        pMsg = vos_mem_malloc(sizeof(tSirSmeStopBssReq));
-        if ( NULL == pMsg ) return eHAL_STATUS_FAILURE;
-        vos_mem_set(pMsg, sizeof( tSirSmeStopBssReq ), 0);
-                pMsg->messageType = pal_cpu_to_be16((tANI_U16)eWNI_SME_STOP_BSS_REQ);
-                pMsg->reasonCode = 0;
-        // bssid
-        // if BSSType is WDS sta, use selfmacAddr as bssid, else use bssid in connectedProfile
-        if( CSR_IS_CONN_WDS_STA(&pSession->connectedProfile) )
-        {
-            pbBssid = (tANI_U8 *)&pSession->selfMacAddr;
-        }
-        else
-        {
-            pbBssid = (tANI_U8 *)&pSession->connectedProfile.bssid;
-        }
-        vos_mem_copy(&pMsg->bssId, pbBssid, sizeof(tSirMacAddr));
-        pMsg->transactionId = 0;
-        pMsg->sessionId = (tANI_U8)sessionId;
-                pMsg->length = pal_cpu_to_be16((tANI_U16)sizeof( tSirSmeStopBssReq ));
-                status = palSendMBMessage( pMac->hHdd, pMsg );
-#endif                
-        } while( 0 );
+    pMsg = vos_mem_malloc(sizeof(tSirSmeStopBssReq));
+    if ( NULL == pMsg ) return eHAL_STATUS_FAILURE;
+    vos_mem_set(pMsg, sizeof( tSirSmeStopBssReq ), 0);
+    pMsg->messageType = pal_cpu_to_be16((tANI_U16)eWNI_SME_STOP_BSS_REQ);
+    pBuf = &pMsg->sessionId;
+    //sessionId
+    *pBuf = (tANI_U8)sessionId;
+    pBuf++;
+    // transactionId
+    *pBuf = 0;
+    pBuf += sizeof(tANI_U16);
+    //reason code
+    *pBuf  = 0;
+    pBuf += sizeof(tSirResultCodes);
+    // bssid
+    // if BSSType is WDS sta, use selfmacAddr as bssid, else use bssid in connectedProfile
+    if( CSR_IS_CONN_WDS_STA(&pSession->connectedProfile) )
+    {
+        vos_mem_copy(pBuf, (tANI_U8 *)&pSession->selfMacAddr,
+                    sizeof(tSirMacAddr));
+    }
+    else
+    {
+        vos_mem_copy(pBuf, (tANI_U8 *)&pSession->connectedProfile.bssid,
+                    sizeof(tSirMacAddr));
+    }
+    pBuf += sizeof(tSirMacAddr);
+    msgLen = sizeof(tANI_U16) + sizeof(tANI_U16) + 1 + sizeof(tANI_U16) + sizeof(tSirResultCodes) + sizeof(tSirMacAddr);
+    pMsg->length =  pal_cpu_to_be16(msgLen);
+    status =  palSendMBMessage( pMac->hHdd, pMsg );
+
     return( status );
 }
 
