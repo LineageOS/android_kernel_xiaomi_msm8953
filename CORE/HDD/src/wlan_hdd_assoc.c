@@ -2595,7 +2595,6 @@ eHalStatus hdd_RoamTdlsStatusUpdateHandler(hdd_adapter_t *pAdapter,
     eHalStatus status = eHAL_STATUS_FAILURE ;
     tANI_U8 staIdx;
 
-#ifdef WLAN_FEATURE_TDLS_DEBUG
     VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
               ("hdd_tdlsStatusUpdate: %s staIdx %d " MAC_ADDRESS_STR),
               roamResult == eCSR_ROAM_RESULT_ADD_TDLS_PEER ?
@@ -2611,7 +2610,6 @@ eHalStatus hdd_RoamTdlsStatusUpdateHandler(hdd_adapter_t *pAdapter,
               roamResult == eCSR_ROAM_RESULT_LINK_ESTABLISH_REQ_RSP ?
               "LINK_ESTABLISH_REQ_RSP" : "UNKNOWN",
               pRoamInfo->staId, MAC_ADDR_ARRAY(pRoamInfo->peerMac));
-#endif
     switch( roamResult )
     {
         case eCSR_ROAM_RESULT_ADD_TDLS_PEER:
