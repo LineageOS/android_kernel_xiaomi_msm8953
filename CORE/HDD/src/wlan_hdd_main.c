@@ -7087,7 +7087,7 @@ VOS_STATUS hdd_stop_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter,
          {
 #ifdef FEATURE_WLAN_TDLS
               mutex_lock(&pHddCtx->tdls_lock);
-              wlan_hdd_tdls_exit(pAdapter);
+              wlan_hdd_tdls_exit(pAdapter, TRUE);
               mutex_unlock(&pHddCtx->tdls_lock);
 #endif
             if (pWextState->roamProfile.BSSType == eCSR_BSS_TYPE_START_IBSS)
@@ -7409,7 +7409,7 @@ VOS_STATUS hdd_reset_all_adapters( hdd_context_t *pHddCtx )
 
 #ifdef FEATURE_WLAN_TDLS
       mutex_lock(&pHddCtx->tdls_lock);
-      wlan_hdd_tdls_exit(pAdapter);
+      wlan_hdd_tdls_exit(pAdapter, TRUE);
       mutex_unlock(&pHddCtx->tdls_lock);
 #endif
       status = hdd_get_next_adapter ( pHddCtx, pAdapterNode, &pNext );

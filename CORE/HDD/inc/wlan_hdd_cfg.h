@@ -2150,20 +2150,20 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
  */
 #define CFG_ASD_PROBE_INTERVAL_NAME                     "gAsdProbeInterval"
 #define CFG_ASD_PROBE_INTERVAL_DEFAULT                  (50)
-#define CFG_ASD_PROBE_INTERVAL_MIN                      (10)
-#define CFG_ASD_PROBE_INTERVAL_MAX                      (100)
+#define CFG_ASD_PROBE_INTERVAL_MIN                      (1)
+#define CFG_ASD_PROBE_INTERVAL_MAX                      (500)
 
 /* RSSI Threshold used to trigger probing activity/selection process*/
 #define CFG_ASD_TRIGGER_THRESHOLD_NAME                  "gAsdTriggerThreshold"
-#define CFG_ASD_TRIGGER_THRESHOLD_DEFAULT               (-75)
-#define CFG_ASD_TRIGGER_THRESHOLD_MIN                   (-120)
-#define CFG_ASD_TRIGGER_THRESHOLD_MAX                   (0)
+#define CFG_ASD_TRIGGER_THRESHOLD_DEFAULT               (-60)
+#define CFG_ASD_TRIGGER_THRESHOLD_MIN                   (-100)
+#define CFG_ASD_TRIGGER_THRESHOLD_MAX                   (-10)
 
 /*RSSI Hysteresis Threshold for RSSI-RTT*/
 #define CFG_ASD_RTT_RSSI_HYST_THRESHOLD_NAME             "gAsdRTTRssiHystThreshold"
-#define CFG_ASD_RTT_RSSI_HYST_THRESHOLD_DEFAULT          (50)
+#define CFG_ASD_RTT_RSSI_HYST_THRESHOLD_DEFAULT          (3)
 #define CFG_ASD_RTT_RSSI_HYST_THRESHOLD_MIN              (0)
-#define CFG_ASD_RTT_RSSI_HYST_THRESHOLD_MAX              (100)
+#define CFG_ASD_RTT_RSSI_HYST_THRESHOLD_MAX              (5)
 
 //Enable debug for remain on channel issues
 #define CFG_DEBUG_P2P_REMAIN_ON_CHANNEL_NAME    "gDebugP2pRemainOnChannel"
