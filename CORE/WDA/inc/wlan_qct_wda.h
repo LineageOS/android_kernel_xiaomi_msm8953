@@ -382,7 +382,7 @@ typedef void (*pWDATxRxCompFunc)( v_PVOID_t pContext, void *pData );
 //callback function for TX complete
 //parameter 1 - global pMac pointer
 //parameter 2 - txComplete status : 1- success, 0 - failure.
-typedef eHalStatus (*pWDAAckFnTxComp)(tpAniSirGlobal, tANI_U32);
+typedef eHalStatus (*pWDAAckFnTxComp)(tpAniSirGlobal, void *pData);
 
 typedef struct
 {

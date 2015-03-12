@@ -4013,12 +4013,12 @@ end:
     return eHAL_STATUS_SUCCESS;
 }
 
-eHalStatus limDisassocTxCompleteCnf(tpAniSirGlobal pMac, tANI_U32 txCompleteSuccess)
+eHalStatus limDisassocTxCompleteCnf(tpAniSirGlobal pMac, void *pData)
 {
     return limSendDisassocCnf(pMac);
 }
 
-eHalStatus limDeauthTxCompleteCnf(tpAniSirGlobal pMac, tANI_U32 txCompleteSuccess)
+eHalStatus limDeauthTxCompleteCnf(tpAniSirGlobal pMac, void *pData)
 {
     return limSendDeauthCnf(pMac);
 }

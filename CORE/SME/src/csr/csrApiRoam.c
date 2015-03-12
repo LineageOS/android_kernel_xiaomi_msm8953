@@ -10271,6 +10271,9 @@ void csrRoamCheckForLinkStatusChange( tpAniSirGlobal pMac, tSirSmeRsp *pSirMsg )
                                            pSession->pCurRoamProfile->csrPersona);
                                     if( CSR_IS_CHANNEL_24GHZ(pSession->connectedProfile.operationChannel)
                                        && IS_HT40_OBSS_SCAN_FEATURE_ENABLE
+                                       && (pSession->connectState ==
+                                           eCSR_ASSOC_STATE_TYPE_INFRA_ASSOCIATED)
+                                       && pSession->pCurRoamProfile
                                        && (VOS_P2P_GO_MODE !=
                                                pSession->pCurRoamProfile->csrPersona
                                            && VOS_STA_SAP_MODE !=
@@ -10288,6 +10291,20 @@ void csrRoamCheckForLinkStatusChange( tpAniSirGlobal pMac, tSirSmeRsp *pSirMsg )
                                          status = palSendMBMessage(pMac->hHdd,
                                                                      pMsg );
                                     }
+                                    else
+                                    {
+                                         smsLog( pMac, LOG1,FL("OBSS SCAN"
+                                                 "Indication not sent to FW"
+                                                 "channel %d OBSS_SCAN: %d"),
+                                                 pSession->connectedProfile.
+                                                 operationChannel,
+                                                 IS_HT40_OBSS_SCAN_FEATURE_ENABLE);
+                                         smsLog( pMac, LOG1,FL("connectState %d"
+                                                 "pCurRoamProfile %p"),
+                                                 pSession->connectState,
+                                                 pSession->pCurRoamProfile);
+                                    }
+
                                     result = eCSR_ROAM_RESULT_AUTHENTICATED;
                                 }
                                 else
