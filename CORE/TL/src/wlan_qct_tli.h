@@ -688,6 +688,7 @@ typedef struct
 
   /* Flag to check EAPOL 4/4 recevied by TL*/
   v_U8_t isEapolM4Transmitted;
+  vos_lock_t ulaLock;
 
   v_U32_t       linkCapacity;
 
