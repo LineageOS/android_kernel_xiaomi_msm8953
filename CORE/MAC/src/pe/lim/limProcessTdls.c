@@ -542,9 +542,18 @@ static tANI_U32 limPrepareTdlsFrameHeader(tpAniSirGlobal pMac, tANI_U8* pFrame,
  * TX Complete for Management frames
  */
  eHalStatus limMgmtTXComplete(tpAniSirGlobal pMac,
-                                   tANI_U32 txCompleteSuccess)
+                                   void *pData)
 {
     tpPESession psessionEntry = NULL ;
+    tANI_U32 txCompleteSuccess = 0;
+
+    if (!pData)
+    {
+        limLog(pMac, LOGE, FL("pData is NULL"));
+        return eHAL_STATUS_SUCCESS;
+    }
+
+    txCompleteSuccess = *((tANI_U32*) pData);
 
     if (0xff != pMac->lim.mgmtFrameSessionId)
     {
