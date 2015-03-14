@@ -566,4 +566,6 @@ void limUpdateMaxRateFlag(tpAniSirGlobal pMac,
 
 extern tANI_U32 limGetMaxRateFlags(tpDphHashNode pStaDs,
                                    tpPESession psessionEntry);
+
+void limDecrementPendingMgmtCount (tpAniSirGlobal pMac);
 #endif /* __LIM_UTILS_H */

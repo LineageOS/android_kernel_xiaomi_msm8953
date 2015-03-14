@@ -1076,6 +1076,7 @@ void __hdd_tx_timeout(struct net_device *dev)
    struct netdev_queue *txq;
    hdd_remain_on_chan_ctx_t *pRemainChanCtx;
    int i = 0;
+   int status = 0;
    v_ULONG_t diff_in_jiffies = 0;
 
    VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
@@ -1091,12 +1092,10 @@ void __hdd_tx_timeout(struct net_device *dev)
    }
 
    pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
-   if (NULL == pHddCtx)
+   status = wlan_hdd_validate_context(pHddCtx);
+   if (status !=0 )
    {
-      VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
-              FL("HDD context is NULL"));
-      VOS_ASSERT(0);
-      return;
+       return;
    }
 
    ++pAdapter->hdd_stats.hddTxRxStats.txTimeoutCount;
