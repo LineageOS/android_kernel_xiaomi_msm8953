@@ -8507,6 +8507,13 @@ void WDA_EnterBmpsRespCallback(WDI_EnterBmpsRspParamsType *pwdiEnterBmpsRsp, voi
    {
        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
                "%s:pWDA is NULL", __func__);
+
+       if(pWdaParams->wdaWdiApiMsgParam)
+       {
+          vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
+       }
+       vos_mem_free(pWdaParams);
+
        VOS_ASSERT(0);
        return ;
    }
@@ -8671,6 +8678,13 @@ void WDA_ExitBmpsRespCallback(WDI_ExitBmpsRspParamsType *pwdiExitBmpsRsp, void* 
    {
        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
                "%s:pWDA is NULL", __func__);
+
+       if(pWdaParams->wdaWdiApiMsgParam)
+       {
+          vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
+       }
+       vos_mem_free(pWdaParams);
+
        VOS_ASSERT(0);
        return ;
    }
@@ -8808,6 +8822,13 @@ void WDA_EnterUapsdRespCallback(  WDI_EnterUapsdRspParamsType *pwdiEnterUapsdRsp
    {
        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
                "%s:pWDA is NULL", __func__);
+
+       if(pWdaParams->wdaWdiApiMsgParam)
+       {
+          vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
+       }
+       vos_mem_free(pWdaParams);
+
        VOS_ASSERT(0);
        return ;
    }
@@ -10932,6 +10953,13 @@ void WDA_WowlEnterRespCallback(WDI_WowlEnterRspParamsType *pwdiWowlEnterRspParam
    {
        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
                "%s:pWDA is NULL", __func__);
+
+       if(pWdaParams->wdaWdiApiMsgParam)
+       {
+          vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
+       }
+       vos_mem_free(pWdaParams);
+
        VOS_ASSERT(0);
        return ;
    }
@@ -11108,6 +11136,13 @@ void WDA_WowlExitRespCallback( WDI_WowlExitRspParamsType *pwdiWowlExitRsp, void*
    {
        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
                "%s:pWDA is NULL", __func__);
+
+       if(pWdaParams->wdaWdiApiMsgParam)
+       {
+          vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
+       }
+       vos_mem_free(pWdaParams);
+
        VOS_ASSERT(0);
        return ;
    }
@@ -11279,6 +11314,13 @@ void WDA_NvDownloadReqCallback(WDI_NvDownloadRspInfoType *pNvDownloadRspParams,
    {
       VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
                            "%s:pWDA is NULL", __func__);
+
+       if(pWdaParams->wdaWdiApiMsgParam)
+       {
+          vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
+       }
+       vos_mem_free(pWdaParams);
+
       VOS_ASSERT(0);
       return ;
    }
