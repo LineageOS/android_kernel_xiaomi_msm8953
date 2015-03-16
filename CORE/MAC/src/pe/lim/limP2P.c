@@ -1255,7 +1255,7 @@ void limSendP2PActionFrame(tpAniSirGlobal pMac, tpSirMsgQ pMsg)
         halstatus = halTxFrameWithTxComplete( pMac, pPacket, (tANI_U16)nBytes,
                         HAL_TXRX_FRM_802_11_MGMT, ANI_TXDIR_TODS,
                         7,/*SMAC_SWBD_TX_TID_MGMT_HIGH */ limTxComplete, pFrame,
-                        limP2PActionCnf, txFlag );
+                        limP2PActionCnf, txFlag, pMac->lim.txBdToken++ );
 
         if ( ! HAL_STATUS_SUCCESS ( halstatus ) )
         {

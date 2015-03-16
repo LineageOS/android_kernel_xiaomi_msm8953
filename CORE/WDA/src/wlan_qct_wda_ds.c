@@ -421,7 +421,8 @@ WDA_DS_BuildTxPacketInfo
   v_U32_t          txFlag,
   v_U32_t         timeStamp,
   v_U8_t          ucIsEapol,
-  v_U8_t          ucUP
+  v_U8_t          ucUP,
+  v_U32_t         ucTxBdToken
 )
 {
   VOS_STATUS             vosStatus;
@@ -466,7 +467,7 @@ WDA_DS_BuildTxPacketInfo
   pTxMetaInfo->fdisableFrmXlt = ucDisableFrmXtl;
   pTxMetaInfo->frmType     = ( ( typeSubtype & 0x30 ) >> 4 );
   pTxMetaInfo->typeSubtype = typeSubtype;
-
+  pTxMetaInfo->txBdToken = ucTxBdToken;
   /* Length = MAC header + payload */
   vos_pkt_get_packet_length( vosDataBuff, pusPktLen);
   pTxMetaInfo->fPktlen = *pusPktLen;
