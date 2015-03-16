@@ -7339,7 +7339,6 @@ static int __wlan_hdd_cfg80211_stop_ap (struct wiphy *wiphy,
     hdd_adapter_t *pAdapter =  WLAN_HDD_GET_PRIV_PTR(dev);
     hdd_context_t  *pHddCtx    = NULL;
     hdd_scaninfo_t *pScanInfo  = NULL;
-    hdd_adapter_t  *staAdapter = NULL;
     VOS_STATUS status;
     long ret;
 
@@ -7360,18 +7359,6 @@ static int __wlan_hdd_cfg80211_stop_ap (struct wiphy *wiphy,
     if (0 != status)
     {
         return status;
-    }
-
-    staAdapter = hdd_get_adapter(pAdapter->pHddCtx, WLAN_HDD_INFRA_STATION);
-    if (NULL == staAdapter)
-    {
-        staAdapter = hdd_get_adapter(pAdapter->pHddCtx, WLAN_HDD_P2P_CLIENT);
-        if (NULL == staAdapter)
-        {
-            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
-                      "%s: HDD adapter context for STA/P2P-CLI is Null",
-                      __func__);
-        }
     }
 
     pScanInfo =  &pHddCtx->scan_info;
