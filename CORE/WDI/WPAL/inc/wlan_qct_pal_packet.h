@@ -76,7 +76,7 @@
 #define VPKT_SIZE_BUFFER  ((30 * 128) + 32)
 
 /* Transport channel count to report DIAG */
-#define WPT_NUM_TRPT_CHANNEL      4
+#define WPT_NUM_TRPT_CHANNEL      5
 /* Transport channel name string size */
 #define WPT_TRPT_CHANNEL_NAME     4
 

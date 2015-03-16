@@ -73,6 +73,14 @@ when           who        what, where, why
  * -------------------------------------------------------------------------*/
 #define WLANDXE_CTXT_COOKIE              0xC00CC111
 
+#define foreach_valid_channel(idx)                \
+    for (idx = 0; idx < WDTS_CHANNEL_MAX; idx++)  \
+        if (!(dxeGetEnabledChannels() & 1<<idx))  \
+            continue;                             \
+        else
+
+#define WLANDXE_IS_VALID_CHANNEL(idx) \
+    (dxeGetEnabledChannels() & 1<<idx)
 
 /* From here WCNSS DXE register information
  * This is temporary definition location to make compile and unit test
@@ -734,4 +742,13 @@ extern wpt_status dxeChannelDefaultConfig
    WLANDXE_ChannelCBType   *channelEntry
 );
 
+void dxeSetEnabledChannels
+(
+   wpt_uint8 enabledChannels
+);
+
+wpt_uint8 dxeGetEnabledChannels
+(
+   void
+);
 #endif /* WLAN_QCT_DXE_I_H */

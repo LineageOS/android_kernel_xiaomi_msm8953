@@ -108,6 +108,7 @@ static char                   *channelType[WDTS_CHANNEL_MAX] =
       "TX_HIGH_PRI",
       "RX_LOW_PRI",
       "RX_HIGH_PRI",
+      "RX_FW_LOGS",
    };
 static  wpt_packet               *rx_reaped_buf[WLANDXE_MAX_REAPED_RX_FRAMES];
 
@@ -169,7 +170,7 @@ static wpt_status dxeChannelMonitor
       return eWLAN_PAL_STATUS_E_INVAL;
    }
 
-   if(channelEntry->channelType > WDTS_CHANNEL_RX_HIGH_PRI)
+   if(channelEntry->channelType >= WDTS_CHANNEL_MAX)
    {
       HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_FATAL,
                "INVALID Channel type");
@@ -343,7 +344,7 @@ wpt_status dxeChannelRegisterDump
    dxeNotifySmsm(eWLAN_PAL_TRUE, eWLAN_PAL_FALSE);
    wpalSleep(10);
 
-   if(channelEntry->channelType > WDTS_CHANNEL_RX_HIGH_PRI)
+   if(channelEntry->channelType >= WDTS_CHANNEL_MAX)
    {
       HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_FATAL,
                "INVALID Channel type");
@@ -408,7 +409,8 @@ void dxeChannelAllDescDump
    previousCtrlValue = targetCtrlBlk->linkedDesc->descCtrl.ctrl;
 
    if((WDTS_CHANNEL_RX_LOW_PRI == channel) ||
-      (WDTS_CHANNEL_RX_HIGH_PRI == channel))
+      (WDTS_CHANNEL_RX_HIGH_PRI == channel)||
+      (WDTS_CHANNEL_RX_LOG == channel))
    {
       for(channelLoop = 0; channelLoop < channelEntry->numDesc; channelLoop++)
       {
@@ -653,6 +655,9 @@ void dxeRxThreadChannelDebugHandler
     * Just incase TX not wanted stuck, Trigger TX again */
    for(channelLoop = WDTS_CHANNEL_RX_LOW_PRI; channelLoop < WDTS_CHANNEL_MAX; channelLoop++)
    {
+      if (!WLANDXE_IS_VALID_CHANNEL(channelLoop))
+         continue;
+
       dxeChannelMonitor("******** Get Descriptor Snapshot ",
                         &tempDxeCtrlBlk->dxeChannel[channelLoop],
                         &channelLog);
@@ -739,6 +744,9 @@ void dxeRXHealthMonitor
 
    for(chLoop = WDTS_CHANNEL_RX_LOW_PRI; chLoop < WDTS_CHANNEL_MAX; chLoop++)
    {
+      if (!WLANDXE_IS_VALID_CHANNEL(chLoop))
+            continue;
+
       testCHCtrlBlk = &tempDxeCtrlBlk->dxeChannel[chLoop];
       wpalReadRegister(testCHCtrlBlk->channelRegister.chDXECtrlRegAddr, &chControlReg);
       wpalReadRegister(testCHCtrlBlk->channelRegister.chDXEStatusRegAddr, &chStatusReg);
@@ -1206,7 +1214,8 @@ static wpt_status dxeDescAllocAndLink
        * Pre allocated and physical address must be assigned into
        * Corresponding DXE Descriptor */
       if((WDTS_CHANNEL_RX_LOW_PRI  == channelEntry->channelType) ||
-         (WDTS_CHANNEL_RX_HIGH_PRI == channelEntry->channelType))
+         (WDTS_CHANNEL_RX_HIGH_PRI == channelEntry->channelType) ||
+         (WDTS_CHANNEL_RX_LOG == channelEntry->channelType))
       {
          status = dxeRXFrameSingleBufferAlloc(dxeCtrlBlk,
                                               channelEntry,
@@ -1228,7 +1237,8 @@ static wpt_status dxeDescAllocAndLink
          currentDesc->dxedesc.dxe_short_desc.dstMemAddrL = channelEntry->extraConfig.refWQ_swapped;
       }
       else if((WDTS_CHANNEL_RX_LOW_PRI == channelEntry->channelType) ||
-              (WDTS_CHANNEL_RX_HIGH_PRI == channelEntry->channelType))
+              (WDTS_CHANNEL_RX_HIGH_PRI == channelEntry->channelType)||
+              (WDTS_CHANNEL_RX_LOG == channelEntry->channelType))
       {
          currentDesc->descCtrl.ctrl = channelEntry->extraConfig.cw_ctrl_read;
          currentDesc->dxedesc.dxe_short_desc.srcMemAddrL = channelEntry->extraConfig.refWQ_swapped;
@@ -1276,7 +1286,7 @@ static wpt_status dxeSetInterruptPath
    HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO_LOW,
             "%s Enter", __func__);
 
-   for(idx = 0; idx < WDTS_CHANNEL_MAX; idx++)
+   foreach_valid_channel(idx)
    {
       channelEntry = &dxeCtrlBlk->dxeChannel[idx];
       if((WDTS_CHANNEL_TX_LOW_PRI == channelEntry->channelType) ||
@@ -1285,7 +1295,8 @@ static wpt_status dxeSetInterruptPath
          interruptPath |= (1 << channelEntry->assignedDMAChannel);
       }
       else if((WDTS_CHANNEL_RX_LOW_PRI == channelEntry->channelType) ||
-              (WDTS_CHANNEL_RX_HIGH_PRI == channelEntry->channelType))
+              (WDTS_CHANNEL_RX_HIGH_PRI == channelEntry->channelType)||
+              (WDTS_CHANNEL_RX_LOG == channelEntry->channelType))
       {
          interruptPath |= (1 << (channelEntry->assignedDMAChannel + 16));
       }
@@ -1468,7 +1479,8 @@ static wpt_status dxeChannelInitProgram
       }
    }
    else if((WDTS_CHANNEL_RX_LOW_PRI  == channelEntry->channelType) ||
-           (WDTS_CHANNEL_RX_HIGH_PRI == channelEntry->channelType))
+           (WDTS_CHANNEL_RX_HIGH_PRI == channelEntry->channelType) ||
+           (WDTS_CHANNEL_RX_LOG == channelEntry->channelType))
    {
       /* Initialize Descriptor control Word First */
       currentCtrlBlk = channelEntry->headCtrlBlk;
@@ -1728,7 +1740,8 @@ static wpt_status dxeChannelClose
               nextDescriptor = NULL;
           }
           if((WDTS_CHANNEL_RX_LOW_PRI  == channelEntry->channelType) ||
-             (WDTS_CHANNEL_RX_HIGH_PRI == channelEntry->channelType))
+             (WDTS_CHANNEL_RX_HIGH_PRI == channelEntry->channelType) ||
+             (WDTS_CHANNEL_RX_LOG == channelEntry->channelType))
           {
             if (NULL != currentCtrlBlk->xfrFrame)
             {
@@ -2699,6 +2712,7 @@ void dxeRXEventHandler
    WLANDXE_ChannelCBType    *channelCb  = NULL;
    wpt_uint32                chHighStat = 0;
    wpt_uint32                chLowStat  = 0;
+   wpt_uint32                chLogRxStat  = 0;
    wpt_uint32                regValue, chanMask;
 
    dxeCtxt = (WLANDXE_CtrlBlkType *)(msgContent->pContext);
@@ -2713,11 +2727,15 @@ void dxeRXEventHandler
    /* Now try to refill the ring with empty Rx buffers to keep DXE busy */
    dxeRXFrameRefillRing(dxeCtxt, &dxeCtxt->dxeChannel[WDTS_CHANNEL_RX_LOW_PRI]);
    dxeRXFrameRefillRing(dxeCtxt, &dxeCtxt->dxeChannel[WDTS_CHANNEL_RX_HIGH_PRI]);
+   if (WLANDXE_IS_VALID_CHANNEL(WDTS_CHANNEL_RX_LOG))
+      dxeRXFrameRefillRing(dxeCtxt, &dxeCtxt->dxeChannel[WDTS_CHANNEL_RX_LOG]);
 
    dxeCtxt = (WLANDXE_CtrlBlkType *)(msgContent->pContext);
       
    if((!dxeCtxt->dxeChannel[WDTS_CHANNEL_RX_HIGH_PRI].extraConfig.chEnabled) ||
-      (!dxeCtxt->dxeChannel[WDTS_CHANNEL_RX_LOW_PRI].extraConfig.chEnabled))
+      (!dxeCtxt->dxeChannel[WDTS_CHANNEL_RX_LOW_PRI].extraConfig.chEnabled) ||
+      (WLANDXE_IS_VALID_CHANNEL(WDTS_CHANNEL_RX_LOG) &&
+       !dxeCtxt->dxeChannel[WDTS_CHANNEL_RX_LOG].extraConfig.chEnabled))
    {
       HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
          "DXE already stopped in RX event handler. Just return");
@@ -2758,11 +2776,24 @@ void dxeRXEventHandler
       if(eWLAN_PAL_STATUS_SUCCESS != status)
       {
          HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
-                  "dxeRXEventHandler Pull from RX low channel fail");        
+                  "dxeRXEventHandler Pull from RX low channel fail");
       }
       /* LOW Priority CH same above */
       channelCb->numFragmentCurrentChain = 1;
 
+      if (WLANDXE_IS_VALID_CHANNEL(WDTS_CHANNEL_RX_LOG))
+      {
+         channelCb = &dxeCtxt->dxeChannel[WDTS_CHANNEL_RX_LOG];
+         status = dxeRXFrameReady(dxeCtxt,
+                                  channelCb,
+                                  chLogRxStat);
+         if(eWLAN_PAL_STATUS_SUCCESS != status)
+         {
+            HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                     "dxeRXEventHandler Pull from RX log channel fail");
+         }
+         channelCb->numFragmentCurrentChain = 1;
+      }
       /* Interrupt will not enabled at here, it will be enabled at PS mode change */
       tempDxeCtrlBlk->rxIntDisabledByIMPS = eWLAN_PAL_TRUE;
 
@@ -2881,6 +2912,58 @@ void dxeRXEventHandler
       HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO,
                "RX LOW CH EVNT STAT 0x%x, %d frames handled", chLowStat, channelCb->numFragmentCurrentChain);
    }
+
+   if (WLANDXE_IS_VALID_CHANNEL(WDTS_CHANNEL_RX_LOG))
+   {
+      channelCb = &dxeCtxt->dxeChannel[WDTS_CHANNEL_RX_LOG];
+
+      if(intSrc & (1 << channelCb->assignedDMAChannel))
+      {
+         status = dxeChannelCleanInt(channelCb,&chLogRxStat);
+         if(eWLAN_PAL_STATUS_SUCCESS != status)
+         {
+            HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                     "dxeRXEventHandler INT Clean up fail");
+            return;
+         }
+
+         if(WLANDXE_CH_STAT_INT_ERR_MASK & chLogRxStat)
+         {
+            /* Error Happen during transaction, Handle it */
+            HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_FATAL,
+                     "%11s : 0x%x Error Reported, Reload Driver",
+                     channelType[channelCb->channelType], chLogRxStat);
+
+            dxeErrChannelDebug(channelCb, chLogRxStat);
+
+            dxeCtxt->driverReloadInProcessing = eWLAN_PAL_TRUE;
+            wpalWlanReload();
+            dxeStartSSRTimer(dxeCtxt);
+         }
+         else if((WLANDXE_CH_STAT_INT_ED_MASK & chLogRxStat) ||
+                  (WLANDXE_CH_STAT_INT_DONE_MASK & chLogRxStat))
+         {
+            /* Handle RX Ready for low priority channel */
+            status = dxeRXFrameReady(dxeCtxt,
+                                     channelCb,
+                                     chLogRxStat);
+          }
+
+         /* Update the Rx DONE histogram */
+         channelCb->rxDoneHistogram = (channelCb->rxDoneHistogram << 1);
+         if(WLANDXE_CH_STAT_INT_DONE_MASK & chLogRxStat)
+         {
+            channelCb->rxDoneHistogram |= 1;
+         }
+         else
+         {
+            channelCb->rxDoneHistogram &= ~1;
+         }
+         HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO,
+                  "RX LOG CH EVNT STAT 0x%x, %d frames handled", chLogRxStat, channelCb->numFragmentCurrentChain);
+      }
+   }
+
    if(eWLAN_PAL_STATUS_SUCCESS != status)
    {
       HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
@@ -2930,6 +3013,28 @@ void dxeRXEventHandler
    wpalWriteRegister(dxeCtxt->dxeChannel[WDTS_CHANNEL_RX_LOW_PRI].channelRegister.chDXECtrlRegAddr,
                      chanMask);
 
+   if (WLANDXE_IS_VALID_CHANNEL(WDTS_CHANNEL_RX_LOG))
+   {
+      if(!(dxeCtxt->dxeChannel[WDTS_CHANNEL_RX_LOG].extraConfig.chan_mask & WLANDXE_CH_CTRL_EN_MASK))
+      {
+         HDXE_ASSERT(0);
+      }
+
+      if (dxeCtxt->rxPalPacketUnavailable &&
+          (WLANDXE_CH_STAT_INT_DONE_MASK & chLogRxStat))
+      {
+        chanMask = dxeCtxt->dxeChannel[WDTS_CHANNEL_RX_LOG].extraConfig.chan_mask &
+                   (~WLANDXE_CH_CTRL_INE_DONE_MASK);
+        dxeCtxt->dxeChannel[WDTS_CHANNEL_RX_LOG].doneIntDisabled = 1;
+      }
+      else
+      {
+        chanMask = dxeCtxt->dxeChannel[WDTS_CHANNEL_RX_LOG].extraConfig.chan_mask;
+        dxeCtxt->dxeChannel[WDTS_CHANNEL_RX_LOG].doneIntDisabled = 0;
+      }
+      wpalWriteRegister(dxeCtxt->dxeChannel[WDTS_CHANNEL_RX_LOG].channelRegister.chDXECtrlRegAddr,
+                        chanMask);
+   }
 
    /* Clear Interrupt handle processing bit
     * RIVA may power down */
@@ -3023,6 +3128,16 @@ void dxeRXPacketAvailableEventHandler
       if(eWLAN_PAL_STATUS_SUCCESS != status)
       {
          break;
+      }
+
+      if (WLANDXE_IS_VALID_CHANNEL(WDTS_CHANNEL_RX_LOG))
+      {
+         channelCb = &dxeCtxt->dxeChannel[WDTS_CHANNEL_RX_LOG];
+         status = dxeRXFrameRefillRing(dxeCtxt,channelCb);
+         if(eWLAN_PAL_STATUS_SUCCESS != status)
+         {
+            break;
+         }
       }
    } while(0);
 
@@ -4215,6 +4330,16 @@ void *WLANDXE_Open
    HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO_LOW,
             "%s Enter", __func__);
 
+   if (wpalIsFwLoggingEnabled())
+   {
+       dxeSetEnabledChannels(WDTS_TRANSPORT_CHANNELS_MASK |
+                             WDTS_RX_LOG_CHANNEL_MASK);
+   }
+   else
+   {
+       dxeSetEnabledChannels(WDTS_TRANSPORT_CHANNELS_MASK);
+   }
+
    /* This is temporary allocation */
    tempDxeCtrlBlk = (WLANDXE_CtrlBlkType *)wpalMemoryAllocate(sizeof(WLANDXE_CtrlBlkType));
    if(NULL == tempDxeCtrlBlk)
@@ -4234,7 +4359,7 @@ void *WLANDXE_Open
       return NULL;         
    }
 
-   for(idx = 0; idx < WDTS_CHANNEL_MAX; idx++)
+   foreach_valid_channel(idx)
    {
       HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_WARN,
                "WLANDXE_Open Channel %s Open Start", channelType[idx]);
@@ -4254,6 +4379,10 @@ void *WLANDXE_Open
       else if(idx == WDTS_CHANNEL_RX_HIGH_PRI)
       {
          currentChannel->channelType = WDTS_CHANNEL_RX_HIGH_PRI;
+      }
+      else if(idx == WDTS_CHANNEL_RX_LOG)
+      {
+         currentChannel->channelType = WDTS_CHANNEL_RX_LOG;
       }
 
       /* Config individual channels from channel default setup table */
@@ -4369,7 +4498,7 @@ void *WLANDXE_Open
    {
       HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
                "SMSM Channel init fail %d", smsmInitState);
-      for(idx = 0; idx < WDTS_CHANNEL_MAX; idx++)
+      foreach_valid_channel(idx)
       {
          dxeChannelClose(tempDxeCtrlBlk, &tempDxeCtrlBlk->dxeChannel[idx]);
       }
@@ -4523,7 +4652,7 @@ wpt_status WLANDXE_Start
    }
 
    /* Individual Channel Start */
-   for(idx = 0; idx < WDTS_CHANNEL_MAX; idx++)
+   foreach_valid_channel(idx)
    {
       HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_WARN,
                "WLANDXE_Start Channel %s Start", channelType[idx]);
@@ -4645,7 +4774,7 @@ wpt_status WLANDXE_TxFrame
       return eWLAN_PAL_STATUS_E_INVAL;   
    }
 
-   if((WDTS_CHANNEL_MAX < channel) || (WDTS_CHANNEL_MAX == channel))
+   if(WDTS_CHANNEL_MAX <= channel)
    {
       HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
                "WLANDXE_Start Invalid channel");
@@ -4881,7 +5010,7 @@ wpt_status WLANDXE_Stop
    }
 
    dxeCtxt = (WLANDXE_CtrlBlkType *)pDXEContext;
-   for(idx = 0; idx < WDTS_CHANNEL_MAX; idx++)
+   foreach_valid_channel(idx)
    {
       if(VOS_TIMER_STATE_RUNNING == wpalTimerGetCurStatus(&dxeCtxt->dxeChannel[idx].healthMonitorTimer))
       {
@@ -4955,7 +5084,7 @@ wpt_status WLANDXE_Close
    wpalTimerDelete(&dxeCtxt->rxResourceAvailableTimer);
 #endif
    wpalTimerDelete(&dxeCtxt->dxeSSRTimer);
-   for(idx = 0; idx < WDTS_CHANNEL_MAX; idx++)
+   foreach_valid_channel(idx)
    {
       wpalMutexDelete(&dxeCtxt->dxeChannel[idx].dxeChannelLock);
       wpalTimerDelete(&dxeCtxt->dxeChannel[idx].healthMonitorTimer);
@@ -5384,8 +5513,7 @@ wpt_uint32 WLANDXE_GetFreeTxDataResNumber
       return (0);
    }
 
-   return 
-      ((WLANDXE_CtrlBlkType *)pDXEContext)->dxeChannel[WDTS_CHANNEL_TX_LOW_PRI].numFreeDesc;
+   return ((WLANDXE_CtrlBlkType *)pDXEContext)->dxeChannel[WDTS_CHANNEL_TX_LOW_PRI].numFreeDesc;
 }
 
 /*==========================================================================
