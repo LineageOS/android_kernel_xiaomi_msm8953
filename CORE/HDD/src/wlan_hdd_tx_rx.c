@@ -1531,10 +1531,10 @@ VOS_STATUS hdd_tx_complete_cbk( v_VOID_t *vosContext,
    pHddCtx = (hdd_context_t *)vos_get_context( VOS_MODULE_ID_HDD, vosContext );
    //Get the Adapter context.
    pAdapter = hdd_get_adapter(pHddCtx,WLAN_HDD_INFRA_STATION);
-   if (pAdapter == NULL)
+   if (pAdapter == NULL || WLAN_HDD_ADAPTER_MAGIC != pAdapter->magic)
    {
-      VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_INFO,
-                              "%s: HDD adapter context is Null", __func__);
+      VOS_TRACE(VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_INFO,
+                    "%s: Invalid adapter %p", __func__, pAdapter);
    }
    else
    {
@@ -1614,7 +1614,7 @@ VOS_STATUS hdd_tx_fetch_packet_cbk( v_VOID_t *vosContext,
    if ((NULL == pAdapter) || (WLAN_HDD_ADAPTER_MAGIC != pAdapter->magic))
    {
       VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
-              FL("pAdapter is NULL %u"), *pStaId);
+              FL("invalid adapter:%p for staId:%u"), pAdapter, *pStaId);
       VOS_ASSERT(0);
       return VOS_STATUS_E_FAILURE;
    }
@@ -2003,10 +2003,10 @@ VOS_STATUS hdd_tx_low_resource_cbk( vos_pkt_t *pVosPacket,
    v_SIZE_t size = 0;
    hdd_adapter_t* pAdapter = (hdd_adapter_t *)userData;
    
-   if (NULL == pAdapter)
+   if (NULL == pAdapter || WLAN_HDD_ADAPTER_MAGIC != pAdapter->magic)
    {
-      VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
-                            "%s: pAdapter is Null", __func__);
+      VOS_TRACE(VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
+                 FL("Invalid adapter %p"), pAdapter);
       return VOS_STATUS_E_FAILURE;
    }
 
@@ -2086,11 +2086,10 @@ VOS_STATUS hdd_rx_packet_cbk( v_VOID_t *vosContext,
    }
 
    pAdapter = pHddCtx->sta_to_adapter[staId];
-   if( (NULL == pAdapter)  || (WLAN_HDD_ADAPTER_MAGIC != pAdapter->magic) )
+   if ((NULL == pAdapter)  || (WLAN_HDD_ADAPTER_MAGIC != pAdapter->magic) )
    {
-      VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
-              "%s: pAdapter is Null or adapter has invalid magic for staId %u",
-                 __func__, staId);
+      VOS_TRACE(VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
+                 FL("Invalid adapter %p for staId %u"), pAdapter, staId);
       return VOS_STATUS_E_FAILURE;
    }
 
