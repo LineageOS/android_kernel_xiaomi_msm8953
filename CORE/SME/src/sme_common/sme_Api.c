@@ -3963,6 +3963,7 @@ eHalStatus sme_GetConfigParam(tHalHandle hHal, tSmeConfigParams *pParam)
          return status;
       }
 #endif
+      pParam->fBtcEnableIndTimerVal = pMac->fBtcEnableIndTimerVal;
       sme_ReleaseGlobalLock( &pMac->sme );
    }
 
