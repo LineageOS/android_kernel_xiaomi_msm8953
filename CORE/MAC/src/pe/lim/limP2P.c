@@ -671,6 +671,8 @@ void limRemainOnChnRsp(tpAniSirGlobal pMac, eHalStatus status, tANI_U32 *data)
     tSirRemainOnChnReq *MsgRemainonChannel = pMac->lim.gpLimRemainOnChanReq;
     tSirMacAddr             nullBssid = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     tANI_U32 txStatus = 0;
+    tSirTxBdStatus txBdStatus = {0};
+
     if ( NULL == MsgRemainonChannel )
     {
         PELOGE(limLog( pMac, LOGP,
@@ -722,9 +724,13 @@ void limRemainOnChnRsp(tpAniSirGlobal pMac, eHalStatus status, tANI_U32 *data)
      * indicaiton confirmation with status failure */
     if (pMac->lim.mgmtFrameSessionId != 0xff)
     {
-       limLog(pMac, LOGE,
-              FL("Remain on channel expired, Action frame status failure"));
-       limP2PActionCnf(pMac, &txStatus);
+        limLog(pMac, LOGE,
+                FL("Remain on channel expired, Action frame status failure"));
+
+        if (IS_FEATURE_SUPPORTED_BY_FW(ENHANCED_TXBD_COMPLETION))
+            limP2PActionCnf(pMac, &txBdStatus);
+        else
+            limP2PActionCnf(pMac, &txStatus);
     }
 
     return;
@@ -839,6 +845,7 @@ void limSendSmeMgmtFrameInd(
 eHalStatus limP2PActionCnf(tpAniSirGlobal pMac, void *pData)
 {
     tANI_U32 txCompleteSuccess;
+    tpSirTxBdStatus pTxBdStatus;
 
     if (!pData)
     {
@@ -847,11 +854,25 @@ eHalStatus limP2PActionCnf(tpAniSirGlobal pMac, void *pData)
         return eHAL_STATUS_FAILURE;
     }
 
-    txCompleteSuccess = *((tANI_U32*) pData);
+    if (IS_FEATURE_SUPPORTED_BY_FW(ENHANCED_TXBD_COMPLETION))
+    {
+        pTxBdStatus = (tpSirTxBdStatus) pData;
+        txCompleteSuccess = pTxBdStatus->txCompleteStatus;
 
-    limLog(pMac, LOG1,
-              FL(" %s txCompleteSuccess %d, Session Id %d"),
-              __func__, txCompleteSuccess, pMac->lim.mgmtFrameSessionId);
+        limLog(pMac, LOG1,
+                FL("txCompleteSuccess %d, Token %u, Session Id %d"),
+                txCompleteSuccess, pTxBdStatus->txBdToken,
+                pMac->lim.mgmtFrameSessionId);
+    }
+    else
+    {
+        txCompleteSuccess = *((tANI_U32*) pData);
+
+        limLog(pMac, LOG1,
+                FL(" %s txCompleteSuccess %d, Session Id %d"),
+                __func__, txCompleteSuccess, pMac->lim.mgmtFrameSessionId);
+    }
+
     if (pMac->lim.mgmtFrameSessionId != 0xff)
     {
         /* The session entry might be invalid(0xff) action confirmation received after

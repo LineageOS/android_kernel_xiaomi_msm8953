@@ -202,6 +202,7 @@ static placeHolderInCapBitmap supportEnabledFeatures[] =
 #endif
    ,FEATURE_NOT_SUPPORTED          //52
    ,MGMT_FRAME_LOGGING             //53
+   ,ENHANCED_TXBD_COMPLETION       //54
 };
 
 /*-------------------------------------------------------------------------- 

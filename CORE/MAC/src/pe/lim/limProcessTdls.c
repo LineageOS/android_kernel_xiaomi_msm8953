@@ -546,6 +546,7 @@ static tANI_U32 limPrepareTdlsFrameHeader(tpAniSirGlobal pMac, tANI_U8* pFrame,
 {
     tpPESession psessionEntry = NULL ;
     tANI_U32 txCompleteSuccess = 0;
+    tpSirTxBdStatus pTxBdStatus = NULL;
 
     if (!pData)
     {
@@ -553,7 +554,18 @@ static tANI_U32 limPrepareTdlsFrameHeader(tpAniSirGlobal pMac, tANI_U8* pFrame,
         return eHAL_STATUS_SUCCESS;
     }
 
-    txCompleteSuccess = *((tANI_U32*) pData);
+    if (IS_FEATURE_SUPPORTED_BY_FW(ENHANCED_TXBD_COMPLETION))
+    {
+        pTxBdStatus = (tpSirTxBdStatus) pData;
+        txCompleteSuccess = pTxBdStatus->txCompleteStatus;
+        limLog(pMac, LOG1, FL("txCompleteSuccess %u, token %u"),
+                txCompleteSuccess, pTxBdStatus->txBdToken);
+    }
+    else
+    {
+        txCompleteSuccess = *((tANI_U32*) pData);
+        limLog(pMac, LOG1, FL("txCompleteSuccess %u"), txCompleteSuccess);
+    }
 
     if (0xff != pMac->lim.mgmtFrameSessionId)
     {

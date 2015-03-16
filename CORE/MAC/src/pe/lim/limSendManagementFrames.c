@@ -4077,11 +4077,25 @@ end:
 
 eHalStatus limDisassocTxCompleteCnf(tpAniSirGlobal pMac, void *pData)
 {
+    if (pData && IS_FEATURE_SUPPORTED_BY_FW(ENHANCED_TXBD_COMPLETION))
+    {
+        tpSirTxBdStatus pTxBdStatus;
+        pTxBdStatus = (tpSirTxBdStatus) pData;
+        limLog(pMac, LOG1, FL("txCompleteStatus %u, txBdToken %u"),
+                pTxBdStatus->txCompleteStatus, pTxBdStatus->txBdToken);
+    }
     return limSendDisassocCnf(pMac);
 }
 
 eHalStatus limDeauthTxCompleteCnf(tpAniSirGlobal pMac, void *pData)
 {
+    if (pData && IS_FEATURE_SUPPORTED_BY_FW(ENHANCED_TXBD_COMPLETION))
+    {
+        tpSirTxBdStatus pTxBdStatus;
+        pTxBdStatus = (tpSirTxBdStatus) pData;
+        limLog(pMac, LOG1, FL("txCompleteStatus %u, txBdToken %u"),
+                pTxBdStatus->txCompleteStatus, pTxBdStatus->txBdToken);
+    }
     return limSendDeauthCnf(pMac);
 }
 
