@@ -6712,6 +6712,7 @@ typedef enum {
     WPS_PRBRSP_TMPL        = 48,
     BCN_IE_FLT_DELTA       = 49,
     TDLS_OFF_CHANNEL       = 51,
+    MGMT_FRAME_LOGGING     = 53,
     MAX_FEATURE_SUPPORTED  = 128,
 } placeHolderInCapBitmap;
 
