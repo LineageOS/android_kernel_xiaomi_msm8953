@@ -944,6 +944,23 @@ limProcessMlmReassocCnf(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
         psessionEntry->pLimReAssocReq = NULL;
     }
 
+    /* Upon Reassoc success or failure, freeup the cached
+     * preauth request, to ensure that channel switch is now
+     * allowed following any change in HT params.
+     */
+    if (pMac->ft.ftPEContext.pFTPreAuthReq)
+    {
+        limLog(pMac, LOG1, "%s: Freeing pFTPreAuthReq= %p", __func__,
+               pMac->ft.ftPEContext.pFTPreAuthReq);
+        if (pMac->ft.ftPEContext.pFTPreAuthReq->pbssDescription)
+        {
+            vos_mem_free(pMac->ft.ftPEContext.pFTPreAuthReq->pbssDescription);
+            pMac->ft.ftPEContext.pFTPreAuthReq->pbssDescription = NULL;
+        }
+        vos_mem_free(pMac->ft.ftPEContext.pFTPreAuthReq);
+        pMac->ft.ftPEContext.pFTPreAuthReq = NULL;
+    }
+
     PELOGE(limLog(pMac, LOG1, FL("Rcv MLM_REASSOC_CNF with result code %d"), pLimMlmReassocCnf->resultCode);)
     if (pLimMlmReassocCnf->resultCode == eSIR_SME_SUCCESS) {
         // Successful Reassociation

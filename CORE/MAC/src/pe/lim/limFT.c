@@ -105,11 +105,11 @@ void limFTCleanup(tpAniSirGlobal pMac)
             PELOGE(limLog( pMac, LOGE, "%s: Deleting Preauth Session %d", __func__, ((tpPESession)pMac->ft.ftPEContext.pftSessionEntry)->peSessionId);)
             peDeleteSession(pMac, pMac->ft.ftPEContext.pftSessionEntry);
         }
-        pMac->ft.ftPEContext.pftSessionEntry = NULL;
 #if defined WLAN_FEATURE_VOWIFI_11R_DEBUG
-        PELOGE(limLog( pMac, LOGE, "%s: Setting psavedsessionEntry= %p to NULL",
-            __func__, pMac->ft.ftPEContext.psavedsessionEntry);) 
+        PELOGE(limLog( pMac, LOGE, "%s: Setting pftSessionEntry= %p to NULL",
+            __func__, pMac->ft.ftPEContext.pftSessionEntry);)
 #endif
+        pMac->ft.ftPEContext.pftSessionEntry = NULL;
     }
 
     if (pMac->ft.ftPEContext.pAddBssReq)
@@ -125,8 +125,7 @@ void limFTCleanup(tpAniSirGlobal pMac)
         pMac->ft.ftPEContext.pAddStaReq = NULL;
     }
 
-    pMac->ft.ftPEContext.ftPreAuthStatus = eSIR_SUCCESS; 
-
+    vos_mem_zero(&pMac->ft.ftPEContext, sizeof(tftPEContext));
 }
 
 /*--------------------------------------------------------------------------
@@ -292,13 +291,11 @@ int limProcessFTPreAuthReq(tpAniSirGlobal pMac, tpSirMsgQ pMsg)
         limPrintMacAddr( pMac, pMac->ft.ftPEContext.pFTPreAuthReq->currbssId, LOGE );
         // Post the FT Pre Auth Response to SME
         limPostFTPreAuthRsp(pMac, eSIR_FAILURE, NULL, 0, NULL);
-        if (pMac->ft.ftPEContext.pFTPreAuthReq->pbssDescription)
-        {
-            vos_mem_free(pMac->ft.ftPEContext.pFTPreAuthReq->pbssDescription);
-            pMac->ft.ftPEContext.pFTPreAuthReq->pbssDescription = NULL;
-        }
-        pMac->ft.ftPEContext.pFTPreAuthReq = NULL;
-        return TRUE;
+
+        /* return FALSE, since the Pre-Auth Req will be freed in
+         * limPostFTPreAuthRsp on failure
+         */
+        return bufConsumed;
     }
 #ifdef FEATURE_WLAN_DIAG_SUPPORT_LIM //FEATURE_WLAN_DIAG_SUPPORT
         limDiagEventReport(pMac, WLAN_PE_DIAG_PRE_AUTH_REQ_EVENT, psessionEntry, 0, 0);
@@ -1086,7 +1083,16 @@ void limPostFTPreAuthRsp(tpAniSirGlobal pMac, tSirRetStatus status,
         */
     }
 #endif
-    
+
+    if (status != eSIR_SUCCESS)
+    {
+        /* Ensure that on Pre-Auth failure the cached Pre-Auth Req and
+         * other allocated memory is freed up before returning.
+         */
+        limLog(pMac, LOG1, "Pre-Auth Failed, Cleanup!");
+        limFTCleanup(pMac);
+    }
+
     mmhMsg.type = pFTPreAuthRsp->messageType;
     mmhMsg.bodyptr = pFTPreAuthRsp;
     mmhMsg.bodyval = 0;
@@ -1365,6 +1371,15 @@ void limProcessFTPreauthRspTimeout(tpAniSirGlobal pMac)
     /* To handle the race condition where we recieve preauth rsp after
      * timer has expired.
      */
+
+    if (pMac->ft.ftPEContext.pFTPreAuthReq == NULL)
+    {
+       limLog(pMac, LOGE, FL("Auth Rsp might already be posted to SME"
+              " and ftcleanup done! sessionId:%d"),
+              pMac->lim.limTimers.gLimFTPreAuthRspTimer.sessionId);
+       return;
+    }
+
     if (eANI_BOOLEAN_TRUE ==
         pMac->ft.ftPEContext.pFTPreAuthReq->bPreAuthRspProcessed)
     {
