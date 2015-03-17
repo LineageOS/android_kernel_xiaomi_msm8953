@@ -251,7 +251,6 @@ VOS_STATUS vos_alloc_context( v_VOID_t *pVosContext, VOS_MODULE_ID moduleID,
   --------------------------------------------------------------------------*/
 VOS_STATUS vos_free_context( v_VOID_t *pVosContext, VOS_MODULE_ID moduleID,
                              v_VOID_t *pModuleContext );
-                             
 v_BOOL_t vos_is_apps_power_collapse_allowed(void* pHddCtx);
 void vos_abort_mac_scan(tANI_U8 sessionId);
 
@@ -333,5 +332,6 @@ v_BOOL_t vos_is_wlan_in_badState(VOS_MODULE_ID moduleId,
                                  v_VOID_t *moduleContext);
 v_VOID_t  vos_set_roam_delay_stats_enabled(v_U8_t value);
 v_U8_t    vos_get_roam_delay_stats_enabled(v_VOID_t);
-
+v_U32_t   vos_get_dxeReplenishRXTimerVal(void);
+v_BOOL_t  vos_get_dxeSSREnable(void);
 #endif // if !defined __VOS_NVITEM_H

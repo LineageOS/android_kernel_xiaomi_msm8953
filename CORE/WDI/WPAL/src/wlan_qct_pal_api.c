@@ -490,3 +490,13 @@ int  wpalIsSsrPanicOnFailure(void)
    return isSsrPanicOnFailure();
 }
 
+int  wpalGetDxeReplenishRXTimerVal(void)
+{
+   return vos_get_dxeReplenishRXTimerVal();
+}
+
+int  wpalIsDxeSSREnable(void)
+{
+   return vos_get_dxeSSREnable();
+}
+
