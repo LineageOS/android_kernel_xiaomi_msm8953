@@ -11916,7 +11916,7 @@ static int __wlan_hdd_cfg80211_connect( struct wiphy *wiphy,
                                                   req->ssid_len, req->bssid, 0);
     }
 
-    if (0 > status)
+    if (0 != status)
     {
         //ReEnable BMPS if disabled
         if((VOS_STATUS_SUCCESS == exitbmpsStatus) &&
