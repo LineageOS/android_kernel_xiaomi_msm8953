@@ -402,9 +402,10 @@ void wlan_hdd_remain_on_chan_timeout(void *data)
     hdd_adapter_t *pAdapter = (hdd_adapter_t *)data;
     hdd_remain_on_chan_ctx_t *pRemainChanCtx;
     hdd_cfg80211_state_t *cfgState;
-    if ( NULL == pAdapter )
+
+    if ((NULL == pAdapter) || (WLAN_HDD_ADAPTER_MAGIC != pAdapter->magic))
     {
-        hddLog( LOGE, FL("pAdapter is NULL !!!"));
+        hddLog( LOGE, FL("pAdapter is invalid %p !!!"), pAdapter);
         return;
     }
     cfgState = WLAN_HDD_GET_CFG_STATE_PTR( pAdapter );
