@@ -8449,3 +8449,20 @@ void limDecrementPendingMgmtCount (tpAniSirGlobal pMac)
     else
          limLog(pMac, LOGW, FL("Pending Management count going negative"));
 }
+
+eHalStatus limTxBdComplete(tpAniSirGlobal pMac, void *pData)
+{
+    tpSirTxBdStatus pTxBdStatus;
+
+    if (!pData)
+    {
+       limLog(pMac, LOGE, FL("pData is NULL"));
+       return eHAL_STATUS_FAILURE;
+    }
+
+    pTxBdStatus = (tpSirTxBdStatus) pData;
+
+    limLog(pMac, LOG1, FL("txBdToken %u, txBdStatus %u"),
+            pTxBdStatus->txBdToken, pTxBdStatus->txCompleteStatus);
+    return eHAL_STATUS_SUCCESS;
+}

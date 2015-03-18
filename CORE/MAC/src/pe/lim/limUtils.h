@@ -568,4 +568,6 @@ extern tANI_U32 limGetMaxRateFlags(tpDphHashNode pStaDs,
                                    tpPESession psessionEntry);
 
 void limDecrementPendingMgmtCount (tpAniSirGlobal pMac);
+
+eHalStatus limTxBdComplete(tpAniSirGlobal pMac, void *pData);
 #endif /* __LIM_UTILS_H */

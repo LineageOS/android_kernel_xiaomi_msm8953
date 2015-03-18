@@ -1722,12 +1722,28 @@ limSendAssocRspMgmtFrame(tpAniSirGlobal pMac,
     MTRACE(macTrace(pMac, TRACE_CODE_TX_MGMT,
            psessionEntry->peSessionId,
            pMacHdr->fc.subType));
-    /// Queue Association Response frame in high priority WQ
-    halstatus = halTxFrame( pMac, pPacket, ( tANI_U16 ) nBytes,
-                            HAL_TXRX_FRM_802_11_MGMT,
-                            ANI_TXDIR_TODS,
-                            7,//SMAC_SWBD_TX_TID_MGMT_HIGH,
-                            limTxComplete, pFrame, txFlag );
+
+    if (IS_FEATURE_SUPPORTED_BY_FW(ENHANCED_TXBD_COMPLETION))
+    {
+        limLog(pMac, LOG1, FL("Re/AssocRsp - txBdToken %u"), pMac->lim.txBdToken);
+        /// Queue Association Response frame in high priority WQ
+        halstatus = halTxFrameWithTxComplete( pMac, pPacket, ( tANI_U16 ) nBytes,
+                HAL_TXRX_FRM_802_11_MGMT,
+                ANI_TXDIR_TODS,
+                7,//SMAC_SWBD_TX_TID_MGMT_HIGH,
+                limTxComplete, pFrame, limTxBdComplete,
+                txFlag, pMac->lim.txBdToken );
+        pMac->lim.txBdToken++;
+    }
+    else
+    {
+        /// Queue Association Response frame in high priority WQ
+        halstatus = halTxFrame( pMac, pPacket, ( tANI_U16 ) nBytes,
+                HAL_TXRX_FRM_802_11_MGMT,
+                ANI_TXDIR_TODS,
+                7,//SMAC_SWBD_TX_TID_MGMT_HIGH,
+                limTxComplete, pFrame, txFlag );
+    }
     MTRACE(macTrace(pMac, TRACE_CODE_TX_COMPLETE,
            psessionEntry->peSessionId,
            halstatus));
@@ -2630,12 +2646,27 @@ limSendAssocReqMgmtFrame(tpAniSirGlobal   pMac,
                           ( !IS_BROADCAST_MAC(pMlmAssocReq->peerMacAddr) ) ){
         txFlag |= HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME;
     }
+    if (IS_FEATURE_SUPPORTED_BY_FW(ENHANCED_TXBD_COMPLETION))
+    {
+        limLog(pMac, LOG1, FL("Assoc Req - txBdToken %u"), pMac->lim.txBdToken);
+        halstatus = halTxFrameWithTxComplete( pMac, pPacket,
+                ( tANI_U16 ) (sizeof(tSirMacMgmtHdr) + nPayload),
+                HAL_TXRX_FRM_802_11_MGMT, ANI_TXDIR_TODS,
+                7,//SMAC_SWBD_TX_TID_MGMT_HIGH,
+                limTxComplete, pFrame, limTxBdComplete, txFlag,
+                pMac->lim.txBdToken);
+        pMac->lim.txBdToken++;
+    }
+    else
+    {
+        halstatus = halTxFrame( pMac, pPacket,
+                ( tANI_U16 ) (sizeof(tSirMacMgmtHdr) + nPayload),
+                HAL_TXRX_FRM_802_11_MGMT,
+                ANI_TXDIR_TODS,
+                7,//SMAC_SWBD_TX_TID_MGMT_HIGH,
+                limTxComplete, pFrame, txFlag );
+    }
 
-    halstatus = halTxFrame( pMac, pPacket, ( tANI_U16 ) (sizeof(tSirMacMgmtHdr) + nPayload),
-            HAL_TXRX_FRM_802_11_MGMT,
-            ANI_TXDIR_TODS,
-            7,//SMAC_SWBD_TX_TID_MGMT_HIGH,
-            limTxComplete, pFrame, txFlag );
     MTRACE(macTrace(pMac, TRACE_CODE_TX_COMPLETE,
            psessionEntry->peSessionId,
            halstatus));
@@ -3076,11 +3107,25 @@ limSendReassocReqWithFTIEsMgmtFrame(tpAniSirGlobal     pMac,
     MTRACE(macTrace(pMac, TRACE_CODE_TX_MGMT,
            psessionEntry->peSessionId,
            pMacHdr->fc.subType));
-    halstatus = halTxFrame( pMac, pPacket, ( tANI_U16 ) (nBytes + ft_ies_length),
-            HAL_TXRX_FRM_802_11_MGMT,
-            ANI_TXDIR_TODS,
-            7,//SMAC_SWBD_TX_TID_MGMT_HIGH,
-            limTxComplete, pFrame, txFlag );
+    if (IS_FEATURE_SUPPORTED_BY_FW(ENHANCED_TXBD_COMPLETION))
+    {
+        limLog( pMac, LOG1, FL("Reassoc req - txBdToken %u"), pMac->lim.txBdToken);
+        halstatus = halTxFrameWithTxComplete( pMac, pPacket,
+                ( tANI_U16 ) (nBytes + ft_ies_length),
+                HAL_TXRX_FRM_802_11_MGMT, ANI_TXDIR_TODS,
+                7,//SMAC_SWBD_TX_TID_MGMT_HIGH,
+                limTxComplete, pFrame, limTxBdComplete, txFlag,
+                pMac->lim.txBdToken);
+        pMac->lim.txBdToken++;
+    }
+    else
+    {
+        halstatus = halTxFrame( pMac, pPacket, ( tANI_U16 ) (nBytes + ft_ies_length),
+                HAL_TXRX_FRM_802_11_MGMT,
+                ANI_TXDIR_TODS,
+                7,//SMAC_SWBD_TX_TID_MGMT_HIGH,
+                limTxComplete, pFrame, txFlag );
+    }
     MTRACE(macTrace(pMac, TRACE_CODE_TX_COMPLETE,
            psessionEntry->peSessionId,
            halstatus));
@@ -3210,7 +3255,7 @@ limSendReassocReqMgmtFrame(tpAniSirGlobal     pMac,
 #if defined WLAN_FEATURE_VOWIFI
     tANI_U8               PowerCapsPopulated = FALSE;
 #endif
-    tpSirMacMgmtHdr     pMacHdr;
+    tpSirMacMgmtHdr       pMacHdr;
 
     if(NULL == psessionEntry)
     {
@@ -3479,12 +3524,25 @@ limSendReassocReqMgmtFrame(tpAniSirGlobal     pMac,
 
     // enable caching
     WLANTL_EnableCaching(psessionEntry->staId);
-
-    halstatus = halTxFrame( pMac, pPacket, ( tANI_U16 ) (sizeof(tSirMacMgmtHdr) + nPayload),
-                            HAL_TXRX_FRM_802_11_MGMT,
-                            ANI_TXDIR_TODS,
-                            7,//SMAC_SWBD_TX_TID_MGMT_HIGH,
-                            limTxComplete, pFrame, txFlag );
+    if (IS_FEATURE_SUPPORTED_BY_FW(ENHANCED_TXBD_COMPLETION))
+    {
+        limLog(pMac, LOG1, FL("Reassoc req - txBdToken %u"), pMac->lim.txBdToken);
+        halstatus = halTxFrameWithTxComplete( pMac, pPacket,
+                ( tANI_U16 ) (sizeof(tSirMacMgmtHdr) + nPayload),
+                HAL_TXRX_FRM_802_11_MGMT, ANI_TXDIR_TODS,
+                7,//SMAC_SWBD_TX_TID_MGMT_HIGH,
+                limTxComplete, pFrame, limTxBdComplete,
+                txFlag, pMac->lim.txBdToken );
+        pMac->lim.txBdToken++;
+    }
+    else
+    {
+        halstatus = halTxFrame( pMac, pPacket, ( tANI_U16 ) (sizeof(tSirMacMgmtHdr) + nPayload),
+                HAL_TXRX_FRM_802_11_MGMT,
+                ANI_TXDIR_TODS,
+                7,//SMAC_SWBD_TX_TID_MGMT_HIGH,
+                limTxComplete, pFrame, txFlag );
+    }
     MTRACE(macTrace(pMac, TRACE_CODE_TX_COMPLETE,
            psessionEntry->peSessionId,
            halstatus));
@@ -3505,8 +3563,9 @@ end:
 } // limSendReassocReqMgmtFrame
 
 eHalStatus limAuthTxCompleteCnf(tpAniSirGlobal pMac, void *pData)
- {
+{
     tANI_U32 txCompleteSuccess;
+    tpSirTxBdStatus pTxBdStatus;
 
     if (!pData)
     {
@@ -3514,10 +3573,21 @@ eHalStatus limAuthTxCompleteCnf(tpAniSirGlobal pMac, void *pData)
                 FL(" pData is NULL"));
         return eHAL_STATUS_FAILURE;
     }
-    txCompleteSuccess = *((tANI_U32*) pData);
 
-    limLog(pMac, LOG1,
-                   FL("txCompleteSuccess= %d"),txCompleteSuccess);
+    if (IS_FEATURE_SUPPORTED_BY_FW(ENHANCED_TXBD_COMPLETION))
+    {
+        pTxBdStatus = (tpSirTxBdStatus) pData;
+        txCompleteSuccess = pTxBdStatus->txCompleteStatus;
+        limLog(pMac, LOG1, FL("txCompleteStatus %u, txBdToken %u"),
+                pTxBdStatus->txCompleteStatus, pTxBdStatus->txBdToken);
+    }
+    else
+    {
+        txCompleteSuccess = *((tANI_U32*) pData);
+        limLog(pMac, LOG1,
+                FL("txCompleteSuccess= %d"), txCompleteSuccess);
+    }
+
     if(txCompleteSuccess)
     {
        pMac->authAckStatus = LIM_AUTH_ACK_RCD_SUCCESS;
@@ -3845,13 +3915,16 @@ limSendAuthMgmtFrame(tpAniSirGlobal pMac,
     if(eSIR_TRUE == waitForAck)
     {
         pMac->authAckStatus = LIM_AUTH_ACK_NOT_RCD;
-
+        limLog(pMac, LOGE, FL("Auth frame - txBdToken %u"),
+                pMac->lim.txBdToken);
         halstatus = halTxFrameWithTxComplete( pMac, pPacket,
                     ( tANI_U16 ) frameLen,
                     HAL_TXRX_FRM_802_11_MGMT,
                     ANI_TXDIR_TODS,
                     7,//SMAC_SWBD_TX_TID_MGMT_HIGH,
-                    limTxComplete, pFrame, limAuthTxCompleteCnf, txFlag );
+                    limTxComplete, pFrame, limAuthTxCompleteCnf, txFlag,
+                    pMac->lim.txBdToken);
+        pMac->lim.txBdToken++;
         MTRACE(macTrace(pMac, TRACE_CODE_TX_COMPLETE,
                psessionEntry->peSessionId,
                halstatus));
