@@ -43,6 +43,7 @@
 #include "vos_packet.h"
 #include "vos_trace.h"
 #include "vos_list.h"
+#include "vos_api.h"
 
 #include <linux/skbuff.h>
 #include "dma-mapping.h"
@@ -972,3 +973,41 @@ void wpalPacketStallDumpLog
    return;
 }
 #endif /* FEATURE_WLAN_DIAG_SUPPORT */
+
+/*---------------------------------------------------------------------------
+    wpalLogPktSerialize - Serialize Logging data to logger thread
+
+    Param:
+    wpt_packet pFrame - The packet which contains the logging data.
+                        This packet has to be a VALID packet, as this
+                        API will not do any checks on the validity of
+                        the packet.
+
+    Return:
+        NONE
+
+---------------------------------------------------------------------------*/
+void wpalLogPktSerialize
+(
+   wpt_packet *pFrame
+)
+{
+   WDI_DS_RxMetaInfoType *pRxMetadata;
+   void                  *pBuffer;
+   VOS_STATUS             vosStatus;
+
+   vosStatus = vos_pkt_peek_data(WPAL_TO_VOS_PKT(pFrame), 0, &pBuffer,
+                                 WDI_DS_LOG_PKT_TYPE_LEN);
+
+   if (VOS_IS_STATUS_SUCCESS(vosStatus))
+   {
+      // a VALID packet implies non NULL meta-data
+      pRxMetadata = WDI_DS_ExtractRxMetaData(pFrame);
+      pRxMetadata->loggingData = *((wpt_uint8 *)pBuffer);
+      vos_logger_pkt_serialize(WPAL_TO_VOS_PKT(pFrame), pRxMetadata->loggingData);
+   }
+   else
+   {
+      vos_pkt_return_packet(WPAL_TO_VOS_PKT(pFrame));
+   }
+}

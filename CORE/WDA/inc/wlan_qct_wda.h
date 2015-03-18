@@ -762,6 +762,10 @@ tBssSystemRole wdaGetGlobalSystemRole(tpAniSirGlobal pMac);
 #  define WDA_IS_RX_LLC_PRESENT(pRxMeta)    \
       ( (0 == ((WDI_DS_RxMetaInfoType*)(pRxMeta))->llcr) ? VOS_TRUE : VOS_FALSE )
 
+#  define WDA_IS_LOGGING_DATA(pRxMeta)    \
+        ((0 == ((WDI_DS_RxMetaInfoType*)(pRxMeta))->loggingData) ? VOS_FALSE \
+                                                                 : VOS_TRUE)
+
 #define WLANWDA_HO_IS_AN_AMPDU                    0x4000
 #define WLANWDA_HO_LAST_MPDU_OF_AMPDU             0x400
 

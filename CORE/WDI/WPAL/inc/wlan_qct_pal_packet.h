@@ -412,4 +412,21 @@ void wpalPacketStallDumpLog
 );
 #endif /* FEATURE_WLAN_DIAG_SUPPORT */
 
+/*---------------------------------------------------------------------------
+    wpalLogPktSerialize - Serialize Logging data to logger thread
+
+    Param:
+    wpt_packet pFrame - The packet which contains the logging data.
+                        This packet has to be a VALID packet, as this
+                        API will not do any checks on the validity of
+                        the packet.
+
+    Return:
+        NONE
+
+---------------------------------------------------------------------------*/
+void wpalLogPktSerialize
+(
+   wpt_packet *pFrame
+);
 #endif // __WLAN_QCT_PAL_PACKET_H
