@@ -8163,8 +8163,7 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
    {
       /* This will issue a dump command which will clean up
          BTQM queues and unblock MC thread */
-      WLANTL_TLDebugMessage(WLANTL_DEBUG_FW_CLEANUP);
-
+      vos_fwDumpReq(274, 0, 0, 0, 0, 1);
       // Unloading, restart logic is no more required.
       wlan_hdd_restart_deinit(pHddCtx);
 
@@ -10676,11 +10675,17 @@ static VOS_STATUS wlan_hdd_framework_restart(hdd_context_t *pHddCtx)
 
    /* Iterate over all adapters/devices */
    status =  hdd_get_front_adapter ( pHddCtx, &pAdapterNode );
+   if ((NULL == pAdapterNode) || (VOS_STATUS_SUCCESS != status))
+   {
+       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                 FL("fail to get adapter: %p %d"), pAdapterNode, status);
+       goto end;
+   }
+
    do 
    {
-      if( (status == VOS_STATUS_SUCCESS) && 
-                           pAdapterNode  && 
-                           pAdapterNode->pAdapter)
+      if(pAdapterNode->pAdapter &&
+           WLAN_HDD_ADAPTER_MAGIC == pAdapterNode->pAdapter->magic)
       {
          VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_FATAL, 
                "restarting the driver(intf:\'%s\' mode:%d :try %d)",
@@ -10705,7 +10710,7 @@ static VOS_STATUS wlan_hdd_framework_restart(hdd_context_t *pHddCtx)
       pAdapterNode = pNext;
    } while((NULL != pAdapterNode) && (VOS_STATUS_SUCCESS == status));
 
-
+   end:
    /* Free the allocated management frame */
    kfree(mgmt);
 

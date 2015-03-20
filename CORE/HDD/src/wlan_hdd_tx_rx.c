@@ -2270,7 +2270,7 @@ void hdd_tx_rx_pkt_cnt_stat_timer_handler( void *phddctx)
     {
         pAdapter = pAdapterNode->pAdapter;
 
-        if ( pAdapter )
+        if ((NULL != pAdapter) && (WLAN_HDD_ADAPTER_MAGIC == pAdapter->magic))
         {
             VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_INFO,
                     "%s: Adapter with device mode %d exists",
