@@ -16279,6 +16279,59 @@ csrRoamScanOffloadPrepareProbeReqTemplate(tpAniSirGlobal pMac,
         return eSIR_SUCCESS;
 }
 
+/*
+ * Below Table describe whether RSO command can be send down to fimrware or not.
+ * Host check it on the basis of previous RSO command sent down to firmware.
+||===========================================================================||
+|| New cmd        |            LAST SENT COMMAND --->                        ||
+||====|======================================================================||
+||    V           |  RSO_START  |  RSO_STOP  |  RSO_RESTART | RSO_UPDATE_CFG ||
+|| --------------------------------------------------------------------------||
+|| RSO_START      |     NO      |   YES      |     NO       |      NO        ||
+|| RSO_STOP       |    YES      |   YES      |     YES      |      YES       ||
+|| RSO_RESTART    |    YES      |   NO       |     NO       |      YES       ||
+|| RSO_UPDATE_CFG |    YES      |   NO       |     YES      |      YES       ||
+||===========================================================================||
+*/
+
+#define RSO_START_BIT       (1<<ROAM_SCAN_OFFLOAD_START)
+#define RSO_STOP_BIT        (1<<ROAM_SCAN_OFFLOAD_STOP)
+#define RSO_RESTART_BIT     (1<<ROAM_SCAN_OFFLOAD_RESTART)
+#define RSO_UPDATE_CFG_BIT  (1<<ROAM_SCAN_OFFLOAD_UPDATE_CFG)
+
+#define RSO_START_ALLOW_MASK   ( RSO_STOP_BIT )
+#define RSO_STOP_ALLOW_MASK    ( RSO_UPDATE_CFG_BIT | RSO_RESTART_BIT | \
+                                 RSO_STOP_BIT | RSO_START_BIT )
+#define RSO_RESTART_ALLOW_MASK ( RSO_UPDATE_CFG_BIT | RSO_START_BIT )
+#define RSO_UPDATE_CFG_ALLOW_MASK  (RSO_UPDATE_CFG_BIT | RSO_STOP_BIT | \
+                                    RSO_START_BIT)
+
+tANI_BOOLEAN CsrIsRSOCommandAllowed(tpAniSirGlobal pMac, tANI_U8 command)
+{
+    tpCsrNeighborRoamControlInfo pNeighborRoamInfo = &pMac->roam.neighborRoamInfo;
+    tANI_U8 desiredMask = 0;
+    switch(command)
+    {
+        case ROAM_SCAN_OFFLOAD_START:
+             desiredMask = RSO_START_ALLOW_MASK;
+             break;
+        case ROAM_SCAN_OFFLOAD_STOP:
+             desiredMask = RSO_STOP_ALLOW_MASK;
+             break;
+        case ROAM_SCAN_OFFLOAD_RESTART:
+             desiredMask = RSO_RESTART_ALLOW_MASK;
+             break;
+        case ROAM_SCAN_OFFLOAD_UPDATE_CFG:
+             desiredMask = RSO_UPDATE_CFG_ALLOW_MASK;
+             break;
+        default:
+             VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+                       FL("Wrong RSO command %d, not allowed"), command);
+             return 0;/*Cmd Not allowed*/
+    }
+    return ( desiredMask & ( 1 << pNeighborRoamInfo->lastSentCmd) );
+}
+
 eHalStatus csrRoamOffloadScan(tpAniSirGlobal pMac, tANI_U8 command, tANI_U8 reason)
 {
    vos_msg_t msg;
@@ -16326,6 +16379,14 @@ eHalStatus csrRoamOffloadScan(tpAniSirGlobal pMac, tANI_U8 command, tANI_U8 reas
                 macTraceGetNeighbourRoamState(
                 pMac->roam.neighborRoamInfo.neighborRoamState), command);
       return eHAL_STATUS_FAILURE;
+   }
+
+   if (!CsrIsRSOCommandAllowed(pMac, command))
+   {
+       VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+            FL("RSO command %d lastSentCmd %d, RSO is out of sync in HOST-FWR"),
+            command, pNeighborRoamInfo->lastSentCmd);
+       return eHAL_STATUS_FAILURE;
    }
 
    /* We dont need psession during ROAM_SCAN_OFFLOAD_STOP
@@ -16743,6 +16804,9 @@ send_roam_scan_offload_cmd:
             bRoamScanOffloadStarted = VOS_TRUE;
         else if (ROAM_SCAN_OFFLOAD_STOP == command)
             bRoamScanOffloadStarted = VOS_FALSE;
+
+        /*update the last sent cmd*/
+        pNeighborRoamInfo->lastSentCmd = command;
     }
 
    VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_DEBUG, "Roam Scan Offload Command %d, Reason %d", command, reason);

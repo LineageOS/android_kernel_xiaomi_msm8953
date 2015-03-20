@@ -205,6 +205,7 @@ typedef struct sCsrNeighborRoamControlInfo
     tSirMacAddr                 cfgRoambssId;
     vos_timer_t                 forcedInitialRoamTo5GHTimer;
     tANI_U8                     isForcedInitialRoamTo5GH;
+    tANI_U8                     lastSentCmd;
 } tCsrNeighborRoamControlInfo, *tpCsrNeighborRoamControlInfo;
 
 
