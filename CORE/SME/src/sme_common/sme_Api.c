@@ -726,6 +726,30 @@ eHalStatus smeProcessPnoCommand(tpAniSirGlobal pMac, tSmeCmd *pCmd)
     return eHAL_STATUS_SUCCESS;
 }
 
+static void smeProcessNanReq(tpAniSirGlobal pMac, tSmeCmd *pCommand )
+{
+    tSirMsgQ msgQ;
+    tSirRetStatus   retCode = eSIR_SUCCESS;
+
+    msgQ.type = WDA_NAN_REQUEST;
+    msgQ.reserved = 0;
+    msgQ.bodyptr = pCommand->u.pNanReq;
+    msgQ.bodyval = 0;
+
+    retCode = wdaPostCtrlMsg( pMac, &msgQ );
+    if( eSIR_SUCCESS != retCode)
+    {
+        vos_mem_free(pCommand->u.pNanReq);
+        smsLog( pMac, LOGE,
+                FL("Posting WDA_NAN_REQUEST to WDA failed, reason=%X"),
+                retCode );
+    }
+    else
+    {
+        smsLog(pMac, LOG1, FL("posted WDA_NAN_REQUEST command"));
+    }
+}
+
 tANI_BOOLEAN smeProcessCommand( tpAniSirGlobal pMac )
 {
     tANI_BOOLEAN fContinue = eANI_BOOLEAN_FALSE;
@@ -1107,6 +1131,18 @@ sme_process_cmd:
                             }
                             break ;
 #endif
+                        case eSmeCommandNanReq:
+                            csrLLUnlock( &pMac->sme.smeCmdActiveList );
+                            smeProcessNanReq( pMac, pCommand );
+                            if (csrLLRemoveEntry(&pMac->sme.smeCmdActiveList,
+                                              &pCommand->Link, LL_ACCESS_LOCK))
+                            {
+                                csrReleaseCommand(pMac, pCommand);
+                            }
+                            VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_INFO,
+                                    "eSmeCommandNanReq processed");
+                            fContinue = eANI_BOOLEAN_TRUE;
+                            break;
 
                         default:
                             //something is wrong

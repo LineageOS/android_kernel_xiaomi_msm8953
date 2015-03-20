@@ -1,8 +1,28 @@
 /*
- * Copyright (c) 2014 Qualcomm Atheros, Inc.
- * All Rights Reserved.
- * Qualcomm Atheros Confidential and Proprietary.
+ * Copyright (c) 2014-2015 The Linux Foundation. All rights reserved.
  *
+ * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
+ *
+ *
+ * Permission to use, copy, modify, and/or distribute this software for
+ * any purpose with or without fee is hereby granted, provided that the
+ * above copyright notice and this permission notice appear in all
+ * copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
+ * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+ * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+ * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+ * PERFORMANCE OF THIS SOFTWARE.
+ */
+
+/*
+ * This file was originally distributed by Qualcomm Atheros, Inc.
+ * under proprietary terms before Copyright ownership was assigned
+ * to the Linux Foundation.
  */
 
 #include "sme_Api.h"
@@ -47,41 +67,56 @@ void sme_NanRegisterCallback(tHalHandle hHal, NanCallback callback)
  * from userspace
  *
  * Args:
- * Nan Request structure ptr
+ * hHal, Nan Request structure ptr and sessionId
  *
  * Returns:
  * VOS_STATUS
  *****************************************************************************/
-VOS_STATUS sme_NanRequest(tpNanRequestReq input)
+VOS_STATUS sme_NanRequest(tHalHandle hHalHandle, tpNanRequestReq input,
+        tANI_U32 sessionId)
 {
-    vos_msg_t msg;
-    tpNanRequest data;
+    tNanRequest *pNanReq = NULL;
     size_t data_len;
+    tSmeCmd *pCommand;
+    tpAniSirGlobal pMac = PMAC_STRUCT(hHalHandle);
 
-    data_len = sizeof(tNanRequest) + input->request_data_len;
-    data = vos_mem_malloc(data_len);
-
-    if (data == NULL)
+    pCommand = csrGetCommandBuffer(pMac);
+    if (NULL == pCommand)
     {
         VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
-                FL("Memory allocation failure"));
-        return VOS_STATUS_E_FAULT;
+                FL("Failed to get command buffer for nan req"));
+        return eHAL_STATUS_RESOURCES;
     }
 
-    vos_mem_zero(data, data_len);
-    data->request_data_len = input->request_data_len;
-    vos_mem_copy(data->request_data,
-            input->request_data, input->request_data_len);
+    data_len = sizeof(tNanRequest) - sizeof(pNanReq->request_data)
+                 + input->request_data_len;
+    pNanReq = vos_mem_malloc(data_len);
 
-    msg.type = WDA_NAN_REQUEST;
-    msg.reserved = 0;
-    msg.bodyptr = data;
-
-    if (VOS_STATUS_SUCCESS != vos_mq_post_message(VOS_MODULE_ID_WDA, &msg))
+    if (pNanReq == NULL)
     {
         VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
-            FL("Not able to post WDA_NAN_REQUEST message to WDA"));
-        vos_mem_free(data);
+                FL("Memory allocation failure, size : %zu"), data_len);
+        csrReleaseCommand(pMac, pCommand);
+        return eHAL_STATUS_RESOURCES;
+    }
+
+    smsLog(pMac, LOG1, "Posting NAN command to csr queue");
+    vos_mem_zero(pNanReq, data_len);
+    pNanReq->request_data_len = input->request_data_len;
+    vos_mem_copy(pNanReq->request_data,
+                 input->request_data,
+                 input->request_data_len);
+
+    pCommand->command = eSmeCommandNanReq;
+    pCommand->sessionId = sessionId;
+    pCommand->u.pNanReq = pNanReq;
+
+    if (!HAL_STATUS_SUCCESS(csrQueueSmeCommand(pMac, pCommand, TRUE)))
+    {
+        VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+                 FL("failed to post eSmeCommandNanReq command"));
+        csrReleaseCommand(pMac, pCommand);
+        vos_mem_free(pNanReq);
         return VOS_STATUS_E_FAILURE;
     }
 

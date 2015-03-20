@@ -653,6 +653,9 @@ static int __wlan_hdd_cfg80211_nan_request(struct wiphy *wiphy,
     tNanRequestReq nan_req;
     VOS_STATUS status;
     int ret_val = -1;
+    struct net_device *dev = wdev->netdev;
+    hdd_adapter_t *pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
+    tHalHandle hHal = WLAN_HDD_GET_HAL_CTX(pAdapter);
     hdd_context_t *pHddCtx = wiphy_priv(wiphy);
 
     if (0 == data_len)
@@ -692,7 +695,7 @@ static int __wlan_hdd_cfg80211_nan_request(struct wiphy *wiphy,
     nan_req.request_data_len = data_len;
     nan_req.request_data = data;
 
-    status = sme_NanRequest(&nan_req);
+    status = sme_NanRequest(hHal, &nan_req, pAdapter->sessionId);
     if (VOS_STATUS_SUCCESS == status)
     {
         ret_val = 0;

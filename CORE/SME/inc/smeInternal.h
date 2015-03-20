@@ -90,6 +90,7 @@ typedef enum eSmeCommandType
     eSmeCommandTdlsExitUapsd,
 #endif
 #endif
+    eSmeCommandNanReq,
     //PMC
     eSmePmcCommandMask = 0x20000, //To identify PMC commands
     eSmeCommandEnterImps,
