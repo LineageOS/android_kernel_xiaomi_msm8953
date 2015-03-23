@@ -487,8 +487,12 @@ static int wlan_hdd_p2p_start_remain_on_channel(
     if (status != VOS_STATUS_SUCCESS)
     {
         hddLog(VOS_TRACE_LEVEL_ERROR,
-                "%s: Not able to initalize remain_on_chan timer", __func__);
+                FL("Not able to initalize remain_on_chan timer"));
+        cfgState->remain_on_chan_ctx = NULL;
+        vos_mem_free(pRemainChanCtx);
+        return -EINVAL;
     }
+
     status =  hdd_get_front_adapter ( pHddCtx, &pAdapterNode );
     while ( NULL != pAdapterNode && VOS_STATUS_SUCCESS == status )
     {
@@ -652,6 +656,7 @@ static int wlan_hdd_request_remain_on_channel( struct wiphy *wiphy,
         return -ENOMEM;
     }
 
+    vos_mem_zero(pRemainChanCtx, sizeof (hdd_remain_on_chan_ctx_t));
     vos_mem_copy( &pRemainChanCtx->chan, chan,
                    sizeof(struct ieee80211_channel) );
 
