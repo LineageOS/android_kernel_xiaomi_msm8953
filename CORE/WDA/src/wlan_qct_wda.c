@@ -6037,7 +6037,7 @@ void WDA_AddBAReqCallback(WDI_AddBARspinfoType *pAddBARspParams,
  * Request to WDI to Update the ADDBA REQ params.
  */ 
 VOS_STATUS WDA_ProcessAddBAReq(tWDA_CbContext *pWDA, VOS_STATUS status,
-           tANI_U16 baSessionID, tANI_U8 staIdx, tAddBAParams *pAddBAReqParams)
+           tANI_U16 baSessionID, tANI_U8 staIdx, tANI_U8 ucWinSize, tAddBAParams *pAddBAReqParams)
 {
    WDI_Status wstatus;
    WDI_AddBAReqParamsType *wdiAddBAReqParam = 
@@ -6067,7 +6067,7 @@ VOS_STATUS WDA_ProcessAddBAReq(tWDA_CbContext *pWDA, VOS_STATUS status,
       WDI_AddBAReqinfoType *wdiAddBaInfo = &wdiAddBAReqParam->wdiBAInfoType ;
       wdiAddBaInfo->ucSTAIdx = staIdx ;
       wdiAddBaInfo->ucBaSessionID = baSessionID ;
-      wdiAddBaInfo->ucWinSize     = WDA_BA_MAX_WINSIZE ;
+      wdiAddBaInfo->ucWinSize     = ucWinSize ;
    } while(0) ;
    wdiAddBAReqParam->wdiReqStatusCB = NULL ;
    pWdaParams->pWdaContext = pWDA;
@@ -6134,7 +6134,6 @@ void WDA_AddBASessionReqCallback(
     * if WDA in update TL state, update TL with BA session parama and send
     * another request to HAL(/WDI) (ADD_BA_REQ)
     */
-   
    if((VOS_STATUS_SUCCESS == 
                        CONVERT_WDI2VOS_STATUS(wdiAddBaSession->wdiStatus)) && 
                                  (WDA_BA_UPDATE_TL_STATE == pWDA->wdaState))
@@ -6148,7 +6147,8 @@ void WDA_AddBASessionReqCallback(
                                         wdiAddBaSession->ucWinSize,
                                         wdiAddBaSession->usBaSSN );
       WDA_ProcessAddBAReq(pWDA, status, wdiAddBaSession->usBaSessionID, 
-                                      wdiAddBaSession->ucSTAIdx, pAddBAReqParams) ;
+                                      wdiAddBaSession->ucSTAIdx,
+                                      wdiAddBaSession->ucWinSize, pAddBAReqParams) ;
    }
    else
    {

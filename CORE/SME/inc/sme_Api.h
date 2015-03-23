@@ -3560,4 +3560,8 @@ tANI_BOOLEAN sme_IsTdlsOffChannelValid(tHalHandle hHal, tANI_U8 channel);
   --------------------------------------------------------------------------*/
 tANI_BOOLEAN sme_IsCoexScoIndicationSet(tHalHandle hHal);
 
+eHalStatus sme_SetMiracastVendorConfig(tHalHandle hHal,
+                               tANI_U32 iniNumBuffAdvert,
+                                      tANI_U32 set_value);
+
 #endif //#if !defined( __SME_API_H )

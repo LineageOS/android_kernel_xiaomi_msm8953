@@ -1079,6 +1079,7 @@ typedef struct sAniSirGlobal
     v_U8_t miracast_mode;
     v_U8_t fBtcEnableIndTimerVal;
     v_U8_t roamDelayStatsEnabled;
+    tANI_BOOLEAN miracastVendorConfig;
 } tAniSirGlobal;
 
 #ifdef FEATURE_WLAN_TDLS
