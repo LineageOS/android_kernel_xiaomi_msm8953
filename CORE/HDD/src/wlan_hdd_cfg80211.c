@@ -12362,7 +12362,7 @@ static int __wlan_hdd_cfg80211_join_ibss( struct wiphy *wiphy,
                     "%s:ccmCfgStInt faild for WNI_CFG_IBSS_AUTO_BSSID", __func__);
             return -EIO;
         }
-        params->bssid = vos_mem_malloc(sizeof(VOS_MAC_ADDR_SIZE));
+        params->bssid = vos_mem_malloc(VOS_MAC_ADDR_SIZE);
         if (!params->bssid)
         {
             hddLog (VOS_TRACE_LEVEL_ERROR,
