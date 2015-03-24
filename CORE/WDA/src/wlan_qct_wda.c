@@ -12440,6 +12440,8 @@ VOS_STATUS WDA_TxComplete( v_PVOID_t pVosContext, vos_pkt_t *pData,
    tpAniSirGlobal pMac = (tpAniSirGlobal)VOS_GET_MAC_CTXT((void *)pVosContext) ;
    tANI_U32 uUserData; 
 
+   VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO, "Enter:%s", __func__);
+
    if(NULL == wdaContext)
    {
       VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
@@ -12457,6 +12459,9 @@ VOS_STATUS WDA_TxComplete( v_PVOID_t pVosContext, vos_pkt_t *pData,
     if ( WDA_TL_TX_MGMT_TIMED_OUT == uUserData )
     {
        /*Discard frame - no further processing is needed*/
+       VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_WARN,
+                            "%s: MGMT Frame Tx timed out",
+                            __func__);
        vos_pkt_return_packet(pData); 
        return VOS_STATUS_SUCCESS; 
     }
