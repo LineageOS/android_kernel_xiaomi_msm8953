@@ -3299,10 +3299,10 @@ limProcessMlmDeauthReqNtf(tpAniSirGlobal pMac, eHalStatus suspendStatus, tANI_U3
             break;
 
         case eLIM_STA_IN_IBSS_ROLE:
-            vos_mem_free(pMlmDeauthReq);
-
-            return;
-
+            limLog(pMac, LOGE,
+                       FL("received MLM_DEAUTH_REQ IBSS Mode "));
+            mlmDeauthCnf.resultCode = eSIR_SME_INVALID_PARAMETERS;
+            goto end;
         default: // eLIM_AP_ROLE
             break;
 
