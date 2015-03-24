@@ -6032,6 +6032,15 @@ void hdd_set_station_ops( struct net_device *pWlanDev )
 #endif
 }
 
+void  hdd_set_ibss_ops( hdd_adapter_t *pAdapter )
+{
+ #if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,29))
+     wlan_drv_ops.ndo_start_xmit = hdd_ibss_hard_start_xmit;
+ #else
+     pAdapter->dev->hard_start_xmit = hdd_ibss_hard_start_xmit;
+ #endif
+}
+
 static hdd_adapter_t* hdd_alloc_station_adapter( hdd_context_t *pHddCtx, tSirMacAddr macAddr, const char* name )
 {
    struct net_device *pWlanDev = NULL;
@@ -6237,12 +6246,13 @@ VOS_STATUS hdd_init_station_mode( hdd_adapter_t *pAdapter )
       status = VOS_STATUS_E_FAILURE;
       goto error_register_wext;
    }
+
    //Safe to register the hard_start_xmit function again
-#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,29))
-   wlan_drv_ops.ndo_start_xmit = hdd_hard_start_xmit;
-#else
-   pWlanDev->hard_start_xmit = hdd_hard_start_xmit;
-#endif
+   #if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,29))
+      wlan_drv_ops.ndo_start_xmit = hdd_hard_start_xmit;
+   #else
+      pWlanDev->hard_start_xmit = hdd_hard_start_xmit;
+   #endif
 
    //Set the Connection State to Not Connected
    hddLog(VOS_TRACE_LEVEL_INFO,
@@ -6334,6 +6344,14 @@ void hdd_deinit_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter, tANI_U
    ENTER();
    switch ( pAdapter->device_mode )
    {
+      case WLAN_HDD_IBSS:
+      {
+         if(test_bit(INIT_TX_RX_SUCCESS, &pAdapter->event_flags))
+         {
+            hdd_ibss_deinit_tx_rx( pAdapter );
+            clear_bit(INIT_TX_RX_SUCCESS, &pAdapter->event_flags);
+         }
+      }
       case WLAN_HDD_INFRA_STATION:
       case WLAN_HDD_P2P_CLIENT:
       case WLAN_HDD_P2P_DEVICE:
@@ -7397,6 +7415,9 @@ VOS_STATUS hdd_reset_all_adapters( hdd_context_t *pHddCtx )
       pAdapter->sessionCtx.station.hdd_ReassocScenario = VOS_FALSE;
 
       hdd_deinit_tx_rx(pAdapter);
+
+      if(pAdapter->device_mode == WLAN_HDD_IBSS )
+         hdd_ibss_deinit_tx_rx(pAdapter);
 
       wlan_hdd_decr_active_session(pHddCtx, pAdapter->device_mode);
 

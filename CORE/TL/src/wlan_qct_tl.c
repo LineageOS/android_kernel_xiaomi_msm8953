@@ -11061,9 +11061,11 @@ WLAN_TLGetNextTxIds
 
 #ifdef FEATURE_WLAN_TDLS
   if ((eSYSTEM_AP_ROLE == systemRole) ||
+      (eSYSTEM_STA_IN_IBSS_ROLE == systemRole) ||
       (vos_concurrent_open_sessions_running()) || pTLCb->ucTdlsPeerCount)
 #else
   if ((eSYSTEM_AP_ROLE == systemRole) ||
+      (eSYSTEM_STA_IN_IBSS_ROLE == systemRole) ||
       (vos_concurrent_open_sessions_running()))
 #endif
   {
