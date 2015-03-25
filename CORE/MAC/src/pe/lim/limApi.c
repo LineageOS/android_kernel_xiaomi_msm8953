@@ -1818,6 +1818,19 @@ tAniBool limEncTypeMatched(tpAniSirGlobal pMac, tpSchBeaconStruct  pBeacon,
                 (pSession->encryptType == eSIR_ED_AES_128_CMAC)))
         return eSIR_TRUE;
 
+    /* For HS2.0, RSN ie is not present
+     * in beacon. Therefore no need to
+     * check for security type in case
+     * OSEN session.
+     */
+    /*TODO: AP capability mismatch
+     * is not checked here because
+     * no logic for beacon parsing
+     * is avilable for HS2.0.
+     */
+    if (pSession->bOSENAssociation)
+        return eSIR_TRUE;
+
     return eSIR_FALSE;
 }
 
