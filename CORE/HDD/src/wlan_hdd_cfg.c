@@ -3257,6 +3257,21 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                  CFG_BTC_FAST_WLAN_CONN_PREF_MIN,
                  CFG_BTC_FAST_WLAN_CONN_PREF_MAX ),
 
+   REG_VARIABLE( CFG_DXE_REPLENISH_RX_TIMER_VALUE, WLAN_PARAM_Integer,
+                  hdd_config_t, dxeReplenishRXTimerVal,
+                  VAR_FLAGS_OPTIONAL |
+                  VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                  CFG_DXE_REPLENISH_RX_TIMER_VALUE_DEFAULT,
+                  CFG_DXE_REPLENISH_RX_TIMER_VALUE_MIN,
+                  CFG_DXE_REPLENISH_RX_TIMER_VALUE_MAX ),
+
+   REG_VARIABLE( CFG_DXE_SSR_ENABLE, WLAN_PARAM_Integer,
+                  hdd_config_t, dxeSSREnable,
+                  VAR_FLAGS_OPTIONAL |
+                  VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                  CFG_DXE_SSR_ENABLE_DEFAULT,
+                  CFG_DXE_SSR_ENABLE_MIN,
+                  CFG_DXE_SSR_ENABLE_MAX ),
 };
 
 /*
@@ -3671,6 +3686,8 @@ static void print_hdd_cfg(hdd_context_t *pHddCtx)
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [gACSBandSwitchThreshold] value = [%u]\n",pHddCtx->cfg_ini->acsBandSwitchThreshold);
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [gDeferScanTimeInterval] value = [%u]\n",pHddCtx->cfg_ini->nDeferScanTimeInterval);
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [gEnableTDLSScan] value = [%u]\n",pHddCtx->cfg_ini->fEnableTDLSScan);
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [gDxeReplenishRXTimerVal] Value = [%u] ", pHddCtx->cfg_ini->dxeReplenishRXTimerVal);
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [gDxeSSREnable] Value = [%u] ", pHddCtx->cfg_ini->dxeSSREnable);
 }
 
 

@@ -236,9 +236,7 @@ eHalStatus wlan_hdd_remain_on_channel_callback( tHalHandle hHal, void* pCtx,
                        NULL, 0 );
         }
     }
-    else if ( ( WLAN_HDD_SOFTAP== pAdapter->device_mode ) ||
-              ( WLAN_HDD_P2P_GO == pAdapter->device_mode )
-            )
+    else if (WLAN_HDD_P2P_GO == pAdapter->device_mode)
     {
         WLANSAP_DeRegisterMgmtFrame(
                 (WLAN_HDD_GET_CTX(pAdapter))->pvosContext,
@@ -297,12 +295,12 @@ VOS_STATUS wlan_hdd_cancel_existing_remain_on_channel(hdd_adapter_t *pAdapter)
                                         msecs_to_jiffies(WAIT_REM_CHAN_READY));
             if (0 >= status)
             {
+                pRemainChanCtx->is_pending_roc_cancelled = TRUE;
+                mutex_unlock(&pHddCtx->roc_lock);
                 hddLog( LOGE,
                        "%s: timeout waiting for remain on channel"
                        " ready indication %d",
                         __func__, status);
-                pRemainChanCtx->is_pending_roc_cancelled = TRUE;
-                mutex_unlock(&pHddCtx->roc_lock);
                 return VOS_STATUS_E_FAILURE;
             }
 
@@ -314,8 +312,9 @@ VOS_STATUS wlan_hdd_cancel_existing_remain_on_channel(hdd_adapter_t *pAdapter)
               * The remain on channel callback will make sure the remain_on_chan
               * expired event is sent.
               */
-              if (( WLAN_HDD_P2P_CLIENT == pAdapter->device_mode ) ||
-                 ( WLAN_HDD_P2P_DEVICE == pAdapter->device_mode ))
+              if ( ( WLAN_HDD_INFRA_STATION == pAdapter->device_mode ) ||
+                   ( WLAN_HDD_P2P_CLIENT == pAdapter->device_mode ) ||
+                   ( WLAN_HDD_P2P_DEVICE == pAdapter->device_mode ))
               {
                   if (eHAL_STATUS_SUCCESS !=
                           sme_CancelRemainOnChannel( WLAN_HDD_GET_HAL_CTX( pAdapter ),
@@ -424,7 +423,8 @@ void wlan_hdd_remain_on_chan_timeout(void *data)
     pRemainChanCtx->hdd_remain_on_chan_cancel_in_progress = TRUE;
     INIT_COMPLETION(pAdapter->cancel_rem_on_chan_var);
     hddLog( LOG1,"%s: Cancel Remain on Channel on timeout", __func__);
-    if ( ( WLAN_HDD_P2P_CLIENT == pAdapter->device_mode ) ||
+    if ( ( WLAN_HDD_INFRA_STATION == pAdapter->device_mode ) ||
+          ( WLAN_HDD_P2P_CLIENT == pAdapter->device_mode ) ||
            ( WLAN_HDD_P2P_DEVICE == pAdapter->device_mode )
        )
     {
@@ -436,7 +436,7 @@ void wlan_hdd_remain_on_chan_timeout(void *data)
                     FL("Failed to Cancel Remain on Channel"));
         }
     }
-    else if ( WLAN_HDD_P2P_GO == pAdapter->device_mode )
+    else if (WLAN_HDD_P2P_GO == pAdapter->device_mode)
     {
         WLANSAP_CancelRemainOnChannel(
                 (WLAN_HDD_GET_CTX(pAdapter))->pvosContext);
@@ -540,9 +540,7 @@ static int wlan_hdd_p2p_start_remain_on_channel(
         }
 
     }
-    else if ( ( WLAN_HDD_SOFTAP== pAdapter->device_mode ) ||
-            ( WLAN_HDD_P2P_GO == pAdapter->device_mode )
-            )
+    else if (WLAN_HDD_P2P_GO == pAdapter->device_mode)
     {
         //call sme API to start remain on channel.
         if (VOS_STATUS_SUCCESS != WLANSAP_RemainOnChannel(
@@ -921,10 +919,10 @@ int __wlan_hdd_cfg80211_cancel_remain_on_channel( struct wiphy *wiphy,
     if( (cfgState->remain_on_chan_ctx == NULL) ||
         (cfgState->remain_on_chan_ctx->cookie != cookie) )
     {
+        mutex_unlock(&pHddCtx->roc_lock);
         hddLog( LOGE,
             "%s: No Remain on channel pending with specified cookie value",
              __func__);
-        mutex_unlock(&pHddCtx->roc_lock);
         return -EINVAL;
     }
     if (TRUE != pRemainChanCtx->is_pending_roc_cancelled)
@@ -980,7 +978,8 @@ int __wlan_hdd_cfg80211_cancel_remain_on_channel( struct wiphy *wiphy,
      * The remain on channel callback will make sure the remain_on_chan
      * expired event is sent.
      */
-    if (( WLAN_HDD_P2P_CLIENT == pAdapter->device_mode ) ||
+    if ( ( WLAN_HDD_INFRA_STATION == pAdapter->device_mode ) ||
+         ( WLAN_HDD_P2P_CLIENT == pAdapter->device_mode ) ||
          ( WLAN_HDD_P2P_DEVICE == pAdapter->device_mode ))
     {
         tANI_U8 sessionId = pAdapter->sessionId;
@@ -1270,15 +1269,17 @@ int __wlan_hdd_mgmt_tx( struct wiphy *wiphy, struct net_device *dev,
                 status = vos_timer_start(
                        &cfgState->remain_on_chan_ctx->hdd_remain_on_chan_timer,
                        wait);
-                if ( status != VOS_STATUS_SUCCESS )
-                {
-                    hddLog( LOGE, "Remain on Channel timer start failed");
-                }
+
+                mutex_unlock(&pHddCtx->roc_lock);
 
                 hddLog(VOS_TRACE_LEVEL_INFO,
                    "action frame: extending the wait time %u",
                    wait);
-                mutex_unlock(&pHddCtx->roc_lock);
+
+                if ( status != VOS_STATUS_SUCCESS )
+                {
+                    hddLog( LOGE, "Remain on Channel timer start failed");
+                }
                 goto send_frame;
             }
             else
@@ -1409,9 +1410,7 @@ bypass_lock:
             goto err;
         }
     }
-    else if( ( WLAN_HDD_SOFTAP== pAdapter->device_mode ) ||
-              ( WLAN_HDD_P2P_GO == pAdapter->device_mode )
-            )
+    else if (WLAN_HDD_P2P_GO == pAdapter->device_mode)
      {
         if( VOS_STATUS_SUCCESS !=
              WLANSAP_SendAction( (WLAN_HDD_GET_CTX(pAdapter))->pvosContext,

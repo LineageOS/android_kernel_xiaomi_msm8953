@@ -553,9 +553,9 @@ VOS_STATUS hdd_processSpoofMacAddrRequest(hdd_context_t *pHddCtx)
         if (VOS_STATUS_SUCCESS != vos_randomize_n_bytes(
                 (void *)(&pHddCtx->spoofMacAddr.randomMacAddr.bytes[3]),
                 VOS_MAC_ADDR_LAST_3_BYTES)) {
-                hddLog(LOGE, FL("Failed to generate random Mac Addr"));
                 pHddCtx->spoofMacAddr.isEnabled = FALSE;
                 mutex_unlock(&pHddCtx->spoofMacAddr.macSpoofingLock);
+                hddLog(LOGE, FL("Failed to generate random Mac Addr"));
                 return VOS_STATUS_E_FAILURE;
         }
     }

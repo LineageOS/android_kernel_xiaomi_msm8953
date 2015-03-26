@@ -382,4 +382,8 @@ int  wpalIslogPInProgress(void);
        STATUS
 --------------------------------------------------------------------------*/
 int  wpalIsSsrPanicOnFailure(void);
+
+int  wpalGetDxeReplenishRXTimerVal(void);
+int  wpalIsDxeSSREnable(void);
+
 #endif // __WLAN_QCT_PAL_API_H
