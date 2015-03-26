@@ -2840,6 +2840,7 @@ eHalStatus hdd_RoamTdlsStatusUpdateHandler(hdd_adapter_t *pAdapter,
                                                       pRoamInfo->peerMac,
                                                       pRoamInfo->staId,
                                                       pRoamInfo->ucastSig);
+                    wlan_hdd_tdls_increment_peer_count(pAdapter);
                 }
                 else
                 {
@@ -2893,15 +2894,12 @@ eHalStatus hdd_RoamTdlsStatusUpdateHandler(hdd_adapter_t *pAdapter,
                        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                                  " Current status for peer" MAC_ADDRESS_STR "is %d",
                                  MAC_ADDR_ARRAY(pRoamInfo->peerMac), curr_peer->link_status);
-                       if (TDLS_IS_CONNECTED(curr_peer))
-                       {
-                           hdd_roamDeregisterTDLSSTA ( pAdapter, pRoamInfo->staId );
-                           wlan_hdd_tdls_decrement_peer_count(pAdapter);
-                       }
-                       else if (eTDLS_LINK_CONNECTING == curr_peer->link_status)
+                       if (TDLS_IS_CONNECTED(curr_peer) ||
+                          (eTDLS_LINK_CONNECTING == curr_peer->link_status))
                        {
                            hdd_roamDeregisterTDLSSTA ( pAdapter, pRoamInfo->staId );
                        }
+                       wlan_hdd_tdls_decrement_peer_count(pAdapter);
                     }
                     wlan_hdd_tdls_reset_peer(pAdapter, pRoamInfo->peerMac);
 

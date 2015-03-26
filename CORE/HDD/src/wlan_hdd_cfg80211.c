@@ -15040,7 +15040,7 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                 /* TDLS Off Channel, Disable tdls channel switch,
                    when there are more than one tdls link */
                 numCurrTdlsPeers = wlan_hdd_tdlsConnectedPeers(pAdapter);
-                if (numCurrTdlsPeers == 1)
+                if (numCurrTdlsPeers == 2)
                 {
                     /* get connected peer and send disable tdls off chan */
                     connPeer = wlan_hdd_tdls_get_connected_peer(pAdapter);
@@ -15138,7 +15138,6 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                                  hddLog(VOS_TRACE_LEVEL_ERROR, FL("Failed to suspend data tx"));
                             }
                         }
-                        wlan_hdd_tdls_increment_peer_count(pAdapter);
 
                         /* TDLS Off Channel, Enable tdls channel switch,
                            when their is only one tdls link and it supports */
