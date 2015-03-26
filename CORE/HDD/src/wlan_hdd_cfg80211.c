@@ -15050,6 +15050,7 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                                   "%s: More then one peer connected, Disable "
                                   "TDLS channel switch", __func__);
 
+                        connPeer->isOffChannelEstablished = FALSE;
                         ret = sme_SendTdlsChanSwitchReq(
                                            WLAN_HDD_GET_HAL_CTX(pAdapter),
                                            pAdapter->sessionId,
@@ -15149,6 +15150,8 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                                   "%s: Send TDLS channel switch request for channel %d",
                                   __func__, pTdlsPeer->peerParams.channel);
+
+                            pTdlsPeer->isOffChannelEstablished = TRUE;
                             ret = sme_SendTdlsChanSwitchReq(WLAN_HDD_GET_HAL_CTX(pAdapter),
                                                            pAdapter->sessionId,
                                                            pTdlsPeer->peerMac,
@@ -15260,6 +15263,7 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                             (connPeer->isOffChannelSupported == TRUE) &&
                             (connPeer->isOffChannelConfigured == TRUE))
                         {
+                            connPeer->isOffChannelEstablished = TRUE;
                             status = sme_SendTdlsChanSwitchReq(
                                          WLAN_HDD_GET_HAL_CTX(pAdapter),
                                          pAdapter->sessionId,
@@ -15274,10 +15278,12 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                                   "%s: TDLS channel switch "
                                   "isOffChannelSupported %d "
-                                  "isOffChannelConfigured %d",
+                                  "isOffChannelConfigured %d "
+                                  "isOffChannelEstablished %d",
                                   __func__,
                                   (connPeer ? connPeer->isOffChannelSupported : -1),
-                                  (connPeer ? connPeer->isOffChannelConfigured : -1));
+                                  (connPeer ? connPeer->isOffChannelConfigured : -1),
+                                  (connPeer ? connPeer->isOffChannelEstablished : -1));
                     }
                     else
                     {

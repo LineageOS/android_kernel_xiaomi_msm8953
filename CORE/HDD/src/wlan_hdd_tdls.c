@@ -2895,7 +2895,15 @@ void wlan_hdd_tdls_get_wifi_hal_state(hddTdlsPeer_t *curr_peer,
             *state = WIFI_TDLS_TRYING;
             break;
         case eTDLS_LINK_CONNECTED:
-            *state = WIFI_TDLS_ESTABLISHED;
+            if ((TRUE == curr_peer->isOffChannelConfigured) &&
+                (TRUE == curr_peer->isOffChannelEstablished))
+            {
+                *state = WIFI_TDLS_ESTABLISHED_OFF_CHANNEL;
+            }
+            else
+            {
+                *state = WIFI_TDLS_ESTABLISHED;
+            }
             break;
         case eTDLS_LINK_TEARING:
             *state = WIFI_TDLS_DROPPED;
