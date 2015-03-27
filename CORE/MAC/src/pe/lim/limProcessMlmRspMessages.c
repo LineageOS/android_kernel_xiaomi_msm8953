@@ -4704,13 +4704,23 @@ limHandleDelBssInReAssocContext(tpAniSirGlobal pMac, tpDphHashNode pStaDs,tpPESe
     psessionEntry->limMlmState = eLIM_MLM_IDLE_STATE;
    /* Update PE session Id*/
     mlmReassocCnf.sessionId = psessionEntry->peSessionId;
-    switch (psessionEntry->limMlmState) {
+    switch (psessionEntry->limSmeState) {
         case eLIM_SME_WT_REASSOC_STATE :
         {
             tpSirAssocRsp assocRsp;
             tpDphHashNode   pStaDs;
             tSirRetStatus       retStatus = eSIR_SUCCESS;
-            tSchBeaconStruct beaconStruct;
+            tpSchBeaconStruct pBeaconStruct;
+            pBeaconStruct = vos_mem_vmalloc(sizeof(tSchBeaconStruct));
+            if (NULL == pBeaconStruct)
+            {
+                limLog(pMac, LOGE, FL("beaconStruct allocation failed"));
+                mlmReassocCnf.resultCode = eSIR_SME_RESOURCES_UNAVAILABLE;
+                mlmReassocCnf.protStatusCode = eSIR_MAC_UNSPEC_FAILURE_STATUS;
+                limDeleteDphHashEntry(pMac, psessionEntry->bssId,
+                                      DPH_STA_HASH_INDEX_PEER, psessionEntry);
+                goto Error;
+            }
             /** Delete the older STA Table entry */
             limDeleteDphHashEntry(pMac, psessionEntry->bssId, DPH_STA_HASH_INDEX_PEER, psessionEntry);
        /**
@@ -4735,17 +4745,17 @@ limHandleDelBssInReAssocContext(tpAniSirGlobal pMac, tpDphHashNode pStaDs,tpPESe
             limExtractApCapabilities( pMac,
                   (tANI_U8 *) psessionEntry->pLimReAssocReq->bssDescription.ieFields,
                   limGetIElenFromBssDescription( &psessionEntry->pLimReAssocReq->bssDescription ),
-                    &beaconStruct );
+                    pBeaconStruct );
             if(pMac->lim.gLimProtectionControl != WNI_CFG_FORCE_POLICY_PROTECTION_DISABLE)
-                limDecideStaProtectionOnAssoc(pMac, &beaconStruct, psessionEntry);
-                if(beaconStruct.erpPresent) {
-                if (beaconStruct.erpIEInfo.barkerPreambleMode)
+                limDecideStaProtectionOnAssoc(pMac, pBeaconStruct, psessionEntry);
+                if(pBeaconStruct->erpPresent) {
+                if (pBeaconStruct->erpIEInfo.barkerPreambleMode)
                     psessionEntry->beaconParams.fShortPreamble = 0;
                 else
                     psessionEntry->beaconParams.fShortPreamble = 1;
             }
             //updateBss flag is false, as in this case, PE is first deleting the existing BSS and then adding a new one.
-            if (eSIR_SUCCESS != limStaSendAddBss( pMac, assocRsp, &beaconStruct,
+            if (eSIR_SUCCESS != limStaSendAddBss( pMac, assocRsp, pBeaconStruct,
                                                     &psessionEntry->pLimReAssocReq->bssDescription, false, psessionEntry))  {
                 limLog( pMac, LOGE, FL( "Posting ADDBSS in the ReAssocContext has Failed "));
                 retStatus = eSIR_FAILURE;
@@ -4755,10 +4765,12 @@ limHandleDelBssInReAssocContext(tpAniSirGlobal pMac, tpDphHashNode pStaDs,tpPESe
                 mlmReassocCnf.resultCode = eSIR_SME_RESOURCES_UNAVAILABLE;
                 mlmReassocCnf.protStatusCode = eSIR_MAC_UNSPEC_FAILURE_STATUS;
                 vos_mem_free(assocRsp);
+                vos_mem_vfree(pBeaconStruct);
                 pMac->lim.gLimAssocResponseData = NULL;
                 goto Error;
             }
             vos_mem_free(assocRsp);
+            vos_mem_vfree(pBeaconStruct);
             psessionEntry->limAssocResponseData = NULL;
         }
         break;

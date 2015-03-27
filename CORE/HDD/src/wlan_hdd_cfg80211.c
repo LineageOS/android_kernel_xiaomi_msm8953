@@ -4835,6 +4835,9 @@ __wlan_hdd_cfg80211_get_supported_features(struct wiphy *wiphy,
     /* Soft-AP is supported currently by default */
     fset |= WIFI_FEATURE_SOFT_AP;
 
+    /* HOTSPOT is a supplicant feature, enable it by default */
+    fset |= WIFI_FEATURE_HOTSPOT;
+
 #ifdef WLAN_FEATURE_EXTSCAN
     if ((TRUE == pHddCtx->cfg_ini->fEnableEXTScan) &&
             sme_IsFeatureSupportedByFW(EXTENDED_SCAN)) {
