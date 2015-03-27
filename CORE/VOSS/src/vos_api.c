@@ -2307,3 +2307,47 @@ v_U8_t  vos_get_roam_delay_stats_enabled(v_VOID_t)
 {
     return gpVosContext->roamDelayStatsEnabled;
 }
+
+v_U32_t vos_get_dxeReplenishRXTimerVal(void)
+{
+    hdd_context_t *pHddCtx = NULL;
+    v_CONTEXT_t pVosContext = NULL;
+
+    /* Get the Global VOSS Context */
+    pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+    if(!pVosContext) {
+       hddLog(VOS_TRACE_LEVEL_FATAL, "%s: Global VOS context is Null", __func__);
+       return 0;
+    }
+
+    /* Get the HDD context */
+    pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD, pVosContext );
+    if(!pHddCtx) {
+       hddLog(VOS_TRACE_LEVEL_FATAL, "%s: HDD context is Null", __func__);
+       return 0;
+     }
+
+   return pHddCtx->cfg_ini->dxeReplenishRXTimerVal;
+}
+
+v_BOOL_t vos_get_dxeSSREnable(void)
+{
+    hdd_context_t *pHddCtx = NULL;
+    v_CONTEXT_t pVosContext = NULL;
+
+    /* Get the Global VOSS Context */
+    pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+    if(!pVosContext) {
+       hddLog(VOS_TRACE_LEVEL_FATAL, "%s: Global VOS context is Null", __func__);
+       return FALSE;
+    }
+
+    /* Get the HDD context */
+    pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD, pVosContext );
+    if(!pHddCtx) {
+       hddLog(VOS_TRACE_LEVEL_FATAL, "%s: HDD context is Null", __func__);
+       return FALSE;
+     }
+
+   return pHddCtx->cfg_ini->dxeSSREnable;
+}

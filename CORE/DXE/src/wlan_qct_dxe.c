@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1980,7 +1980,7 @@ void dxeRXResourceAvailableTimerExpHandler
 
    HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_FATAL,
             "RX Low resource, Durign wait time period %d, RX resource not allocated",
-            T_WLANDXE_MAX_RX_PACKET_WAIT);
+            wpalGetDxeReplenishRXTimerVal());
 
    //This API wil also try to replenish packets
    wpalGetNumRxFreePacket(&numRxFreePackets);
@@ -2004,19 +2004,25 @@ void dxeRXResourceAvailableTimerExpHandler
                   "%s: Replenish successful. Restart the Rx Low resource timer",
                   __func__);
          wpalTimerStart(&dxeCtxt->rxResourceAvailableTimer,
-                        T_WLANDXE_MAX_RX_PACKET_WAIT);
+                        wpalGetDxeReplenishRXTimerVal());
          return;
       }
    }
+   if(wpalIsDxeSSREnable())
+   {
+      if (NULL != dxeCtxt)
+         dxeCtxt->driverReloadInProcessing = eWLAN_PAL_TRUE;
 
-   if (NULL != dxeCtxt)
-      dxeCtxt->driverReloadInProcessing = eWLAN_PAL_TRUE;
+      wpalWlanReload();
 
-   wpalWlanReload();
-
-   if (NULL != usrData)
-      dxeStartSSRTimer((WLANDXE_CtrlBlkType *)usrData);
-
+      if (NULL != usrData)
+         dxeStartSSRTimer((WLANDXE_CtrlBlkType *)usrData);
+   }
+   else
+   {
+       wpalTimerStart(&dxeCtxt->rxResourceAvailableTimer,
+                      wpalGetDxeReplenishRXTimerVal());
+   }
    return;
 }
 #endif
@@ -2242,7 +2248,7 @@ static wpt_status dxeRXFrameSingleBufferAlloc
             HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_WARN,
                      "RX Low resource, wait available resource");
             wpalTimerStart(&dxeCtxt->rxResourceAvailableTimer,
-                           T_WLANDXE_MAX_RX_PACKET_WAIT);
+                           wpalGetDxeReplenishRXTimerVal());
          }
 #endif
       }

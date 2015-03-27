@@ -2698,14 +2698,11 @@ void hdd_tx_rx_pkt_cnt_stat_timer_handler( void *phddctx)
     v_U8_t staId = 0;
     v_U8_t fconnected = 0;
 
-   if (NULL == phddctx)
-   {
-       VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
-              FL("phddctx is NULL"));
-       VOS_ASSERT(0);
-       return;
-   }
-
+    ENTER();
+    if (0 != (wlan_hdd_validate_context(pHddCtx)))
+    {
+        return;
+    }
     if (!cfg_param->dynSplitscan)
     {
         VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_INFO,
@@ -2817,6 +2814,7 @@ void hdd_tx_rx_pkt_cnt_stat_timer_handler( void *phddctx)
                                   SME_DISABLE_SPLIT_SCAN,
                                   SME_DISABLE_SPLIT_SCAN);
     }
+    EXIT();
     return;
 }
 

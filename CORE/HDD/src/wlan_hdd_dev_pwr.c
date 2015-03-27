@@ -490,13 +490,11 @@ void hddDevTmTxBlockTimeoutHandler(void *usrData)
 {
    hdd_context_t        *pHddCtx = (hdd_context_t *)usrData;
    hdd_adapter_t        *staAdapater;
-   /* Sanity, This should not happen */
-   if(NULL == pHddCtx)
+
+   ENTER();
+   if (0 != (wlan_hdd_validate_context(pHddCtx)))
    {
-      VOS_TRACE(VOS_MODULE_ID_HDD,VOS_TRACE_LEVEL_ERROR,
-                "%s: NULL Context", __func__);
-      VOS_ASSERT(0);
-      return;
+       return;
    }
 
    staAdapater = hdd_get_adapter(pHddCtx, WLAN_HDD_INFRA_STATION);
@@ -523,6 +521,7 @@ void hddDevTmTxBlockTimeoutHandler(void *usrData)
    pHddCtx->tmInfo.qBlocked = VOS_FALSE;
    mutex_unlock(&pHddCtx->tmInfo.tmOperationLock);
 
+   EXIT();
    return;
 }
 

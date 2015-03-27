@@ -80,6 +80,7 @@
 
 #endif
 
+#define JOIN_FAILURE_TIMEOUT   1000   // in msecs
 /* This overhead is time for sending NOA start to host in case of GO/sending NULL data & receiving ACK 
  * in case of P2P Client and starting actual scanning with init scan req/rsp plus in case of concurrency,
  * taking care of sending null data and receiving ACK to/from AP/Also SetChannel with calibration is taking
@@ -1954,7 +1955,11 @@ __limProcessSmeJoinReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
         
         if (wlan_cfgGetInt(pMac, WNI_CFG_JOIN_FAILURE_TIMEOUT, (tANI_U32 *) &pMlmJoinReq->joinFailureTimeout)
             != eSIR_SUCCESS)
-            limLog(pMac, LOGP, FL("could not retrieve JoinFailureTimer value"));
+        {
+            limLog(pMac, LOGE, FL("could not retrieve JoinFailureTimer value "
+                                   "setting it to default value"));
+            pMlmJoinReq->joinFailureTimeout = JOIN_FAILURE_TIMEOUT;
+        }
 
         /* copy operational rate from psessionEntry*/
         vos_mem_copy((void*)&psessionEntry->rateSet, (void*)&pSmeJoinReq->operationalRateSet,
@@ -2015,8 +2020,12 @@ __limProcessSmeJoinReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
         if(SIR_BAND_5_GHZ == psessionEntry->limRFBand)
         {
             if (wlan_cfgGetInt(pMac, WNI_CFG_11H_ENABLED, &val) != eSIR_SUCCESS)
+            {
                 limLog(pMac, LOGP, FL("Fail to get WNI_CFG_11H_ENABLED "));
-            psessionEntry->lim11hEnable = val;
+                psessionEntry->lim11hEnable = 1;
+            }
+            else
+                psessionEntry->lim11hEnable = val;
         }
         else
             psessionEntry->lim11hEnable = 0;
