@@ -961,9 +961,7 @@ void wlan_hdd_tdls_exit(hdd_adapter_t *pAdapter, tANI_BOOLEAN mutexLock)
         return;
     }
 
-#ifdef WLAN_OPEN_SOURCE
-    cancel_delayed_work_sync(&pHddCtx->tdls_scan_ctxt.tdls_scan_work);
-#endif
+    vos_flush_delayed_work(&pHddCtx->tdls_scan_ctxt.tdls_scan_work);
 
     /* must stop timer here before freeing peer list, because peerIdleTimer is
     part of peer list structure. */
