@@ -267,13 +267,13 @@
 #define QWLAN_HAL_CFG_BURST_MODE_BE_TXOP_VALUE               209
 #define QWLAN_HAL_CFG_ENABLE_DYNAMIC_RA_START_RATE           210
 #define QWLAN_HAL_CFG_BTC_FAST_WLAN_CONN_PREF                211
+#define QWLAN_HAL_CFG_ENABLE_RTSCTS_HTVHT                    212
 
-
-#define QWLAN_HAL_CFG_MAX_PARAMS                             212
+#define QWLAN_HAL_CFG_MAX_PARAMS                             213
 
 
 /* Total number of Integer CFGs. This is used while allocating the memory for TLV */
-#define QWLAN_HAL_CFG_INTEGER_PARAM                     212
+#define QWLAN_HAL_CFG_INTEGER_PARAM                     213
 
 /*-------------------------------------------------------------------------
   Configuration Parameter min, max, defaults
@@ -1047,5 +1047,16 @@
 #define QWLAN_HAL_CFG_BTC_FAST_WLAN_CONN_PREF_MIN 0
 #define QWLAN_HAL_CFG_BTC_FAST_WLAN_CONN_PREF_MAX 1
 
+/* QWLAN_HAL_CFG_ENABLE_RTSCTS_HTVHT */
+/* Bit mask value to enable RTS/CTS for different modes
+ * for 2.4 GHz, HT20 - 0x0001, for 2.4 GHz, HT40 - 0x0002
+ * for 2.4 GHz, VHT20 - 0x0004, for 2.4 GHz, VHT40 - 0x0008
+ * for 5 GHz, HT20 - 0x0100, for 5 GHz, HT40 - 0x0200
+ * for 5 GHz, VHT20 - 0x0400, for 5 GHz, VHT40 - 0x0800
+ * for 5 GHz, VHT80 - 0x1000
+ */
+#define QWLAN_HAL_CFG_ENABLE_RTSCTS_HTVHT_MIN 0x0000
+#define QWLAN_HAL_CFG_ENABLE_RTSCTS_HTVHT_MAX 0x1f0f
+#define QWLAN_HAL_CFG_ENABLE_RTSCTS_HTVHT_DEF 0x0000
 
 #endif //__WLAN_HAL_CFG_H__
