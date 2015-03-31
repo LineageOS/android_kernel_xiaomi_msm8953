@@ -269,6 +269,18 @@
 #define CFG_ENABLE_DYNAMIC_RA_START_RATE_MAX     ( 1 )
 #define CFG_ENABLE_DYNAMIC_RA_START_RATE_DEFAULT ( 0 )
 
+/* Bit mask value to enable RTS/CTS for different modes
+ * for 2.4 GHz, HT20 - 0x0001, for 2.4 GHz, HT40 - 0x0002
+ * for 2.4 GHz, VHT20 - 0x0004, for 2.4 GHz, VHT40 - 0x0008
+ * for 5 GHz, HT20 - 0x0100, for 5 GHz, HT40 - 0x0200
+ * for 5 GHz, VHT20 - 0x0400, for 5 GHz, VHT40 - 0x0800
+ * for 5 GHz, VHT80 - 0x1000
+ */
+#define CFG_ENABLE_RTSCTS_HTVHT_NAME             "gEnableRtsCtsHtVht"
+#define CFG_ENABLE_RTSCTS_HTVHT_MIN              ( 0x0000 )
+#define CFG_ENABLE_RTSCTS_HTVHT_MAX              ( 0x1f0f )
+#define CFG_ENABLE_RTSCTS_HTVHT_DEFAULT          ( 0x0000 )
+
 #define CFG_AUTO_BMPS_TIMER_VALUE_NAME         "gAutoBmpsTimerValue" 
 #define CFG_AUTO_BMPS_TIMER_VALUE_MIN          ( 1000 )
 #define CFG_AUTO_BMPS_TIMER_VALUE_MAX          ( 4294967295UL )
@@ -2904,6 +2916,7 @@ typedef struct
    v_U8_t                      acsScanBandPreference;
    v_U16_t                     acsBandSwitchThreshold;
    v_U32_t                     enableDynamicRAStartRate;
+   v_U32_t                     enableRtsCtsHtVht;
 #ifdef WLAN_FEATURE_AP_HT40_24G
    v_BOOL_t                    apHT40_24GEnabled;
 #endif
