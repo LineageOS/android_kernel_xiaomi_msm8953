@@ -9621,6 +9621,18 @@ int iw_set_tdlssecoffchanneloffset(hdd_context_t *pHddCtx, int offchanoffset)
        return 0;
 
     }
+
+    if ((offchanoffset == 80) &&
+        (TRUE == sme_IsFeatureSupportedByFW(DOT11AC)) &&
+        (TRUE == sme_IsFeatureSupportedByDriver(DOT11AC)))
+    {
+       tdlsOffChBwOffset = 4;
+       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                 "%s: change tdls secondary off channel offset to %u",
+                 __func__, tdlsOffChBwOffset);
+
+       return 0;
+    }
     VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR, "%s: Invalid tdls secondary off channel offset %d",
               __func__, offchanoffset);
     return -1;
