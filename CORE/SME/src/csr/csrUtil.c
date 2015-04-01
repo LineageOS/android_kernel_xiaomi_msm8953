@@ -2056,8 +2056,39 @@ eHalStatus csrGetParsedBssDescriptionIEs(tHalHandle hHal, tSirBssDescription *pB
     return (status);
 }
 
+eHalStatus csrProcessGetFrameLogCommand( tpAniSirGlobal pMac,
+                                         tSmeCmd *pCommand )
+{
+   tAniGetFrameLogReq *pMsg;
+   tANI_U16 msgLen;
+   eHalStatus status = eHAL_STATUS_FAILURE;
 
+   msgLen = sizeof(tAniGetFrameLogReq);
 
+   if ( NULL == pCommand )
+   {
+       smsLog( pMac, LOGE, FL("cannot process. cmd is null") );
+       return eHAL_STATUS_FAILURE;
+   }
+
+   pMsg = vos_mem_malloc(msgLen);
+   if ( NULL == pMsg )
+   {
+       smsLog( pMac, LOGE, FL("fail to allocate memory") );
+       return eHAL_STATUS_FAILURE;
+   }
+
+   pMsg->msgType= pal_cpu_to_be16((tANI_U16)WDA_GET_FRAME_LOG_REQ);
+   pMsg->msgLen= pal_cpu_to_be16(msgLen);
+
+   pMsg->pDevContext = pCommand->u.getFramelogCmd.pDevContext;
+   pMsg->getFramelogCallback= pCommand->u.getFramelogCmd.getFramelogCallback;
+   pMsg->getFrameLogCmdFlag = pCommand->u.getFramelogCmd.getFrameLogCmdFlag;
+
+   status = palSendMBMessage(pMac->hHdd, pMsg);
+
+   return( status );
+}
 
 tANI_BOOLEAN csrIsNULLSSID( tANI_U8 *pBssSsid, tANI_U8 len )
 {

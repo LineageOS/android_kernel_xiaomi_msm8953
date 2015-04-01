@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -2650,6 +2650,23 @@ typedef struct
 
 }WDI_SpoofMacAddrRspParamType;
 /*---------------------------------------------------------------------------
+  WDI_GetFrameLogRspParamType
+---------------------------------------------------------------------------*/
+typedef struct
+{
+  /* wdi status */
+  wpt_uint32   wdiStatus;
+}WDI_GetFrameLogRspParamType;
+/*---------------------------------------------------------------------------
+  WDI_MgmtLoggingRspParamType
+---------------------------------------------------------------------------*/
+typedef struct
+{
+  /* wdi status */
+  wpt_uint32   wdiStatus;
+
+}WDI_MgmtLoggingRspParamType;
+/*---------------------------------------------------------------------------
   WDI_AddBAReqinfoType
 ---------------------------------------------------------------------------*/
 typedef struct
@@ -4020,6 +4037,19 @@ typedef struct
    function pointer will be called */ 
    void*                      pUserData; 
 }WDI_ConfigureRxpFilterReqParamsType;
+
+typedef struct
+{
+   wpt_uint8 enableFlag;
+   wpt_uint8 frameType;
+   wpt_uint8 frameSize;
+   wpt_uint8 bufferMode;
+}WDI_MgmtLoggingInitReqInfoType;
+
+typedef struct
+{
+   wpt_uint8 flags;
+}WDI_GetFrameLogReqInfoType;
 
 /*---------------------------------------------------------------------------
   WDI_BeaconFilterInfoType
@@ -7920,6 +7950,11 @@ typedef void  (*WDI_FWStatsGetRspCb)(WDI_Status status,void *fwStatsResp,
                                          void *pUserData);
 
 typedef void  (*WDI_EncryptMsgRspCb)(wpt_uint8 status, void *pEventData, void* pUserData);
+typedef void  (*WDI_MgmtLoggingInitRspCb)(
+                         WDI_MgmtLoggingRspParamType *wdiRsp, void *pUserData);
+typedef void  (*WDI_GetFrameLogRspCb)(
+                        WDI_GetFrameLogRspParamType *wdiRsp, void *pUserData);
+
 /*========================================================================
  *     Function Declarations and Documentation
  ==========================================================================*/
@@ -9346,6 +9381,67 @@ WDI_SetUapsdAcParamsReq
   WDI_SetUapsdAcParamsReqParamsType*      pwdiPowerSaveCfg,
   WDI_SetUapsdAcParamsCb  wdiSetUapsdAcParamsCb,
   void*                   pUserData
+);
+/**
+ @brief WDI_GetFrameLogReq will be called when the upper
+        MAC wants to initialize frame logging. Upon the call of
+        this API the WLAN DAL will pack and send a HAL
+        Frame logging init request message to
+        the lower RIVA sub-system.
+
+        In state BUSY this request will be queued. Request won't
+        be allowed in any other state.
+
+
+ @param pwdiGetFrameLogReqInfo: the Frame Logging params
+                      as specified by the Device Interface
+
+        wdiGetFrameLogReqCb: callback for passing back the
+        response of the frame logging init operation received
+        from the device
+
+        pUserData: user data will be passed back with the
+        callback
+
+ @return Result of the function call
+*/
+WDI_Status
+WDI_GetFrameLogReq
+(
+   WDI_GetFrameLogReqInfoType    *pwdiGetFrameLogReqInfo,
+   WDI_GetFrameLogRspCb             wdiGetFrameLogReqCb,
+   void*                                pUserData
+);
+
+/**
+ @brief WDI_MgmtLoggingInitReq will be called when the upper
+        MAC wants to initialize frame logging. Upon the call of
+        this API the WLAN DAL will pack and send a HAL
+        Frame logging init request message to
+        the lower RIVA sub-system.
+
+        In state BUSY this request will be queued. Request won't
+        be allowed in any other state.
+
+
+ @param pwdiMgmtLoggingInitReqParams: the Frame Logging params
+                      as specified by the Device Interface
+
+        wdiMgmtLoggingInitReqCb: callback for passing back the
+        response of the frame logging init operation received
+        from the device
+
+        pUserData: user data will be passed back with the
+        callback
+
+ @return Result of the function call
+*/
+WDI_Status
+WDI_MgmtLoggingInitReq
+(
+   WDI_MgmtLoggingInitReqInfoType      *pwdiMgmtLoggingInitReqInfo,
+   WDI_MgmtLoggingInitRspCb             wdiMgmtLoggingInitReqCb,
+   void*                                pUserData
 );
 
 /**

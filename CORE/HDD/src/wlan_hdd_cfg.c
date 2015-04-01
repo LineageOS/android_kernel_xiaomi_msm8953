@@ -3133,6 +3133,20 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                 CFG_ENABLE_MAC_ADDR_SPOOFING_MIN,
                 CFG_ENABLE_MAC_ADDR_SPOOFING_MAX),
 
+   REG_VARIABLE(CFG_ENABLE_MGMT_LOGGING, WLAN_PARAM_Integer,
+                hdd_config_t, enableMgmtLogging,
+                VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                CFG_ENABLE_MGMT_LOGGING_DEFAULT,
+                CFG_ENABLE_MGMT_LOGGING_MIN,
+                CFG_ENABLE_MGMT_LOGGING_MAX),
+
+   REG_VARIABLE(CFG_ENABLE_BMUHW_TRACING, WLAN_PARAM_Integer,
+                hdd_config_t, enableBMUHWtracing,
+                VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                CFG_ENABLE_BMUHW_TRACING_DEFAULT,
+                CFG_ENABLE_BMUHW_TRACING_MIN,
+                CFG_ENABLE_BMUHW_TRACING_MAX),
+
    REG_VARIABLE(CFG_ENABLE_CH_AVOID, WLAN_PARAM_Integer,
                  hdd_config_t, fenableCHAvoidance,
                  VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
@@ -3256,6 +3270,14 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                  CFG_BTC_FAST_WLAN_CONN_PREF_DEFAULT,
                  CFG_BTC_FAST_WLAN_CONN_PREF_MIN,
                  CFG_BTC_FAST_WLAN_CONN_PREF_MAX ),
+
+   REG_VARIABLE( CFG_ENABLE_RTSCTS_HTVHT_NAME, WLAN_PARAM_Integer,
+                  hdd_config_t, enableRtsCtsHtVht,
+                  VAR_FLAGS_OPTIONAL |
+                  VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                  CFG_ENABLE_RTSCTS_HTVHT_DEFAULT,
+                  CFG_ENABLE_RTSCTS_HTVHT_MIN,
+                  CFG_ENABLE_RTSCTS_HTVHT_MAX),
 
    REG_VARIABLE( CFG_DXE_REPLENISH_RX_TIMER_VALUE, WLAN_PARAM_Integer,
                   hdd_config_t, dxeReplenishRXTimerVal,
@@ -5190,6 +5212,15 @@ v_BOOL_t hdd_update_config_dat( hdd_context_t *pHddCtx )
    {
       fStatus = FALSE;
       hddLog(LOGE, "Could not pass on WNI_CFG_BTC_FAST_WLAN_CONN_PREF ");
+   }
+
+   if (ccmCfgSetInt(pHddCtx->hHal, WNI_CFG_ENABLE_RTSCTS_HTVHT,
+               pConfig->enableRtsCtsHtVht,
+               NULL, eANI_BOOLEAN_FALSE) == eHAL_STATUS_FAILURE)
+   {
+       fStatus = FALSE;
+       hddLog(LOGE, "Could not pass on"
+               "WNI_CFG_ENABLE_RTSCTS_HTVHT to CCM");
    }
    return fStatus;
 }

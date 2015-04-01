@@ -8918,6 +8918,102 @@ static eHalStatus hdd_11d_scan_done(tHalHandle halHandle, void *pContext,
 
     return eHAL_STATUS_SUCCESS;
 }
+/**---------------------------------------------------------------------------
+
+  \brief hdd_init_frame_logging_done - callback to be executed when mgmt frame
+                                       logging is completed successfully.
+
+  \return -  None
+
+  --------------------------------------------------------------------------*/
+void hdd_init_frame_logging_done(void *mgmtlogInitCbContext, VOS_STATUS status)
+{
+   hdd_context_t* pHddCtx = (hdd_context_t*)mgmtlogInitCbContext;
+
+   if (NULL == pHddCtx)
+   {
+      hddLog(VOS_TRACE_LEVEL_ERROR,
+                 "%s: HDD context is NULL",__func__);
+      return;
+   }
+
+   if (VOS_STATUS_SUCCESS == status)
+   {
+      hddLog(VOS_TRACE_LEVEL_INFO, FL("Mgmt Frame Logging init successful"));
+      pHddCtx->mgmt_frame_logging = TRUE;
+   }
+   else
+   {
+      hddLog(VOS_TRACE_LEVEL_INFO, FL("Mgmt Frame Logging init not success"));
+      pHddCtx->mgmt_frame_logging = FALSE;
+   }
+
+   return;
+}
+/**---------------------------------------------------------------------------
+
+  \brief hdd_init_frame_logging - function to initialize frame logging.
+                            Currently only Mgmt Frames are logged in both TX
+                            and Rx direction and are sent to userspace
+                            application using logger thread when queried.
+
+  \return -  None
+
+  --------------------------------------------------------------------------*/
+void hdd_init_frame_logging(hdd_context_t* pHddCtx, v_BOOL_t enable)
+{
+   eHalStatus halStatus = eHAL_STATUS_FAILURE;
+   tpSirMgmtLoggingInitParam wlanMgmtLoggingInitParam;
+
+   if (TRUE != sme_IsFeatureSupportedByFW(MGMT_FRAME_LOGGING))
+   {
+       hddLog(VOS_TRACE_LEVEL_INFO, FL("MGMT_FRAME_LOGGING not supp by FW"));
+       return;
+   }
+
+   wlanMgmtLoggingInitParam = vos_mem_malloc(sizeof(tSirMgmtLoggingInitParam));
+   if(NULL == wlanMgmtLoggingInitParam)
+   {
+       hddLog(VOS_TRACE_LEVEL_FATAL, "%s: vos_mem_alloc failed ", __func__);
+       return;
+   }
+
+   vos_mem_set(wlanMgmtLoggingInitParam, sizeof(tSirMgmtLoggingInitParam), 0);
+
+   hddLog(VOS_TRACE_LEVEL_INFO, "%s: Configuring Mgmt Frame Logging %d",
+                                     __func__, enable);
+
+   if (enable)
+   {
+      wlanMgmtLoggingInitParam->enableFlag |= WLAN_FRAME_LOG_EN;
+   }
+
+   if (pHddCtx->cfg_ini->enableBMUHWtracing)
+   {
+      wlanMgmtLoggingInitParam->enableFlag |= WLAN_BMUHW_TRACE_LOG_EN;
+   }
+
+   wlanMgmtLoggingInitParam->frameType = WLAN_FRAME_LOGGING_FRAMETYPE_MGMT;
+   wlanMgmtLoggingInitParam->frameSize = WLAN_MGMT_LOGGING_FRAMESIZE_128BYTES;
+   wlanMgmtLoggingInitParam->bufferMode =
+                                       WLAN_FRAME_LOGGING_BUFFERMODE_CIRCULAR;
+
+   wlanMgmtLoggingInitParam->enableFlag &= ~WLAN_QXDM_LOG_EN;
+   wlanMgmtLoggingInitParam->enableFlag &= ~WLAN_DPU_TXP_LOG_EN;
+
+   wlanMgmtLoggingInitParam->mgmtlogInitCallback = hdd_init_frame_logging_done;
+   wlanMgmtLoggingInitParam->mgmtlogInitCbContext= pHddCtx;
+
+   halStatus = sme_InitMgmtFrameLogging(pHddCtx->hHal,
+                                                      wlanMgmtLoggingInitParam);
+
+   if (eHAL_STATUS_SUCCESS != halStatus)
+   {
+       vos_mem_free(wlanMgmtLoggingInitParam);
+   }
+
+   return;
+}
 
 /**---------------------------------------------------------------------------
 
@@ -9639,7 +9735,20 @@ int hdd_wlan_startup(struct device *dev )
            pHddCtx->cfg_ini->gEnableDebugLog =
            VOS_PKT_PROTO_TYPE_EAPOL | VOS_PKT_PROTO_TYPE_DHCP;
    }
+
+   if (pHddCtx->cfg_ini->enableMgmtLogging &&
+               pHddCtx->cfg_ini->wlanLoggingEnable)
+   {
+       hdd_init_frame_logging(pHddCtx, TRUE);
+   }
+   else
+   {
+       hddLog(VOS_TRACE_LEVEL_INFO, FL("Mgmt Logging disabled in ini"));
+   }
+
 #endif
+
+
    hdd_register_mcast_bcast_filter(pHddCtx);
    if (VOS_STA_SAP_MODE != hdd_get_conparam())
    {
