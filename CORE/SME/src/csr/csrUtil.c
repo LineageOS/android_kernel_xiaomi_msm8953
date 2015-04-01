@@ -2200,7 +2200,15 @@ tANI_U32 csrTranslateToWNICfgDot11Mode(tpAniSirGlobal pMac, eCsrCfgDot11Mode csr
         }
         else
         {
-            ret = WNI_CFG_DOT11_MODE_11AC;
+#ifdef WLAN_FEATURE_11AC
+            if ( IS_FEATURE_SUPPORTED_BY_DRIVER(DOT11AC) &&
+                     IS_FEATURE_SUPPORTED_BY_FW(DOT11AC))
+                ret = WNI_CFG_DOT11_MODE_11AC;
+            else
+                ret = WNI_CFG_DOT11_MODE_11N;
+#else
+            ret = WNI_CFG_DOT11_MODE_11N;
+#endif
         }
         break;
     case eCSR_CFG_DOT11_MODE_TAURUS:
@@ -2225,19 +2233,27 @@ tANI_U32 csrTranslateToWNICfgDot11Mode(tpAniSirGlobal pMac, eCsrCfgDot11Mode csr
         ret = WNI_CFG_DOT11_MODE_TITAN;
         break;
     case eCSR_CFG_DOT11_MODE_11G_ONLY:
-       ret = WNI_CFG_DOT11_MODE_11G_ONLY;
-       break;
+        ret = WNI_CFG_DOT11_MODE_11G_ONLY;
+        break;
     case eCSR_CFG_DOT11_MODE_11N_ONLY:
-       ret = WNI_CFG_DOT11_MODE_11N_ONLY;
-       break;
+        ret = WNI_CFG_DOT11_MODE_11N_ONLY;
+        break;
 
 #ifdef WLAN_FEATURE_11AC
-     case eCSR_CFG_DOT11_MODE_11AC_ONLY:
-        ret = WNI_CFG_DOT11_MODE_11AC_ONLY;
+    case eCSR_CFG_DOT11_MODE_11AC_ONLY:
+        if ( IS_FEATURE_SUPPORTED_BY_DRIVER(DOT11AC) &&
+             IS_FEATURE_SUPPORTED_BY_FW(DOT11AC))
+            ret = WNI_CFG_DOT11_MODE_11AC_ONLY;
+        else
+            ret = WNI_CFG_DOT11_MODE_11N;
         break;
-     case eCSR_CFG_DOT11_MODE_11AC:
-        ret = WNI_CFG_DOT11_MODE_11AC;
-       break;
+    case eCSR_CFG_DOT11_MODE_11AC:
+        if ( IS_FEATURE_SUPPORTED_BY_DRIVER(DOT11AC) &&
+             IS_FEATURE_SUPPORTED_BY_FW(DOT11AC))
+             ret = WNI_CFG_DOT11_MODE_11AC;
+        else
+            ret = WNI_CFG_DOT11_MODE_11N;
+        break;
 #endif
     default:
         smsLog(pMac, LOGW, FL("doesn't expect %d as csrDo11Mode"), csrDot11Mode);
