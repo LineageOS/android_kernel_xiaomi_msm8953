@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -99,6 +99,12 @@ typedef struct sAniNlMsg {
     int radio;                        // unit number of the radio
     tAniHdr wmsg;                     // Airgo Message Header
 } tAniNlHdr;
+typedef struct sAniNlMgmtLogMsg {
+    struct  nlmsghdr nlh;
+    int radio;
+    tAniHdr wmsg;
+    uint32 frameSize;
+} tAniNlLogHdr;
 typedef struct sAniAppRegReq {
     tAniNlModTypes type;              // module id
     int pid;                          // process id

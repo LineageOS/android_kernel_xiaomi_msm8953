@@ -75,7 +75,7 @@
 #include "sapApi.h"
 #include "vos_trace.h"
 #include "vos_utils.h"
-
+#include <wlan_logging_sock_svc.h>
 
 #ifdef WLAN_BTAMP_FEATURE
 #include "bapApi.h"
@@ -1460,7 +1460,30 @@ VOS_STATUS vos_free_context( v_VOID_t *pVosContext, VOS_MODULE_ID moduleID,
   return VOS_STATUS_SUCCESS;
 
 } /* vos_free_context() */
-                                                 
+
+/**---------------------------------------------------------------------------
+
+  \brief vos_logger_pkt_serialize() - queue a logging vos pkt
+
+  This API allows single vos pkt to be queued and later sent to userspace by
+  logger thread.
+
+  \param pPacket - a pointer to a vos pkt to be queued
+         pkt_type - type of pkt to be queued
+                    LOG_PKT_TYPE_DATA_MGMT - frame log i.e data/mgmt pkts
+
+  \return VOS_STATUS_SUCCESS - the pkt has been successfully queued.
+          VOS_STATUS_E_FAILURE - the pkt queue handler has reported
+          a failure.
+  --------------------------------------------------------------------------*/
+VOS_STATUS vos_logger_pkt_serialize( vos_pkt_t *pPacket, uint8 pkt_type)
+{
+#ifdef WLAN_LOGGING_SOCK_SVC_ENABLE
+      return wlan_queue_logpkt_for_app(pPacket, pkt_type);
+#else
+      return vos_pkt_return_packet(pPacket);
+#endif
+}
 
 /**---------------------------------------------------------------------------
   

@@ -63,6 +63,7 @@
 #include <linux/semaphore.h>
 #include <wlan_hdd_hostapd.h>
 #include "cfgApi.h"
+#include <wlan_logging_sock_svc.h>
 
 #ifdef WLAN_BTAMP_FEATURE
 #include "bapApi.h"
@@ -2031,6 +2032,9 @@ VOS_STATUS hdd_wlan_shutdown(void)
    vos_sched_flush_mc_mqs(vosSchedContext);
    vos_sched_flush_tx_mqs(vosSchedContext);
    vos_sched_flush_rx_mqs(vosSchedContext);
+#ifdef WLAN_LOGGING_SOCK_SVC_ENABLE
+   wlan_logging_flush_pkt_queue();
+#endif
 
    /* Deinit all the TX and MC queues */
    vos_sched_deinit_mqs(vosSchedContext);

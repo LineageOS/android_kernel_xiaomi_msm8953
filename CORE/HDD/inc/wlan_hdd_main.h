@@ -103,6 +103,7 @@
 /** Maximum time(ms)to wait for disconnect to complete **/
 #define WLAN_WAIT_TIME_DISCONNECT  2000
 #define WLAN_WAIT_TIME_STATS       800
+#define WLAN_WAIT_TIME_FRAME_LOG   2000
 #define WLAN_WAIT_TIME_POWER       800
 #define WLAN_WAIT_TIME_COUNTRY     1000
 #define WLAN_WAIT_TIME_CHANNEL_UPDATE   600
@@ -272,6 +273,13 @@ struct statsContext
    unsigned int magic;
 };
 
+struct getFrameLogCtx
+{
+   struct completion completion;
+   hdd_adapter_t *pAdapter;
+   unsigned int magic;
+};
+
 extern spinlock_t hdd_context_lock;
 
 #define STATS_CONTEXT_MAGIC 0x53544154   //STAT
@@ -280,6 +288,7 @@ extern spinlock_t hdd_context_lock;
 #define SNR_CONTEXT_MAGIC   0x534E5200   //SNR
 #define BCN_MISS_RATE_CONTEXT_MAGIC 0x513F5753
 #define FW_STATS_CONTEXT_MAGIC  0x5022474E //FW STATS
+#define GET_FRAME_LOG_MAGIC   0x464c4f47   //FLOG
 
 /*
  * Driver miracast parameters 0-Disabled
@@ -1394,6 +1403,7 @@ struct hdd_context_s
     struct notifier_block ipv4_notifier;
     //Lock to avoid race condition during wmm operations
     struct mutex   wmmLock;
+    v_BOOL_t mgmt_frame_logging;
 };
 
 
@@ -1406,6 +1416,47 @@ struct hdd_context_s
 #define WLAN_HDD_IS_LOAD_UNLOAD_IN_PROGRESS(pHddCtx)  \
             (pHddCtx->isLoadUnloadInProgress &    \
               (WLAN_HDD_LOAD_IN_PROGRESS | WLAN_HDD_UNLOAD_IN_PROGRESS))
+
+/* Logging of both Mgmt and Data pkts are supported by HW in both TX & RX.
+ * But only support for logging of Mgmt pkts is supported from host driver.
+ */
+typedef enum
+{
+   WLAN_FRAME_LOGGING_FRAMETYPE_DATA,
+   WLAN_FRAME_LOGGING_FRAMETYPE_MGMT,
+} WLAN_FRAME_LOGGING_FRAMETYPE;
+
+// Only first 64/128 bytes of Mgmt/Data pkts can be logged.
+typedef enum
+{
+   WLAN_MGMT_LOGGING_FRAMESIZE_64BYTES = 64,
+   WLAN_MGMT_LOGGING_FRAMESIZE_128BYTES = 128,
+} WLAN_MGMT_LOGGING_FRAMESIZE;
+
+/* In Circular Mode HW buffer will be filled in circular fashion with buffer
+ * overwritten when buffer memory is full and new pkt is to be logged.
+ * Freeze mode will stop filling the buffer memory when buffer is full and thus
+ * no more pkts will logged unless buffer memory is freed.
+ */
+typedef enum
+{
+   WLAN_FRAME_LOGGING_BUFFERMODE_CIRCULAR,
+   WLAN_FRAME_LOGGING_BUFFERMODE_FREEZE,
+} WLAN_FRAME_LOGGING_BUFFERMODE;
+
+/* WLAN_FRAME_LOG_EN - Enables frame logging in HW
+ * WLAN_BMUHW_TRACE_LOG_EN - 8K/16K memory buffer will be used for logging
+ * WLAN_QXDM_LOG_EN - FW QXDM logs will be routed through host driver
+ * WLAN_DPU_TXP_LOG_EN - pkts will be logged at both DPU and TXP HW block.
+ */
+typedef enum
+{
+   WLAN_FRAME_LOG_EN = 1<<0,
+   WLAN_BMUHW_TRACE_LOG_EN = 1<<1,
+   WLAN_QXDM_LOG_EN = 1<<2,
+   WLAN_DPU_TXP_LOG_EN = 1<<3,
+} WLAN_ENABLE_HW_FW_LOG_TYPE;
+
 /*--------------------------------------------------------------------------- 
   Function declarations and documenation
   -------------------------------------------------------------------------*/

@@ -129,6 +129,7 @@ typedef enum {
 #ifdef FEATURE_WLAN_TDLS
    TDLS_OFF_CHANNEL      = 51,
 #endif
+   MGMT_FRAME_LOGGING    = 53,
    //MAX_FEATURE_SUPPORTED = 128
 } placeHolderInCapBitmap;
 
@@ -332,6 +333,7 @@ typedef struct sSirMbMsgP2p
 
 // HAL message types
 #define SIR_HAL_MSG_TYPES_BEGIN            (SIR_HAL_MODULE_ID << 8)
+#define SIR_HAL_EXT_MSG_TYPES_BEGIN        (SIR_HAL_EXT_MODULE_ID << 8)
 #define SIR_HAL_ITC_MSG_TYPES_BEGIN        (SIR_HAL_MSG_TYPES_BEGIN+0x20)
 #define SIR_HAL_RADAR_DETECTED_IND         SIR_HAL_ITC_MSG_TYPES_BEGIN
 #define SIR_HAL_WDT_KAM_RSP                (SIR_HAL_ITC_MSG_TYPES_BEGIN + 1)
@@ -701,6 +703,9 @@ typedef struct sSirMbMsgP2p
 
 #define SIR_HAL_ENCRYPT_MSG_REQ               (SIR_HAL_ITC_MSG_TYPES_BEGIN + 263)
 #define SIR_HAL_ENCRYPT_MSG_RSP               (SIR_HAL_ITC_MSG_TYPES_BEGIN + 264)
+
+#define SIR_HAL_MGMT_LOGGING_INIT_REQ         (SIR_HAL_ITC_MSG_TYPES_BEGIN + 265)
+#define SIR_HAL_GET_FRAME_LOG_REQ             (SIR_HAL_ITC_MSG_TYPES_BEGIN + 266)
 
 #define SIR_HAL_MSG_TYPES_END              (SIR_HAL_MSG_TYPES_BEGIN + 0x1FF)
 // CFG message types

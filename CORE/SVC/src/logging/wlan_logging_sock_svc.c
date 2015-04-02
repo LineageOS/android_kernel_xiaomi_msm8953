@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2014 The Linux Foundation. All rights reserved.
+* Copyright (c) 2014-2015 The Linux Foundation. All rights reserved.
 *
 * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
 *
@@ -42,15 +42,24 @@
 #include "vos_memory.h"
 
 #define LOGGING_TRACE(level, args...) \
-		VOS_TRACE(VOS_MODULE_ID_HDD, level, ## args)
+		VOS_TRACE(VOS_MODULE_ID_SVC, level, ## args)
 
 /* Global variables */
 
 #define ANI_NL_MSG_LOG_TYPE 89
 #define ANI_NL_MSG_READY_IND_TYPE 90
+#define ANI_NL_MSG_LOG_PKT_TYPE 91
 #define INVALID_PID -1
 
 #define MAX_LOGMSG_LENGTH 4096
+#define LOGGER_PKT_POST_MASK   0x001
+#define HOST_LOG_POST_MASK   0x002
+
+#define LOGGER_MAX_PKT_Q_LEN   (8)
+
+enum {
+	LOG_PKT_TYPE_DATA_MGMT = 0x1
+};
 
 struct log_msg {
 	struct list_head node;
@@ -76,6 +85,12 @@ struct wlan_logging {
 	struct list_head free_list;
 	/* Holds the filled nodes which needs to be indicated to APP */
 	struct list_head filled_list;
+	/* Points to head of logger pkt queue */
+	vos_pkt_t *data_mgmt_pkt_queue;
+	/* Holds number of pkts in vos pkt queue */
+	unsigned int data_mgmt_pkt_qcnt;
+	/* Lock to synchronize of queue/dequeue of pkts in logger pkt queue */
+	spinlock_t data_mgmt_pkt_lock;
 	/* Wait queue for Logger thread */
 	wait_queue_head_t wait_queue;
 	/* Logger thread */
@@ -84,12 +99,16 @@ struct wlan_logging {
 	struct completion   shutdown_comp;
 	/* Indicates to logger thread to exit */
 	bool exit;
-	/* wakeup indication */
-	bool wakeEvent;
 	/* Holds number of dropped logs*/
 	unsigned int drop_count;
+	/* Holds number of dropped vos pkts*/
+	unsigned int pkt_drop_cnt;
 	/* current logbuf to which the log will be filled to */
 	struct log_msg *pcur_node;
+	/* Event flag used for wakeup and post indication*/
+	unsigned long event_flag;
+	/* Indicates logger thread is activated */
+	bool is_active;
 };
 
 static struct wlan_logging gwlan_logging;
@@ -219,6 +238,7 @@ static void set_default_logtoapp_log_level(void)
 			VOS_TRUE);
 	vos_trace_setValue(VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ALL, VOS_TRUE);
 	vos_trace_setValue(VOS_MODULE_ID_PMC, VOS_TRACE_LEVEL_ALL, VOS_TRUE);
+	vos_trace_setValue(VOS_MODULE_ID_SVC, VOS_TRACE_LEVEL_ALL, VOS_TRUE);
 }
 
 static void clear_default_logtoapp_log_level(void)
@@ -234,8 +254,6 @@ static void clear_default_logtoapp_log_level(void)
 				VOS_TRUE);
 	}
 
-	vos_trace_setValue(VOS_MODULE_ID_RSV3, VOS_TRACE_LEVEL_NONE,
-			VOS_FALSE);
 	vos_trace_setValue(VOS_MODULE_ID_RSV4, VOS_TRACE_LEVEL_NONE,
 			VOS_FALSE);
 }
@@ -375,7 +393,7 @@ int wlan_log_to_user(VOS_TRACE_LEVEL log_level, char *to_be_sent, int length)
                  * register for the logs.
                  */
 		if ( (gapp_pid != INVALID_PID)) {
-			gwlan_logging.wakeEvent = TRUE;
+			set_bit(HOST_LOG_POST_MASK, &gwlan_logging.event_flag);
 			wake_up_interruptible(&gwlan_logging.wait_queue);
 		}
 		else {
@@ -391,6 +409,99 @@ int wlan_log_to_user(VOS_TRACE_LEVEL log_level, char *to_be_sent, int length)
 	}
 
 	return 0;
+}
+
+static int send_data_mgmt_log_pkt_to_user(void)
+{
+	int ret = -1;
+	int extra_header_len, nl_payload_len;
+	struct sk_buff *skb = NULL;
+	static int nlmsg_seq;
+	vos_pkt_t *current_pkt;
+	vos_pkt_t *next_pkt;
+	VOS_STATUS status = VOS_STATUS_E_FAILURE;
+	unsigned long flags;
+
+	tAniNlLogHdr msg_header;
+
+	do {
+		spin_lock_irqsave(&gwlan_logging.data_mgmt_pkt_lock, flags);
+
+		/* pick first pkt from queued chain */
+		current_pkt = gwlan_logging.data_mgmt_pkt_queue;
+
+		/* get the pointer to the next packet in the chain */
+		status = vos_pkt_walk_packet_chain(current_pkt, &next_pkt,
+							TRUE);
+
+		/* both "success" and "empty" are acceptable results */
+		if (!((status == VOS_STATUS_SUCCESS) ||
+					(status == VOS_STATUS_E_EMPTY))) {
+			++gwlan_logging.pkt_drop_cnt;
+			spin_unlock_irqrestore(
+				&gwlan_logging.data_mgmt_pkt_lock, flags);
+			LOGGING_TRACE(VOS_TRACE_LEVEL_ERROR,
+				"%s: Failure walking packet chain", __func__);
+			return -EIO;
+		}
+
+		/* update queue head with next pkt ptr which could be NULL */
+		gwlan_logging.data_mgmt_pkt_queue = next_pkt;
+		--gwlan_logging.data_mgmt_pkt_qcnt;
+		spin_unlock_irqrestore(&gwlan_logging.data_mgmt_pkt_lock, flags);
+
+		status = vos_pkt_get_os_packet(current_pkt, (v_VOID_t **)&skb,
+						TRUE);
+		if (!VOS_IS_STATUS_SUCCESS(status)) {
+			++gwlan_logging.pkt_drop_cnt;
+			LOGGING_TRACE(VOS_TRACE_LEVEL_ERROR,
+			"%s: Failure extracting skb from vos pkt", __func__);
+			return -EIO;
+		}
+
+		/*return vos pkt since skb is already detached */
+		vos_pkt_return_packet(current_pkt);
+
+		extra_header_len = sizeof(msg_header.radio) + sizeof(tAniHdr) +
+						sizeof(msg_header.frameSize);
+		nl_payload_len = NLMSG_ALIGN(extra_header_len + skb->len);
+
+		msg_header.nlh.nlmsg_type = ANI_NL_MSG_LOG;
+		msg_header.nlh.nlmsg_len = nl_payload_len;
+		msg_header.nlh.nlmsg_flags = NLM_F_REQUEST;
+		msg_header.nlh.nlmsg_pid = gapp_pid;
+		msg_header.nlh.nlmsg_seq = nlmsg_seq++;
+
+		msg_header.radio = 0;
+
+		msg_header.wmsg.type = ANI_NL_MSG_LOG_PKT_TYPE;
+		msg_header.wmsg.length = skb->len + sizeof(uint32);
+
+		msg_header.frameSize = WLAN_MGMT_LOGGING_FRAMESIZE_128BYTES;
+
+		if (unlikely(skb_headroom(skb) < sizeof(msg_header))) {
+			LOGGING_TRACE(VOS_TRACE_LEVEL_ERROR,
+				"VPKT [%d]: Insufficient headroom, head[%p],"
+				" data[%p], req[%zu]", __LINE__, skb->head,
+				skb->data, sizeof(msg_header));
+			return -EIO;
+		}
+
+		vos_mem_copy(skb_push(skb, sizeof(msg_header)), &msg_header,
+							sizeof(msg_header));
+
+		ret = nl_srv_ucast(skb, gapp_pid, 0);
+		if (ret < 0) {
+			LOGGING_TRACE(VOS_TRACE_LEVEL_INFO,
+				"%s: Send Failed %d drop_count = %u\n",
+				__func__, ret, ++gwlan_logging.pkt_drop_cnt);
+		} else {
+			ret = 0;
+		}
+
+	} while (next_pkt);
+
+	return ret;
 }
 
 static int send_filled_buffers_to_user(void)
@@ -500,14 +611,13 @@ static int wlan_logging_thread(void *Arg)
 
 	while (!gwlan_logging.exit) {
 		ret_wait_status = wait_event_interruptible(
-		    gwlan_logging.wait_queue,
-		    (gwlan_logging.wakeEvent || gwlan_logging.exit));
-
-		gwlan_logging.wakeEvent = FALSE;
+		  gwlan_logging.wait_queue,
+		  (test_bit(HOST_LOG_POST_MASK, &gwlan_logging.event_flag) ||
+		  gwlan_logging.exit ||
+		  test_bit(LOGGER_PKT_POST_MASK, &gwlan_logging.event_flag)));
 
 		if (ret_wait_status == -ERESTARTSYS) {
-			pr_err("%s: wait_event_interruptible returned -ERESTARTSYS",
-				__func__);
+			pr_err("%s: wait_event return -ERESTARTSYS", __func__);
 			break;
 		}
 
@@ -521,9 +631,17 @@ static int wlan_logging_thread(void *Arg)
 		    continue;
 		}
 
-		ret = send_filled_buffers_to_user();
-		if (-ENOMEM == ret) {
-		    msleep(200);
+		if (test_and_clear_bit(HOST_LOG_POST_MASK,
+			&gwlan_logging.event_flag)) {
+			ret = send_filled_buffers_to_user();
+			if (-ENOMEM == ret) {
+				msleep(200);
+			}
+		}
+
+		if (test_and_clear_bit(LOGGER_PKT_POST_MASK,
+			&gwlan_logging.event_flag)) {
+			send_data_mgmt_log_pkt_to_user();
 		}
 	}
 
@@ -565,7 +683,7 @@ static int wlan_logging_proc_sock_rx_msg(struct sk_buff *skb)
 			wlan_queue_logmsg_for_app();
 		}
 		spin_unlock_bh(&gwlan_logging.spin_lock);
-		gwlan_logging.wakeEvent = TRUE;
+		set_bit(HOST_LOG_POST_MASK, &gwlan_logging.event_flag);
 		wake_up_interruptible(&gwlan_logging.wait_queue);
 	} else {
 		/* This is to set the default levels (WLAN logging
@@ -623,7 +741,8 @@ int wlan_logging_sock_activate_svc(int log_fe_to_console, int num_buf)
 
 	init_waitqueue_head(&gwlan_logging.wait_queue);
 	gwlan_logging.exit = false;
-	gwlan_logging.wakeEvent = FALSE;
+	clear_bit(HOST_LOG_POST_MASK, &gwlan_logging.event_flag);
+	clear_bit(LOGGER_PKT_POST_MASK, &gwlan_logging.event_flag);
 	init_completion(&gwlan_logging.shutdown_comp);
 	gwlan_logging.thread = kthread_create(wlan_logging_thread, NULL,
 					"wlan_logging_thread");
@@ -638,12 +757,35 @@ int wlan_logging_sock_activate_svc(int log_fe_to_console, int num_buf)
 		return -ENOMEM;
 	}
 	wake_up_process(gwlan_logging.thread);
+	gwlan_logging.is_active = true;
 
 	nl_srv_register(ANI_NL_MSG_LOG, wlan_logging_proc_sock_rx_msg);
 
 	//Broadcast SVC ready message to logging app/s running
 	wlan_logging_srv_nl_ready_indication();
 	pr_info("%s: Activated wlan_logging svc\n", __func__);
+	return 0;
+}
+
+int wlan_logging_flush_pkt_queue(void)
+{
+	vos_pkt_t *pkt_queue_head;
+	unsigned long flags;
+
+	spin_lock_irqsave(&gwlan_logging.data_mgmt_pkt_lock, flags);
+	if (NULL != gwlan_logging.data_mgmt_pkt_queue) {
+		pkt_queue_head = gwlan_logging.data_mgmt_pkt_queue;
+		gwlan_logging.data_mgmt_pkt_queue = NULL;
+		gwlan_logging.pkt_drop_cnt = 0;
+		gwlan_logging.data_mgmt_pkt_qcnt = 0;
+		spin_unlock_irqrestore(&gwlan_logging.data_mgmt_pkt_lock,
+					flags);
+		vos_pkt_return_packet(pkt_queue_head);
+	} else {
+		spin_unlock_irqrestore(&gwlan_logging.data_mgmt_pkt_lock,
+					flags);
+	}
+
 	return 0;
 }
 
@@ -660,6 +802,7 @@ int wlan_logging_sock_deactivate_svc(void)
 
 	INIT_COMPLETION(gwlan_logging.shutdown_comp);
 	gwlan_logging.exit = true;
+	gwlan_logging.is_active = false;
 	wake_up_interruptible(&gwlan_logging.wait_queue);
 	wait_for_completion(&gwlan_logging.shutdown_comp);
 
@@ -667,6 +810,8 @@ int wlan_logging_sock_deactivate_svc(void)
 	vfree(gplog_msg);
 	gwlan_logging.pcur_node = NULL;
 	spin_unlock_irqrestore(&gwlan_logging.spin_lock, irq_flag);
+
+	wlan_logging_flush_pkt_queue();
 
 	pr_info("%s: Deactivate wlan_logging svc\n", __func__);
 
@@ -676,6 +821,7 @@ int wlan_logging_sock_deactivate_svc(void)
 int wlan_logging_sock_init_svc(void)
 {
 	spin_lock_init(&gwlan_logging.spin_lock);
+	spin_lock_init(&gwlan_logging.data_mgmt_pkt_lock);
 	gapp_pid = INVALID_PID;
 	gwlan_logging.pcur_node = NULL;
 
@@ -689,4 +835,80 @@ int wlan_logging_sock_deinit_svc(void)
 
        return 0;
 }
+
+int wlan_queue_logpkt_for_app(vos_pkt_t *pPacket, uint8 pkt_type)
+{
+	unsigned long flags;
+	vos_pkt_t *next_pkt;
+	vos_pkt_t *free_pkt;
+	VOS_STATUS status = VOS_STATUS_E_FAILURE;
+
+	if (pPacket == NULL) {
+		LOGGING_TRACE(VOS_TRACE_LEVEL_ERROR,
+				"%s: Null param", __func__);
+		VOS_ASSERT(0);
+		return VOS_STATUS_E_FAILURE;
+	}
+
+	if (pkt_type != LOG_PKT_TYPE_DATA_MGMT) {
+		LOGGING_TRACE(VOS_TRACE_LEVEL_INFO,
+				"%s: Unknown pkt received", __func__);
+	}
+
+	if (gwlan_logging.is_active == false) {
+		/*return all packets queued*/
+		wlan_logging_flush_pkt_queue();
+
+		/*return currently received pkt*/
+		vos_pkt_return_packet(pPacket);
+		return VOS_STATUS_E_FAILURE;
+	}
+
+	spin_lock_irqsave(&gwlan_logging.data_mgmt_pkt_lock, flags);
+	if (gwlan_logging.data_mgmt_pkt_qcnt >= LOGGER_MAX_PKT_Q_LEN) {
+		status = vos_pkt_walk_packet_chain(
+			gwlan_logging.data_mgmt_pkt_queue, &next_pkt, TRUE);
+		/*both "success" and "empty" are acceptable results*/
+		if (!((status == VOS_STATUS_SUCCESS) ||
+				(status == VOS_STATUS_E_EMPTY))) {
+			++gwlan_logging.pkt_drop_cnt;
+			spin_unlock_irqrestore(
+				&gwlan_logging.data_mgmt_pkt_lock, flags);
+			LOGGING_TRACE(VOS_TRACE_LEVEL_ERROR,
+				"%s: Failure walking packet chain", __func__);
+			/*keep returning pkts to avoid low resource cond*/
+			vos_pkt_return_packet(pPacket);
+			return VOS_STATUS_E_FAILURE;
+		}
+
+		free_pkt = gwlan_logging.data_mgmt_pkt_queue;
+		gwlan_logging.data_mgmt_pkt_queue = next_pkt;
+		/*returning head of pkt queue. latest pkts are important*/
+		--gwlan_logging.data_mgmt_pkt_qcnt;
+		spin_unlock_irqrestore(&gwlan_logging.data_mgmt_pkt_lock,
+					flags);
+		vos_pkt_return_packet(free_pkt);
+	} else {
+		spin_unlock_irqrestore(&gwlan_logging.data_mgmt_pkt_lock,
+					flags);
+	}
+
+	spin_lock_irqsave(&gwlan_logging.data_mgmt_pkt_lock, flags);
+
+	if (gwlan_logging.data_mgmt_pkt_queue) {
+		vos_pkt_chain_packet(gwlan_logging.data_mgmt_pkt_queue,
+					pPacket, TRUE);
+	} else {
+		gwlan_logging.data_mgmt_pkt_queue = pPacket;
+	}
+	++gwlan_logging.data_mgmt_pkt_qcnt;
+
+	spin_unlock_irqrestore(&gwlan_logging.data_mgmt_pkt_lock, flags);
+
+	set_bit(LOGGER_PKT_POST_MASK, &gwlan_logging.event_flag);
+	wake_up_interruptible(&gwlan_logging.wait_queue);
+
+	return VOS_STATUS_SUCCESS;
+}
+
 #endif /* WLAN_LOGGING_SOCK_SVC_ENABLE */
