@@ -275,6 +275,17 @@ void csrAbortCommand( tpAniSirGlobal pMac, tSmeCmd *pCommand, tANI_BOOLEAN fStop
 eHalStatus sme_AcquireGlobalLock( tSmeStruct *psSme);
 eHalStatus sme_ReleaseGlobalLock( tSmeStruct *psSme);
 
+/* ---------------------------------------------------------------------------
+    \fn sme_SetCfgScanControlList
+    \brief  API to set Scan Control List
+    \param  hHal - The handle returned by macOpen.
+    \param  countryCode -  Pointer to the countryCode
+    \param  pChannelList -  Pointer to the valid channel list
+    \return eHalStatus
+  ---------------------------------------------------------------------------*/
+eHalStatus sme_SetCfgScanControlList(tHalHandle hHal, tANI_U8 *countryCode,
+                                                    tCsrChannel *pChannelList);
+
 #ifdef FEATURE_OEM_DATA_SUPPORT
 eHalStatus oemData_ProcessOemDataReqCommand(tpAniSirGlobal pMac, tSmeCmd *pCommand);
 #endif

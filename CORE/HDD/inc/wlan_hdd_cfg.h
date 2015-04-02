@@ -1408,9 +1408,16 @@ typedef enum
 #define CFG_ENABLE_BYPASS_11D_MAX                  ( 1 )
 #define CFG_ENABLE_BYPASS_11D_DEFAULT              ( 1 )
 
+/*
+ * gEnableDFSChnlScan
+ * 0: disable scan on DFS channels
+ * 1: enables passive scan on DFS channels
+ * 2: enables active scan on DFS channels for static list.
+ *    Static or cfg list is the channel list set by ioctl SETROAMSCANCHANNELS.
+*/
 #define CFG_ENABLE_DFS_CHNL_SCAN_NAME              "gEnableDFSChnlScan"
 #define CFG_ENABLE_DFS_CHNL_SCAN_MIN               ( 0 )
-#define CFG_ENABLE_DFS_CHNL_SCAN_MAX               ( 1 )
+#define CFG_ENABLE_DFS_CHNL_SCAN_MAX               ( 2 )
 #define CFG_ENABLE_DFS_CHNL_SCAN_DEFAULT           ( 1 )
 
 #define CFG_ENABLE_DFS_PNO_CHNL_SCAN_NAME              "gEnableDFSPnoChnlScan"

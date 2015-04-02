@@ -552,7 +552,11 @@ eHalStatus csrUpdateChannelList(tpAniSirGlobal pMac)
     tANI_U32 numChan = 0;
     tANI_U32 bufLen ;
     vos_msg_t msg;
-    tANI_U8 i;
+    tANI_U8 i, j;
+    tANI_U8 num_channel = 0;
+    tANI_U8 channel_state;
+    tANI_U8 cfgnumChannels = 0;
+    tANI_U8 *cfgChannelList = NULL;
 
     limInitOperatingClasses((tHalHandle)pMac);
     numChan = sizeof(pMac->roam.validChannelList);
@@ -574,25 +578,72 @@ eHalStatus csrUpdateChannelList(tpAniSirGlobal pMac)
                 "Failed to allocate memory for tSirUpdateChanList");
         return eHAL_STATUS_FAILED_ALLOC;
     }
+    vos_mem_zero(pChanList, bufLen);
+
+    smsLog(pMac, LOG1, FL("fEnableDFSChnlScan %d"),
+                                  pMac->scan.fEnableDFSChnlScan);
+
+    for (i = 0; i < numChan; i++)
+    {
+        channel_state =
+               vos_nv_getChannelEnabledState(pMac->roam.validChannelList[i]);
+
+        if((pMac->scan.fEnableDFSChnlScan == DFS_CHNL_SCAN_DISABLED)
+           && (channel_state == NV_CHANNEL_DFS))
+        {
+           continue;
+        }
+        pChanList->chanParam[num_channel].chanId =
+                    pMac->roam.validChannelList[i];
+        pChanList->chanParam[num_channel].pwr =
+          cfgGetRegulatoryMaxTransmitPower(pMac,
+                                           pScan->defaultPowerTable[i].chanId);
+        if (channel_state == NV_CHANNEL_DFS)
+            pChanList->chanParam[num_channel].dfsSet = VOS_TRUE;
+        else
+            pChanList->chanParam[num_channel].dfsSet = VOS_FALSE;
+
+        /* When DFS mode is 2, mark static channels as active */
+        if (pMac->scan.fEnableDFSChnlScan == DFS_CHNL_SCAN_ENABLED_ACTIVE)
+        {
+            cfgnumChannels =
+               pMac->roam.neighborRoamInfo.cfgParams.channelInfo.numOfChannels;
+            cfgChannelList =
+                 pMac->roam.neighborRoamInfo.cfgParams.channelInfo.ChannelList;
+
+            if (cfgChannelList)
+            {
+                for(j=0; j< cfgnumChannels; j++)
+                {
+                    if (CSR_IS_CHANNEL_DFS(cfgChannelList[j]) &&
+                         (pMac->roam.validChannelList[i] == cfgChannelList[j]))
+                    {
+                        pChanList->chanParam[num_channel].dfsSet = VOS_FALSE;
+                        VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_INFO,
+                                  "%s Marked DFS ch %d as active\n", __func__,
+                                   cfgChannelList[j]);
+                    }
+                }
+            }
+            else
+                VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_INFO,
+                                    "%s cfgChannelList is NULL \n", __func__);
+         }
+
+        VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_INFO,
+             "%s Supported Channel: %d dfsSet %d pwr: %d \n", __func__,
+              pChanList->chanParam[num_channel].chanId,
+              pChanList->chanParam[num_channel].dfsSet,
+              pChanList->chanParam[num_channel].pwr);
+        num_channel++;
+    }
+    pChanList->regId = csrGetCurrentRegulatoryDomain(pMac);
 
     msg.type = WDA_UPDATE_CHAN_LIST_REQ;
     msg.reserved = 0;
     msg.bodyptr = pChanList;
-    pChanList->numChan = numChan;
-    for (i = 0; i < pChanList->numChan; i++)
-    {
-        pChanList->chanParam[i].chanId = pMac->roam.validChannelList[i];
-        pChanList->chanParam[i].pwr = cfgGetRegulatoryMaxTransmitPower(pMac,
-                pScan->defaultPowerTable[i].chanId);
-        if (vos_nv_getChannelEnabledState(pChanList->chanParam[i].chanId) ==
-            NV_CHANNEL_DFS)
-            pChanList->chanParam[i].dfsSet = VOS_TRUE;
-        else
-            pChanList->chanParam[i].dfsSet = VOS_FALSE;
-        VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_INFO,
-             "%s Supported Channel: %d\n", __func__, pChanList->chanParam[i].chanId);
-    }
-    pChanList->regId = csrGetCurrentRegulatoryDomain(pMac);
+    pChanList->numChan = num_channel;
+
     if(VOS_STATUS_SUCCESS != vos_mq_post_message(VOS_MODULE_ID_WDA, &msg))
     {
         VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_FATAL,
