@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -335,4 +335,7 @@ v_VOID_t  vos_set_roam_delay_stats_enabled(v_U8_t value);
 v_U8_t    vos_get_roam_delay_stats_enabled(v_VOID_t);
 v_U32_t   vos_get_dxeReplenishRXTimerVal(void);
 v_BOOL_t  vos_get_dxeSSREnable(void);
+
+v_U8_t vos_is_fw_logging_enabled(void);
+
 #endif // if !defined __VOS_NVITEM_H

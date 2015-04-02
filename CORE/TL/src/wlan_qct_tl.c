@@ -3165,16 +3165,6 @@ WLANTL_updateSpoofMacAddr
   /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
   /*------------------------------------------------------------------------
-    Sanity check
-   ------------------------------------------------------------------------*/
-  if ( NULL == spoofMacAddr || NULL == selfMacAddr)
-  {
-    VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
-           "WLAN TL:Invalid parameter sent on WLANTL_updateSpoofMacAddr");
-    return VOS_STATUS_E_INVAL;
-  }
-
-  /*------------------------------------------------------------------------
     Extract TL control block
    ------------------------------------------------------------------------*/
   pTLCb = VOS_GET_TL_CB(pvosGCtx);

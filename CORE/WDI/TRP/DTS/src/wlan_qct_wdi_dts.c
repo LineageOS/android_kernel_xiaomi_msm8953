@@ -585,6 +585,42 @@ wpt_status WDTS_RxPacket (void *pContext, wpt_packet *pFrame, WDTS_ChannelType c
       ucMPDUHOffset, usMPDUDOffset, usMPDULen, ucMPDUHLen, ucTid,
       WDI_RX_BD_HEADER_SIZE);
 
+  pRxMetadata = WDI_DS_ExtractRxMetaData(pFrame);
+
+  // Special handling for frames which contain logging information
+  if (WDTS_CHANNEL_RX_LOG == channel)
+  {
+      if(VPKT_SIZE_BUFFER_ALIGNED < (usMPDULen+ucMPDUHOffset)){
+        WPAL_TRACE(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_FATAL,
+                   "Invalid Frame size, might memory corrupted(%d+%d/%d)",
+                   usMPDULen, ucMPDUHOffset, VPKT_SIZE_BUFFER_ALIGNED);
+
+        /* Size of the packet tranferred by the DMA engine is
+         * greater than the the memory allocated for the skb
+         */
+        WPAL_BUG(0);
+
+        wpalPacketFree(pFrame);
+        return eWLAN_PAL_STATUS_SUCCESS;
+      }
+
+      /* Firmware should send the Header offset as length
+       * of RxBd and data length should be populated to
+       * the length of total data being sent
+       */
+      wpalPacketSetRxLength(pFrame, usMPDULen+ucMPDUHOffset);
+      wpalPacketRawTrimHead(pFrame, ucMPDUHOffset);
+
+      // Invoke Rx complete callback
+      wpalLogPktSerialize(pFrame);
+
+      return eWLAN_PAL_STATUS_SUCCESS;
+  }
+  else
+  {
+      pRxMetadata->loggingData = 0;
+  }
+
   if(!isFcBd)
   {
       if(usMPDUDOffset <= ucMPDUHOffset || usMPDULen < ucMPDUHLen) {
@@ -634,9 +670,6 @@ wpt_status WDTS_RxPacket (void *pContext, wpt_packet *pFrame, WDTS_ChannelType c
           wpalPacketFree(pFrame);
           return eWLAN_PAL_STATUS_SUCCESS;
       }
-     
-
-      pRxMetadata = WDI_DS_ExtractRxMetaData(pFrame);
 
       pRxMetadata->fc = isFcBd;
       pRxMetadata->staId = WDI_RX_BD_GET_STA_ID(pBDHeader);
@@ -742,7 +775,6 @@ wpt_status WDTS_RxPacket (void *pContext, wpt_packet *pFrame, WDTS_ChannelType c
       wpalPacketSetRxLength(pFrame, usMPDULen+ucMPDUHOffset);
       wpalPacketRawTrimHead(pFrame, ucMPDUHOffset);
 
-      pRxMetadata = WDI_DS_ExtractRxMetaData(pFrame);
       //flow control related
       pRxMetadata->fc = isFcBd;
       pRxMetadata->mclkRxTimestamp = WDI_RX_BD_GET_TIMESTAMP(pBDHeader);

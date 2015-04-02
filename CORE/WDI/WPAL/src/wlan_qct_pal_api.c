@@ -430,6 +430,19 @@ int wpalWcnssIsProntoHwVer3(void)
 }
 
 /*---------------------------------------------------------------------------
+    wpalIsFwLoggingEnabled -  Check if Firmware will send logs using DXE
+
+    Param:
+       None
+    Return:
+        Check the documentation of vos_is_fw_logging_enabled
+---------------------------------------------------------------------------*/
+wpt_uint8 wpalIsFwLoggingEnabled(void)
+{
+  return vos_is_fw_logging_enabled();
+}
+
+/*---------------------------------------------------------------------------
     wpalFwDumpReq -  Trigger the dump commands to Firmware
      
     Param:

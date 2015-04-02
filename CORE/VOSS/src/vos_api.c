@@ -2298,6 +2298,23 @@ v_BOOL_t vos_is_wlan_in_badState(VOS_MODULE_ID moduleId,
 
 /**---------------------------------------------------------------------------
 
+  \brief vos_is_fw_logging_enabled() -
+
+  API to check if firmware is configured to send logs using DXE channel
+
+  \param  -  None
+
+  \return -  0: firmware logging is not enabled
+             1: firmware logging is enabled
+
+  --------------------------------------------------------------------------*/
+v_U8_t vos_is_fw_logging_enabled(void)
+{
+   return hdd_is_fw_logging_enabled();
+}
+
+/**---------------------------------------------------------------------------
+
   \brief vos_set_roam_delay_stats_enabled() -
 
   API to set value of roamDelayStatsEnabled in vos context

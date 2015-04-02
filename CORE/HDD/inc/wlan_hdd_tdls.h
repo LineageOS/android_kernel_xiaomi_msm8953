@@ -218,6 +218,7 @@ typedef struct _hddTdlsPeer_t {
     tTDLSLinkReason reason;
     cfg80211_exttdls_callback state_change_notification;
     tANI_BOOLEAN   isOffChannelConfigured;
+    tANI_BOOLEAN   isOffChannelEstablished;
     tdls_req_params_t peerParams;
 } hddTdlsPeer_t;
 
