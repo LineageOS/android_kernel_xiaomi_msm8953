@@ -395,7 +395,7 @@ MTRACE(macTrace(pMac, TRACE_CODE_TIMER_ACTIVATE, psessionEntry->peSessionId, eLI
 
     limSendAuthMgmtFrame(pMac, &authFrame,
         pMac->ft.ftPEContext.pFTPreAuthReq->preAuthbssId,
-        LIM_NO_WEP_IN_FC, psessionEntry);
+        LIM_NO_WEP_IN_FC, psessionEntry, eSIR_FALSE);
 
     return;
 preauth_fail:
