@@ -673,6 +673,12 @@ void limCovertChannelScanType(tpAniSirGlobal pMac,tANI_U8 channelNum, tANI_BOOLE
         limLog(pMac, LOGE, FL("Invalid scan control list length:%d"), len);
         return ;
     }
+    if (pMac->fActiveScanOnDFSChannels)
+    {
+        limLog(pMac, LOG1, FL("DFS feature triggered,"
+                              "block scan type conversion"));
+        return ;
+    }
     for (i=0; (i+1) < len; i+=2)
     {
         if (channelPair[i] == channelNum)

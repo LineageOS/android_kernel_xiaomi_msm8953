@@ -1391,8 +1391,58 @@ __limProcessSmeScanReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
                    */
                   limLog(pMac, LOGP,
                           FL("could not retrieve Valid channel list"));
+
+                  if (pMac->lim.gLimRspReqd)
+                  {
+                      pMac->lim.gLimRspReqd = false;
+
+                      limSendSmeScanRsp(pMac, sizeof(tSirSmeScanRsp),
+                                        eSIR_SME_INVALID_PARAMETERS,
+                                        pScanReq->sessionId,
+                                        pScanReq->transactionId);
+                  }
+                  return;
               }
               pMlmScanReq->channelList.numChannels = (tANI_U8) cfg_len;
+
+              //Ignore DFS channels if DFS scan is disabled
+              if(pMac->scan.fEnableDFSChnlScan == DFS_CHNL_SCAN_DISABLED)
+              {
+                  tANI_U8 numChan = 0;
+                  tANI_U8 channel_state;
+                  tANI_U8 *chan_ptr = pMlmScanReq->channelList.channelNumber;
+
+                  limLog(pMac, LOG1,
+                     FL("Ignore DFS channels from valid channel list"));
+
+                  VOS_TRACE_HEX_DUMP(VOS_MODULE_ID_PE, VOS_TRACE_LEVEL_INFO,
+                                pMlmScanReq->channelList.channelNumber,
+                                pMlmScanReq->channelList.numChannels);
+
+                  //Filter DFS channels
+                  for (i = 0; i < cfg_len; i++)
+                  {
+                       channel_state =
+                              vos_nv_getChannelEnabledState(*(chan_ptr + i));
+
+                       //Allow channel if not DFS
+                       if(channel_state != NV_CHANNEL_DFS)
+                       {
+                          *(chan_ptr + numChan) = *(chan_ptr + i);
+                          numChan++;
+                       }
+                  }
+                  pMlmScanReq->channelList.numChannels = (tANI_U8) numChan;
+
+                  limLog(pMac, LOG1, FL("No of valid channels %d, No of"
+                         "channels after filtering %d"), cfg_len, numChan);
+
+                  limLog(pMac, LOG1, FL("Channel list after filtering: "));
+
+                  VOS_TRACE_HEX_DUMP(VOS_MODULE_ID_PE, VOS_TRACE_LEVEL_INFO,
+                                pMlmScanReq->channelList.channelNumber,
+                                pMlmScanReq->channelList.numChannels);
+              }
           }
           else
           {

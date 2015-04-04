@@ -3633,6 +3633,13 @@ typedef struct sSirSmeDelStaSelfRsp
     tSirMacAddr     selfMacAddr;
 }tSirSmeDelStaSelfRsp, *tpSirSmeDelStaSelfRsp;
 
+typedef enum DFSChanScanType
+{
+    DFS_CHNL_SCAN_DISABLED,
+    DFS_CHNL_SCAN_ENABLED_NORMAL,
+    DFS_CHNL_SCAN_ENABLED_ACTIVE
+}eDFSChanScanType;
+
 /* Coex Indication defines - 
    should match WLAN_COEX_IND_DATA_SIZE 
    should match WLAN_COEX_IND_TYPE_DISABLE_HB_MONITOR 
