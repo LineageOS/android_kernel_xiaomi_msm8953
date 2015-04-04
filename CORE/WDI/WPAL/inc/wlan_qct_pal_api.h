@@ -386,4 +386,5 @@ int  wpalIsSsrPanicOnFailure(void);
 int  wpalGetDxeReplenishRXTimerVal(void);
 int  wpalIsDxeSSREnable(void);
 
+wpt_uint8 wpalIsFwLoggingEnabled(void);
 #endif // __WLAN_QCT_PAL_API_H

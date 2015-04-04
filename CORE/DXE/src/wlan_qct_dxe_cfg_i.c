@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -252,59 +252,52 @@ WLANDXE_ChannelConfigType chanRXHighPriConfig =
    eWLAN_PAL_TRUE
 };
 
-#ifdef WLANDXE_TEST_CHANNEL_ENABLE
-WLANDXE_ChannelConfigType chanH2HTestConfig =
+WLANDXE_ChannelConfigType chanRXLogConfig =
 {
    /* Q handle type, Circular */
    WLANDXE_CHANNEL_HANDLE_CIRCULA,
 
-   /* Number of Descriptor, NOT CLEAR YET !!! */
-   5,
+   /* Number of Descriptors*/
+   8,
 
-   /* MAX num RX Buffer, NOT CLEAR YET !!! */
-   0,
+   /* MAX num RX Buffer*/
+   1,
 
-   /* Reference WQ, NOT CLEAR YET !!! */
-   /* Temporary BMU Work Q 5 */
-   5,
+   /* Reference WQ, RX23 */
+   23,
 
    /* USB Only, End point info */
    0,
 
    /* Transfer Type */
-   WLANDXE_DESC_CTRL_XTYPE_H2H,
+   WLANDXE_DESC_CTRL_XTYPE_B2H,
 
-   /* Channel Priority 7(Highest) - 0(Lowest), NOT CLEAR YET !!! */
-   5,
+   /* Channel Priority 7(Highest) - 0(Lowest)*/
+   0,
 
    /* BD attached to frames for this pipe */
-   eWLAN_PAL_FALSE,
+   eWLAN_PAL_TRUE,
 
-   /* chk_size, NOT CLEAR YET !!!*/
+   /* chk_size*/
    0,
 
-   /* bmuThdSel, NOT CLEAR YET !!! */
-   0,
+   /* bmuThdSel*/
+   8,
 
-   /* Added in Gen5 for Prefetch, NOT CLEAR YET !!!*/
+   /* Added in Gen5 for Prefetch*/
    eWLAN_PAL_TRUE,
 
    /* Use short Descriptor */
    eWLAN_PAL_TRUE
 };
-#endif /* WLANDXE_TEST_CHANNEL_ENABLE */
 
 WLANDXE_ChannelMappingType channelList[WDTS_CHANNEL_MAX] =
 {
    {WDTS_CHANNEL_TX_LOW_PRI,  WLANDXE_DMA_CHANNEL_0, &chanTXLowPriConfig},
    {WDTS_CHANNEL_TX_HIGH_PRI, WLANDXE_DMA_CHANNEL_4, &chanTXHighPriConfig},
    {WDTS_CHANNEL_RX_LOW_PRI,  WLANDXE_DMA_CHANNEL_1, &chanRXLowPriConfig},
-#ifndef WLANDXE_TEST_CHANNEL_ENABLE
    {WDTS_CHANNEL_RX_HIGH_PRI, WLANDXE_DMA_CHANNEL_3, &chanRXHighPriConfig},
-#else
-   {WDTS_CHANNEL_H2H_TEST_TX,    WLANDXE_DMA_CHANNEL_2, &chanH2HTestConfig},
-   {WDTS_CHANNEL_H2H_TEST_RX,    WLANDXE_DMA_CHANNEL_2, &chanH2HTestConfig}
-#endif /* WLANDXE_TEST_CHANNEL_ENABLE */
+   {WDTS_CHANNEL_RX_LOG, WLANDXE_DMA_CHANNEL_5, &chanRXLogConfig},
 };
 
 WLANDXE_TxCompIntConfigType txCompInt = 
@@ -327,6 +320,49 @@ WLANDXE_TxCompIntConfigType txCompInt =
    /* Periodic timer msec */
    10
 };
+
+// Indicates the DXE channels being used in the current run.
+static wpt_uint8 dxeEnabledChannels;
+
+/*==========================================================================
+  @  Function Name
+      dxeSetEnabledChannels
+
+  @  Description
+
+  @  Parameters
+
+  @  Return
+      void
+
+===========================================================================*/
+void dxeSetEnabledChannels
+(
+   wpt_uint8 enabledChannels
+)
+{
+   dxeEnabledChannels = enabledChannels;
+}
+
+/*==========================================================================
+  @  Function Name
+      dxeGetEnabledChannels
+
+  @  Description
+
+  @  Parameters
+
+  @  Return
+      wpt_uint8
+
+===========================================================================*/
+wpt_uint8 dxeGetEnabledChannels
+(
+   void
+)
+{
+   return dxeEnabledChannels;
+}
 
 /*==========================================================================
   @  Function Name 
@@ -475,7 +511,8 @@ wpt_status dxeChannelDefaultConfig
    }
    /* RX Channel, Set SIQ bit, Clear DIQ bit since source is not WQ */
    else if((WDTS_CHANNEL_RX_LOW_PRI  == channelEntry->channelType) ||
-           (WDTS_CHANNEL_RX_HIGH_PRI == channelEntry->channelType))
+           (WDTS_CHANNEL_RX_HIGH_PRI == channelEntry->channelType) ||
+           (WDTS_CHANNEL_RX_LOG == channelEntry->channelType))
    {
       channelEntry->extraConfig.chan_mask |= WLANDXE_CH_CTRL_SIQ_MASK;
    }
@@ -614,6 +651,10 @@ wpt_status dxeChannelDefaultConfig
    wpalGetNumRxRawPacket(&rxResourceCount);
    if((WDTS_CHANNEL_TX_LOW_PRI == channelEntry->channelType) ||
       (0 == rxResourceCount))
+   {
+      channelEntry->numDesc         = mappedChannel->channelConfig->nDescs;
+   }
+   else if(WDTS_CHANNEL_RX_LOG == channelEntry->channelType)
    {
       channelEntry->numDesc         = mappedChannel->channelConfig->nDescs;
    }

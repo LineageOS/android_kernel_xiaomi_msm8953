@@ -633,9 +633,6 @@ tBssSystemRole wdaGetGlobalSystemRole(tpAniSirGlobal pMac);
 #define WDA_TL_TX_SUSPEND_SUCCESS   0
 #define WDA_TL_TX_SUSPEND_FAILURE   1
 
-// FIXME Temporary value for R33D integaration
-//#define WDA_TL_TX_FRAME_TIMEOUT  20000 /* in msec a very high upper limit */
-
 #define DPU_FEEDBACK_UNPROTECTED_ERROR 0x0F
 
 
@@ -764,6 +761,10 @@ tBssSystemRole wdaGetGlobalSystemRole(tpAniSirGlobal pMac);
 /* WDA_IS_RX_LLC_PRESENT *****************************************************/
 #  define WDA_IS_RX_LLC_PRESENT(pRxMeta)    \
       ( (0 == ((WDI_DS_RxMetaInfoType*)(pRxMeta))->llcr) ? VOS_TRUE : VOS_FALSE )
+
+#  define WDA_IS_LOGGING_DATA(pRxMeta)    \
+        ((0 == ((WDI_DS_RxMetaInfoType*)(pRxMeta))->loggingData) ? VOS_FALSE \
+                                                                 : VOS_TRUE)
 
 #define WLANWDA_HO_IS_AN_AMPDU                    0x4000
 #define WLANWDA_HO_LAST_MPDU_OF_AMPDU             0x400
