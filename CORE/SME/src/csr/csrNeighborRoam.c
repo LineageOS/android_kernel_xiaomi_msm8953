@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -4768,19 +4768,28 @@ eHalStatus csrNeighborRoamInit(tpAniSirGlobal pMac)
     pNeighborRoamInfo->cfgParams.channelInfo.numOfChannels   =
                         pMac->roam.configParam.neighborRoamConfig.neighborScanChanList.numChannels;
 
-    pNeighborRoamInfo->cfgParams.channelInfo.ChannelList =
+    if (pNeighborRoamInfo->cfgParams.channelInfo.numOfChannels != 0)
+    {
+        pNeighborRoamInfo->cfgParams.channelInfo.ChannelList =
                 vos_mem_malloc(pMac->roam.configParam.neighborRoamConfig.neighborScanChanList.numChannels);
 
-    if (NULL == pNeighborRoamInfo->cfgParams.channelInfo.ChannelList)
-    {
-        smsLog(pMac, LOGE, FL("Memory Allocation for CFG Channel List failed"));
-        return eHAL_STATUS_RESOURCES;
-    }
+        if (NULL == pNeighborRoamInfo->cfgParams.channelInfo.ChannelList)
+        {
+            smsLog(pMac, LOGE, FL("Memory Allocation for CFG Channel List failed"));
+            return eHAL_STATUS_RESOURCES;
+        }
 
-    /* Update the roam global structure from CFG */
-    vos_mem_copy(pNeighborRoamInfo->cfgParams.channelInfo.ChannelList,
+        /* Update the roam global structure from CFG */
+        vos_mem_copy(pNeighborRoamInfo->cfgParams.channelInfo.ChannelList,
                         pMac->roam.configParam.neighborRoamConfig.neighborScanChanList.channelList,
                         pMac->roam.configParam.neighborRoamConfig.neighborScanChanList.numChannels);
+    }
+    else
+    {
+         smsLog(pMac, LOGW,
+                FL("invalid neighbor roam channel list: %u"),
+                    pNeighborRoamInfo->cfgParams.channelInfo.numOfChannels);
+    }
 
     vos_mem_set(pNeighborRoamInfo->currAPbssid, sizeof(tCsrBssid), 0);
     pNeighborRoamInfo->currentNeighborLookupThreshold = pMac->roam.neighborRoamInfo.cfgParams.neighborLookupThreshold;

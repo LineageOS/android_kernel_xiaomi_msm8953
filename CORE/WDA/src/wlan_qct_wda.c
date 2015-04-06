@@ -15966,7 +15966,7 @@ void WDA_RssiFilterReqCallback(WDI_Status wdiStatus, void* pUserData)
    return;
 }
 /*
- * FUNCTION: WDA_ProcessSetPreferredNetworkList
+ * FUNCTION: WDA_ProcessSetRssiFilterReq
  * Request to WDI to set Preferred Network List.Offload
  */ 
 VOS_STATUS WDA_ProcessSetRssiFilterReq(tWDA_CbContext *pWDA, 
