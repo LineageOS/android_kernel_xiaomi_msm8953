@@ -417,16 +417,14 @@ wpt_uint8 dxeGetEnabledChannels
                                DXE host driver main control block
 
   @  Return
-      wpt_status
+      void
 
 ===========================================================================*/
-wpt_status dxeCommonDefaultConfig
+void dxeCommonDefaultConfig
 (
    WLANDXE_CtrlBlkType     *dxeCtrlBlk
 )
 {
-   wpt_status                  status = eWLAN_PAL_STATUS_SUCCESS;
-
    dxeCtrlBlk->rxReadyCB     = NULL;
    dxeCtrlBlk->txCompCB      = NULL;
    dxeCtrlBlk->lowResourceCB = NULL;
@@ -434,8 +432,6 @@ wpt_status dxeCommonDefaultConfig
    wpalMemoryCopy(&dxeCtrlBlk->txCompInt,
                   &txCompInt,
                   sizeof(WLANDXE_TxCompIntConfigType));
-
-   return status;
 }
 
 /*==========================================================================
