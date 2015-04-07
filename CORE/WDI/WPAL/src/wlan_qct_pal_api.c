@@ -410,7 +410,7 @@ void wpalWlanReload(void)
 void wpalWcnssResetIntr(void)
 {
 #ifdef HAVE_WCNSS_RESET_INTR
-   wcnss_reset_intr();
+   wcnss_reset_fiq(true);
 #endif
    return;
 }
