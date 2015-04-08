@@ -240,6 +240,7 @@ typedef struct sLimTimers
     TX_TIMER           gLimPeriodicJoinProbeReqTimer;
     TX_TIMER           gLimDisassocAckTimer;
     TX_TIMER           gLimDeauthAckTimer;
+    TX_TIMER           gLimPeriodicAuthRetryTimer;
     // This timer is started when single shot NOA insert msg is sent to FW for scan in P2P GO mode
     TX_TIMER           gLimP2pSingleShotNoaInsertTimer;
     /* This timer is used to convert active channel to
@@ -995,6 +996,13 @@ typedef struct sHalMacStartParameters
 
 } tHalMacStartParameters;
 
+typedef enum
+{
+    LIM_AUTH_ACK_NOT_RCD,
+    LIM_AUTH_ACK_RCD_SUCCESS,
+    LIM_AUTH_ACK_RCD_FAILURE,
+} tAuthAckStatus;
+
 // -------------------------------------------------------------------
 /// MAC Sirius parameter structure
 typedef struct sAniSirGlobal
@@ -1081,6 +1089,7 @@ typedef struct sAniSirGlobal
     v_U8_t roamDelayStatsEnabled;
     tANI_BOOLEAN miracastVendorConfig;
     v_BOOL_t fActiveScanOnDFSChannels;
+    tAuthAckStatus  authAckStatus;
 } tAniSirGlobal;
 
 #ifdef FEATURE_WLAN_TDLS
