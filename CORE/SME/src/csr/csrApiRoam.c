@@ -598,6 +598,14 @@ eHalStatus csrUpdateChannelList(tpAniSirGlobal pMac)
         pChanList->chanParam[num_channel].pwr =
           cfgGetRegulatoryMaxTransmitPower(pMac,
                                            pScan->defaultPowerTable[i].chanId);
+        if (!pChanList->chanParam[num_channel].pwr)
+        {
+            smsLog(pMac, LOGE, FL("Power level is zero for channel %d "
+                                               "setting to default %d"),
+                               pChanList->chanParam[num_channel].chanId,
+                                                      TX_POWER_DEFAULT);
+            pChanList->chanParam[num_channel].pwr = TX_POWER_DEFAULT;
+        }
         if (channel_state == NV_CHANNEL_DFS)
             pChanList->chanParam[num_channel].dfsSet = VOS_TRUE;
         else

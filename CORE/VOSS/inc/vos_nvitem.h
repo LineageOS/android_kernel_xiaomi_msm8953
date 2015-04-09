@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -50,6 +50,8 @@
 /* Maximum number of channels per country can be ignored */
 #define MAX_CHANNELS_IGNORE 10
 #define MAX_COUNTRY_IGNORE 5
+
+#define TX_POWER_DEFAULT  30//in dbm
 
 typedef struct sCsrIgnoreChannels
 {
