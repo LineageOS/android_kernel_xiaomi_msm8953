@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1208,6 +1208,18 @@ VOS_STATUS vos_nv_open(void)
            VOS_TRACE(VOS_MODULE_ID_VOSS,  VOS_TRACE_LEVEL_ERROR,
                        "nvParser failed %d",status);
 
+           if (nvReadBufSize != sizeof(sHalNv)) {
+               vos_mem_free(pEncodedBuf);
+               pEncodedBuf = (v_U8_t *)vos_mem_malloc(sizeof(sHalNv));
+
+               if (!pEncodedBuf) {
+                   VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+                             "%s : failed to allocate memory for NV", __func__);
+                   vos_mem_free(pnvData);
+                   return VOS_STATUS_E_NOMEM;
+               }
+           }
+
            nvReadBufSize = 0;
 
            vos_mem_copy(pEncodedBuf, &nvDefaults, sizeof(sHalNv));
@@ -1246,6 +1258,17 @@ VOS_STATUS vos_nv_open(void)
         /* From here, NV2 will be stored into NV3 structure */
         dataOffset = sizeof(v_U32_t);
         nvReadEncodeBufSize = sizeof(sHalNvV2);
+        if (nvReadBufSize != nvReadEncodeBufSize)
+        {
+            vos_mem_free(pEncodedBuf);
+            pEncodedBuf = (v_U8_t *)vos_mem_malloc(nvReadEncodeBufSize);
+            if (!pEncodedBuf)
+            {
+                VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+                          "%s : failed to allocate memory for NV", __func__);
+                return VOS_STATUS_E_NOMEM;
+            }
+        }
         vos_mem_copy(pEncodedBuf,
                      &pnvEncodedBuf[dataOffset],
                      nvReadBufSize - dataOffset);
