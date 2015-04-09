@@ -2235,7 +2235,7 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_ROAMING_DFS_CHANNEL_NAME                "gAllowDFSChannelRoam"
 #define CFG_ROAMING_DFS_CHANNEL_MIN                 (0)
 #define CFG_ROAMING_DFS_CHANNEL_MAX                 (1)
-#define CFG_ROAMING_DFS_CHANNEL_DEFAULT             (0)
+#define CFG_ROAMING_DFS_CHANNEL_DEFAULT             (1)
 
 
 #ifdef WLAN_LOGGING_SOCK_SVC_ENABLE
