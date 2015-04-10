@@ -5718,4 +5718,9 @@ typedef struct sSirSmeUpdateMaxRateParams
     tANI_U8         smeSessionId;
 }tSirSmeUpdateMaxRateParams, *tpSirSmeUpdateMaxRateParams;
 
+typedef struct
+{
+    tANI_U32 event_data_len;
+    tANI_U8  event_data[1];
+} tSirNanEvent, *tpSirNanEvent;
 #endif /* __SIR_API_H */

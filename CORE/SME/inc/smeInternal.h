@@ -90,6 +90,7 @@ typedef enum eSmeCommandType
     eSmeCommandTdlsExitUapsd,
 #endif
 #endif
+    eSmeCommandNanReq,
     //PMC
     eSmePmcCommandMask = 0x20000, //To identify PMC commands
     eSmeCommandEnterImps,
@@ -169,6 +170,7 @@ typedef struct tagSmeStruct
 #endif /* WLAN_FEATURE_EXTSCAN */
    tSmeEncMsgHddCbkInfo pEncMsgInfoParams;
    void (*pBtCoexTDLSNotification) (void *pAdapter, int);
+   void (*nanCallback) (void*, tSirNanEvent*);
 
 } tSmeStruct, *tpSmeStruct;
 

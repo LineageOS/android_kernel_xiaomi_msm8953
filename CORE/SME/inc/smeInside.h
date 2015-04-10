@@ -229,6 +229,7 @@ typedef struct tagSmeCmd
         tSirPNOScanReq pnoInfo;
         tSirSpoofMacAddrReq macAddrSpoofCmd;
         tAniGetFrameLogReq getFramelogCmd;
+        tpNanRequest pNanReq;
     }u;
 }tSmeCmd;
 

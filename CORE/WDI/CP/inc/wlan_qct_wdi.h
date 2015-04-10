@@ -414,6 +414,7 @@ typedef enum
 #endif
   /*Delete BA Ind*/
   WDI_DEL_BA_IND,
+  WDI_NAN_EVENT_IND,
 
   WDI_MAX_IND
 }WDI_LowLevelIndEnumType;
@@ -614,6 +615,13 @@ typedef struct
                              see specific wake type */ 
 } WDI_WakeReasonIndType;
 #endif // WLAN_WAKEUP_EVENTS
+
+typedef struct
+{
+    wpt_uint16 event_data_len;
+    wpt_uint8* event_data;
+} WDI_NanEventType;
+
 
 /*---------------------------------------------------------------------------
  WDI_MissedBeaconIndType
@@ -946,6 +954,8 @@ typedef struct
     void *pEXTScanIndData;
 #endif
     WDI_DeleteBAIndType         wdiDeleteBAInd;
+
+    WDI_NanEventType wdiNanEvent;
   }  wdiIndicationData;
 }WDI_LowLevelIndType;
 
@@ -5740,6 +5750,16 @@ typedef struct
     function pointer will be called */
   void*             pUserData;
 } WDI_AddPeriodicTxPtrnParamsType;
+
+/*---------------------------------------------------------------------------
+  WDI_NanRequestType
+---------------------------------------------------------------------------*/
+typedef struct
+{
+    wpt_uint16 request_data_len;
+    wpt_uint8 request_data[1];
+} WDI_NanRequestType;
+
 
 /*---------------------------------------------------------------------------
   WDI_DelPeriodicTxPtrnParamsType
@@ -11391,6 +11411,29 @@ WDI_EncryptMsgReq(void* pwdiEncryptMsgParams,
         WDI_EncryptMsgRspCb wdiEncryptMsgCbRsp,
         void*                   pUserData
         );
+
+/**
+ @brief WDI_NanRequest
+        NAN request
+
+ @param pwdiNanRequest: data
+
+        pwdiNanCb: callback
+
+        usrData: user data will be passed back with the
+        callback
+
+ @return Result of the function call
+*/
+WDI_Status
+WDI_NanRequest
+(
+    WDI_NanRequestType           *pwdiNanRequest,
+    void                         *usrData
+);
+
+
+
 #ifdef __cplusplus
  }
 #endif 
