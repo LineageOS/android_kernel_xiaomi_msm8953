@@ -473,6 +473,9 @@ typedef enum
   WDI_MGMT_LOGGING_INIT_REQ                      = 104,
   WDI_GET_FRAME_LOG_REQ                          = 105,
 
+  /* NAN Request */
+  WDI_NAN_REQUEST                                = 106,
+
   WDI_MAX_REQ,
 
   /*Send a suspend Indication down to HAL*/
@@ -805,6 +808,9 @@ typedef enum
 
   WDI_MGMT_LOGGING_INIT_RSP                      = 104,
   WDI_GET_FRAME_LOG_RSP                          = 105,
+
+  WDI_NAN_RESPONSE                               = 106,
+
   /*-------------------------------------------------------------------------
     Indications
      !! Keep these last in the enum if possible
@@ -883,6 +889,7 @@ typedef enum
 #endif
   WDI_TDLS_CHAN_SWITCH_REQ_RESP      = WDI_HAL_IND_MIN + 26,
   WDI_HAL_DEL_BA_IND                 = WDI_HAL_IND_MIN + 27,
+  WDI_HAL_NAN_EVENT                  = WDI_HAL_IND_MIN + 28,
   WDI_MAX_RESP
 }WDI_ResponseEnumType; 
 
@@ -6149,5 +6156,56 @@ WDI_ProcessEncryptMsgRsp
   WDI_ControlBlockType*  pWDICtx,
   WDI_EventInfoType*     pEventData
 );
+
+/**
+ @brief Process NAN Request
+
+ @param  pWDICtx:         pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+WDI_Status
+WDI_ProcessNanRequest
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+/**
+ @brief Process NAN Response
+
+ @param  pWDICtx:         pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+WDI_Status
+WDI_ProcessNanResponse
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+/**
+*@brief Process NAN Event function (called when
+        an indication is being received over the
+        bus from HAL)
+
+ @param  pWDICtx:         pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+WDI_Status
+WDI_ProcessNanEvent
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
 #endif /*WLAN_QCT_WDI_I_H*/
 

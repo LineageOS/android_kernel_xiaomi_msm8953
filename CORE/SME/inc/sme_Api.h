@@ -64,6 +64,7 @@
 #if defined WLAN_FEATURE_VOWIFI
 #include "smeRrmInternal.h"
 #endif
+#include "nan_Api.h"
 
 /*-------------------------------------------------------------------------- 
   Preprocessor definitions and constants

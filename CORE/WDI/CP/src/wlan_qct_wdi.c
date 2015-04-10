@@ -472,6 +472,9 @@ WDI_ReqProcFuncType  pfnReqProcTbl[WDI_MAX_UMAC_IND] =
 
   WDI_ProcessMgmtLoggingInitReq,        /* WDI_MGMT_LOGGING_INIT_REQ*/
   WDI_ProcessGetFrameLogReq,            /* WDI_GET_FRAME_LOG_REQ*/
+
+  WDI_ProcessNanRequest,            /* WDI_NAN_REQUEST*/
+
   /*-------------------------------------------------------------------------
     Indications
   -------------------------------------------------------------------------*/
@@ -738,6 +741,8 @@ WDI_RspProcFuncType  pfnRspProcTbl[WDI_MAX_RESP] =
     WDI_ProcessMgmtFrameLoggingInitRsp,        /* WDI_MGMT_LOGGING_INIT_RSP*/
     WDI_ProcessGetFrameLogRsp,                 /* WDI_GET_FRAME_LOG_RSP*/
 
+    WDI_ProcessNanResponse,                    /* WDI_NAN_RESPONSE */
+
   /*---------------------------------------------------------------------
     Indications
   ---------------------------------------------------------------------*/
@@ -822,6 +827,7 @@ WDI_RspProcFuncType  pfnRspProcTbl[WDI_MAX_RESP] =
   NULL,
 #endif
   WDI_delBaInd,                             /* WDI_HAL_DEL_BA_IND*/
+  WDI_ProcessNanEvent,                      /* WDI_HAL_NAN_EVENT */
 };
 
 
@@ -1160,6 +1166,7 @@ static char *WDI_getReqMsgString(wpt_uint16 wdiReqMsgId)
     CASE_RETURN_STRING( WDI_ENCRYPT_MSG_REQ);
     CASE_RETURN_STRING( WDI_MGMT_LOGGING_INIT_REQ);
     CASE_RETURN_STRING( WDI_GET_FRAME_LOG_REQ);
+    CASE_RETURN_STRING( WDI_NAN_REQUEST );
     default:
         return "Unknown WDI MessageId";
   }
@@ -24106,6 +24113,8 @@ WDI_2_HAL_REQ_TYPE
        return WLAN_HAL_MGMT_LOGGING_INIT_REQ;
   case WDI_GET_FRAME_LOG_REQ:
        return WLAN_HAL_GET_FRAME_LOG_REQ;
+  case WDI_NAN_REQUEST:
+       return WLAN_HAL_NAN_REQ;
 
   default:
     return WLAN_HAL_MSG_MAX;
@@ -24428,6 +24437,10 @@ case WLAN_HAL_DEL_STA_SELF_RSP:
        return WDI_MGMT_LOGGING_INIT_RSP;
   case WLAN_HAL_GET_FRAME_LOG_RSP:
        return WDI_GET_FRAME_LOG_RSP;
+  case WLAN_HAL_NAN_RSP:
+       return WDI_NAN_RESPONSE;
+  case WLAN_HAL_NAN_EVT:
+       return WDI_HAL_NAN_EVENT;
 
   default:
     return eDRIVER_TYPE_MAX;
@@ -34308,3 +34321,197 @@ WDI_ProcessEncryptMsgRsp
           pWDICtx->pRspCBUserData);
   return WDI_STATUS_SUCCESS;
 }
+
+WDI_Status
+WDI_NanRequest
+(
+   WDI_NanRequestType         *pwdiNanRequest,
+   void                       *usrData
+)
+{
+  WDI_EventInfoType      wdiEventData;
+
+  /*------------------------------------------------------------------------
+    Sanity Check
+  ------------------------------------------------------------------------*/
+  if ( eWLAN_PAL_FALSE == gWDIInitialized )
+  {
+     WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+              "WDI API call before module is initialized - Fail request");
+
+     return WDI_STATUS_E_NOT_ALLOWED;
+  }
+
+  WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
+              "WDI_NanRequest %zu %d", sizeof(*pwdiNanRequest),
+              pwdiNanRequest->request_data_len);
+
+  /*------------------------------------------------------------------------
+    Fill in Event data and post to the Main FSM
+  ------------------------------------------------------------------------*/
+  wdiEventData.wdiRequest      = WDI_NAN_REQUEST;
+  wdiEventData.pEventData      = pwdiNanRequest;
+  wdiEventData.uEventDataSize  = sizeof(*pwdiNanRequest)
+                                 + pwdiNanRequest->request_data_len;
+  wdiEventData.pUserData       = usrData;
+  wdiEventData.pCBfnc          = NULL;
+
+
+  return WDI_PostMainEvent(&gWDICb, WDI_REQUEST_EVENT, &wdiEventData);
+}
+
+WDI_Status
+WDI_ProcessNanRequest
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+)
+{
+  WDI_NanRequestType               *pwdiNanRequest   = NULL;
+  wpt_uint8*                       pSendBuffer       = NULL;
+  wpt_uint16                       usDataOffset      = 0;
+  wpt_uint16                       usSendSize        = 0;
+
+  WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
+              "WDI_ProcessNanRequest");
+
+  /*-------------------------------------------------------------------------
+    Sanity check
+  -------------------------------------------------------------------------*/
+  if (( NULL == pEventData ) ||
+      ( NULL == (pwdiNanRequest = (WDI_NanRequestType*)pEventData->pEventData)))
+  {
+     WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
+                 "%s: Invalid parameters", __FUNCTION__);
+     WDI_ASSERT(0);
+     return WDI_STATUS_E_FAILURE;
+  }
+
+  /*-----------------------------------------------------------------------
+    Get message buffer
+  -----------------------------------------------------------------------*/
+  if (( WDI_STATUS_SUCCESS
+        != WDI_GetMessageBuffer( pWDICtx,
+                                 WDI_NAN_REQUEST,
+                                 pwdiNanRequest->request_data_len,
+                                 &pSendBuffer,
+                                 &usDataOffset,
+                                 &usSendSize))||
+      ( usSendSize < (usDataOffset + pwdiNanRequest->request_data_len)))
+  {
+     WPAL_TRACE( eWLAN_MODULE_DAL_CTRL,  eWLAN_PAL_TRACE_LEVEL_WARN,
+                 "Unable to get send buffer in NAN request %p %p",
+                 pEventData, pwdiNanRequest);
+     WDI_ASSERT(0);
+     return WDI_STATUS_E_FAILURE;
+  }
+
+  wpalMemoryCopy( pSendBuffer+usDataOffset,
+                  pwdiNanRequest->request_data,
+                  pwdiNanRequest->request_data_len);
+
+  pWDICtx->pReqStatusUserData = NULL;
+  pWDICtx->pfncRspCB = NULL;
+  vos_mem_free( pEventData->pUserData);
+
+  /*-------------------------------------------------------------------------
+    Send NAN Request to HAL
+  -------------------------------------------------------------------------*/
+  return WDI_SendMsg( pWDICtx,
+                      pSendBuffer,
+                      usSendSize,
+                      NULL,
+                      NULL,
+                      WDI_NAN_RESPONSE);
+}
+
+/**
+ @brief Process NAN Response function (called when a
+        response is being received over the bus from HAL)
+
+ @param  pWDICtx:         pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+WDI_Status
+WDI_ProcessNanResponse
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+)
+{
+  WDI_Status wdiStatus;
+  eHalStatus halStatus;
+
+  /*-------------------------------------------------------------------------
+    Sanity check
+  -------------------------------------------------------------------------*/
+  if (( NULL == pWDICtx ) || ( NULL == pEventData ) ||
+      ( NULL == pEventData->pEventData))
+  {
+     WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
+                 "%s: Invalid parameters", __func__);
+     WDI_ASSERT(0);
+     return WDI_STATUS_E_FAILURE;
+  }
+
+  halStatus = *((eHalStatus*)pEventData->pEventData);
+  wdiStatus = WDI_HAL_2_WDI_STATUS(halStatus);
+
+  WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
+          "%s : Received NAN response, status : %d", __FUNCTION__, wdiStatus);
+
+  return WDI_STATUS_SUCCESS;
+}/*WDI_ProcessNanResponse*/
+
+
+/**
+ @brief Process NAN Event function (called when
+        an indication is being received over the
+        bus from HAL)
+
+ @param  pWDICtx:         pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+WDI_Status
+WDI_ProcessNanEvent
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+)
+{
+  WDI_LowLevelIndType  wdiInd;
+
+  /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+  if (( NULL == pWDICtx ) || ( NULL == pEventData ) ||
+      ( NULL == pEventData->pEventData ))
+  {
+     WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
+                 "%s: Invalid parameters", __func__);
+     WDI_ASSERT( 0 );
+     return WDI_STATUS_E_FAILURE;
+  }
+
+  WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
+          "%s: Received NAN event", __func__);
+  /*-------------------------------------------------------------------------
+    Extract indication and send it to UMAC
+  -------------------------------------------------------------------------*/
+  wdiInd.wdiIndicationType = WDI_NAN_EVENT_IND;
+  wdiInd.wdiIndicationData.wdiNanEvent.event_data_len =
+      pEventData->uEventDataSize;
+  wdiInd.wdiIndicationData.wdiNanEvent.event_data =
+      pEventData->pEventData;
+
+  /*Notify UMAC*/
+  pWDICtx->wdiLowLevelIndCB( &wdiInd, pWDICtx->pIndUserData );
+
+  return WDI_STATUS_SUCCESS;
+}/*WDI_ProcessNanEvent*/
+
