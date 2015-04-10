@@ -915,7 +915,7 @@ typedef struct tagCsrRoamProfile
      * It has the IE byte stream for additional IE,
      * which can be WSC IE and/or P2P IE
      */
-    tANI_U8  addIEScan[SIR_MAC_MAX_IE_LENGTH+2];       //Additional IE information.
+    tANI_U8  addIEScan[SIR_MAC_MAX_ADD_IE_LENGTH+2];       //Additional IE information.
     tANI_U32 nAddIEAssocLength;   //The byte count in the pAddIE for assoc
     tANI_U8 *pAddIEAssoc;       //If not null, it has the IE byte stream for additional IE, which can be WSC IE and/or P2P IE
 
