@@ -2391,3 +2391,22 @@ v_BOOL_t vos_get_dxeSSREnable(void)
 
    return pHddCtx->cfg_ini->dxeSSREnable;
 }
+
+v_VOID_t vos_flush_work(struct work_struct *work)
+{
+#if defined (WLAN_OPEN_SOURCE)
+   cancel_work_sync(work);
+#else
+   wcnss_flush_work(work);
+#endif
+}
+
+v_VOID_t vos_flush_delayed_work(struct delayed_work *dwork)
+{
+#if defined (WLAN_OPEN_SOURCE)
+   cancel_delayed_work_sync(dwork);
+#else
+   wcnss_flush_delayed_work(dwork);
+#endif
+}
+

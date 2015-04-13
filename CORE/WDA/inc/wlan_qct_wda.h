@@ -604,7 +604,9 @@ VOS_STATUS WDA_TxPacket(tWDA_CbContext *pWDA,
                                     pWDATxRxCompFunc pCompFunc,
                                     void *pData,
                                     pWDAAckFnTxComp pAckTxComp, 
-                                    tANI_U32 txFlag);
+                                    tANI_U32 txFlag,
+                                    tANI_U32 txBdToken
+                                    );
 
 /*
  * FUNCTION: WDA_PostMsgApi
@@ -1293,9 +1295,10 @@ eHalStatus WDA_SetRegDomain(void * clientCtxt, v_REGDOMAIN_t regId,
          (pCompFunc),\
          (pData),\
          (NULL), \
-         (txFlag)) )
+         (txFlag), \
+         (0)) )
 
-#define halTxFrameWithTxComplete(hHal, pFrmBuf, frmLen, frmType, txDir, tid, pCompFunc, pData, pCBackFnTxComp, txFlag) \
+#define halTxFrameWithTxComplete(hHal, pFrmBuf, frmLen, frmType, txDir, tid, pCompFunc, pData, pCBackFnTxComp, txFlag, txBdToken) \
    (eHalStatus)( WDA_TxPacket(\
          vos_get_context(VOS_MODULE_ID_WDA, vos_get_global_context(VOS_MODULE_ID_WDA, (hHal))),\
          (pFrmBuf),\
@@ -1306,7 +1309,8 @@ eHalStatus WDA_SetRegDomain(void * clientCtxt, v_REGDOMAIN_t regId,
          (pCompFunc),\
          (pData),\
          (pCBackFnTxComp), \
-         (txFlag)) )
+         (txFlag), \
+         (txBdToken)) )
 
 /* -----------------------------------------------------------------
   WDA data path API's for TL
@@ -1553,7 +1557,8 @@ WDA_DS_BuildTxPacketInfo
   v_U32_t          txFlag,
   v_U32_t         timeStamp,
   v_U8_t          ucIsEapol,
-  v_U8_t          ucUP
+  v_U8_t          ucUP,
+  v_U32_t         ucTxBdToken
 );
 
 /*==========================================================================

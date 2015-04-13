@@ -456,6 +456,7 @@ typedef struct
   v_BOOL_t  bMorePackets;
   /* notifying TL if this is an ARP frame or not */
   v_U8_t    ucIsArp;
+  v_U32_t   ucTxBdToken;
 }WLANTL_MetaInfoType;
 
 /*---------------------------------------------------------------------------
@@ -2034,7 +2035,8 @@ WLANTL_TxMgmtFrm
   v_U8_t               tid,
   WLANTL_TxCompCBType  pfnCompTxFunc,
   v_PVOID_t            voosBDHeader,
-  v_U32_t              ucAckResponse
+  v_U32_t              ucAckResponse,
+  v_U32_t              ucTxBdToken
 );
 
 

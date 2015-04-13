@@ -1824,16 +1824,15 @@ VOS_STATUS hdd_wmm_adapter_close ( hdd_adapter_t* pAdapter )
 #ifdef FEATURE_WLAN_ESE
       hdd_wmm_disable_inactivity_timer(pQosContext);
 #endif
-#ifdef WLAN_OPEN_SOURCE
    mutex_lock(&pHddCtx->wmmLock);
    if (pQosContext->handle == HDD_WMM_HANDLE_IMPLICIT
        && pQosContext->magic == HDD_WMM_CTX_MAGIC)
    {
 
-      cancel_work_sync(&pQosContext->wmmAcSetupImplicitQos);
+      vos_flush_work(&pQosContext->wmmAcSetupImplicitQos);
    }
    mutex_unlock(&pHddCtx->wmmLock);
-#endif
+
       hdd_wmm_free_context(pQosContext);
    }
 

@@ -5768,6 +5768,8 @@ typedef PACKED_PRE struct PACKED_POST
 {
    /*Tx Complete Indication Success or Failure*/
    tANI_U32   status;
+   /* Dialog token */
+   tANI_U32   dialogToken;
 }tTxComplParams,*tpTxComplParams;
 
 typedef PACKED_PRE struct PACKED_POST
@@ -6713,6 +6715,7 @@ typedef enum {
     BCN_IE_FLT_DELTA       = 49,
     TDLS_OFF_CHANNEL       = 51,
     MGMT_FRAME_LOGGING     = 53,
+    ENHANCED_TXBD_COMPLETION = 54,
     MAX_FEATURE_SUPPORTED  = 128,
 } placeHolderInCapBitmap;
 
@@ -6740,6 +6743,7 @@ typedef PACKED_PRE struct PACKED_POST{
 #define IS_DYNAMIC_WMM_PS_SUPPORTED_BY_HOST ((!!(halMsg_GetHostWlanFeatCaps(DYNAMIC_WMM_PS))))
 #define IS_MAC_SPOOF_SCAN_SUPPORTED_BY_HOST ((!!(halMsg_GetHostWlanFeatCaps(MAC_SPOOFED_SCAN))))
 #define IS_NEW_BMU_ERROR_RECOVERY_SUPPORTED_BY_HOST ((!!(halMsg_GetHostWlanFeatCaps(BMU_ERROR_GENERIC_RECOVERY))))
+#define IS_ENHANCED_TXBD_COMPLETION_SUPPORTED_BY_HOST ((!!(halMsg_GetHostWlanFeatCaps(ENHANCED_TXBD_COMPLETION))))
 
 tANI_U8 halMsg_GetHostWlanFeatCaps(tANI_U8 feat_enum_value);
 

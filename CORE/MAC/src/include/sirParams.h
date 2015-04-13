@@ -128,6 +128,7 @@ typedef enum {
    TDLS_OFF_CHANNEL      = 51,
 #endif
    MGMT_FRAME_LOGGING    = 53,
+   ENHANCED_TXBD_COMPLETION = 54,
    //MAX_FEATURE_SUPPORTED = 128
 } placeHolderInCapBitmap;
 

@@ -325,6 +325,9 @@ VOS_STATUS vos_wlanRestart(void);
 v_VOID_t vos_fwDumpReq(tANI_U32 cmd, tANI_U32 arg1, tANI_U32 arg2,
                         tANI_U32 arg3, tANI_U32 arg4, tANI_U8 async);
 
+v_VOID_t vos_flush_work(struct work_struct *work);
+v_VOID_t vos_flush_delayed_work(struct delayed_work *dwork);
+
 v_U64_t vos_get_monotonic_boottime(void);
 
 VOS_STATUS vos_randomize_n_bytes(void *mac_addr, tANI_U32 n);
