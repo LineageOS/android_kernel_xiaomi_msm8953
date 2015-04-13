@@ -1270,6 +1270,7 @@ limSendSmeDisassocNtf(tpAniSirGlobal pMac,
     tSirSmeDisassocRsp      *pSirSmeDisassocRsp;
     tSirSmeDisassocInd      *pSirSmeDisassocInd;
     tANI_U32 *pMsg;
+    bool failure = FALSE;
 
     limLog(pMac, LOG1, FL("Disassoc Ntf with trigger : %d"
             "reasonCode: %d"),
@@ -1280,7 +1281,10 @@ limSendSmeDisassocNtf(tpAniSirGlobal pMac,
     {
         case eLIM_PEER_ENTITY_DISASSOC:
             if (reasonCode != eSIR_SME_STA_NOT_ASSOCIATED)
-                return;
+            {
+                failure = TRUE;
+                goto error;
+            }
 
         case eLIM_HOST_DISASSOC:
             /**
@@ -1294,8 +1298,8 @@ limSendSmeDisassocNtf(tpAniSirGlobal pMac,
                 // Log error
                 limLog(pMac, LOGP,
                    FL("call to AllocateMemory failed for eWNI_SME_DISASSOC_RSP"));
-
-                return;
+                failure = TRUE;
+                goto error;
             }
             limLog(pMac, LOG1, FL("send eWNI_SME_DISASSOC_RSP with "
             "retCode: %d for "MAC_ADDRESS_STR),reasonCode,
@@ -1345,7 +1349,8 @@ limSendSmeDisassocNtf(tpAniSirGlobal pMac,
                 limLog(pMac, LOGP,
                    FL("call to AllocateMemory failed for eWNI_SME_DISASSOC_IND"));
 
-                return;
+                failure = TRUE;
+                goto error;
             }
             limLog(pMac, LOG1, FL("send eWNI_SME_DISASSOC_IND with "
             "retCode: %d for "MAC_ADDRESS_STR),reasonCode,
@@ -1377,15 +1382,16 @@ limSendSmeDisassocNtf(tpAniSirGlobal pMac,
             break;
     }
 
+error:
     /* Delete the PE session Created */
     if((psessionEntry != NULL) && ((psessionEntry ->limSystemRole ==  eLIM_STA_ROLE) ||
                                   (psessionEntry ->limSystemRole ==  eLIM_BT_AMP_STA_ROLE)) )
     {
         peDeleteSession(pMac,psessionEntry);
     }
-        
-    limSendSmeDisassocDeauthNtf( pMac, eHAL_STATUS_SUCCESS,
-                                              (tANI_U32*) pMsg );
+    if (failure == FALSE)
+        limSendSmeDisassocDeauthNtf( pMac, eHAL_STATUS_SUCCESS,
+                                             (tANI_U32*) pMsg );
 } /*** end limSendSmeDisassocNtf() ***/
 
 
