@@ -2644,6 +2644,14 @@ void limProcessChannelSwitchTimeout(tpAniSirGlobal pMac)
             if ( isLimSessionOffChannel(pMac,
                 pMac->lim.limTimers.gLimChannelSwitchTimer.sessionId) )
             {
+                if (limIsLinkSuspended(pMac))
+                {
+                    limLog(pMac, LOGE, FL("Link is already suspended for "
+                        "some other reason. Return here for sessionId:%d"),
+                        pMac->lim.limTimers.gLimChannelSwitchTimer.sessionId);
+                    return;
+                }
+
                 limSuspendLink(pMac,
                     eSIR_DONT_CHECK_LINK_TRAFFIC_BEFORE_SCAN,
                     limProcessChannelSwitchSuspendLink,
@@ -7391,6 +7399,8 @@ void limHandleDeferMsgError(tpAniSirGlobal pMac, tpSirMsgQ pLimMsg)
 {
       if(SIR_BB_XPORT_MGMT_MSG == pLimMsg->type) 
         {
+            /*Decrement the Pending count before droping */
+            limDecrementPendingMgmtCount (pMac);
             vos_pkt_return_packet((vos_pkt_t*)pLimMsg->bodyptr);
         }
       else if(pLimMsg->bodyptr != NULL)
@@ -8448,4 +8458,21 @@ void limDecrementPendingMgmtCount (tpAniSirGlobal pMac)
     }
     else
          limLog(pMac, LOGW, FL("Pending Management count going negative"));
+}
+
+eHalStatus limTxBdComplete(tpAniSirGlobal pMac, void *pData)
+{
+    tpSirTxBdStatus pTxBdStatus;
+
+    if (!pData)
+    {
+       limLog(pMac, LOGE, FL("pData is NULL"));
+       return eHAL_STATUS_FAILURE;
+    }
+
+    pTxBdStatus = (tpSirTxBdStatus) pData;
+
+    limLog(pMac, LOG1, FL("txBdToken %u, txBdStatus %u"),
+            pTxBdStatus->txBdToken, pTxBdStatus->txCompleteStatus);
+    return eHAL_STATUS_SUCCESS;
 }

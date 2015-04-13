@@ -386,7 +386,8 @@ WDI_FillTxBd
     wpt_uint8              ucProtMgmtFrame,
     wpt_uint32             uTimeStamp,
     wpt_uint8              isEapol,
-    wpt_uint8*             staIndex
+    wpt_uint8*             staIndex,
+    wpt_uint32             txBdToken
 )
 {
     wpt_uint8              ucTid        = *pTid; 
@@ -407,6 +408,7 @@ WDI_FillTxBd
     /*------------------------------------------------------------------------
        Get type and subtype of the frame first 
     ------------------------------------------------------------------------*/
+    pBd->txBdToken = txBdToken;
     ucType = (ucTypeSubtype & WDI_FRAME_TYPE_MASK) >> WDI_FRAME_TYPE_OFFSET;
     ucSubType = (ucTypeSubtype & WDI_FRAME_SUBTYPE_MASK);
 

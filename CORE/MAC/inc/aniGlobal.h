@@ -926,6 +926,7 @@ tLimMlmOemDataRsp       *gpLimMlmOemDataRsp;
      * debug marker frame.
      */
     tANI_U32 remOnChnSeqNum;
+    tANI_U32 txBdToken;
 } tAniSirLim, *tpAniSirLim;
 
 typedef struct sLimMgmtFrameRegistration

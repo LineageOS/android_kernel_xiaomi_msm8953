@@ -546,6 +546,7 @@ static tANI_U32 limPrepareTdlsFrameHeader(tpAniSirGlobal pMac, tANI_U8* pFrame,
 {
     tpPESession psessionEntry = NULL ;
     tANI_U32 txCompleteSuccess = 0;
+    tpSirTxBdStatus pTxBdStatus = NULL;
 
     if (!pData)
     {
@@ -553,7 +554,18 @@ static tANI_U32 limPrepareTdlsFrameHeader(tpAniSirGlobal pMac, tANI_U8* pFrame,
         return eHAL_STATUS_SUCCESS;
     }
 
-    txCompleteSuccess = *((tANI_U32*) pData);
+    if (IS_FEATURE_SUPPORTED_BY_FW(ENHANCED_TXBD_COMPLETION))
+    {
+        pTxBdStatus = (tpSirTxBdStatus) pData;
+        txCompleteSuccess = pTxBdStatus->txCompleteStatus;
+        limLog(pMac, LOG1, FL("txCompleteSuccess %u, token %u"),
+                txCompleteSuccess, pTxBdStatus->txBdToken);
+    }
+    else
+    {
+        txCompleteSuccess = *((tANI_U32*) pData);
+        limLog(pMac, LOG1, FL("txCompleteSuccess %u"), txCompleteSuccess);
+    }
 
     if (0xff != pMac->lim.mgmtFrameSessionId)
     {
@@ -745,7 +757,8 @@ tSirRetStatus limSendTdlsDisReqFrame(tpAniSirGlobal pMac, tSirMacAddr peer_mac,
                             TID_AC_VI,
                             limTxComplete, pFrame,
                             limMgmtTXComplete,
-                            HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME);
+                            HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME,
+                            pMac->lim.txBdToken++);
     if ( ! HAL_STATUS_SUCCESS ( halstatus ) )
     {
         pMac->lim.mgmtFrameSessionId = 0xff;
@@ -1266,7 +1279,8 @@ static tSirRetStatus limSendTdlsDisRspFrame(tpAniSirGlobal pMac,
                             0,
                             limTxComplete, pFrame, 
                             limMgmtTXComplete,
-                            HAL_USE_SELF_STA_REQUESTED_MASK );
+                            HAL_USE_SELF_STA_REQUESTED_MASK,
+                            pMac->lim.txBdToken++);
     if ( ! HAL_STATUS_SUCCESS ( halstatus ) )
     {
         pMac->lim.mgmtFrameSessionId = 0xff;
@@ -1567,7 +1581,8 @@ tSirRetStatus limSendTdlsLinkSetupReqFrame(tpAniSirGlobal pMac,
                             TID_AC_BK,
                             limTxComplete, pFrame,
                             limMgmtTXComplete,
-                            HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME );
+                            HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME,
+                            pMac->lim.txBdToken++);
 
     if ( ! HAL_STATUS_SUCCESS ( halstatus ) )
     {
@@ -1760,7 +1775,8 @@ tSirRetStatus limSendTdlsTeardownFrame(tpAniSirGlobal pMac,
                             TID_AC_VI,
                             limTxComplete, pFrame,
                             limMgmtTXComplete,
-                            HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME );
+                            HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME,
+                            pMac->lim.txBdToken++);
     if ( ! HAL_STATUS_SUCCESS ( halstatus ) )
     {
         pMac->lim.mgmtFrameSessionId = 0xff;
@@ -2018,7 +2034,8 @@ static tSirRetStatus limSendTdlsSetupRspFrame(tpAniSirGlobal pMac,
                             TID_AC_BK,
                             limTxComplete, pFrame,
                             limMgmtTXComplete,
-                            HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME );
+                            HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME,
+                            pMac->lim.txBdToken++);
     if ( ! HAL_STATUS_SUCCESS ( halstatus ) )
     {
         pMac->lim.mgmtFrameSessionId = 0xff;
@@ -2262,7 +2279,8 @@ tSirRetStatus limSendTdlsLinkSetupCnfFrame(tpAniSirGlobal pMac, tSirMacAddr peer
                             TID_AC_VI,
                             limTxComplete, pFrame, 
                             limMgmtTXComplete,
-                            HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME );
+                            HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME,
+                            pMac->lim.txBdToken++);
 
 
     if ( ! HAL_STATUS_SUCCESS ( halstatus ) )

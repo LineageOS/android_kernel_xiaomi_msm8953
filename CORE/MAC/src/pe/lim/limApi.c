@@ -351,6 +351,7 @@ static void __limInitVars(tpAniSirGlobal pMac)
     pMac->lim.gScanInPowersave = 0;
     pMac->lim.probeCounter = 0;
     pMac->lim.maxProbe = 0;
+    pMac->lim.txBdToken = 0;
 }
 
 static void __limInitAssocVars(tpAniSirGlobal pMac)

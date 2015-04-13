@@ -210,7 +210,8 @@ WDI_Status WDI_DS_TxPacket(void *pContext,
               "Packet Length is %d\n", pTxMetadata->fPktlen);
   }
   wdiStatus = WDI_FillTxBd(pContext, ucTypeSubtype, pSTAMACAddress, pAddr2MACAddress,
-    &ucUP, 1, pvBDHeader, ucTxFlag /* No ACK */, ucProtMgmtFrame, 0, isEapol, &staId);
+    &ucUP, 1, pvBDHeader, ucTxFlag /* No ACK */, ucProtMgmtFrame, 0, isEapol, &staId,
+    pTxMetadata->txBdToken);
 
   if(WDI_STATUS_SUCCESS != wdiStatus)
   {

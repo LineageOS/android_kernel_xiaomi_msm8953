@@ -68,6 +68,7 @@ typedef struct
    wpt_uint16 fPktlen;
    wpt_status txCompleteStatus;
    wpt_uint8  staIdx;
+   wpt_uint32  txBdToken;
 } WDI_DS_TxMetaInfoType;
 
 

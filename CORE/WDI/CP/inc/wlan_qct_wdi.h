@@ -876,6 +876,11 @@ typedef struct
     wpt_macAddr  bssId;   // TO SUPPORT BT-AMP
 }  WDI_DeleteBAIndType;
 
+typedef struct
+{
+    wpt_uint32 tx_complete_status;
+    wpt_uint32 tx_bd_token;
+}  WDI_TxBDStatus;
 /*---------------------------------------------------------------------------
   WDI_LowLevelIndType
     Inidcation type and information about the indication being carried
@@ -956,6 +961,8 @@ typedef struct
     WDI_DeleteBAIndType         wdiDeleteBAInd;
 
     WDI_NanEventType wdiNanEvent;
+
+    WDI_TxBDStatus              wdiTxBdInd;
   }  wdiIndicationData;
 }WDI_LowLevelIndType;
 

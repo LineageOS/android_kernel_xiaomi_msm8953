@@ -5723,4 +5723,10 @@ typedef struct
     tANI_U32 event_data_len;
     tANI_U8  event_data[1];
 } tSirNanEvent, *tpSirNanEvent;
+
+typedef struct
+{
+    tANI_U32 txCompleteStatus;
+    tANI_U32 txBdToken;
+}tSirTxBdStatus, *tpSirTxBdStatus;
 #endif /* __SIR_API_H */
