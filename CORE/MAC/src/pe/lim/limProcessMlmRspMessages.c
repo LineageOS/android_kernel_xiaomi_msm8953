@@ -2144,12 +2144,15 @@ void limProcessStaMlmDelBssRsp( tpAniSirGlobal pMac, tpSirMsgQ limMsgQ,tpPESessi
     }
     else
     {
-        limLog( pMac, LOGE, FL( "DEL BSS failed!" ) );
-        vos_mem_free(pDelBssParams);
-        limMsgQ->bodyptr = NULL;
-        return;
+        /* If DelBSS response is failure, go ahead and
+         * post response to SME
+         */
+        limLog( pMac, LOGE, FL( "DEL BSS failed! Status:%d" ),
+                pDelBssParams->status );
+        statusCode = eSIR_SME_REFUSED;
     }
-   end:
+
+end:
      if( 0 != limMsgQ->bodyptr )
      {
         vos_mem_free(pDelBssParams);
@@ -2378,47 +2381,56 @@ void limProcessStaMlmDelStaRsp( tpAniSirGlobal pMac, tpSirMsgQ limMsgQ,tpPESessi
     tSirResultCodes   statusCode    = eSIR_SME_SUCCESS;
     tpDeleteStaParams pDelStaParams = (tpDeleteStaParams) limMsgQ->bodyptr;
     tpDphHashNode     pStaDs        = NULL;
+
     if(NULL == pDelStaParams )
     {
         limLog( pMac, LOGE, FL( "Encountered NULL Pointer" ));
         goto end;
     }
-    if( eHAL_STATUS_SUCCESS == pDelStaParams->status )
+
+    limLog(pMac, LOG1, FL("Del STA RSP received. Status:%d AssocID:%d"),
+           pDelStaParams->status, pDelStaParams->assocId);
+
+    if (eHAL_STATUS_SUCCESS != pDelStaParams->status)
     {
-        pStaDs = dphGetHashEntry(pMac, DPH_STA_HASH_INDEX_PEER, &psessionEntry->dph.dphHashTable);
-        if (pStaDs == NULL)
-        {
-            //TODO: any response to be sent out here ?
-            limLog( pMac, LOGE, FL( "DPH Entry for STA %X missing."),
-                    pDelStaParams->assocId);
-            statusCode = eSIR_SME_REFUSED;
-            goto end;
-        }
-        if( eLIM_MLM_WT_DEL_STA_RSP_STATE != psessionEntry->limMlmState)
-        {
-            //TODO: any response to be sent out here ?
-            limLog( pMac, LOGE, FL( "Received unexpected WDA_DELETE_STA_RSP in state %s" ),
-                  limMlmStateStr(psessionEntry->limMlmState));
-            statusCode = eSIR_SME_REFUSED;
-            goto end;
-        }
-        limLog( pMac, LOG1, FL("STA AssocID %d MAC "), pStaDs->assocId );
-        limPrintMacAddr(pMac, pStaDs->staAddr, LOG1);
-        limLog( pMac, LOGW, FL( "DEL_STA_RSP received for assocID: %X"), pDelStaParams->assocId);
-        //we must complete all cleanup related to delSta before calling limDelBSS.
-        if( 0 != limMsgQ->bodyptr )
-        {
-            vos_mem_free(pDelStaParams);
-            limMsgQ->bodyptr = NULL;
-        }
-        statusCode = (tSirResultCodes) limDelBss(pMac, pStaDs, 0,psessionEntry);
-        return;
+        limLog(pMac, LOGE, FL("Del STA failed! Status:%d, still proceeding"
+               "with Del BSS"), pDelStaParams->status);
     }
-    else
+
+    pStaDs = dphGetHashEntry(pMac, DPH_STA_HASH_INDEX_PEER, &psessionEntry->dph.dphHashTable);
+
+    if (pStaDs == NULL)
     {
-        limLog( pMac, LOGE, FL( "DEL_STA failed for sta Id %d" ), pDelStaParams->staIdx);
+        //TODO: any response to be sent out here ?
+        limLog( pMac, LOGE, FL( "DPH Entry for STA %X missing."),
+                pDelStaParams->assocId);
         statusCode = eSIR_SME_REFUSED;
+        goto end;
     }
+
+    if (eLIM_MLM_WT_DEL_STA_RSP_STATE != psessionEntry->limMlmState)
+    {
+        //TODO: any response to be sent out here ?
+        limLog( pMac, LOGE, FL( "Received unexpected WDA_DELETE_STA_RSP in state %s" ),
+                limMlmStateStr(psessionEntry->limMlmState));
+        statusCode = eSIR_SME_REFUSED;
+        goto end;
+    }
+
+    limLog( pMac, LOG1, FL("STA AssocID %d MAC "), pStaDs->assocId );
+    limPrintMacAddr(pMac, pStaDs->staAddr, LOG1);
+
+    //we must complete all cleanup related to delSta before calling limDelBSS.
+    if (0 != limMsgQ->bodyptr )
+    {
+        vos_mem_free(pDelStaParams);
+        limMsgQ->bodyptr = NULL;
+    }
+
+    // Proceed to do DelBSS even if DelSta resulted in failure
+    statusCode = (tSirResultCodes) limDelBss(pMac, pStaDs, 0,psessionEntry);
+    return;
+
 end:
     if( 0 != limMsgQ->bodyptr )
     {

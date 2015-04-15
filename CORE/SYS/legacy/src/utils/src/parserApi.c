@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -2088,7 +2088,7 @@ tSirRetStatus sirConvertProbeFrame2Struct(tpAniSirGlobal       pMac,
     // Ok, zero-init our [out] parameter,
     vos_mem_set( ( tANI_U8* )pProbeResp, sizeof(tSirProbeRespBeacon), 0 );
 
-    pr = vos_mem_malloc(sizeof(tDot11fProbeResponse));
+    pr = vos_mem_vmalloc(sizeof(tDot11fProbeResponse));
     if ( NULL == pr )
         status = eHAL_STATUS_FAILURE;
     else
@@ -2108,7 +2108,7 @@ tSirRetStatus sirConvertProbeFrame2Struct(tpAniSirGlobal       pMac,
         limLog(pMac, LOGE, FL("Failed to parse a Probe Response (0x%08x, %d bytes):\n"),
                   status, nFrame);
         PELOG2(sirDumpBuf(pMac, SIR_DBG_MODULE_ID, LOG2, pFrame, nFrame);)
-        vos_mem_free(pr);
+        vos_mem_vfree(pr);
         return eSIR_FAILURE;
     }
     else if ( DOT11F_WARNED( status ) )
@@ -2321,7 +2321,7 @@ tSirRetStatus sirConvertProbeFrame2Struct(tpAniSirGlobal       pMac,
         vos_mem_copy( &pProbeResp->VHTExtBssLoad, &pr->VHTExtBssLoad, sizeof( tDot11fIEVHTExtBssLoad) );
     }
 #endif
-    vos_mem_free(pr);
+    vos_mem_vfree(pr);
     return eSIR_SUCCESS;
 
 } // End sirConvertProbeFrame2Struct.
@@ -3442,7 +3442,7 @@ sirConvertBeaconFrame2Struct(tpAniSirGlobal       pMac,
     // Zero-init our [out] parameter,
     vos_mem_set( ( tANI_U8* )pBeaconStruct, sizeof(tSirProbeRespBeacon), 0 );
 
-    pBeacon = vos_mem_malloc(sizeof(tDot11fBeacon));
+    pBeacon = vos_mem_vmalloc(sizeof(tDot11fBeacon));
     if ( NULL == pBeacon )
         status = eHAL_STATUS_FAILURE;
     else
@@ -3465,7 +3465,7 @@ sirConvertBeaconFrame2Struct(tpAniSirGlobal       pMac,
         limLog(pMac, LOGE, FL("Failed to parse Beacon IEs (0x%08x, %d bytes):\n"),
                   status, nPayload);
         PELOG2(sirDumpBuf(pMac, SIR_DBG_MODULE_ID, LOG2, pPayload, nPayload);)
-        vos_mem_free(pBeacon);
+        vos_mem_vfree(pBeacon);
         return eSIR_FAILURE;
     }
     else if ( DOT11F_WARNED( status ) )
@@ -3725,7 +3725,7 @@ sirConvertBeaconFrame2Struct(tpAniSirGlobal       pMac,
                      &pBeacon->OBSSScanParameters,
                      sizeof( tDot11fIEOBSSScanParameters));
     }
-    vos_mem_free(pBeacon);
+    vos_mem_vfree(pBeacon);
     return eSIR_SUCCESS;
 
 } // End sirConvertBeaconFrame2Struct.

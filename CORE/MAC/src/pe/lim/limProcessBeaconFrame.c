@@ -106,7 +106,7 @@ limProcessBeaconFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,tpPESession ps
         || pMac->fScanOffload
         )
     {
-        pBeacon = vos_mem_malloc(sizeof(tSchBeaconStruct));
+        pBeacon = vos_mem_vmalloc(sizeof(tSchBeaconStruct));
         if ( NULL == pBeacon )
         {
             limLog(pMac, LOGE, FL("Unable to allocate memory in limProcessBeaconFrame") );
@@ -127,7 +127,7 @@ limProcessBeaconFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,tpPESession ps
                (sirCompareMacAddr( psessionEntry->bssId, pHdr->sa)))
                 limParseBeaconForTim(pMac, (tANI_U8 *) pRxPacketInfo, psessionEntry);
 
-            vos_mem_free(pBeacon);
+            vos_mem_vfree(pBeacon);
             return;
         }
         /*during scanning, when any session is active, and beacon/Pr belongs to
@@ -191,7 +191,7 @@ limProcessBeaconFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,tpPESession ps
              // STA in WT_JOIN_BEACON_STATE (IBSS)
             limCheckAndAnnounceJoinSuccess(pMac, pBeacon, pHdr,psessionEntry);
         } // if (pMac->lim.gLimMlmState == eLIM_MLM_WT_PROBE_RESP_STATE)
-        vos_mem_free(pBeacon);
+        vos_mem_vfree(pBeacon);
     } // if ((pMac->lim.gLimMlmState == eLIM_MLM_WT_PROBE_RESP_STATE) || ...
     else
     {
@@ -264,7 +264,7 @@ limProcessBeaconFrameNoSession(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo)
         (pMac->lim.gLimMlmState == eLIM_MLM_PASSIVE_SCAN_STATE) ||
         (pMac->lim.gLimMlmState == eLIM_MLM_LEARN_STATE))
     {
-        pBeacon = vos_mem_malloc(sizeof(tSchBeaconStruct));
+        pBeacon = vos_mem_vmalloc(sizeof(tSchBeaconStruct));
         if ( NULL == pBeacon )
         {
             limLog(pMac, LOGE, FL("Unable to allocate memory in limProcessBeaconFrameNoSession") );
@@ -276,7 +276,7 @@ limProcessBeaconFrameNoSession(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo)
             // Received wrongly formatted/invalid Beacon. Ignore and move on. 
             limLog(pMac, LOGW, FL("Received invalid Beacon in global MLM state %d"), pMac->lim.gLimMlmState);
             limPrintMlmState(pMac, LOGW,  pMac->lim.gLimMlmState);
-            vos_mem_free(pBeacon);
+            vos_mem_vfree(pBeacon);
             return;
         }
 
@@ -293,7 +293,7 @@ limProcessBeaconFrameNoSession(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo)
         else if (pMac->lim.gLimMlmState == eLIM_MLM_LEARN_STATE)
         {
         }  // end of eLIM_MLM_LEARN_STATE)       
-        vos_mem_free(pBeacon);
+        vos_mem_vfree(pBeacon);
     } // end of (eLIM_MLM_WT_PROBE_RESP_STATE) || (eLIM_MLM_PASSIVE_SCAN_STATE)
     else
     {
