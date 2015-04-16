@@ -15185,6 +15185,9 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                     return -EINVAL;
                 }
 
+                /* before starting tdls connection, set tdls
+                 * off channel established status to default value */
+                pTdlsPeer->isOffChannelEstablished = FALSE;
                 /* TDLS Off Channel, Disable tdls channel switch,
                    when there are more than one tdls link */
                 numCurrTdlsPeers = wlan_hdd_tdlsConnectedPeers(pAdapter);
@@ -15373,7 +15376,8 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                 {
                     long status;
 
-
+                    /* set tdls off channel status to false for this peer */
+                    pTdlsPeer->isOffChannelEstablished = FALSE;
                     wlan_hdd_tdls_set_peer_link_status(pTdlsPeer,
                               eTDLS_LINK_TEARING,
                               (pTdlsPeer->link_status == eTDLS_LINK_TEARING)?
