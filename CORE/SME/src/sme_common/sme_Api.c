@@ -12610,3 +12610,54 @@ void sme_SetDefDot11Mode(tHalHandle hHal)
     csrSetDefaultDot11Mode(pMac);
 }
 
+/* ---------------------------------------------------------------------------
+    \fn sme_SetTdls2040BSSCoexistence
+    \brief  API to enable or disable 20_40 BSS Coexistence IE in TDLS frames.
+
+    \param  isEnabled - Enable or Disable.
+    \- return VOS_STATUS_SUCCES
+    -------------------------------------------------------------------------*/
+eHalStatus sme_SetTdls2040BSSCoexistence(tHalHandle hHal,
+                                     tANI_S32 isTdls2040BSSCoexEnabled)
+{
+    eHalStatus          status    = eHAL_STATUS_SUCCESS;
+    tpAniSirGlobal      pMac      = PMAC_STRUCT(hHal);
+    vos_msg_t           msg;
+    tAniSetTdls2040BSSCoex  *pMsg;
+
+    status = sme_AcquireGlobalLock( &pMac->sme );
+    if (HAL_STATUS_SUCCESS( status ))
+    {
+        VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_INFO,
+                  "%s: is2040BSSCoexEnabled %d ",
+                  __func__, isTdls2040BSSCoexEnabled);
+        pMsg = vos_mem_malloc(sizeof(tAniSetTdls2040BSSCoex));
+        if (NULL == pMsg )
+        {
+            smsLog(pMac, LOGE, "failed to allocate mem for SetTdls2040BSSCoex");
+            sme_ReleaseGlobalLock( &pMac->sme );
+            return eHAL_STATUS_FAILURE;
+        }
+
+        pMsg->msgType = pal_cpu_to_be16(
+                        (tANI_U16)eWNI_SME_SET_TDLS_2040_BSSCOEX_REQ);
+        pMsg->msgLen = (tANI_U16)sizeof(tAniSetTdls2040BSSCoex);
+        pMsg->SetTdls2040BSSCoex = isTdls2040BSSCoexEnabled;
+
+        msg.type = eWNI_SME_SET_TDLS_2040_BSSCOEX_REQ;
+        msg.reserved = 0;
+        msg.bodyptr = pMsg;
+        msg.bodyval = 0;
+
+        if(VOS_STATUS_SUCCESS != vos_mq_post_message(VOS_MQ_ID_PE, &msg))
+        {
+            smsLog(pMac, LOGE,
+                   "sme_SetTdls2040BSSCoexistence failed to post msg to PE ");
+            vos_mem_free((void *)pMsg);
+            status = eHAL_STATUS_FAILURE;
+        }
+        smsLog(pMac, LOG1, FL(" returned"));
+        sme_ReleaseGlobalLock( &pMac->sme );
+    }
+    return status;
+}

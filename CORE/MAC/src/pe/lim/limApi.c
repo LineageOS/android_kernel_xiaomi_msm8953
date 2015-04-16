@@ -352,6 +352,8 @@ static void __limInitVars(tpAniSirGlobal pMac)
     pMac->lim.probeCounter = 0;
     pMac->lim.maxProbe = 0;
     pMac->lim.txBdToken = 0;
+
+    pMac->lim.EnableTdls2040BSSCoexIE = 1;
 }
 
 static void __limInitAssocVars(tpAniSirGlobal pMac)

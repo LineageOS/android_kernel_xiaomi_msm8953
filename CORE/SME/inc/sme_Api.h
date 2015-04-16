@@ -3659,4 +3659,14 @@ eHalStatus sme_SetMiracastVendorConfig(tHalHandle hHal,
                                       tANI_U32 set_value);
 
 void sme_SetDefDot11Mode(tHalHandle hHal);
+
+/* ---------------------------------------------------------------------------
+    \fn sme_SetTdls2040BSSCoexistence
+    \brief  API to enable or disable 20_40 BSS Coexistence IE in TDLS frames.
+
+    \param  isEnabled - Enable or Disable.
+    \- return VOS_STATUS_SUCCES
+   -------------------------------------------------------------------------*/
+eHalStatus sme_SetTdls2040BSSCoexistence(tHalHandle hHal, tANI_S32 isEnabled);
+
 #endif //#if !defined( __SME_API_H )

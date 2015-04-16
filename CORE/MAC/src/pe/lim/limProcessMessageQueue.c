@@ -2339,6 +2339,12 @@ limProcessMessages(tpAniSirGlobal pMac, tpSirMsgQ  limMsg)
        limProcessMlmSpoofMacAddrRsp(pMac, (tSirRetStatus)limMsg->bodyval);
        break;
 
+    case eWNI_SME_SET_TDLS_2040_BSSCOEX_REQ:
+         limProcessSmeSetTdls2040BSSCoexReq(pMac, limMsg->bodyptr);
+         vos_mem_free((v_VOID_t*)limMsg->bodyptr);
+         limMsg->bodyptr = NULL;
+        break;
+
     default:
         vos_mem_free((v_VOID_t*)limMsg->bodyptr);
         limMsg->bodyptr = NULL;
