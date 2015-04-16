@@ -516,7 +516,7 @@ WLANTL_Open
       }
   }
 
-  pTLCb->reorderBufferPool = vos_mem_malloc(sizeof(WLANTL_REORDER_BUFFER_T) * WLANTL_MAX_BA_SESSION);
+  pTLCb->reorderBufferPool = vos_mem_vmalloc(sizeof(WLANTL_REORDER_BUFFER_T) * WLANTL_MAX_BA_SESSION);
   if (NULL == pTLCb->reorderBufferPool)
   {
     TLLOGE(VOS_TRACE(VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR, "WLAN TL: Reorder buffer allocation failed"));
@@ -578,7 +578,7 @@ WLANTL_Open
     TLLOGE(VOS_TRACE(VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
               "Handoff support module init fail"));
     WLANTL_FreeClientMemory(pTLCb->atlSTAClients);
-    vos_mem_free(pTLCb->reorderBufferPool);
+    vos_mem_vfree(pTLCb->reorderBufferPool);
     vos_free_context(pvosGCtx, VOS_MODULE_ID_TL, pTLCb);
     return status;
   }
@@ -850,7 +850,7 @@ WLANTL_Close
 
   WLANTL_FreeClientMemory(pTLCb->atlSTAClients);
 
-  vos_mem_free(pTLCb->reorderBufferPool);
+  vos_mem_vfree(pTLCb->reorderBufferPool);
 
   /*------------------------------------------------------------------------
     Free TL context from VOSS global

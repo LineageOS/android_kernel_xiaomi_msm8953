@@ -593,7 +593,7 @@ limCreateTimers(tpAniSirGlobal pMac)
                FL("could not retrieve mac preauth value"));
     }
     pMac->lim.gLimPreAuthTimerTable.numEntry = cfgValue;
-    pMac->lim.gLimPreAuthTimerTable.pTable = vos_mem_malloc(cfgValue*sizeof(tLimPreAuthNode));
+    pMac->lim.gLimPreAuthTimerTable.pTable = vos_mem_vmalloc(cfgValue*sizeof(tLimPreAuthNode));
     if(pMac->lim.gLimPreAuthTimerTable.pTable == NULL)
     {
         limLog(pMac, LOGP, FL("AllocateMemory failed!"));
@@ -758,7 +758,7 @@ limCreateTimers(tpAniSirGlobal pMac)
 
         if(NULL != pMac->lim.gLimPreAuthTimerTable.pTable)
         {
-            vos_mem_free(pMac->lim.gLimPreAuthTimerTable.pTable);
+            vos_mem_vfree(pMac->lim.gLimPreAuthTimerTable.pTable);
             pMac->lim.gLimPreAuthTimerTable.pTable = NULL;
         }
 
