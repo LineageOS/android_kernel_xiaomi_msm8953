@@ -1978,28 +1978,6 @@ v_BOOL_t vos_is_apps_power_collapse_allowed(void* pHddCtx)
   return hdd_is_apps_power_collapse_allowed((hdd_context_t*) pHddCtx);
 }
 
-void vos_abort_mac_scan(v_U8_t sessionId)
-{
-    hdd_context_t *pHddCtx = NULL;
-    v_CONTEXT_t pVosContext        = NULL;
-
-    /* Get the Global VOSS Context */
-    pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
-    if(!pVosContext) {
-       hddLog(VOS_TRACE_LEVEL_FATAL, "%s: Global VOS context is Null", __func__);
-       return;
-    }
-    
-    /* Get the HDD context */
-    pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD, pVosContext );
-    if(!pHddCtx) {
-       hddLog(VOS_TRACE_LEVEL_FATAL, "%s: HDD context is Null", __func__);
-       return;
-    }
-
-    hdd_abort_mac_scan(pHddCtx, sessionId, eCSR_SCAN_ABORT_DEFAULT);
-    return;
-}
 /*---------------------------------------------------------------------------
 
   \brief vos_shutdown() - shutdown VOS

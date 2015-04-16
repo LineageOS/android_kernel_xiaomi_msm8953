@@ -1408,6 +1408,16 @@ limProcessMessages(tpAniSirGlobal pMac, tpSirMsgQ  limMsg)
 
                 }
 
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+                if (WDA_GET_ROAMCANDIDATEIND(limMsgNew.bodyptr))
+                    limLog(pMac, LOG1, FL("roamCandidateInd %d"),
+                           WDA_GET_ROAMCANDIDATEIND(limMsgNew.bodyptr));
+
+                if (WDA_GET_OFFLOADSCANLEARN(limMsgNew.bodyptr))
+                    limLog(pMac, LOG1, FL("offloadScanLearn %d"),
+                           WDA_GET_OFFLOADSCANLEARN(limMsgNew.bodyptr));
+#endif
+
                 /*
                 * putting a check for age out probe request frames
                 * such that any probe req more than 0.5 sec old can directly
