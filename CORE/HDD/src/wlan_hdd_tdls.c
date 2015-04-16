@@ -65,6 +65,94 @@ static u8 wlan_hdd_tdls_hash_key (u8 *mac)
     return key;
 }
 
+/**
+ * wlan_hdd_tdls_disable_offchan_and_teardown_links - Disable offchannel
+ * and teardown TDLS links
+ * @hddCtx : pointer to hdd context
+ *
+ * Return: None
+ */
+void wlan_hdd_tdls_disable_offchan_and_teardown_links(hdd_context_t *hddctx)
+{
+    u16 connected_tdls_peers = 0;
+    u8 staidx;
+    hddTdlsPeer_t *curr_peer = NULL;
+    hdd_adapter_t *adapter = NULL;
+
+    if (eTDLS_SUPPORT_NOT_ENABLED == hddctx->tdls_mode) {
+        hddLog(LOG1, FL("TDLS mode is disabled OR not enabled in FW"));
+        return ;
+    }
+
+    adapter = hdd_get_adapter(hddctx, WLAN_HDD_INFRA_STATION);
+
+    if (adapter == NULL) {
+        hddLog(LOGE, FL("Station Adapter Not Found"));
+        return;
+    }
+
+    connected_tdls_peers = wlan_hdd_tdlsConnectedPeers(adapter);
+
+    if (!connected_tdls_peers)
+        return ;
+
+    /* TDLS is not supported in case of concurrency
+     * Disable TDLS Offchannel to avoid more than two concurrent channels.
+     */
+    if (connected_tdls_peers == 1) {
+        curr_peer = wlan_hdd_tdls_get_connected_peer(adapter);
+        if (curr_peer && (curr_peer->isOffChannelConfigured == TRUE)) {
+            hddLog(LOG1, FL("%s: Concurrency detected, Disable "
+                                 "TDLS channel switch"), __func__);
+
+            sme_SendTdlsChanSwitchReq(WLAN_HDD_GET_HAL_CTX(adapter),
+                                         adapter->sessionId,
+                                         curr_peer->peerMac,
+                                         curr_peer->peerParams.channel,
+                                         TDLS_OFF_CHANNEL_BW_OFFSET,
+                                         TDLS_CHANNEL_SWITCH_DISABLE);
+        }
+    }
+
+    /* As mentioned above TDLS is not supported in case of concurrency
+     * Find the connected peer and generate TDLS teardown indication to
+     * supplicant.
+     */
+    for (staidx = 0; staidx < HDD_MAX_NUM_TDLS_STA; staidx++) {
+        if (!hddctx->tdlsConnInfo[staidx].staId)
+            continue;
+
+        curr_peer = wlan_hdd_tdls_find_all_peer(hddctx,
+                                   hddctx->tdlsConnInfo[staidx].peerMac.bytes);
+
+        if (!curr_peer)
+            continue;
+
+        hddLog(LOG1, FL("indicate TDLS teardown (staId %d)"),
+                                         curr_peer->staId);
+
+        wlan_hdd_tdls_indicate_teardown(
+                                    curr_peer->pHddTdlsCtx->pAdapter,
+                                    curr_peer,
+                                    eSIR_MAC_TDLS_TEARDOWN_UNSPEC_REASON);
+    }
+    wlan_hdd_tdls_set_mode(hddctx, eTDLS_SUPPORT_DISABLED, FALSE);
+    hddLog(LOG1, FL("TDLS Support Disabled"));
+}
+
+/**
+ * hdd_tdls_notify_mode_change - Notify mode change
+ * @adapter: pointer to hdd adapter
+ * @hddCtx : pointer to hdd context
+ *
+ * Return: None
+ */
+void hdd_tdls_notify_mode_change(hdd_adapter_t *adapter, hdd_context_t *hddctx)
+{
+    if (adapter->device_mode != WLAN_HDD_INFRA_STATION)
+        wlan_hdd_tdls_disable_offchan_and_teardown_links(hddctx);
+}
+
 static v_VOID_t wlan_hdd_tdls_start_peer_discover_timer(tdlsCtx_t *pHddTdlsCtx,
                                                         tANI_BOOLEAN mutexLock,
                                                         v_U32_t discoveryExpiry)
