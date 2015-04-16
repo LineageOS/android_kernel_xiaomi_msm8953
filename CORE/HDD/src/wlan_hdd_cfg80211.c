@@ -15162,6 +15162,7 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                 WLAN_STADescType         staDesc;
                 tANI_U16 numCurrTdlsPeers = 0;
                 hddTdlsPeer_t *connPeer = NULL;
+                tANI_U8 suppChannelLen = 0;
 
                 pTdlsPeer = wlan_hdd_tdls_find_peer(pAdapter, peer, TRUE);
                 memset(&staDesc, 0, sizeof(staDesc));
@@ -15290,6 +15291,40 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                                  hddLog(VOS_TRACE_LEVEL_ERROR, FL("Failed to suspend data tx"));
                             }
                         }
+
+                        suppChannelLen =
+                               tdlsLinkEstablishParams.supportedChannelsLen;
+                        if  ((TRUE == pTdlsPeer->isOffChannelSupported) &&
+                             (TRUE == pTdlsPeer->isOffChannelConfigured) &&
+                             (suppChannelLen > 0) &&
+                             (suppChannelLen <= SIR_MAC_MAX_SUPP_CHANNELS))
+                        {
+                            int offChan =  pTdlsPeer->peerParams.channel;
+                            int i = 0;
+                            for (i = 0U; i < suppChannelLen; i++)
+                            {
+                                pTdlsPeer->isOffChannelConfigured = FALSE;
+                                if (
+                                   (tdlsLinkEstablishParams.supportedChannels[i]
+                                    <= offChan) &&
+                                   (tdlsLinkEstablishParams.supportedChannels[i]
+                                    == offChan))
+                                {
+                                    pTdlsPeer->isOffChannelConfigured = TRUE;
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            pTdlsPeer->isOffChannelConfigured = FALSE;
+                        }
+                        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                                  "%s: TDLS channel switch request for channel "
+                                  "%d isOffChannelConfigured %d suppChannelLen "
+                                  "%d", __func__, pTdlsPeer->peerParams.channel,
+                                  pTdlsPeer->isOffChannelConfigured,
+                                  suppChannelLen);
 
                         /* TDLS Off Channel, Enable tdls channel switch,
                            when their is only one tdls link and it supports */
