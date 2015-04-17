@@ -641,7 +641,7 @@ static void __schBeaconProcessForSession( tpAniSirGlobal      pMac,
     /* Obtain the Max Tx power for the current regulatory  */
     regMax = cfgGetRegulatoryMaxTransmitPower( pMac, psessionEntry->currentOperChannel );
 #endif
-
+    MTRACE(macTrace(pMac, TRACE_CODE_RX_MGMT_PROCESS, 0, 2 );)
 #if defined WLAN_FEATURE_VOWIFI
     {
         tPowerdBm  localRRMConstraint = 0;
@@ -699,8 +699,8 @@ static void __schBeaconProcessForSession( tpAniSirGlobal      pMac,
 
     if(beaconParams.paramChangeBitmap)
     {
-        PELOGW(schLog(pMac, LOGW, FL("Beacon for session[%d] got changed. "), psessionEntry->peSessionId);)
-        PELOGW(schLog(pMac, LOGW, FL("sending beacon param change bitmap: 0x%x "), beaconParams.paramChangeBitmap);)
+        schLog(pMac, LOGW, FL("Beacon for session[%d] got changed. "), psessionEntry->peSessionId);
+        schLog(pMac, LOGW, FL("sending beacon param change bitmap: 0x%x "), beaconParams.paramChangeBitmap);
         limSendBeaconParams(pMac, &beaconParams, psessionEntry);
     }
 
@@ -746,7 +746,7 @@ void schBeaconProcess(tpAniSirGlobal pMac, tANI_U8* pRxPacketInfo, tpPESession p
 
         return;
     }
-
+    MTRACE(macTrace(pMac, TRACE_CODE_RX_MGMT_PROCESS, 0, 1 );)
     if (beaconStruct.ssidPresent)
     {
         beaconStruct.ssId.ssId[beaconStruct.ssId.length] = 0;

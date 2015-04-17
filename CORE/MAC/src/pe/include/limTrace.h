@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -81,6 +81,7 @@ enum {
     TRACE_CODE_TX_CFG_MSG,
     TRACE_CODE_RX_CFG_MSG,
     TRACE_CODE_RX_MGMT_DROP,
+    TRACE_CODE_RX_MGMT_PROCESS,
 
     TRACE_CODE_TIMER_ACTIVATE,
     TRACE_CODE_TIMER_DEACTIVATE,
