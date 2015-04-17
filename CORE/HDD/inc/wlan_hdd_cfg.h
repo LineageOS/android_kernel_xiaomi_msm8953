@@ -2321,7 +2321,7 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_ENABLE_MGMT_LOGGING                         "gEnableMgmtLogging"
 #define CFG_ENABLE_MGMT_LOGGING_MIN                     (0)
 #define CFG_ENABLE_MGMT_LOGGING_MAX                     (1)
-#define CFG_ENABLE_MGMT_LOGGING_DEFAULT                 (1)
+#define CFG_ENABLE_MGMT_LOGGING_DEFAULT                 (0)
 
 #define CFG_ENABLE_BMUHW_TRACING                         "gEnableBMUHWtracing"
 #define CFG_ENABLE_BMUHW_TRACING_MIN                     (0)
