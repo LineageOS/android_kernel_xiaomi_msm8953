@@ -1476,7 +1476,7 @@ VOS_STATUS vos_free_context( v_VOID_t *pVosContext, VOS_MODULE_ID moduleID,
           VOS_STATUS_E_FAILURE - the pkt queue handler has reported
           a failure.
   --------------------------------------------------------------------------*/
-VOS_STATUS vos_logger_pkt_serialize( vos_pkt_t *pPacket, uint8 pkt_type)
+VOS_STATUS vos_logger_pkt_serialize( vos_pkt_t *pPacket, uint32 pkt_type)
 {
 #ifdef WLAN_LOGGING_SOCK_SVC_ENABLE
       return wlan_queue_logpkt_for_app(pPacket, pkt_type);

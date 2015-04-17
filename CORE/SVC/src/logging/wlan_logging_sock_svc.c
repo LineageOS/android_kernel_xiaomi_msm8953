@@ -836,7 +836,7 @@ int wlan_logging_sock_deinit_svc(void)
        return 0;
 }
 
-int wlan_queue_logpkt_for_app(vos_pkt_t *pPacket, uint8 pkt_type)
+int wlan_queue_logpkt_for_app(vos_pkt_t *pPacket, uint32 pkt_type)
 {
 	unsigned long flags;
 	vos_pkt_t *next_pkt;

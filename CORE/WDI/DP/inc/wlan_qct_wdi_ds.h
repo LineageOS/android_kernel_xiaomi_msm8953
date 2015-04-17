@@ -87,7 +87,7 @@ typedef enum
   WDI_DS_OPCODE_MAX
 }WDI_DS_BAOpCodeEnumType;
 
-#define WDI_DS_LOG_PKT_TYPE_LEN 1
+#define WDI_DS_LOG_PKT_TYPE_LEN 4
 typedef enum
 {
   WDI_DS_PACKET_LOG = 1<<0,
@@ -98,7 +98,7 @@ typedef enum
   // make sure to change the data type of
   // WDI_DS_RxMetaInfoType.loggingData from wpt_uint8
   // to accommodate more values
-  WDI_DS_MAX_LOG    = 1<<7
+  WDI_DS_MAX_LOG    = 1<<31
 }WDI_DS_LoggingDataEnumType;
 
 typedef struct 
@@ -172,7 +172,7 @@ typedef struct
 #ifdef WLAN_FEATURE_EXTSCAN
    wpt_uint32 extscanBuffer;
 #endif
-   wpt_uint8 loggingData;
+   wpt_uint32 loggingData;
 } WDI_DS_RxMetaInfoType;
 
 typedef struct sPktMetaInfo
