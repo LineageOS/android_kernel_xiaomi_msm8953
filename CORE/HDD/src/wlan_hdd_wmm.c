@@ -2087,6 +2087,14 @@ v_U16_t hdd_hostapd_select_queue(struct net_device * dev, struct sk_buff *skb)
    v_U8_t *pSTAId = (v_U8_t *)(((v_U8_t *)(skb->data)) - 1);
    v_CONTEXT_t pVosContext = ( WLAN_HDD_GET_CTX(pAdapter))->pvosContext;
    ptSapContext pSapCtx = NULL;
+
+   if (vos_is_logp_in_progress(VOS_MODULE_ID_HDD, NULL)) {
+       VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_WARN,
+                  FL("called during WDReset"));
+       skb->priority = SME_QOS_WMM_UP_BE;
+       return HDD_LINUX_AC_BE;
+   }
+
    pSapCtx = VOS_GET_SAP_CB(pVosContext);
    if(pSapCtx == NULL){
        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
