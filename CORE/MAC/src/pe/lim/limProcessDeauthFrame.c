@@ -455,7 +455,8 @@ limProcessDeauthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession p
     }
 
     if ((pStaDs->mlmStaContext.mlmState == eLIM_MLM_WT_DEL_STA_RSP_STATE) ||
-        (pStaDs->mlmStaContext.mlmState == eLIM_MLM_WT_DEL_BSS_RSP_STATE))
+        (pStaDs->mlmStaContext.mlmState == eLIM_MLM_WT_DEL_BSS_RSP_STATE) ||
+        (pStaDs->isDisassocDeauthInProgress))
     {
         /**
          * Already in the process of deleting context for the peer
@@ -463,10 +464,12 @@ limProcessDeauthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession p
          */
         PELOGE(limLog(pMac, LOGE,
            FL("received Deauth frame from peer that is in state %d, addr "
-           MAC_ADDRESS_STR),
-           pStaDs->mlmStaContext.mlmState,MAC_ADDR_ARRAY(pHdr->sa));)
+           MAC_ADDRESS_STR", isDisassocDeauthInProgress : %d\n"),
+           pStaDs->mlmStaContext.mlmState,MAC_ADDR_ARRAY(pHdr->sa),
+           pStaDs->isDisassocDeauthInProgress);)
         return;
     } 
+    pStaDs->isDisassocDeauthInProgress++;
     pStaDs->mlmStaContext.disassocReason = (tSirMacReasonCodes)reasonCode;
     pStaDs->mlmStaContext.cleanupTrigger = eLIM_PEER_ENTITY_DEAUTH;
 

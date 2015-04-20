@@ -634,7 +634,7 @@ typedef struct sDphHashNode
      * end of the structure.
 
      */
-
+    tANI_U8 isDisassocDeauthInProgress;
     struct sDphHashNode  *next;
 
 
