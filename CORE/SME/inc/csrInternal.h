@@ -935,7 +935,7 @@ typedef struct tagCsrRoamSession
     /* This contains the additional IE in (unicast)
      *  probe request at the time of join
      */
-    tANI_U8 addIEScan[SIR_MAC_MAX_IE_LENGTH+2];
+    tANI_U8 addIEScan[SIR_MAC_MAX_ADD_IE_LENGTH+2];
     tANI_U32 nAddIEAssocLength;      //the byte count for pAddIeAssocIE
     tANI_U8 *pAddIEAssoc; //this contains the additional IE in (re) assoc request
 
