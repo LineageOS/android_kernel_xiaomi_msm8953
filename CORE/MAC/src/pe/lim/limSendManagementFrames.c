@@ -2640,9 +2640,6 @@ limSendAssocReqMgmtFrame(tpAniSirGlobal   pMac,
            psessionEntry->peSessionId,
            pMacHdr->fc.subType));
 
-    // enable caching
-    WLANTL_EnableCaching(psessionEntry->staId);
-
     if( ( psessionEntry->is11Gonly == true ) &&
                           ( !IS_BROADCAST_MAC(pMlmAssocReq->peerMacAddr) ) ){
         txFlag |= HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME;
@@ -2667,7 +2664,6 @@ limSendAssocReqMgmtFrame(tpAniSirGlobal   pMac,
                 7,//SMAC_SWBD_TX_TID_MGMT_HIGH,
                 limTxComplete, pFrame, txFlag );
     }
-
     MTRACE(macTrace(pMac, TRACE_CODE_TX_COMPLETE,
            psessionEntry->peSessionId,
            halstatus));
@@ -2679,6 +2675,9 @@ limSendAssocReqMgmtFrame(tpAniSirGlobal   pMac,
         vos_mem_free(pFrm);
         return;
     }
+
+    //Enable caching only if Assoc Request is successfully submitted to the h/w
+    WLANTL_EnableCaching(psessionEntry->staId);
 
     // Free up buffer allocated for mlmAssocReq
     vos_mem_free(pMlmAssocReq);
@@ -3101,10 +3100,6 @@ limSendReassocReqWithFTIEsMgmtFrame(tpAniSirGlobal     pMac,
        psessionEntry->assocReqLen = (ft_ies_length);
     }
 
-
-    // Enable TL cahching in case of roaming
-    WLANTL_EnableCaching(psessionEntry->staId);
-
     MTRACE(macTrace(pMac, TRACE_CODE_TX_MGMT,
            psessionEntry->peSessionId,
            pMacHdr->fc.subType));
@@ -3138,6 +3133,9 @@ limSendReassocReqWithFTIEsMgmtFrame(tpAniSirGlobal     pMac,
         //Pkt will be freed up by the callback
         goto end;
     }
+
+    // Enable TL cahching in case of roaming
+    WLANTL_EnableCaching(psessionEntry->staId);
 
 end:
     // Free up buffer allocated for mlmAssocReq
@@ -3524,8 +3522,6 @@ limSendReassocReqMgmtFrame(tpAniSirGlobal     pMac,
            psessionEntry->peSessionId,
            pMacHdr->fc.subType));
 
-    // enable caching
-    WLANTL_EnableCaching(psessionEntry->staId);
     if (IS_FEATURE_SUPPORTED_BY_FW(ENHANCED_TXBD_COMPLETION))
     {
         limLog(pMac, LOG1, FL("Reassoc req - txBdToken %u"), pMac->lim.txBdToken);
@@ -3556,6 +3552,9 @@ limSendReassocReqMgmtFrame(tpAniSirGlobal     pMac,
         //Pkt will be freed up by the callback
         goto end;
     }
+
+    // enable caching
+    WLANTL_EnableCaching(psessionEntry->staId);
 
 end:
     // Free up buffer allocated for mlmAssocReq
