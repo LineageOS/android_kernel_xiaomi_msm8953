@@ -5758,6 +5758,10 @@ int wlan_hdd_cfg80211_init(struct device *dev,
     }
 #endif/*FEATURE_WLAN_SCAN_PNO*/
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0))
+    wiphy->features |= NL80211_FEATURE_HT_IBSS;
+#endif
+
 #ifdef CONFIG_ENABLE_LINUX_REG
     /* even with WIPHY_FLAG_CUSTOM_REGULATORY,
        driver can still register regulatory callback and
