@@ -686,9 +686,6 @@ void limRemainOnChnRsp(tpAniSirGlobal pMac, eHalStatus status, tANI_U32 *data)
     //Cleanup Everything
     if(eHAL_STATUS_FAILURE == status)
     {
-       //Deactivate Remain on Channel Timer
-       limDeactivateAndChangeTimer(pMac, eLIM_REMAIN_CHN_TIMER);
-
        //Set the Link State to Idle
        /* get the previous valid LINK state */
        if (limSetLinkState(pMac, eSIR_LINK_IDLE_STATE, nullBssid,
