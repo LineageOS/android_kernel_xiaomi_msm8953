@@ -4891,6 +4891,9 @@ eHalStatus csrNeighborRoamInit(tpAniSirGlobal pMac)
 
     CSR_NEIGHBOR_ROAM_STATE_TRANSITION(eCSR_NEIGHBOR_ROAM_STATE_INIT)
     pNeighborRoamInfo->roamChannelInfo.IAPPNeighborListReceived = eANI_BOOLEAN_FALSE;
+
+    //Set the Last Sent Cmd as RSO_STOP
+    pNeighborRoamInfo->lastSentCmd = ROAM_SCAN_OFFLOAD_STOP;
     return eHAL_STATUS_SUCCESS;
 }
 
