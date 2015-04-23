@@ -229,6 +229,12 @@ static const tANI_U8 eth_890d_header[] =
     0x00, 0x00, 0x89, 0x0d,
 } ;
 
+/* store tdls self supported channels
+ * which are non passive */
+#define LIM_TDLS_MAX_NON_DFS_CHANNELS 50
+static tANI_U8 tdlsSelfNumChans = 0;
+static tANI_U8 tdlsSelfSupportedChannels[LIM_TDLS_MAX_NON_DFS_CHANNELS] = {0};
+
 /*
  * type of links used in TDLS 
  */
@@ -5163,12 +5169,17 @@ void PopulateDot11fTdlsOffchannelParams(tpAniSirGlobal pMac,
         if (!LIM_IS_CHANNEL_DFS(validChan[i])) {
             suppChannels->bands[j][0] = validChan[i];
             suppChannels->bands[j][1] = 1;
+            /* store tdls self supported channels */
+            tdlsSelfSupportedChannels[j] = validChan[i];
             j++;
         }
     }
     /* update the channel list with new length */
     suppChannels->num_bands = j;
     suppChannels->present = 1 ;
+    /* store tdls self supported channels new length */
+    tdlsSelfNumChans = j;
+
     /*Get present operating class based on current operating channel*/
     op_class = limGetOPClassFromChannel(
                                      pMac->scan.countryCodeCurrent,
@@ -5817,23 +5828,16 @@ tSirRetStatus limProcesSmeTdlsLinkEstablishReq(tpAniSirGlobal pMac,
     if ((pTdlsLinkEstablishReq->supportedChannelsLen > 0) &&
         (pTdlsLinkEstablishReq->supportedChannelsLen <= SIR_MAC_MAX_SUPP_CHANNELS))
     {
-        tANI_U32   selfNumChans = WNI_CFG_VALID_CHANNEL_LIST_LEN;
-        tANI_U8    selfSupportedChannels[WNI_CFG_VALID_CHANNEL_LIST_LEN];
-        if (wlan_cfgGetStr(pMac, WNI_CFG_VALID_CHANNEL_LIST,
-                          selfSupportedChannels, &selfNumChans) != eSIR_SUCCESS)
+        /* check self supported channels and pass them to FW */
+        if ((tdlsSelfNumChans > 0) &&
+            (tdlsSelfNumChans < LIM_TDLS_MAX_NON_DFS_CHANNELS))
         {
-            /**
-             * Could not get Valid channel list from CFG.
-             * Log error.
-             */
-             limLog(pMac, LOGE,
-                    FL("could not retrieve Valid channel list"));
-        }
-        limTdlsGetIntersection(selfSupportedChannels, selfNumChans,
+            limTdlsGetIntersection(tdlsSelfSupportedChannels, tdlsSelfNumChans,
                                pTdlsLinkEstablishReq->supportedChannels,
                                pTdlsLinkEstablishReq->supportedChannelsLen,
                                pMsgTdlsLinkEstablishReq->validChannels,
                                &pMsgTdlsLinkEstablishReq->validChannelsLen);
+        }
     }
     vos_mem_copy(pMsgTdlsLinkEstablishReq->validOperClasses,
                         pTdlsLinkEstablishReq->supportedOperClasses, pTdlsLinkEstablishReq->supportedOperClassesLen);
