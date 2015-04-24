@@ -11560,7 +11560,6 @@ int wlan_hdd_cfg80211_set_ie( hdd_adapter_t *pAdapter,
                     pWextState->roamProfile.nAddIEAssocLength = pWextState->assocAddIE.length;
                 }
 
-                break;
                 if (WLAN_HDD_IBSS == pAdapter->device_mode) {
 
                    /* populating as ADDIE in beacon frames */
