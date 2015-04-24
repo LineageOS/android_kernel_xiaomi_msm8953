@@ -385,12 +385,6 @@ enum {
     MCC_TOO_CLOSE_MARGIN_CFG_PARAM,
 };
 
-enum
-{
-   WLAN_HDD_GET_FRAME_LOG_CMD_CLEAR          = 1<<0,
-   WLAN_HDD_GET_FRAME_LOG_CMD_SEND_AND_CLEAR = 1<<1,
-};
-
 int hdd_validate_mcc_config(hdd_adapter_t *pAdapter, v_UINT_t staId,
                                 v_UINT_t arg1, v_UINT_t arg2, v_UINT_t arg3);
 
@@ -926,7 +920,7 @@ static void hdd_GetFrameLogCB( void *pContext )
    {
       /* the caller presumably timed out so there is nothing we can do */
       spin_unlock(&hdd_context_lock);
-      hddLog(VOS_TRACE_LEVEL_ERROR,
+      hddLog(VOS_TRACE_LEVEL_WARN,
              "%s: Invalid context, pAdapter [%p] magic [%08x]",
               __func__, pAdapter, pGetFrameLogCtx->magic);
       return;
