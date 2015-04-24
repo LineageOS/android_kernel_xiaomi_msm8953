@@ -102,7 +102,7 @@
 #define MAC_ADDRESS_STR "%02x:%02x:%02x:%02x:%02x:%02x"
 
 #define FEATURE_NOT_SUPPORTED 127
-
+#define MAX_FW_HOST_CAP_SIZE 1024
 #ifdef FEATURE_WLAN_SCAN_PNO
 #define WDI_PNO_VERSION_MASK 0x8000
 #endif
@@ -1319,8 +1319,17 @@ static char *WDI_getRespMsgString(wpt_uint16 wdiRespMsgId)
 void WDI_TraceHostFWCapabilities(tANI_U32 *capabilityBitmap)
 {
      int i,j;
-     char capStr[512];
-     char *pCapStr = capStr;
+     char *pTempCapStr = NULL;
+     char *pCapStr = NULL;
+     pTempCapStr = vos_mem_malloc(MAX_FW_HOST_CAP_SIZE);
+     if (NULL == pTempCapStr)
+     {
+         WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+              "Memory allocation failed for CapStr");
+         return;
+     }
+
+     pCapStr = pTempCapStr;
      for (j = 0; j < 4; j++) {
          for (i = 0; i < 32; i++) {
              if ((*(capabilityBitmap + j) & (1 << i))) {
@@ -1465,8 +1474,12 @@ void WDI_TraceHostFWCapabilities(tANI_U32 *capabilityBitmap)
      }
      pCapStr -= 2;
      *pCapStr = '\0';
-     pCapStr = capStr;
-     WPAL_TRACE( eWLAN_MODULE_DAL_CTRL,  eWLAN_PAL_TRACE_LEVEL_ERROR, "\t\t%s", pCapStr);
+     WPAL_TRACE( eWLAN_MODULE_DAL_CTRL,  eWLAN_PAL_TRACE_LEVEL_ERROR, "\t\t%s", pTempCapStr);
+     if (pTempCapStr)
+     {
+         vos_mem_free(pTempCapStr);
+         pTempCapStr = NULL;
+     }
 }
 
 /**
