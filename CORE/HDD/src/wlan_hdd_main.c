@@ -8226,12 +8226,6 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
 
    ENTER();
 
-#ifdef WLAN_NS_OFFLOAD
-   hddLog(LOGE, FL("Unregister IPv6 notifier"));
-   unregister_inet6addr_notifier(&pHddCtx->ipv6_notifier);
-#endif
-   hddLog(LOGE, FL("Unregister IPv4 notifier"));
-   unregister_inetaddr_notifier(&pHddCtx->ipv4_notifier);
 
    if (VOS_FTM_MODE != hdd_get_conparam())
    {
@@ -8420,6 +8414,13 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
    spin_unlock(&hdd_context_lock);
 
    hdd_debugfs_exit(pHddCtx);
+
+#ifdef WLAN_NS_OFFLOAD
+   hddLog(LOGE, FL("Unregister IPv6 notifier"));
+   unregister_inet6addr_notifier(&pHddCtx->ipv6_notifier);
+#endif
+   hddLog(LOGE, FL("Unregister IPv4 notifier"));
+   unregister_inetaddr_notifier(&pHddCtx->ipv4_notifier);
 
    // Unregister the Net Device Notifier
    unregister_netdevice_notifier(&hdd_netdev_notifier);
