@@ -11037,6 +11037,8 @@ int wlan_hdd_cfg80211_connect_start( hdd_adapter_t  *pAdapter,
         hdd_station_ctx_t *pHddStaCtx;
         pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
 
+        wlan_hdd_get_frame_logs(pAdapter, WLAN_HDD_GET_FRAME_LOG_CMD_CLEAR);
+
         if (HDD_WMM_USER_MODE_NO_QOS ==
                         (WLAN_HDD_GET_CTX(pAdapter))->cfg_ini->WmmMode)
         {
@@ -11560,7 +11562,6 @@ int wlan_hdd_cfg80211_set_ie( hdd_adapter_t *pAdapter,
                     pWextState->roamProfile.nAddIEAssocLength = pWextState->assocAddIE.length;
                 }
 
-                break;
                 if (WLAN_HDD_IBSS == pAdapter->device_mode) {
 
                    /* populating as ADDIE in beacon frames */

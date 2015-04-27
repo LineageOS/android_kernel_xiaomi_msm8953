@@ -628,6 +628,8 @@ static int wlan_logging_thread(void *Arg)
 
 		if (INVALID_PID == gapp_pid) {
 		    pr_err("%s: Invalid PID\n", __func__);
+		    test_and_clear_bit(HOST_LOG_POST_MASK,&gwlan_logging.event_flag);
+		    test_and_clear_bit(LOGGER_PKT_POST_MASK,&gwlan_logging.event_flag);
 		    continue;
 		}
 
