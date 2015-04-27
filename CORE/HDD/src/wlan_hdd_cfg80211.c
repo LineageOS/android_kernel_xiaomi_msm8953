@@ -10480,6 +10480,7 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
     hdd_scaninfo_t *pScanInfo = NULL;
     v_U8_t* pP2pIe = NULL;
     int ret = 0;
+    v_U8_t *pWpsIe=NULL;
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0))
     struct net_device *dev = NULL;
@@ -10693,9 +10694,13 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
      * This condition will work only in case when last request no of channels
      * and channels are exactly same as new request.
      * This should be done only in connected state
+     * Scan shouldn't be defered for WPS scan case.
      */
 
-    if ((VOS_STATUS_SUCCESS == hdd_is_any_session_connected(pHddCtx)))
+    pWpsIe = wlan_hdd_get_wps_ie_ptr((v_U8_t*)request->ie,request->ie_len);
+    /* if wps ie is NULL , then only defer scan */
+    if ( pWpsIe == NULL &&
+        (VOS_STATUS_SUCCESS == hdd_is_any_session_connected(pHddCtx)))
     {
         if ( pScanInfo->last_scan_timestamp !=0 &&
              ((vos_timer_get_system_time() - pScanInfo->last_scan_timestamp ) < pHddCtx->cfg_ini->nDeferScanTimeInterval))
