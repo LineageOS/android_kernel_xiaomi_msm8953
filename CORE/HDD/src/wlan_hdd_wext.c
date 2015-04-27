@@ -166,6 +166,9 @@ static const hdd_freq_chan_map_t freq_chan_map[] = { {2412, 1}, {2417, 2},
 #define  WE_SET_SCAN_BAND_PREFERENCE     17
 #define  WE_SET_MIRACAST_VENDOR_CONFIG     18
 #define WE_GET_FRAME_LOG                 19
+#ifdef FEATURE_WLAN_TDLS
+#define  WE_SET_TDLS_2040_BSS_COEXISTENCE 20
+#endif
 
 /* Private ioctls and their sub-ioctls */
 #define WLAN_PRIV_SET_NONE_GET_INT    (SIOCIWFIRSTPRIV + 1)
@@ -5846,6 +5849,21 @@ static int __iw_setint_getnone(struct net_device *dev,
             break;
         }
 
+        case WE_SET_TDLS_2040_BSS_COEXISTENCE:
+        {
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                      "%s: TDLS_2040_BSS_COEXISTENCE %d", __func__, set_value);
+            if (set_value == 0 || set_value == 1)
+            {
+                sme_SetTdls2040BSSCoexistence(WLAN_HDD_GET_HAL_CTX(pAdapter),
+                                              set_value);
+            }
+            else
+                ret = -EINVAL;
+
+            break;
+        }
+
         default:
         {
             hddLog(LOGE, "Invalid IOCTL setvalue command %d value %d",
@@ -10089,6 +10107,14 @@ static const struct iw_priv_args we_private_args[] = {
     {   WE_SET_MIRACAST_VENDOR_CONFIG,
         IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
         0, "setMiracstConf" },
+
+#ifdef FEATURE_WLAN_TDLS
+    {
+        WE_SET_TDLS_2040_BSS_COEXISTENCE,
+        IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
+        0,
+        "tdls_2040bsscox" },
+#endif
 
     /* handlers for main ioctl */
     {   WLAN_PRIV_SET_NONE_GET_INT,

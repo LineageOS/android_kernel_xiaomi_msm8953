@@ -11038,7 +11038,8 @@ v_U8_t hdd_is_fw_logging_enabled(void)
     pHddCtx = vos_get_context(VOS_MODULE_ID_HDD,
                               vos_get_global_context(VOS_MODULE_ID_HDD, NULL));
 
-    return (pHddCtx && pHddCtx->mgmt_frame_logging);
+    return (pHddCtx && (pHddCtx->cfg_ini->enableMgmtLogging ||
+                        pHddCtx->cfg_ini->enableBMUHWtracing));
 }
 
 /*

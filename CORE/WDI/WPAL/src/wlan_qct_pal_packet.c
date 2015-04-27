@@ -1003,7 +1003,10 @@ void wpalLogPktSerialize
    {
       // a VALID packet implies non NULL meta-data
       pRxMetadata = WDI_DS_ExtractRxMetaData(pFrame);
-      pRxMetadata->loggingData = *((wpt_uint8 *)pBuffer);
+      pRxMetadata->loggingData = *((wpt_uint32 *)pBuffer);
+
+      wpalPacketRawTrimHead(pFrame, WDI_DS_LOG_PKT_TYPE_LEN);
+
       vos_logger_pkt_serialize(WPAL_TO_VOS_PKT(pFrame), pRxMetadata->loggingData);
    }
    else

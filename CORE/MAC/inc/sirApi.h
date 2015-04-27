@@ -5729,4 +5729,13 @@ typedef struct
     tANI_U32 txCompleteStatus;
     tANI_U32 txBdToken;
 }tSirTxBdStatus, *tpSirTxBdStatus;
+
+/* enable or disable 20_40 BSS Coexistence IE in TDLS frames*/
+typedef struct
+{
+    // Common for all types are requests
+    tANI_U16    msgType;    // message type is same as the request type
+    tANI_U16    msgLen;     // length of the entire request
+    tANI_U8     SetTdls2040BSSCoex; //enabled or disabled
+} tAniSetTdls2040BSSCoex, *tpAniSetTdls2040BSSCoex;
 #endif /* __SIR_API_H */

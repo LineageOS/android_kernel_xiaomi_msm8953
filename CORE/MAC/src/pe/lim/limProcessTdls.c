@@ -1141,11 +1141,14 @@ static tSirRetStatus limSendTdlsDisRspFrame(tpAniSirGlobal pMac,
                                             &tdlsDisRsp.SuppChannels,
                                             &tdlsDisRsp.SuppOperatingClasses);
 
-    if ( 1 == pMac->lim.gLimTDLSOffChannelEnabled &&
-         ( pMac->roam.configParam.bandCapability != eCSR_BAND_24) )
+    if (TRUE == pMac->lim.EnableTdls2040BSSCoexIE)
     {
-        tdlsDisRsp.HT2040BSSCoexistence.present = 1;
-        tdlsDisRsp.HT2040BSSCoexistence.infoRequest = 1;
+        if ( 1 == pMac->lim.gLimTDLSOffChannelEnabled &&
+            ( pMac->roam.configParam.bandCapability != eCSR_BAND_24) )
+        {
+            tdlsDisRsp.HT2040BSSCoexistence.present = 1;
+            tdlsDisRsp.HT2040BSSCoexistence.infoRequest = 1;
+        }
     }
     /* 
      * now we pack it.  First, how much space are we going to need?
@@ -1457,11 +1460,14 @@ tSirRetStatus limSendTdlsLinkSetupReqFrame(tpAniSirGlobal pMac,
                                             &tdlsSetupReq.SuppChannels,
                                             &tdlsSetupReq.SuppOperatingClasses);
 
-    if ( 1 == pMac->lim.gLimTDLSOffChannelEnabled &&
-         ( pMac->roam.configParam.bandCapability != eCSR_BAND_24))
+    if (TRUE == pMac->lim.EnableTdls2040BSSCoexIE)
     {
-        tdlsSetupReq.HT2040BSSCoexistence.present = 1;
-        tdlsSetupReq.HT2040BSSCoexistence.infoRequest = 1;
+        if ( 1 == pMac->lim.gLimTDLSOffChannelEnabled &&
+            ( pMac->roam.configParam.bandCapability != eCSR_BAND_24))
+        {
+            tdlsSetupReq.HT2040BSSCoexistence.present = 1;
+            tdlsSetupReq.HT2040BSSCoexistence.infoRequest = 1;
+        }
     }
 
     /*
@@ -1911,11 +1917,14 @@ static tSirRetStatus limSendTdlsSetupRspFrame(tpAniSirGlobal pMac,
 
     tdlsSetupRsp.Status.status = setupStatus ;
 
-    if ( 1 == pMac->lim.gLimTDLSOffChannelEnabled &&
-         ( pMac->roam.configParam.bandCapability != eCSR_BAND_24))
+    if (TRUE == pMac->lim.EnableTdls2040BSSCoexIE)
     {
-        tdlsSetupRsp.HT2040BSSCoexistence.present = 1;
-        tdlsSetupRsp.HT2040BSSCoexistence.infoRequest = 1;
+        if ( 1 == pMac->lim.gLimTDLSOffChannelEnabled &&
+            ( pMac->roam.configParam.bandCapability != eCSR_BAND_24))
+        {
+            tdlsSetupRsp.HT2040BSSCoexistence.present = 1;
+            tdlsSetupRsp.HT2040BSSCoexistence.infoRequest = 1;
+        }
     }
     /* 
      * now we pack it.  First, how much space are we going to need?
@@ -2109,11 +2118,14 @@ tSirRetStatus limSendTdlsLinkSetupCnfFrame(tpAniSirGlobal pMac, tSirMacAddr peer
        PopulateDot11fHTInfo( pMac, &tdlsSetupCnf.HTInfo, psessionEntry );
     }
 
-    if ( 1 == pMac->lim.gLimTDLSOffChannelEnabled &&
-         ( pMac->roam.configParam.bandCapability != eCSR_BAND_24))
+    if (TRUE == pMac->lim.EnableTdls2040BSSCoexIE)
     {
-        tdlsSetupCnf.HT2040BSSCoexistence.present = 1;
-        tdlsSetupCnf.HT2040BSSCoexistence.infoRequest = 1;
+        if ( 1 == pMac->lim.gLimTDLSOffChannelEnabled &&
+            ( pMac->roam.configParam.bandCapability != eCSR_BAND_24))
+        {
+            tdlsSetupCnf.HT2040BSSCoexistence.present = 1;
+            tdlsSetupCnf.HT2040BSSCoexistence.infoRequest = 1;
+        }
     }
 
     /* 
@@ -6249,5 +6261,25 @@ lim_tdls_chan_switch_error:
                                    pTdlsChanSwitch->peerMac,
                                    NULL, eSIR_FAILURE);
     return eSIR_FAILURE;
+}
+
+/*
+ * Set 20_40 BSS Coex IE in TDLS frames.
+ */
+tSirRetStatus limProcessSmeSetTdls2040BSSCoexReq(tpAniSirGlobal pMac,
+                                                 tANI_U32 *pMsgBuf)
+{
+    tAniSetTdls2040BSSCoex *pmsg = NULL;
+    pmsg = (tAniSetTdls2040BSSCoex*) pMsgBuf ;
+
+    if (NULL != pmsg) {
+        pMac->lim.EnableTdls2040BSSCoexIE = pmsg->SetTdls2040BSSCoex;
+    }
+    VOS_TRACE(VOS_MODULE_ID_PE, VOS_TRACE_LEVEL_INFO,
+              "%s: 20_40 BSS Coex IE in TDLS frames "
+              "pMac->lim.EnableTdls2040BSSCoexIE %d ", __func__,
+              pMac->lim.EnableTdls2040BSSCoexIE);
+
+    return eSIR_SUCCESS;
 }
 

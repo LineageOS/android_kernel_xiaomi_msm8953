@@ -927,6 +927,7 @@ tLimMlmOemDataRsp       *gpLimMlmOemDataRsp;
      */
     tANI_U32 remOnChnSeqNum;
     tANI_U32 txBdToken;
+    tANI_U32 EnableTdls2040BSSCoexIE;
 } tAniSirLim, *tpAniSirLim;
 
 typedef struct sLimMgmtFrameRegistration

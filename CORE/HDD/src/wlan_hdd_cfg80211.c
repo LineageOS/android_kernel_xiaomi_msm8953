@@ -90,11 +90,9 @@
 #include "bap_hdd_misc.h"
 #endif
 #include <qc_sap_ioctl.h>
-#ifdef FEATURE_WLAN_TDLS
 #include "wlan_hdd_tdls.h"
 #include "wlan_hdd_wmm.h"
 #include "wlan_qct_wda.h"
-#endif
 #include "wlan_nv.h"
 #include "wlan_hdd_dev_pwr.h"
 
@@ -8027,6 +8025,13 @@ int __wlan_hdd_cfg80211_change_iface( struct wiphy *wiphy,
 #endif //WLAN_BTAMP_FEATURE
     /* Reset the current device mode bit mask*/
     wlan_hdd_clear_concurrency_mode(pHddCtx, pAdapter->device_mode);
+
+    /* Notify Mode change in case of concurrency.
+     * Below function invokes TDLS teardown Functionality Since TDLS is
+     * not Supported in case of concurrency i.e Once P2P session
+     * is detected disable offchannel and teardown TDLS links
+     */
+    hdd_tdls_notify_mode_change(pAdapter, pHddCtx);
 
     if( (pAdapter->device_mode == WLAN_HDD_INFRA_STATION)
       || (pAdapter->device_mode == WLAN_HDD_P2P_CLIENT)
