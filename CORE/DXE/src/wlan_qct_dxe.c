@@ -2288,6 +2288,9 @@ static wpt_status dxeRXFrameRefillRing
          the descriptor. */
       if(channelEntry->extraConfig.cw_ctrl_read != currentDesc->descCtrl.ctrl)
       {
+         HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                  "dxeRXFrameRefillRing, Descriptor write failed");
+         ++channelEntry->desc_write_fail_count;
          //HDXE_ASSERT(0);
       }
 
