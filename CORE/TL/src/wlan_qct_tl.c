@@ -1735,6 +1735,34 @@ WLANTL_UpdateTdlsSTAClient
 
 }
 
+VOS_STATUS WLANTL_SetMonRxCbk(v_PVOID_t pvosGCtx, WLANTL_MonRxCBType pfnMonRx)
+{
+  WLANTL_CbType*  pTLCb = NULL ;
+  pTLCb = VOS_GET_TL_CB(pvosGCtx);
+  if ( NULL == pTLCb )
+  {
+    TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
+      "WLAN TL:Invalid TL pointer from pvosGCtx on WLANTL_RegisterSTAClient"));
+    return VOS_STATUS_E_FAULT;
+  }
+  pTLCb->pfnMonRx = pfnMonRx;
+  return VOS_STATUS_SUCCESS;
+}
+
+void WLANTL_SetIsConversionReq(v_PVOID_t pvosGCtx, v_BOOL_t isConversionReq)
+{
+  WLANTL_CbType*  pTLCb = NULL ;
+  pTLCb = VOS_GET_TL_CB(pvosGCtx);
+  if ( NULL == pTLCb )
+  {
+    TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
+      "WLAN TL:Invalid TL pointer from pvosGCtx on WLANTL_RegisterSTAClient"));
+    return;
+  }
+  pTLCb->isConversionReq = isConversionReq;
+  return;
+}
+
 
 /*===========================================================================
 
@@ -5750,6 +5778,16 @@ WLANTL_RxFrames
     selfBcastLoopback = VOS_FALSE; 
 
     vos_pkt_walk_packet_chain( vosDataBuff, &vosDataBuff, 1/*true*/ );
+
+    if( vos_get_conparam() == VOS_MONITOR_MODE )
+      {
+         if( pTLCb->isConversionReq )
+            WLANTL_MonTranslate80211To8023Header(vosTempBuff, pTLCb);
+
+         pTLCb->pfnMonRx(pvosGCtx, vosTempBuff, pTLCb->isConversionReq);
+         vosTempBuff = vosDataBuff;
+         continue;
+      }
 
     /*---------------------------------------------------------------------
       Peek at BD header - do not remove
@@ -10245,6 +10283,119 @@ WLANTL_Translate80211To8023Header
 
   return VOS_STATUS_SUCCESS;
 }/*WLANTL_Translate80211To8023Header*/
+
+VOS_STATUS
+WLANTL_MonTranslate80211To8023Header
+(
+  vos_pkt_t*      vosDataBuff,
+  WLANTL_CbType*  pTLCb
+)
+{
+   v_U16_t                  usMPDUDOffset;
+   v_U8_t                   ucMPDUHOffset;
+   v_U8_t                   ucMPDUHLen;
+   v_U16_t                  usActualHLen = 0;
+   v_U16_t                  usDataStartOffset = 0;
+   v_PVOID_t                aucBDHeader;
+   WLANTL_8023HeaderType    w8023Header;
+   WLANTL_80211HeaderType   w80211Header;
+   VOS_STATUS               vosStatus;
+   v_U8_t                   aucLLCHeader[WLANTL_LLC_HEADER_LEN];
+
+   WDA_DS_PeekRxPacketInfo( vosDataBuff, (v_PVOID_t)&aucBDHeader, 0 );
+   ucMPDUHOffset = (v_U8_t)WDA_GET_RX_MPDU_HEADER_OFFSET(aucBDHeader);
+   usMPDUDOffset = (v_U16_t)WDA_GET_RX_MPDU_DATA_OFFSET(aucBDHeader);
+   ucMPDUHLen    = (v_U8_t)WDA_GET_RX_MPDU_HEADER_LEN(aucBDHeader);
+   if (usMPDUDOffset > ucMPDUHOffset)
+   {
+      usActualHLen = usMPDUDOffset - ucMPDUHOffset;
+   }
+
+  if ( sizeof(w80211Header) < ucMPDUHLen )
+  {
+     TLLOG2(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO_HIGH,
+       "Warning !: Check the header size for the Rx frame structure=%d received=%dn",
+       sizeof(w80211Header), ucMPDUHLen));
+     ucMPDUHLen = sizeof(w80211Header);
+  }
+
+  vosStatus = vos_pkt_pop_head( vosDataBuff, &w80211Header, ucMPDUHLen);
+  if ( VOS_STATUS_SUCCESS != vosStatus )
+  {
+     TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
+                "WLAN TL: Failed to pop 80211 header from packet %d",
+                vosStatus));
+
+     return vosStatus;
+  }
+  switch ( w80211Header.wFrmCtrl.fromDS )
+  {
+  case 0:
+    if ( w80211Header.wFrmCtrl.toDS )
+    {
+      vos_mem_copy( w8023Header.vDA, w80211Header.vA3, VOS_MAC_ADDR_SIZE);
+      vos_mem_copy( w8023Header.vSA, w80211Header.vA2, VOS_MAC_ADDR_SIZE);
+      TLLOG2(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO_HIGH,
+                  "WLAN TL SoftAP: 802 3 DA %08x SA %08x",
+                  w8023Header.vDA, w8023Header.vSA));
+    }
+    else
+    {
+      vos_mem_copy( w8023Header.vDA, w80211Header.vA1, VOS_MAC_ADDR_SIZE);
+      vos_mem_copy( w8023Header.vSA, w80211Header.vA2, VOS_MAC_ADDR_SIZE);
+    }
+    break;
+  case 1:
+    if ( w80211Header.wFrmCtrl.toDS )
+    {
+      vos_mem_copy( w8023Header.vDA, w80211Header.vA1, VOS_MAC_ADDR_SIZE);
+      vos_mem_copy( w8023Header.vSA, w80211Header.vA2, VOS_MAC_ADDR_SIZE);
+    }
+    else
+    {
+      vos_mem_copy( w8023Header.vDA, w80211Header.vA1, VOS_MAC_ADDR_SIZE);
+      vos_mem_copy( w8023Header.vSA, w80211Header.vA3, VOS_MAC_ADDR_SIZE);
+    }
+    break;
+  }
+  if( usActualHLen > ucMPDUHLen )
+  {
+     usDataStartOffset = usActualHLen - ucMPDUHLen;
+  }
+
+  if ( 0 < usDataStartOffset )
+  {
+    vosStatus = vos_pkt_trim_head( vosDataBuff, usDataStartOffset );
+
+    if ( VOS_STATUS_SUCCESS != vosStatus )
+    {
+      TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
+                  "WLAN TL: Failed to trim header from packet %d",
+                  vosStatus));
+      return vosStatus;
+    }
+  }
+   // Extract the LLC header
+   vosStatus = vos_pkt_pop_head( vosDataBuff, aucLLCHeader,
+                                 WLANTL_LLC_HEADER_LEN);
+
+   if ( VOS_STATUS_SUCCESS != vosStatus )
+   {
+      TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_WARN,
+                 "WLAN TL: Failed to pop LLC header from packet %d",
+                 vosStatus));
+
+      return vosStatus;
+   }
+
+   //Extract the length
+   vos_mem_copy(&w8023Header.usLenType,
+     &aucLLCHeader[WLANTL_LLC_HEADER_LEN - sizeof(w8023Header.usLenType)],
+     sizeof(w8023Header.usLenType) );
+
+   vos_pkt_push_head(vosDataBuff, &w8023Header, sizeof(w8023Header));
+   return VOS_STATUS_SUCCESS;
+}
 
 /*==========================================================================
   FUNCTION    WLANTL_FindFrameTypeBcMcUc

@@ -691,6 +691,9 @@ typedef VOS_STATUS (*WLANTL_STAFetchPktCBType)(
                                             vos_pkt_t**           vosDataBuff,
                                             WLANTL_MetaInfoType*  tlMetaInfo);
 
+typedef VOS_STATUS (*WLANTL_MonRxCBType)( v_PVOID_t              pvosGCtx,
+                                          vos_pkt_t*             vosDataBuff,
+                                          int                    conversion);
 /*----------------------------------------------------------------------------
 
   DESCRIPTION   
@@ -1115,6 +1118,8 @@ WLANTL_ConfigureSwFrameTXXlationForAll
   v_BOOL_t enableFrameXlation
 );
 
+VOS_STATUS WLANTL_SetMonRxCbk(v_PVOID_t pvosGCtx, WLANTL_MonRxCBType pfnMonRx);
+void WLANTL_SetIsConversionReq(v_PVOID_t pvosGCtx, v_BOOL_t isConversionReq);
 /*===========================================================================
 
   FUNCTION    WLANTL_RegisterSTAClient

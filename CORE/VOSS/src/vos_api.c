@@ -589,6 +589,176 @@ VOS_STATUS vos_preStart( v_CONTEXT_t vosContext )
    return VOS_STATUS_SUCCESS;
 }
 
+VOS_STATUS vos_mon_start( v_CONTEXT_t vosContext )
+{
+  VOS_STATUS vStatus          = VOS_STATUS_SUCCESS;
+  pVosContextType pVosContext = (pVosContextType)vosContext;
+
+  if (pVosContext == NULL)
+   {
+       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+          "%s: mismatch in context",__func__);
+       return VOS_STATUS_E_FAILURE;
+   }
+
+  if (( pVosContext->pWDAContext == NULL) || ( pVosContext->pTLContext == NULL))
+  {
+     if (pVosContext->pWDAContext == NULL)
+        VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+            "%s: WDA NULL context", __func__);
+     else
+        VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+            "%s: TL NULL context", __func__);
+
+     return VOS_STATUS_E_FAILURE;
+  }
+
+   /* Reset wda wait event */
+   vos_event_reset(&pVosContext->wdaCompleteEvent);
+
+   /*call WDA pre start*/
+   vStatus = WDA_preStart(pVosContext);
+   if (!VOS_IS_STATUS_SUCCESS(vStatus))
+   {
+      VOS_TRACE(VOS_MODULE_ID_SYS, VOS_TRACE_LEVEL_ERROR,
+             "Failed to WDA prestart ");
+      VOS_ASSERT(0);
+      return VOS_STATUS_E_FAILURE;
+   }
+
+   /* Need to update time out of complete */
+   vStatus = vos_wait_single_event( &pVosContext->wdaCompleteEvent, 1000);
+   if ( vStatus != VOS_STATUS_SUCCESS )
+   {
+      if ( vStatus == VOS_STATUS_E_TIMEOUT )
+      {
+         VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+          "%s: Timeout occurred before WDA complete",__func__);
+      }
+      else
+      {
+         VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+           "%s: WDA_preStart reporting  other error",__func__);
+      }
+      VOS_ASSERT( 0 );
+      return VOS_STATUS_E_FAILURE;
+   }
+
+    vStatus = WDA_NVDownload_Start(pVosContext);
+
+    if ( vStatus != VOS_STATUS_SUCCESS )
+    {
+       VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+                   "%s: Failed to start NV Download",__func__);
+       return VOS_STATUS_E_FAILURE;
+    }
+
+    vStatus = vos_wait_single_event(&(pVosContext->wdaCompleteEvent), 1000 * 30);
+
+    if ( vStatus != VOS_STATUS_SUCCESS )
+    {
+       if ( vStatus == VOS_STATUS_E_TIMEOUT )
+       {
+          VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+                     "%s: Timeout occurred before WDA_NVDownload_Start complete",__func__);
+       }
+       else
+       {
+         VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+                    "%s: WDA_NVDownload_Start reporting  other error",__func__);
+       }
+       VOS_ASSERT(0);
+       return VOS_STATUS_E_FAILURE;
+    }
+
+    vStatus = WDA_start(pVosContext);
+    if (vStatus != VOS_STATUS_SUCCESS)
+    {
+       VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+                 "%s: Failed to start WDA",__func__);
+       return VOS_STATUS_E_FAILURE;
+    }
+
+  /** START TL */
+  vStatus = WLANTL_Start(pVosContext);
+  if (!VOS_IS_STATUS_SUCCESS(vStatus))
+  {
+    VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+               "%s: Failed to start TL", __func__);
+    goto err_wda_stop;
+  }
+
+  return VOS_STATUS_SUCCESS;
+
+err_wda_stop:
+   vos_event_reset(&(pVosContext->wdaCompleteEvent));
+   WDA_stop(pVosContext, HAL_STOP_TYPE_RF_KILL);
+   vStatus = vos_wait_single_event(&(pVosContext->wdaCompleteEvent), 1000);
+   if(vStatus != VOS_STATUS_SUCCESS)
+   {
+      if(vStatus == VOS_STATUS_E_TIMEOUT)
+      {
+         VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+                   "%s: Timeout occurred before WDA_stop complete",__func__);
+
+      }
+      else
+      {
+        VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+                  "%s: WDA_stop reporting  other error",__func__);
+      }
+      VOS_ASSERT(0);
+   }
+  return VOS_STATUS_E_FAILURE;
+}
+
+VOS_STATUS vos_mon_stop( v_CONTEXT_t vosContext )
+{
+  VOS_STATUS vosStatus;
+
+  vos_event_reset( &(gpVosContext->wdaCompleteEvent) );
+
+  vosStatus = WDA_stop( vosContext, HAL_STOP_TYPE_RF_KILL );
+
+  if (!VOS_IS_STATUS_SUCCESS(vosStatus))
+  {
+     VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+         "%s: Failed to stop WDA", __func__);
+     VOS_ASSERT( VOS_IS_STATUS_SUCCESS( vosStatus ) );
+     WDA_setNeedShutdown(vosContext);
+  }
+  else
+  {
+    vosStatus = vos_wait_single_event( &(gpVosContext->wdaCompleteEvent),
+                                       VOS_WDA_STOP_TIMEOUT );
+
+    if ( vosStatus != VOS_STATUS_SUCCESS )
+    {
+       if ( vosStatus == VOS_STATUS_E_TIMEOUT )
+       {
+          VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+           "%s: Timeout occurred before WDA complete", __func__);
+       }
+       else
+       {
+          VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+           "%s: WDA_stop reporting other error", __func__ );
+       }
+       WDA_setNeedShutdown(vosContext);
+    }
+  }
+
+  vosStatus = WLANTL_Stop( vosContext );
+  if (!VOS_IS_STATUS_SUCCESS(vosStatus))
+  {
+     VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+         "%s: Failed to stop TL", __func__);
+     VOS_ASSERT( VOS_IS_STATUS_SUCCESS( vosStatus ) );
+  }
+
+  return VOS_STATUS_SUCCESS;
+}
+
 /*---------------------------------------------------------------------------
   
   \brief vos_start() - Start the Libra SW Modules 

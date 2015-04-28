@@ -4852,8 +4852,6 @@ VOS_STATUS hdd_init_ap_mode( hdd_adapter_t *pAdapter )
 
     set_bit(WMM_INIT_DONE, &pAdapter->event_flags);
 
-    wlan_hdd_set_monitor_tx_adapter( WLAN_HDD_GET_CTX(pAdapter), pAdapter );
-
     return status;
 
 error_wmm_init:

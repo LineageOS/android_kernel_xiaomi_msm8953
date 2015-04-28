@@ -111,7 +111,9 @@ VOS_STATUS vos_preStart( v_CONTEXT_t vosContext );
 
 VOS_STATUS vos_open( v_CONTEXT_t *pVosContext, void *devHandle );
 
+VOS_STATUS vos_mon_start( v_CONTEXT_t vosContext );
 
+VOS_STATUS vos_mon_stop( v_CONTEXT_t vosContext );
 
 VOS_STATUS vos_start( v_CONTEXT_t vosContext ); 
 

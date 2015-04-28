@@ -890,6 +890,9 @@ typedef struct
   v_BOOL_t                  isBMPS;
   /* Whether WDA_DS_TX_START_XMIT msg is pending or not */
   v_BOOL_t   isTxTranmitMsgPending;
+  WLANTL_MonRxCBType           pfnMonRx;
+  v_BOOL_t              isConversionReq;
+
 }WLANTL_CbType;
 
 /*==========================================================================
@@ -1386,9 +1389,15 @@ WLANTL_Translate80211To8023Header
   v_U8_t          ucHeaderLen,
   WLANTL_CbType*  pTLCb,
   v_U8_t          ucSTAId,
-  v_BOOL_t	  bForwardIAPPwithLLC
+  v_BOOL_t       bForwardIAPPwithLLC
 );
 
+VOS_STATUS
+WLANTL_MonTranslate80211To8023Header
+(
+  vos_pkt_t*      vosDataBuff,
+  WLANTL_CbType*  pTLCb
+);
 /*==========================================================================
   FUNCTION    WLANTL_FindFrameTypeBcMcUc
 
