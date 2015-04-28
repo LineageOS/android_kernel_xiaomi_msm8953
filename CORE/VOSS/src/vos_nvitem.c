@@ -1127,7 +1127,7 @@ VOS_STATUS vos_nv_open(void)
        return VOS_STATUS_E_RESOURCES;
     }
 
-    pnvEncodedBuf = (v_U8_t *)vmalloc(nvReadBufSize);
+    pnvEncodedBuf = (v_U8_t *)vos_mem_vmalloc(nvReadBufSize);
 
     if (NULL == pnvEncodedBuf) {
         VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
@@ -1141,23 +1141,26 @@ VOS_STATUS vos_nv_open(void)
     vos_mem_copy(&magicNumber, &pnvEncodedBuf[sizeof(v_U32_t)], sizeof(v_U32_t));
 
     /// Allocate buffer with maximum length..
-    pEncodedBuf = (v_U8_t *)vos_mem_malloc(nvReadBufSize);
+    pEncodedBuf = (v_U8_t *)vos_mem_vmalloc(nvReadBufSize);
 
     if (NULL == pEncodedBuf)
     {
         VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
                     "%s : failed to allocate memory for NV", __func__);
+        vos_mem_vfree(pnvEncodedBuf);
         return VOS_STATUS_E_NOMEM;
     }
 
     VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_INFO,
               "NV Table Size %zu", sizeof(nvEFSTable_t));
 
-    pnvEFSTable = (nvEFSTable_t *)vos_mem_malloc(sizeof(nvEFSTable_t));
+    pnvEFSTable = (nvEFSTable_t *)vos_mem_vmalloc(sizeof(nvEFSTable_t));
     if (NULL == pnvEFSTable)
     {
         VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
                   "%s : failed to allocate memory for NV", __func__);
+        vos_mem_vfree(pnvEncodedBuf);
+        vos_mem_vfree(pEncodedBuf);
         return VOS_STATUS_E_NOMEM;
     }
     vos_mem_zero((void *)pnvEFSTable, sizeof(nvEFSTable_t));
@@ -1174,6 +1177,9 @@ VOS_STATUS vos_nv_open(void)
         {
             VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
                       "%s : failed to allocate memory for NV", __func__);
+            vos_mem_vfree(pnvEncodedBuf);
+            vos_mem_vfree(pEncodedBuf);
+            vos_mem_vfree(pnvEFSTable);
             return VOS_STATUS_E_NOMEM;
         }
 
@@ -1211,13 +1217,15 @@ VOS_STATUS vos_nv_open(void)
                        "nvParser failed %d",status);
 
            if (nvReadBufSize != sizeof(sHalNv)) {
-               vos_mem_free(pEncodedBuf);
-               pEncodedBuf = (v_U8_t *)vos_mem_malloc(sizeof(sHalNv));
+               vos_mem_vfree(pEncodedBuf);
+               pEncodedBuf = (v_U8_t *)vos_mem_vmalloc(sizeof(sHalNv));
 
                if (!pEncodedBuf) {
                    VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
                              "%s : failed to allocate memory for NV", __func__);
                    vos_mem_free(pnvData);
+                   vos_mem_vfree(pnvEncodedBuf);
+                   vos_mem_vfree(pnvEFSTable);
                    return VOS_STATUS_E_NOMEM;
                }
            }
@@ -1250,6 +1258,9 @@ VOS_STATUS vos_nv_open(void)
             VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
                       "Size  mismatch INVALID NV FILE %d %d!!!",
                       nvReadBufSize, bufSize);
+            vos_mem_vfree(pnvEncodedBuf);
+            vos_mem_vfree(pEncodedBuf);
+            vos_mem_vfree(pnvEFSTable);
             return VOS_STATUS_E_FAILURE;
         }
 
@@ -1262,12 +1273,14 @@ VOS_STATUS vos_nv_open(void)
         nvReadEncodeBufSize = sizeof(sHalNvV2);
         if (nvReadBufSize != nvReadEncodeBufSize)
         {
-            vos_mem_free(pEncodedBuf);
-            pEncodedBuf = (v_U8_t *)vos_mem_malloc(nvReadEncodeBufSize);
+            vos_mem_vfree(pEncodedBuf);
+            pEncodedBuf = (v_U8_t *)vos_mem_vmalloc(nvReadEncodeBufSize);
             if (!pEncodedBuf)
             {
                 VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
                           "%s : failed to allocate memory for NV", __func__);
+                vos_mem_vfree(pnvEncodedBuf);
+                vos_mem_vfree(pnvEFSTable);
                 return VOS_STATUS_E_NOMEM;
             }
         }
@@ -1536,9 +1549,9 @@ VOS_STATUS vos_nv_open(void)
 
     return VOS_STATUS_SUCCESS;
 error:
-    vos_mem_free(pnvEFSTable);
-    vos_mem_free(pEncodedBuf);
-    vfree(pnvEncodedBuf);
+    vos_mem_vfree(pnvEFSTable);
+    vos_mem_vfree(pEncodedBuf);
+    vos_mem_vfree(pnvEncodedBuf);
     return eHAL_STATUS_FAILURE ;
 }
 
@@ -1549,10 +1562,10 @@ VOS_STATUS vos_nv_close(void)
     pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
 
     ((hdd_context_t*)((VosContextType*)(pVosContext))->pHDDContext)->nv = NULL;
-    vos_mem_free(pnvEFSTable);
-    vos_mem_free(pEncodedBuf);
+    vos_mem_vfree(pnvEFSTable);
+    vos_mem_vfree(pEncodedBuf);
     vos_mem_free(pDictFile);
-    vfree(pnvEncodedBuf);
+    vos_mem_vfree(pnvEncodedBuf);
 
     gnvEFSTable=NULL;
     return VOS_STATUS_SUCCESS;
@@ -3916,17 +3929,6 @@ int __wlan_hdd_linux_reg_notifier(struct wiphy *wiphy,
     VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_INFO,
                "cfg80211 reg notifier callback for country for initiator %d", request->initiator);
 
-    if (vos_is_logp_in_progress(VOS_MODULE_ID_VOSS, NULL))
-    {
-       VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_INFO,
-                   ("SSR is in progress") );
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,9,0))
-       return;
-#else
-       return 0;
-#endif
-    }
-
     if (NULL == pHddCtx)
     {
        VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
@@ -3938,15 +3940,18 @@ int __wlan_hdd_linux_reg_notifier(struct wiphy *wiphy,
 #endif
     }
 
+    if (vos_is_logp_in_progress(VOS_MODULE_ID_VOSS, NULL))
+    {
+       VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_INFO,
+                   ("SSR is in progress") );
+       goto do_comp;
+    }
+
     if (WLAN_HDD_IS_UNLOAD_IN_PROGRESS(pHddCtx))
     {
        VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
                    ("%s Unload is in progress"), __func__ );
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,9,0))
-       return;
-#else
-       return 0;
-#endif
+       goto do_comp;
     }
 
     VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_INFO,
@@ -4072,6 +4077,7 @@ int __wlan_hdd_linux_reg_notifier(struct wiphy *wiphy,
           }
        }
     }
+do_comp:
     if ((request->initiator == NL80211_REGDOM_SET_BY_DRIVER) ||
          (request->initiator == NL80211_REGDOM_SET_BY_USER))
     {

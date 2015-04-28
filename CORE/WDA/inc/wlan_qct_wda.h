@@ -172,6 +172,7 @@ typedef enum
 #define IS_ADVANCE_TDLS_ENABLE 0
 #endif
 #define IS_HT40_OBSS_SCAN_FEATURE_ENABLE ((WDA_getFwWlanFeatCaps(HT40_OBSS_SCAN)) & (WDI_getHostWlanFeatCaps(HT40_OBSS_SCAN)))
+#define IS_FRAME_LOGGING_SUPPORTED_BY_FW WDA_getFwWlanFeatCaps(MGMT_FRAME_LOGGING)
 
 typedef enum {
     MODE_11A        = 0,   /* 11a Mode */

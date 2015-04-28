@@ -3038,9 +3038,18 @@ void dxeRXEventHandler
 
    /* Clear Interrupt handle processing bit
     * RIVA may power down */
-   wpalReadRegister(WLANDXE_INT_MASK_REG_ADDRESS, &regValue);
-   regValue &= WLANDXE_RX_INTERRUPT_PRO_UNMASK;
-   wpalWriteRegister(WLANDXE_INT_MASK_REG_ADDRESS, regValue);
+   if (!wpalIsFwLoggingSupported())
+   {
+      wpalReadRegister(WLANDXE_INT_MASK_REG_ADDRESS, &regValue);
+      regValue &= WLANDXE_RX_INTERRUPT_PRO_UNMASK;
+      wpalWriteRegister(WLANDXE_INT_MASK_REG_ADDRESS, regValue);
+   }
+   else
+   {
+      wpalReadRegister(WALNDEX_DMA_CSR_ADDRESS, &regValue);
+      regValue &= ~WLANDXE_RX_INTERRUPT_HANDLE_MASK;
+      wpalWriteRegister(WALNDEX_DMA_CSR_ADDRESS, regValue);
+   }
 
    /* Enable system level ISR */
    /* Enable RX ready Interrupt at here */
@@ -3178,9 +3187,18 @@ static void dxeRXISR
 
    /* Set Interrupt processing bit
     * During this bit set, WLAN HW may not power collapse */
-   wpalReadRegister(WLANDXE_INT_MASK_REG_ADDRESS, &regValue);
-   regValue |= WLANPAL_RX_INTERRUPT_PRO_MASK;
-   wpalWriteRegister(WLANDXE_INT_MASK_REG_ADDRESS, regValue);
+   if (!wpalIsFwLoggingSupported())
+   {
+      wpalReadRegister(WLANDXE_INT_MASK_REG_ADDRESS, &regValue);
+      regValue |= WLANPAL_RX_INTERRUPT_PRO_MASK;
+      wpalWriteRegister(WLANDXE_INT_MASK_REG_ADDRESS, regValue);
+   }
+   else
+   {
+      wpalReadRegister(WALNDEX_DMA_CSR_ADDRESS, &regValue);
+      regValue |= WLANDXE_RX_INTERRUPT_HANDLE_MASK;
+      wpalWriteRegister(WALNDEX_DMA_CSR_ADDRESS, regValue);
+   }
 
    /* Disable interrupt at here
     * Disable RX Ready system level Interrupt at here
