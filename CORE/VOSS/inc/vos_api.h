@@ -340,4 +340,6 @@ v_BOOL_t  vos_get_dxeSSREnable(void);
 
 v_U8_t vos_is_fw_logging_enabled(void);
 
+v_U8_t vos_is_fw_logging_supported(void);
+
 #endif // if !defined __VOS_NVITEM_H

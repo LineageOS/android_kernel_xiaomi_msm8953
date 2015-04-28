@@ -443,6 +443,22 @@ wpt_uint8 wpalIsFwLoggingEnabled(void)
 }
 
 /*---------------------------------------------------------------------------
+    wpalIsFwLoggingSupported -  Check if Firmware supports the fw->host
+                                logging infrastructure
+                                This API can only be called after fw caps
+                                are exchanged.
+
+    Param:
+       None
+    Return:
+        Check the documentation of vos_is_fw_logging_supported
+---------------------------------------------------------------------------*/
+wpt_uint8 wpalIsFwLoggingSupported(void)
+{
+  return vos_is_fw_logging_supported();
+}
+
+/*---------------------------------------------------------------------------
     wpalFwDumpReq -  Trigger the dump commands to Firmware
      
     Param:

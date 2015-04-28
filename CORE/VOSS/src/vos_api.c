@@ -2282,7 +2282,8 @@ v_BOOL_t vos_is_wlan_in_badState(VOS_MODULE_ID moduleId,
 
   \param  -  None
 
-  \return -  0: firmware logging is not enabled
+  \return -  0: firmware logging is not enabled (it may or may not
+                be supported)
              1: firmware logging is enabled
 
   --------------------------------------------------------------------------*/
@@ -2291,6 +2292,22 @@ v_U8_t vos_is_fw_logging_enabled(void)
    return hdd_is_fw_logging_enabled();
 }
 
+/**---------------------------------------------------------------------------
+
+  \brief vos_is_fw_logging_supported() -
+
+  API to check if firmware supports to send logs using DXE channel
+
+  \param  -  None
+
+  \return -  0: firmware logging is not supported
+             1: firmware logging is supported
+
+  --------------------------------------------------------------------------*/
+v_U8_t vos_is_fw_logging_supported(void)
+{
+   return IS_FRAME_LOGGING_SUPPORTED_BY_FW;
+}
 /**---------------------------------------------------------------------------
 
   \brief vos_set_roam_delay_stats_enabled() -
