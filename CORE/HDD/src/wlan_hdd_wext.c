@@ -972,10 +972,18 @@ VOS_STATUS wlan_hdd_get_frame_logs(hdd_adapter_t *pAdapter, v_U8_t flag)
       return VOS_STATUS_E_AGAIN;
    }
 
-   if (flag != WLAN_HDD_GET_FRAME_LOG_CMD_CLEAR &&
-                   flag != WLAN_HDD_GET_FRAME_LOG_CMD_SEND_AND_CLEAR)
+   if ((flag != WLAN_HDD_GET_FRAME_LOG_CMD_CLEAR) &&
+                (flag != WLAN_HDD_GET_FRAME_LOG_CMD_SEND_AND_CLEAR) &&
+                (flag != WLAN_HDD_GET_FRAME_LOG_CMD_BMU_TRACING))
    {
       hddLog(VOS_TRACE_LEVEL_ERROR,"%s: Incorrect getFrame params!", __func__);
+      return VOS_STATUS_E_INVAL;
+   }
+
+   if ((flag == WLAN_HDD_GET_FRAME_LOG_CMD_BMU_TRACING) &&
+                               (!pHddCtx->cfg_ini->enableBMUHWtracing))
+   {
+      hddLog(VOS_TRACE_LEVEL_ERROR,"%s: BMUHW Tracing not enabled!", __func__);
       return VOS_STATUS_E_INVAL;
    }
 
