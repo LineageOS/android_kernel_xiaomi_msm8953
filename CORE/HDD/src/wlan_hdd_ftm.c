@@ -993,7 +993,7 @@ static VOS_STATUS wlan_ftm_priv_set_wfgain(hdd_adapter_t *pAdapter,v_S15_t dGain
         return VOS_STATUS_E_FAILURE;
     }
 
-    if (rfGain > 31 || rfGain <0) {
+    if (rfGain > 31) {
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_FATAL,
                    "%s:rf gain value is invalid", __func__);
         return VOS_STATUS_E_FAILURE;

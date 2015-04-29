@@ -5988,9 +5988,6 @@ WLANTL_RxFrames
     {
       ucSTAId = (v_U8_t)WDA_GET_RX_STAID( pvBDHeader );
       ucTid   = (v_U8_t)WDA_GET_RX_TID( pvBDHeader );
-#ifdef WLAN_FEATURE_LINK_LAYER_STATS
-      ac = WLANTL_TID_2_AC[ucTid];
-#endif
 
       TLLOG2(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO_HIGH,
                  "WLAN TL:Data packet received for STA %d", ucSTAId));
@@ -6015,15 +6012,20 @@ WLANTL_RxFrames
         }
       }/*if bcast*/
 
-      if ( WLANTL_STA_ID_INVALID(ucSTAId) )
+      if ((WLANTL_STA_ID_INVALID(ucSTAId)) || (WLANTL_TID_INVALID(ucTid)))
       {
         TLLOGW(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_WARN,
-                   "WLAN TL:STA ID invalid - dropping pkt"));
+                   "WLAN TL:STAId %d, Tid %d. Invalid STA ID/TID- dropping pkt",
+                   ucSTAId, ucTid));
         /* Drop packet */
         vos_pkt_return_packet(vosTempBuff);
         vosTempBuff = vosDataBuff;
         continue;
       }
+
+#ifdef WLAN_FEATURE_LINK_LAYER_STATS
+      ac = WLANTL_TID_2_AC[ucTid];
+#endif
 
       /*----------------------------------------------------------------------
         No need to lock cache access because cache manipulation only happens
