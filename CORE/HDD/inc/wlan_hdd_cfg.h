@@ -2198,7 +2198,7 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_BTC_FAST_WLAN_CONN_PREF             "gBtcFastWlanConnPref"
 #define CFG_BTC_FAST_WLAN_CONN_PREF_DEFAULT     ( 1 )
 #define CFG_BTC_FAST_WLAN_CONN_PREF_MIN         ( 0 )
-#define CFG_BTC_FAST_WLAN_CONN_PREF_MAX         ( 1 )
+#define CFG_BTC_FAST_WLAN_CONN_PREF_MAX         ( 5 )
 
 /*
  * Connection related log Enable/Disable.
@@ -2941,7 +2941,7 @@ typedef struct
 #endif
    v_U16_t                     gP2PListenDeferInterval;
    v_U8_t                      btcEnableIndTimerVal;
-   v_BOOL_t                    btcFastWlanConnPref;
+   v_U8_t                      btcFastWlanConnPref;
    v_U32_t                     dxeReplenishRXTimerVal;
    v_U32_t                     dxeSSREnable;
 } hdd_config_t;
