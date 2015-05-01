@@ -5166,7 +5166,7 @@ void PopulateDot11fTdlsOffchannelParams(tpAniSirGlobal pMac,
                           j < LIM_MAX_BANDS; i++)
     {
         /* don't populate dfs channels in supported channels ie */
-        if (!LIM_IS_CHANNEL_DFS(validChan[i])) {
+        if (!(NV_CHANNEL_DFS == vos_nv_getChannelEnabledState(validChan[i]))) {
             suppChannels->bands[j][0] = validChan[i];
             suppChannels->bands[j][1] = 1;
             /* store tdls self supported channels */

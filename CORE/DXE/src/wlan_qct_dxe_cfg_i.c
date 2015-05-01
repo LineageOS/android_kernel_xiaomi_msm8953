@@ -665,6 +665,7 @@ wpt_status dxeChannelDefaultConfig
    channelEntry->assignedDMAChannel = mappedChannel->DMAChannel;
    channelEntry->numFreeDesc             = 0;
    channelEntry->numRsvdDesc             = 0;
+   channelEntry->desc_write_fail_count   = 0;
    channelEntry->numFragmentCurrentChain = 0;
    channelEntry->numTotalFrame           = 0;
    channelEntry->hitLowResource          = eWLAN_PAL_FALSE;
