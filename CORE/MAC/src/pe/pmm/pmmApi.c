@@ -1539,6 +1539,7 @@ void pmmEnterImpsResponseHandler (tpAniSirGlobal pMac, eHalStatus rspStatus)
 {
     tPmmState nextState = pMac->pmm.gPmmState;
     tSirResultCodes resultCode = eSIR_SME_SUCCESS;
+    static int failCnt = 0;
 
     /* we need to process all the deferred messages enqueued since
      * the initiating the WDA_ENTER_IMPS_REQ.
@@ -1582,11 +1583,13 @@ void pmmEnterImpsResponseHandler (tpAniSirGlobal pMac, eHalStatus rspStatus)
     return;
 
 failure:
-    PELOGE(pmmLog(pMac, LOGE, 
+    if (!(failCnt & 0xF))
+         PELOGE(pmmLog(pMac, LOGE,
            FL("pmmImpsSleepRsp failed, Ret Code: %d, next state will be: %d"),
            rspStatus,
            pMac->pmm.gPmmState);)
 
+    failCnt++;
     pmmImpsUpdateSleepErrStats(pMac, rspStatus);
 
     pMac->pmm.gPmmState = nextState;

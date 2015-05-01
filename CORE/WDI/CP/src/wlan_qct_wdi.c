@@ -6835,6 +6835,7 @@ WDI_PostMainEvent
   WDI_Status         wdiStatus;
   WDI_MainFuncType   pfnWDIMainEvHdlr;
   WDI_MainStateType  wdiOldState;
+  static int failCnt = 0;
   /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
   /*-------------------------------------------------------------------------
@@ -6883,9 +6884,11 @@ WDI_PostMainEvent
   }
   else
   {
-    WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+    if (!(failCnt & 0xF))
+        WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
               "Unexpected event %d in state: %d",
               wdiEV, wdiOldState);
+    failCnt++;
     wdiStatus = WDI_STATUS_E_NOT_ALLOWED;
   }
 
