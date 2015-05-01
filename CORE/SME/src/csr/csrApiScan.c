@@ -3253,6 +3253,9 @@ static void csrMoveTempScanResultsToMainList( tpAniSirGlobal pMac, tANI_U8 reaso
         }
     }
 
+    pEntry = csrLLPeekHead( &pMac->scan.scanResultList, LL_ACCESS_LOCK );
+    if (pEntry && 0 != pMac->scan.scanResultCfgAgingTime)
+        csrScanStartResultCfgAgingTimer(pMac);
     //we don't need to update CC while connected to an AP which is advertising CC already
     if (csrIs11dSupported(pMac))
     {
@@ -3306,6 +3309,7 @@ static tCsrScanResult *csrScanSaveBssDescription( tpAniSirGlobal pMac, tSirBssDe
     tCsrScanResult *pCsrBssDescription = NULL;
     tANI_U32 cbBSSDesc;
     tANI_U32 cbAllocated;
+    tListElem *pEntry;
 
     // figure out how big the BSS description is (the BSSDesc->length does NOT
     // include the size of the length field itself).
@@ -3323,6 +3327,10 @@ static tCsrScanResult *csrScanSaveBssDescription( tpAniSirGlobal pMac, tSirBssDe
         VOS_ASSERT( pCsrBssDescription->Result.pvIes == NULL );
 #endif
         csrScanAddResult(pMac, pCsrBssDescription, pIes);
+        pEntry = csrLLPeekHead( &pMac->scan.scanResultList, LL_ACCESS_LOCK );
+        if (pEntry && 0 != pMac->scan.scanResultCfgAgingTime)
+            csrScanStartResultCfgAgingTimer(pMac);
+
     }
 
     return( pCsrBssDescription );
@@ -6712,7 +6720,8 @@ static void csrScanResultCfgAgingTimerHandler(void *pv)
         pEntry = tmpEntry;
     }
     csrLLUnlock(&pMac->scan.scanResultList);
-    vos_timer_start(&pMac->scan.hTimerResultCfgAging, CSR_SCAN_RESULT_CFG_AGING_INTERVAL/PAL_TIMER_TO_MS_UNIT);
+    if (pEntry)
+        vos_timer_start(&pMac->scan.hTimerResultCfgAging, CSR_SCAN_RESULT_CFG_AGING_INTERVAL/PAL_TIMER_TO_MS_UNIT);
 }
 
 eHalStatus csrScanStartIdleScanTimer(tpAniSirGlobal pMac, tANI_U32 interval)
@@ -8333,6 +8342,7 @@ eHalStatus csrScanSavePreferredNetworkFound(tpAniSirGlobal pMac,
    v_U32_t indx;
    u8 channelsAllowed[WNI_CFG_VALID_CHANNEL_LIST_LEN];
    v_U32_t numChannelsAllowed = WNI_CFG_VALID_CHANNEL_LIST_LEN;
+   tListElem *pEntry;
 
 
    pParsedFrame =
@@ -8538,6 +8548,9 @@ eHalStatus csrScanSavePreferredNetworkFound(tpAniSirGlobal pMac,
    }
    //Add to scan cache
    csrScanAddResult(pMac, pScanResult, pIesLocal);
+   pEntry = csrLLPeekHead( &pMac->scan.scanResultList, LL_ACCESS_LOCK );
+   if (pEntry && 0 != pMac->scan.scanResultCfgAgingTime)
+       csrScanStartResultCfgAgingTimer(pMac);
 
    if( (pScanResult->Result.pvIes == NULL) && pIesLocal )
    {

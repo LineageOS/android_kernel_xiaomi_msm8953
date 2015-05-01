@@ -756,12 +756,6 @@ eHalStatus csrReady(tpAniSirGlobal pMac)
     //WNI_CFG_VALID_CHANNEL_LIST should be set by this time
     //use it to init the background scan list
     csrInitBGScanChannelList(pMac);
-    /* If the gScanAgingTime is set to '0' then scan results aging timeout 
-         based  on timer feature is not enabled*/  
-    if(0 != pMac->scan.scanResultCfgAgingTime )
-    {
-       csrScanStartResultCfgAgingTimer(pMac);
-    }
     //Store the AC weights in TL for later use
     WLANTL_GetACWeights(pMac->roam.gVosContext, pMac->roam.ucACWeights);
     status = csrInitChannelList( pMac );
