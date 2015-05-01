@@ -50,6 +50,7 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/wireless.h>
+#include <linux/wcnss_wlan.h>
 #include <macTrace.h>
 #include <wlan_hdd_includes.h>
 #include <wlan_btc_svc.h>
@@ -497,6 +498,8 @@ void hdd_wlan_get_version(hdd_adapter_t *pAdapter, union iwreq_data *wrqu,
     VOS_STATUS status;
     tSirVersionString wcnss_SW_version;
     tSirVersionString wcnss_HW_version;
+    tSirVersionString iris_name;
+    char *pIRISversion;
     char *pSWversion;
     char *pHWversion;
     tHalHandle hHal = WLAN_HDD_GET_HAL_CTX(pAdapter);
@@ -523,11 +526,19 @@ void hdd_wlan_get_version(hdd_adapter_t *pAdapter, union iwreq_data *wrqu,
         pHWversion = "Unknown";
     }
 
+    status = wcnss_get_iris_name(iris_name);
+
+    if (!status) {
+        pIRISversion = iris_name;
+    } else {
+        pIRISversion = "Unknown";
+    }
+
     wrqu->data.length = scnprintf(extra, WE_MAX_STR_LEN,
-                                 "Host SW:%s, FW:%s, HW:%s",
+                                 "Host SW:%s, FW:%s, HW:%s, IRIS_HW:%s",
                                  QWLAN_VERSIONSTR,
                                  pSWversion,
-                                 pHWversion);
+                                 pHWversion, pIRISversion);
 
     return;
 }
