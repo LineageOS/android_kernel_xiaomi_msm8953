@@ -8325,6 +8325,7 @@ VOS_STATUS WDA_ProcessEnterImpsReq(tWDA_CbContext *pWDA)
    WDI_Status status = WDI_STATUS_SUCCESS ;
    WDI_EnterImpsReqParamsType *wdiEnterImpsReqParams;
    tWDA_ReqParams *pWdaParams;
+   static int failcnt = 0;
    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
                                           "------> %s " ,__func__);
 
@@ -8364,8 +8365,10 @@ VOS_STATUS WDA_ProcessEnterImpsReq(tWDA_CbContext *pWDA)
                              pWdaParams);
    if(IS_WDI_STATUS_FAILURE(status))
    {
-      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-              "Failure in Enter IMPS REQ WDI API, free all the memory " );
+      if (! (failcnt & 0xF))
+          VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                 "Failure in Enter IMPS REQ WDI API, free all the memory " );
+      failcnt++;
       vos_mem_free(wdiEnterImpsReqParams);
       vos_mem_free(pWdaParams);
       WDA_SendMsg(pWDA, WDA_ENTER_IMPS_RSP, NULL , CONVERT_WDI2SIR_STATUS(status)) ;
