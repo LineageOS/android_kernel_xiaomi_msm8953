@@ -58,7 +58,7 @@
 #endif
 #include "sapInternal.h"
 #include  "wlan_hdd_trace.h"
-
+#include "vos_diag_core_event.h"
 /*--------------------------------------------------------------------------- 
   Preprocessor definitions and constants
   -------------------------------------------------------------------------*/ 
@@ -1358,9 +1358,11 @@ VOS_STATUS hdd_softap_tx_fetch_packet_cbk( v_VOID_t *vosContext,
          VOS_TRACE( VOS_MODULE_ID_HDD_SAP_DATA, VOS_TRACE_LEVEL_INFO_HIGH,
                     "%s: VOS packet is EAPOL packet", __func__);
          pPktMetaInfo->ucIsEapol = 1;
+         wlan_hdd_log_eapol(skb,
+                            WIFI_EVENT_DRIVER_EAPOL_FRAME_TRANSMIT_REQUESTED);
       }
    }
- 
+
    if ((NULL != pHddCtx) &&
        (pHddCtx->cfg_ini->gEnableDebugLog))
    {
@@ -1618,6 +1620,8 @@ VOS_STATUS hdd_softap_rx_packet_cbk( v_VOID_t *vosContext,
       ++pAdapter->stats.rx_packets;
       pAdapter->stats.rx_bytes += skb->len;
 
+      if (TRUE == hdd_IsEAPOLPacket(pVosPacket))
+          wlan_hdd_log_eapol(skb, WIFI_EVENT_DRIVER_EAPOL_FRAME_RECEIVED);
       if (pHddCtx->cfg_ini->gEnableDebugLog)
       {
          proto_type = vos_pkt_get_proto_type(skb,
