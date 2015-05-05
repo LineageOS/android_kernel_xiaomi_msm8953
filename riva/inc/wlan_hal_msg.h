@@ -534,6 +534,7 @@ typedef enum
 
    WLAN_HAL_DISABLE_MONITOR_MODE_REQ        = 304,
    WLAN_HAL_DISABLE_MONITOR_MODE_RSP        = 305,
+
    WLAN_HAL_SET_RTS_CTS_HTVHT_IND           = 306,
 
    WLAN_HAL_MSG_MAX = WLAN_HAL_MSG_TYPE_MAX_ENUM_SIZE
@@ -8524,6 +8525,89 @@ typedef PACKED_PRE struct PACKED_POST
     tHalMsgHeader         header;
     tMgmtLoggingInitResp  tMgmtLoggingInitRespParams;
 }  tMgmtLoggingInitRespMsg,  * tpMgmtLoggingInitRespMsg;
+
+/*---------------------------------------------------------------------------
+* WLAN_HAL_ENABLE_MONITOR_MODE_REQ
+*-------------------------------------------------------------------------*/
+
+/* only 1 filter is supported as of now */
+#define NUM_FILTERS_SUPPORTED 1
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tSirMacAddr macAddr;
+   tANI_U8 isA1filteringNeeded;
+   tANI_U8 isA2filteringNeeded;
+   tANI_U8 isA3filteringNeeded;
+}tHalMacFilter, *tpHalMacFilter;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U8 channelNumber;
+   ePhyChanBondState cbState;
+
+   tANI_U32 maxAmpduLen;
+   tANI_U32 maxMpduInAmpduLen;
+
+   tANI_U8 crcCheckEnabled;
+
+   /* value is "1" for this FR. "0" means no filter, RECEIVE ALL PACKETS */
+   tANI_U8 numMacFilters;
+   tHalMacFilter macFilters[NUM_FILTERS_SUPPORTED];
+
+   /* Each bit position maps to IEEE convention of typeSubtype */
+   tANI_U64 typeSubtypeBitmap;
+
+   tANI_U64 reserved;
+
+}tHalEnableMonitorModeReqParams, *tpHalEnableMonitorModeReqParams;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   tHalEnableMonitorModeReqParams enableMonitorModeReqParams;
+}tHalEnableMonitorModeReqMsg, *tpHalEnableMonitorModeReqMsg;
+
+
+/*---------------------------------------------------------------------------
+* WLAN_HAL_ENABLE_MONITOR_MODE_RSP
+*-------------------------------------------------------------------------*/
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U32 status;
+}tHalEnableMonitorModeRspParams, *tpHalEnableMonitorModeRspParams;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   tHalEnableMonitorModeRspParams enableMonitorModeRspParams;
+}tHalEnableMonitorModeRspMsg, *tpHalEnableMonitorModeRspMsg;
+
+/*---------------------------------------------------------------------------
+* WLAN_HAL_DISABLE_MONITOR_MODE_REQ
+*-------------------------------------------------------------------------*/
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   tANI_U8 resetConfiguration;
+}tHalDisableMonitorModeReqMsg, *tpHalDisableMonitorModeReqMsg;
+
+/*---------------------------------------------------------------------------
+* WLAN_HAL_DISABLE_MONITOR_MODE_RSP
+*-------------------------------------------------------------------------*/
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U32 status;
+}tHalDisableMonitorModeRspParams, *tpHalDisableMonitorModeRspParams;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   tHalDisableMonitorModeRspParams disableMonitorModeRspParams;
+}tHalDisableMonitorModeRspMsg, *tpHalDisableMonitorModeRspMsg;
 
 #if defined(__ANI_COMPILER_PRAGMA_PACK_STACK)
 #pragma pack(pop)

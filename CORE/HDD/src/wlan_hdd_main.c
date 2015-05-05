@@ -8196,6 +8196,52 @@ static void hdd_full_power_callback(void *callbackContext, eHalStatus status)
    spin_unlock(&hdd_context_lock);
 }
 
+void wlan_hdd_mon_set_typesubtype( hdd_mon_ctx_t *pMonCtx,int type)
+{
+   pMonCtx->typeSubtypeBitmap = 0;
+   if( type%10 ) /* Management Packets */
+     pMonCtx->typeSubtypeBitmap |= 0xFFFF;
+   type/=10;
+   if( type%10 ) /* Control Packets */
+     pMonCtx->typeSubtypeBitmap |= 0xFFFF0000;
+   type/=10;
+   if( type%10 ) /* Data Packets */
+     pMonCtx->typeSubtypeBitmap |= 0xFFFF00000000;
+}
+
+VOS_STATUS wlan_hdd_mon_poststartmsg( hdd_mon_ctx_t *pMonCtx )
+{
+    vos_msg_t    monMsg;
+
+    monMsg.type = WDA_MON_START_REQ;
+    monMsg.reserved = 0;
+    monMsg.bodyptr = (v_U8_t*)pMonCtx;
+    monMsg.bodyval = 0;
+
+    if (VOS_STATUS_SUCCESS != vos_mq_post_message(
+        VOS_MODULE_ID_WDA,(vos_msg_t *)&monMsg)) {
+        hddLog(VOS_TRACE_LEVEL_ERROR,"%s: : Failed to post Msg to HAL",__func__);
+        return VOS_STATUS_E_FAILURE;
+    }
+
+   return VOS_STATUS_SUCCESS;
+}
+
+void wlan_hdd_mon_poststopmsg(void)
+{
+    vos_msg_t    monMsg;
+
+    monMsg.type = WDA_MON_STOP_REQ;
+    monMsg.reserved = 0;
+    monMsg.bodyptr = NULL;
+    monMsg.bodyval = 0;
+
+    if (VOS_STATUS_SUCCESS != vos_mq_post_message(
+        VOS_MODULE_ID_WDA,(vos_msg_t *)&monMsg)) {
+        hddLog(VOS_TRACE_LEVEL_ERROR,"%s: : Failed to post Msg to HAL",__func__);
+    }
+}
+
 void wlan_hdd_mon_close(hdd_context_t *pHddCtx)
 {
     VOS_STATUS vosStatus;
@@ -8208,6 +8254,8 @@ void wlan_hdd_mon_close(hdd_context_t *pHddCtx)
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_FATAL, "%s:pAdapter is NULL",__func__);
         return ;
     }
+
+   wlan_hdd_mon_poststopmsg();
    hdd_UnregisterWext(pAdapter->dev);
 
    vos_mon_stop( pVosContext );

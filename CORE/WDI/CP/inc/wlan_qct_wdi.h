@@ -6065,6 +6065,31 @@ typedef struct
     wpt_payload data;
 }wpt_pkt80211;
 
+#define NUM_FILTERS_SUPPORTED 1
+typedef struct
+{
+   wpt_macAddr macAddr;
+   wpt_uint8 isA1filter;
+   wpt_uint8 isA2filter;
+   wpt_uint8 isA3filter;
+}WDI_filter;
+
+typedef struct
+{
+   /* start or stop */
+   wpt_uint8 state;
+   /*Conversion of packet required or not*/
+   wpt_uint8 is80211to803ConReq;
+   wpt_uint32 ChannelNo;
+   wpt_uint32 ChannelBW;
+   wpt_uint8 crcCheckEnabled;
+   wpt_uint8 numOfMacFilters;
+   WDI_filter mmFilters[NUM_FILTERS_SUPPORTED];
+   wpt_uint64 typeSubtypeBitmap;
+   wpt_uint64 rsvd;
+
+}WDI_MonStartReqType;
+
 /*----------------------------------------------------------------------------
  *   WDI callback types
  *--------------------------------------------------------------------------*/
@@ -7981,6 +8006,9 @@ typedef void  (*WDI_MgmtLoggingInitRspCb)(
                          WDI_MgmtLoggingRspParamType *wdiRsp, void *pUserData);
 typedef void  (*WDI_GetFrameLogRspCb)(
                         WDI_GetFrameLogRspParamType *wdiRsp, void *pUserData);
+
+typedef void  (*WDI_MonStartRspCb)(void *pEventData,void *pUserData);
+typedef void  (*WDI_MonStopRspCb)(void *pUserData);
 
 /*========================================================================
  *     Function Declarations and Documentation
@@ -11330,6 +11358,19 @@ WDI_Status WDI_FWStatsGetReq
    void* pwdiFWStatsGetReqParams,
    WDI_FWStatsGetRspCb          wdiFWStatsGetRspCb,
    wpt_uint32                   pUserData
+);
+
+WDI_Status WDI_MonStartReq
+(
+    WDI_MonStartReqType*   pwdiMonStartReqParams,
+    WDI_MonStartRspCb      wdiMonStartRspCb,
+    void*                  pUserData
+);
+
+WDI_Status WDI_MonStopReq
+(
+    WDI_MonStopRspCb      wdiMonStopRspCb,
+    void*                  pUserData
 );
 
 #ifdef FEATURE_WLAN_BATCH_SCAN
