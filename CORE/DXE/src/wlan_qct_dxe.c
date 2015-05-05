@@ -694,307 +694,6 @@ void dxeRxThreadChannelDebugHandler
 
 /*==========================================================================
   @  Function Name 
-      dxeRXHealthMonitor
-
-  @  Description 
-      Monitoring RX channel healthy stataus
-      If detect any problem, try to recover
-
-  @  Parameters
-      healthMonitorMsg    MSG pointer.
-                          will have low resource TX channel context
-
-  @  Return
-      NONE
-
-===========================================================================*/
-void dxeRXHealthMonitor
-(
-   wpt_msg         *healthMonitorMsg
-)
-{
-   WLANDXE_ChannelCBType    *channelCtrlBlk;
-   WLANDXE_ChannelCBType    *testCHCtrlBlk;
-   wpt_uint32                regValue;
-   wpt_uint32                chStatusReg, chControlReg, chDescReg, chLDescReg;
-   wpt_uint32                hwWakeLoop, chLoop;
-
-   if(NULL == healthMonitorMsg)
-   {
-      return;
-   }
-
-   /* Make wake up HW */
-   dxeNotifySmsm(eWLAN_PAL_FALSE, eWLAN_PAL_TRUE);
-   dxeNotifySmsm(eWLAN_PAL_TRUE, eWLAN_PAL_FALSE);
-   dxeNotifySmsm(eWLAN_PAL_FALSE, eWLAN_PAL_TRUE);
-
-   for(hwWakeLoop = 0; hwWakeLoop < T_WLANDXE_MAX_HW_ACCESS_WAIT; hwWakeLoop++)
-   {
-      wpalReadRegister(WLANDXE_BMU_AVAILABLE_BD_PDU, &regValue);
-      if(0 != regValue)
-      {
-         break;
-      }
-   }
-
-   HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_WARN,
-            "Scheduled RX, num free BD/PDU %d, loop Count %d",
-            regValue, hwWakeLoop);
-
-   for(chLoop = WDTS_CHANNEL_RX_LOW_PRI; chLoop < WDTS_CHANNEL_MAX; chLoop++)
-   {
-      if (!WLANDXE_IS_VALID_CHANNEL(chLoop))
-            continue;
-
-      testCHCtrlBlk = &tempDxeCtrlBlk->dxeChannel[chLoop];
-      wpalReadRegister(testCHCtrlBlk->channelRegister.chDXECtrlRegAddr, &chControlReg);
-      wpalReadRegister(testCHCtrlBlk->channelRegister.chDXEStatusRegAddr, &chStatusReg);
-      wpalReadRegister(testCHCtrlBlk->channelRegister.chDXEDesclRegAddr, &chDescReg);
-      wpalReadRegister(testCHCtrlBlk->channelRegister.chDXELstDesclRegAddr, &chLDescReg);
-
-      wpalTrace(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO,
-                "%11s : CCR 0x%x, CSR 0x%x, CDR 0x%x, CLDR 0x%x, HCBO %d, HCBDP 0x%x, HCBDC 0x%x, TCBO %d,TCBDP 0x%x, TCBDC 0x%x",
-                channelType[chLoop],
-                chControlReg, chStatusReg, chDescReg, chLDescReg,
-                testCHCtrlBlk->headCtrlBlk->ctrlBlkOrder, testCHCtrlBlk->headCtrlBlk->linkedDescPhyAddr,
-                testCHCtrlBlk->headCtrlBlk->linkedDesc->descCtrl.ctrl,
-                testCHCtrlBlk->tailCtrlBlk->ctrlBlkOrder, testCHCtrlBlk->tailCtrlBlk->linkedDescPhyAddr,
-                testCHCtrlBlk->tailCtrlBlk->linkedDesc->descCtrl.ctrl);
-
-      if((chControlReg & WLANDXE_DESC_CTRL_VALID) && 
-         (chLDescReg != testCHCtrlBlk->headCtrlBlk->linkedDescPhyAddr))
-      {
-         wpalTrace(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_WARN,
-                   "%11s : CCR 0x%x, CSR 0x%x, CDR 0x%x, CLDR 0x%x, "
-                   "HCBO %d, HCBDP 0x%x, HCBDC 0x%x, TCBO %d,TCBDP 0x%x, TCBDC 0x%x",
-                   channelType[chLoop],
-                   chControlReg, chStatusReg, chDescReg, chLDescReg,
-                   testCHCtrlBlk->headCtrlBlk->ctrlBlkOrder, testCHCtrlBlk->headCtrlBlk->linkedDescPhyAddr,
-                   testCHCtrlBlk->headCtrlBlk->linkedDesc->descCtrl.ctrl,
-                   testCHCtrlBlk->tailCtrlBlk->ctrlBlkOrder, testCHCtrlBlk->tailCtrlBlk->linkedDescPhyAddr,
-                   testCHCtrlBlk->tailCtrlBlk->linkedDesc->descCtrl.ctrl);
-         HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_WARN,
-                  "%11s : RX CH EN Descriptor Async, resync it", channelType[chLoop]);
-         wpalWriteRegister(testCHCtrlBlk->channelRegister.chDXELstDesclRegAddr,
-                           testCHCtrlBlk->headCtrlBlk->linkedDescPhyAddr);
-      }
-      else if(!(chControlReg & WLANDXE_DESC_CTRL_VALID) && 
-               (chDescReg != testCHCtrlBlk->headCtrlBlk->linkedDescPhyAddr))
-      {
-         wpalTrace(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_WARN,
-                   "%11s : CCR 0x%x, CSR 0x%x, CDR 0x%x, CLDR 0x%x, "
-                   "HCBO %d, HCBDP 0x%x, HCBDC 0x%x, TCBO %d,TCBDP 0x%x, TCBDC 0x%x",
-                   channelType[chLoop],
-                   chControlReg, chStatusReg, chDescReg, chLDescReg,
-                   testCHCtrlBlk->headCtrlBlk->ctrlBlkOrder, testCHCtrlBlk->headCtrlBlk->linkedDescPhyAddr,
-                   testCHCtrlBlk->headCtrlBlk->linkedDesc->descCtrl.ctrl,
-                   testCHCtrlBlk->tailCtrlBlk->ctrlBlkOrder, testCHCtrlBlk->tailCtrlBlk->linkedDescPhyAddr,
-                   testCHCtrlBlk->tailCtrlBlk->linkedDesc->descCtrl.ctrl);
-         HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_WARN,
-                  "%11s : RX CH DIS Descriptor Async, resync it", channelType[chLoop]);
-         wpalWriteRegister(testCHCtrlBlk->channelRegister.chDXEDesclRegAddr,
-                           testCHCtrlBlk->headCtrlBlk->linkedDescPhyAddr);
-      }
-   }
-
-   channelCtrlBlk = (WLANDXE_ChannelCBType *)healthMonitorMsg->pContext;
-   if(channelCtrlBlk->hitLowResource)
-   {
-      HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_WARN,
-               "%11s : Still Low Resource, kick DXE TX and restart timer",
-               channelType[channelCtrlBlk->channelType]);
-      /* Still Low Resource, Kick DXE again and start timer again */
-      wpalTimerStart(&channelCtrlBlk->healthMonitorTimer,
-                     T_WLANDXE_PERIODIC_HEALTH_M_TIME);
-   }
-   else
-   {
-      HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_WARN,
-               "%11s : Out from Low resource condition, do nothing",
-               channelType[channelCtrlBlk->channelType]);
-      /* Recovered from low resource condition
-       * Not need to do anything */
-   }
-
-   return;
-}
-
-/*==========================================================================
-  @  Function Name 
-      dxeTXHealthMonitor
-
-  @  Description 
-      Monitoring TX channel healthy stataus
-      If detect any problem, try to recover
-
-  @  Parameters
-      healthMonitorMsg    MSG pointer.
-                          will have low resource TX channel context
-
-  @  Return
-      NONE
-
-===========================================================================*/
-void dxeTXHealthMonitor
-(
-   wpt_msg         *healthMonitorMsg
-)
-{
-   WLANDXE_ChannelCBType    *channelCtrlBlk;
-   WLANDXE_ChannelCBType    *testCHCtrlBlk;
-   wpt_uint32                regValue;
-   wpt_uint32                chStatusReg, chControlReg, chDescReg, chLDescReg;
-   wpt_uint32                hwWakeLoop, chLoop;
-   wpt_status                status  = eWLAN_PAL_STATUS_SUCCESS;
-
-   if(NULL == healthMonitorMsg)
-   {
-      return;
-   }
-
-   /* First of all kick TX channel
-    * This will fix if there is any problem with SMSM state */
-   dxeNotifySmsm(eWLAN_PAL_FALSE, eWLAN_PAL_TRUE);
-   dxeNotifySmsm(eWLAN_PAL_TRUE, eWLAN_PAL_FALSE);
-   dxeNotifySmsm(eWLAN_PAL_FALSE, eWLAN_PAL_TRUE);
-
-   /* Wait till RIVA up */
-   for(hwWakeLoop = 0; hwWakeLoop < T_WLANDXE_MAX_HW_ACCESS_WAIT; hwWakeLoop++)
-   {
-      wpalReadRegister(WLANDXE_BMU_AVAILABLE_BD_PDU, &regValue);
-      if(0 != regValue)
-      {
-         HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_WARN,
-                  "num free BD/PDU %d, loop Count %d",
-                  regValue, hwWakeLoop);
-         break;
-      }
-   }
-
-   HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_WARN,
-            "Scheduled TX, num free BD/PDU %d, loop Count %d",
-            regValue, hwWakeLoop);
-
-   for(chLoop = 0; chLoop < WDTS_CHANNEL_RX_LOW_PRI; chLoop++)
-   {
-      testCHCtrlBlk = &tempDxeCtrlBlk->dxeChannel[chLoop];
-      wpalReadRegister(testCHCtrlBlk->channelRegister.chDXECtrlRegAddr, &chControlReg);
-      wpalReadRegister(testCHCtrlBlk->channelRegister.chDXEStatusRegAddr, &chStatusReg);
-      wpalReadRegister(testCHCtrlBlk->channelRegister.chDXEDesclRegAddr, &chDescReg);
-      wpalReadRegister(testCHCtrlBlk->channelRegister.chDXELstDesclRegAddr, &chLDescReg);
-
-      wpalTrace(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO,
-                "%11s : CCR 0x%x, CSR 0x%x, CDR 0x%x, CLDR 0x%x, HCBO %d, HCBDP 0x%x, HCBDC 0x%x, TCBO %d,TCBDP 0x%x, TCBDC 0x%x",
-                channelType[chLoop],
-                chControlReg, chStatusReg, chDescReg, chLDescReg,
-                testCHCtrlBlk->headCtrlBlk->ctrlBlkOrder, testCHCtrlBlk->headCtrlBlk->linkedDescPhyAddr,
-                testCHCtrlBlk->headCtrlBlk->linkedDesc->descCtrl.ctrl,
-                testCHCtrlBlk->tailCtrlBlk->ctrlBlkOrder, testCHCtrlBlk->tailCtrlBlk->linkedDescPhyAddr,
-                testCHCtrlBlk->tailCtrlBlk->linkedDesc->descCtrl.ctrl);
-
-      if((chControlReg & WLANDXE_DESC_CTRL_VALID) && 
-         (chLDescReg != testCHCtrlBlk->tailCtrlBlk->linkedDescPhyAddr))
-      {
-         wpalTrace(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_WARN,
-                   "%11s : CCR 0x%x, CSR 0x%x, CDR 0x%x, CLDR 0x%x, "
-                   "HCBO %d, HCBDP 0x%x, HCBDC 0x%x, TCBO %d,TCBDP 0x%x, TCBDC 0x%x",
-                   channelType[chLoop],
-                   chControlReg, chStatusReg, chDescReg, chLDescReg,
-                   testCHCtrlBlk->headCtrlBlk->ctrlBlkOrder, testCHCtrlBlk->headCtrlBlk->linkedDescPhyAddr,
-                   testCHCtrlBlk->headCtrlBlk->linkedDesc->descCtrl.ctrl,
-                   testCHCtrlBlk->tailCtrlBlk->ctrlBlkOrder, testCHCtrlBlk->tailCtrlBlk->linkedDescPhyAddr,
-                   testCHCtrlBlk->tailCtrlBlk->linkedDesc->descCtrl.ctrl);
-         HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_WARN,
-                  "%11s : TX CH EN Descriptor Async, resync it", channelType[chLoop]);
-         wpalWriteRegister(testCHCtrlBlk->channelRegister.chDXELstDesclRegAddr,
-                           testCHCtrlBlk->tailCtrlBlk->linkedDescPhyAddr);
-      }
-      else if(!(chControlReg & WLANDXE_DESC_CTRL_VALID) && 
-               (chDescReg != testCHCtrlBlk->tailCtrlBlk->linkedDescPhyAddr))
-      {
-         wpalTrace(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_WARN,
-                   "%11s : CCR 0x%x, CSR 0x%x, CDR 0x%x, CLDR 0x%x, "
-                   "HCBO %d, HCBDP 0x%x, HCBDC 0x%x, TCBO %d,TCBDP 0x%x, TCBDC 0x%x",
-                   channelType[chLoop],
-                   chControlReg, chStatusReg, chDescReg, chLDescReg,
-                   testCHCtrlBlk->headCtrlBlk->ctrlBlkOrder, testCHCtrlBlk->headCtrlBlk->linkedDescPhyAddr,
-                   testCHCtrlBlk->headCtrlBlk->linkedDesc->descCtrl.ctrl,
-                   testCHCtrlBlk->tailCtrlBlk->ctrlBlkOrder, testCHCtrlBlk->tailCtrlBlk->linkedDescPhyAddr,
-                   testCHCtrlBlk->tailCtrlBlk->linkedDesc->descCtrl.ctrl);
-         HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_WARN,
-                  "%11s : TX CH DIS Descriptor Async, resync it", channelType[chLoop]);
-         wpalWriteRegister(testCHCtrlBlk->channelRegister.chDXEDesclRegAddr,
-                           testCHCtrlBlk->tailCtrlBlk->linkedDescPhyAddr);
-      }
-   }
-
-   /* TX channel test done, test RX channels */
-   channelCtrlBlk = (WLANDXE_ChannelCBType *)healthMonitorMsg->pContext;
-   channelCtrlBlk->healthMonitorMsg->callback = dxeRXHealthMonitor;
-   status = wpalPostRxMsg(WDI_GET_PAL_CTX(),
-                          channelCtrlBlk->healthMonitorMsg);
-   if (eWLAN_PAL_STATUS_SUCCESS != status)
-   {
-      HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
-               "TX Low resource Kick DXE MSG Serialize fail status=%d",
-               status);
-   }
-
-   return;
-}
-
-/*==========================================================================
-  @  Function Name 
-      dxeHealthMonitorTimeout
-
-  @  Description 
-      Health Monitor timer started when TX channel low resource condition
-      And if reciovered from low resource condition, timer would not fired
-      Timer fired means during certain time, TX CH could not be recovered
-
-  @  Parameters
-      channelCtxt   Low resource condition happen Channel context
-
-  @  Return
-      NONE
-
-===========================================================================*/
-void dxeHealthMonitorTimeout
-(
-   void         *channelCtxt
-)
-{
-   WLANDXE_ChannelCBType    *channelCtrlBlk;
-   wpt_status                status  = eWLAN_PAL_STATUS_SUCCESS;
-
-   if(NULL == channelCtxt)
-   {
-      return;
-   }
-
-   /* Timeout Fired, DXE TX should kick on TX thread
-    * Serailize to TX Thread */
-   channelCtrlBlk = (WLANDXE_ChannelCBType *)channelCtxt;
-   HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO,
-            "%11s : Health Monitor timer expired",
-            channelType[channelCtrlBlk->channelType]);
-
-   channelCtrlBlk->healthMonitorMsg->callback = dxeTXHealthMonitor;
-   status = wpalPostTxMsg(WDI_GET_PAL_CTX(),
-                          channelCtrlBlk->healthMonitorMsg);
-   if (eWLAN_PAL_STATUS_SUCCESS != status)
-   {
-      HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
-               "TX Low resource Kick DXE MSG Serialize fail status=%d",
-               status);
-   }
-
-   return;
-}
-
-/*==========================================================================
-  @  Function Name 
       dxeCtrlBlkAlloc
 
   @  Description 
@@ -3716,7 +3415,6 @@ static wpt_status dxeTXCompFrame
                               channelEntry->channelType,
                               eWLAN_PAL_TRUE);
       channelEntry->hitLowResource = eWLAN_PAL_FALSE;
-      wpalTimerStop(&channelEntry->healthMonitorTimer);
    }
 
    status = wpalMutexRelease(&channelEntry->dxeChannelLock);
@@ -4436,29 +4134,6 @@ void *WLANDXE_Open
          return NULL;
       }
 
-      status = wpalTimerInit(&currentChannel->healthMonitorTimer,
-                    dxeHealthMonitorTimeout,
-                    (void *)currentChannel);
-      if(eWLAN_PAL_STATUS_SUCCESS != status)
-      {
-         HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_WARN,
-                  "WLANDXE_Open Health Monitor timer init fail %d", idx);
-         WLANDXE_Close(tempDxeCtrlBlk);
-         return NULL;
-      }
-
-      currentChannel->healthMonitorMsg = (wpt_msg *)wpalMemoryAllocate(sizeof(wpt_msg));
-      if(NULL == currentChannel->healthMonitorMsg)
-      {
-         HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_WARN,
-                  "WLANDXE_Open Health Monitor MSG Alloc fail %d", idx);
-         WLANDXE_Close(tempDxeCtrlBlk);
-         return NULL;
-      }
-      wpalMemoryZero(currentChannel->healthMonitorMsg, sizeof(wpt_msg));
-      currentChannel->healthMonitorMsg->callback = dxeTXHealthMonitor;
-      currentChannel->healthMonitorMsg->pContext = (void *)currentChannel;
-
       HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_WARN,
                "WLANDXE_Open Channel %s Open Success", channelType[idx]);
    }
@@ -4882,8 +4557,6 @@ wpt_status WLANDXE_TxFrame
          dxeNotifySmsm(eWLAN_PAL_FALSE, eWLAN_PAL_TRUE);
          dxeNotifySmsm(eWLAN_PAL_TRUE, eWLAN_PAL_FALSE);
       }
-      wpalTimerStart(&currentChannel->healthMonitorTimer,
-                     T_WLANDXE_PERIODIC_HEALTH_M_TIME);
    }
    status = wpalMutexRelease(&currentChannel->dxeChannelLock);
    if(eWLAN_PAL_STATUS_SUCCESS != status)
@@ -4946,8 +4619,6 @@ WLANDXE_CompleteTX
                              WDTS_CHANNEL_TX_LOW_PRI,
                              eWLAN_PAL_FALSE);
       inLowRes = channelCb->hitLowResource = eWLAN_PAL_TRUE;
-      wpalTimerStart(&channelCb->healthMonitorTimer,
-                     T_WLANDXE_PERIODIC_HEALTH_M_TIME);
     }
   }
 
@@ -4986,8 +4657,6 @@ WLANDXE_CompleteTX
                              WDTS_CHANNEL_TX_LOW_PRI,
                              eWLAN_PAL_FALSE);
         channelCb->hitLowResource = eWLAN_PAL_TRUE;
-        wpalTimerStart(&channelCb->healthMonitorTimer,
-                       T_WLANDXE_PERIODIC_HEALTH_M_TIME);
       }
     }
   }
@@ -5033,11 +4702,6 @@ wpt_status WLANDXE_Stop
    dxeCtxt = (WLANDXE_CtrlBlkType *)pDXEContext;
    foreach_valid_channel(idx)
    {
-      if(VOS_TIMER_STATE_RUNNING == wpalTimerGetCurStatus(&dxeCtxt->dxeChannel[idx].healthMonitorTimer))
-      {
-         wpalTimerStop(&dxeCtxt->dxeChannel[idx].healthMonitorTimer);
-      }
-
       status = dxeChannelStop(dxeCtxt, &dxeCtxt->dxeChannel[idx]);
       if(eWLAN_PAL_STATUS_SUCCESS != status)
       {
@@ -5108,11 +4772,6 @@ wpt_status WLANDXE_Close
    foreach_valid_channel(idx)
    {
       wpalMutexDelete(&dxeCtxt->dxeChannel[idx].dxeChannelLock);
-      wpalTimerDelete(&dxeCtxt->dxeChannel[idx].healthMonitorTimer);
-      if(NULL != dxeCtxt->dxeChannel[idx].healthMonitorMsg)
-      {
-         wpalMemoryFree(dxeCtxt->dxeChannel[idx].healthMonitorMsg);
-      }
       dxeChannelClose(dxeCtxt, &dxeCtxt->dxeChannel[idx]);
    }
 
@@ -5632,13 +5291,5 @@ void WLANDXE_ChannelDebug
       }
    }
 
-   if(debugFlags & WPAL_DEBUG_START_HEALTH_TIMER)
-   {
-      HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
-               "DXE TX Stall detect");
-      /* Start Stall detect timer and detect stall */
-      wpalTimerStart(&tempDxeCtrlBlk->dxeChannel[WDTS_CHANNEL_TX_LOW_PRI].healthMonitorTimer,
-                     T_WLANDXE_PERIODIC_HEALTH_M_TIME);
-   }
    return;
 }
