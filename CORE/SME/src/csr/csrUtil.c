@@ -5776,7 +5776,7 @@ tANI_BOOLEAN csrMatchBSS( tHalHandle hHal, tSirBssDescription *pBssDesc, tCsrSca
             break;
 
 #ifdef WLAN_FEATURE_VOWIFI_11R
-        if (pFilter->MDID.mdiePresent)
+        if (pFilter->MDID.mdiePresent && csrRoamIs11rAssoc(pMac))
         {
             if (pBssDesc->mdiePresent)
             {
