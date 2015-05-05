@@ -349,5 +349,5 @@ v_U8_t vos_is_fw_ev_logging_enabled(void);
 v_U8_t vos_is_fw_logging_supported(void);
 void vos_set_multicast_logging(uint8_t value);
 v_U8_t vos_is_multicast_logging(void);
-
+bool vos_is_wakelock_enabled(void);
 #endif // if !defined __VOS_NVITEM_H

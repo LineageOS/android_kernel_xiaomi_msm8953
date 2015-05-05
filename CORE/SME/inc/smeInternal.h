@@ -52,6 +52,7 @@
 #include "vos_memory.h"
 #include "vos_types.h"
 #include "csrLinkList.h"
+#include "vos_diag_core_event.h"
 
 /*-------------------------------------------------------------------------- 
   Type declarations

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -197,6 +197,39 @@ void vos_log_submit(v_VOID_t *plog_hdr_ptr)
     }
     return;
 }
+
+/**
+ * vos_log_wlock_diag() - This function is used to send wake lock diag events
+ * @reason: Reason why the wakelock was taken or released
+ * @wake_lock_name: Function in which the wakelock was taken or released
+ * @timeout: Timeout value in case of timed wakelocks
+ * @status: Status field indicating whether the wake lock was taken/released
+ *
+ * This function is used to send wake lock diag events to user space
+ *
+ * Return: None
+ *
+ */
+void vos_log_wlock_diag(uint32_t reason, const char *wake_lock_name,
+                              uint32_t timeout, uint32_t status)
+{
+     WLAN_VOS_DIAG_EVENT_DEF(wlan_diag_event,
+     struct vos_event_wlan_wake_lock);
+
+     if (nl_srv_is_initialized() != 0)
+          return;
+
+     wlan_diag_event.status = status;
+     wlan_diag_event.reason = reason;
+     wlan_diag_event.timeout = timeout;
+     wlan_diag_event.name_len = strlen(wake_lock_name);
+     strlcpy(&wlan_diag_event.name[0],
+             wake_lock_name,
+             wlan_diag_event.name_len+1);
+
+     WLAN_VOS_DIAG_EVENT_REPORT(&wlan_diag_event, EVENT_WLAN_WAKE_LOCK);
+}
+
 
 /**---------------------------------------------------------------------------
   
