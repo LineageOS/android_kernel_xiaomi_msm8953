@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -176,7 +176,7 @@ int nl_srv_ucast(struct sk_buff *skb, int dst_pid, int flag)
 
    if (err < 0)
       VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_WARN,
-      "NLINK: netlink_unicast to pid[%d] failed, ret[0x%X]", dst_pid, err);
+      "NLINK: netlink_unicast to pid[%d] failed, ret[%d]", dst_pid, err);
 
    return err;
 }

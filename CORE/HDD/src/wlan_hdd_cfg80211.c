@@ -10213,8 +10213,8 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
     ENTER();
 
     pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
-    if (0 != wlan_hdd_validate_context(pHddCtx)) {
-        hddLog(VOS_TRACE_LEVEL_ERROR, FL("Invalid HDD context"));
+    if (NULL == pHddCtx) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("HDD context is Null"));
         goto allow_suspend;
     }
 
