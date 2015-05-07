@@ -179,18 +179,14 @@ void vos_log_submit(v_VOID_t *plog_hdr_ptr)
     
     
         vos_mem_copy(pBuf, pHdr,data_len);
-    
-        if(pHddCtx->ptt_pid)
+
+        if (ptt_sock_send_msg_to_app(wmsg, 0,
+                  ANI_NL_MSG_PUMAC, INVALID_PID, MSG_DONTWAIT) < 0)
         {
-            if( ptt_sock_send_msg_to_app(wmsg, 0,
-                      ANI_NL_MSG_PUMAC, pHddCtx->ptt_pid, MSG_DONTWAIT) < 0) {
-        
-                VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                          ("Ptt Socket error sending message to the app!!"));
-                vos_mem_free((v_VOID_t *)wmsg);
-                return;
-            }
-       
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                     ("Ptt Socket error sending message to the app!!"));
+            vos_mem_free((v_VOID_t *)wmsg);
+            return;
         }
         vos_mem_free((v_VOID_t*)wmsg);
     }
@@ -274,7 +270,7 @@ void vos_event_report_payload(v_U16_t event_Id, v_U16_t length, v_VOID_t *pPaylo
         vos_mem_copy(pBuf, pPayload,length);
       
         if( ptt_sock_send_msg_to_app(wmsg, 0,
-                     ANI_NL_MSG_PUMAC, pHddCtx->ptt_pid, MSG_DONTWAIT) < 0) {
+                     ANI_NL_MSG_PUMAC, INVALID_PID, MSG_DONTWAIT) < 0) {
             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                        ("Ptt Socket error sending message to the app!!"));
             vos_mem_free((v_VOID_t*)wmsg);

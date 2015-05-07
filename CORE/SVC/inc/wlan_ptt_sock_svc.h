@@ -64,6 +64,8 @@
 #define ANI_MAX_RADIOS      3
 #define ANI_NL_MSG_OK       0
 #define ANI_NL_MSG_ERROR    -1
+#define INVALID_PID         -1
+
 #define ANI_NL_MSG_OVERHEAD (NLMSG_SPACE(tAniHdr + 4))
 /*
  * Packet Format for READ_REGISTER & WRITE_REGISTER:
