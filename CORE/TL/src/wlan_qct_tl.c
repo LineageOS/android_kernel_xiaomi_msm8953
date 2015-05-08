@@ -1150,36 +1150,16 @@ VOS_STATUS WLANTL_Finish_ULA( void (*callbackRoutine) (void *callbackContext),
     return VOS_STATUS_E_FAILURE;
   }
 
-  if (!VOS_IS_STATUS_SUCCESS(vos_lock_acquire(&(pClientSTA->ulaLock))))
-  {
-        TLLOGE(VOS_TRACE(VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
-                "%s Get ULA Lock Fail", __func__));
-        return VOS_STATUS_E_FAILURE;
-  }
-
   if (pClientSTA->isEapolM4Transmitted ||
       pClientSTA->tlState == WLANTL_STA_AUTHENTICATED)
   {
     TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO,
            "WLAN TL: M4 is already received on %s", __func__));
-    if (!VOS_IS_STATUS_SUCCESS(vos_lock_release(&(pClientSTA->ulaLock))))
-    {
-        TLLOGE(VOS_TRACE(VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
-                "%s Release ULA Lock Fail", __func__));
-        return VOS_STATUS_E_FAILURE;
-    }
     return VOS_STATUS_E_ALREADY;
   }
 
   pClientSTA->pfnSTAUlaComplete = (WLANTL_STAUlaCompleteCBType) callbackRoutine;
   pClientSTA->pUlaCBCtx = callbackContext;
-
-  if (!VOS_IS_STATUS_SUCCESS(vos_lock_release(&(pClientSTA->ulaLock))))
-  {
-        TLLOGE(VOS_TRACE(VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
-                "%s Release ULA Lock Fail", __func__));
-        return VOS_STATUS_E_FAILURE;
-  }
 
   return VOS_STATUS_SUCCESS;
 }
@@ -1328,7 +1308,6 @@ WLANTL_RegisterSTAClient
   pClientSTA->wSTADesc.ucSTAId  = pwSTADescType->ucSTAId;
   pClientSTA->ptkInstalled = 0;
   pClientSTA->isEapolM4Transmitted = 0;
-  vos_lock_init(&pClientSTA->ulaLock);
 
   TLLOG2(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO_HIGH,
              "WLAN TL:Registering STA Client ID: %d with UC %d and BC %d", 
@@ -1622,8 +1601,6 @@ WLANTL_ClearSTAClient
      vos_lock_destroy(&pTLCb->atlSTAClients[ucSTAId]->atlBAReorderInfo[ucIndex].reorderLock);
   }
 
-  /* delete ulaLock*/
-  vos_lock_destroy(&pTLCb->atlSTAClients[ucSTAId]->ulaLock);
 #ifdef FEATURE_WLAN_TDLS
   /* decrement ucTdlsPeerCount only if it is non-zero */  
   if(WLAN_STA_TDLS == pTLCb->atlSTAClients[ucSTAId]->wSTADesc.wSTAType
@@ -7673,25 +7650,11 @@ WLANTL_STATxConn
   // call ULA complete once M4 BD is filled.
   if (tlMetaInfo.ucEapolSubType == EAPOL_M4)
   {
-     if (!VOS_IS_STATUS_SUCCESS(vos_lock_acquire(&(pClientSTA->ulaLock))))
-     {
-        TLLOGE(VOS_TRACE(VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
-                "%s Get ULA Lock Fail", __func__));
-        return VOS_STATUS_E_FAILURE;
-     }
-
      pClientSTA->isEapolM4Transmitted = 1;
      if (pClientSTA->pfnSTAUlaComplete)
          pClientSTA->pfnSTAUlaComplete(pClientSTA->pUlaCBCtx);
      pClientSTA->pfnSTAUlaComplete = NULL;
      pClientSTA->pUlaCBCtx = NULL;
-
-     if (!VOS_IS_STATUS_SUCCESS(vos_lock_release(&(pClientSTA->ulaLock))))
-     {
-        TLLOGE(VOS_TRACE(VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
-                "%s Release ULA Lock Fail", __func__));
-        return VOS_STATUS_E_FAILURE;
-     }
   }
 
   /*-----------------------------------------------------------------------
