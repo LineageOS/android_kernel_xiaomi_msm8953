@@ -1084,7 +1084,7 @@ void WLANTL_AssocFailed(v_U8_t staId)
   }
 }
 
-/*===========================================================================
+  /*===========================================================================
 
   FUNCTION  WLANTL_Finish_ULA
 
@@ -1100,10 +1100,8 @@ void WLANTL_AssocFailed(v_U8_t staId)
 
   PARAMETERS
 
-   callbackRoutine: HDD Callback function.
-   callbackContext: HDD userdata context.
-   pvosGCtx       : VOS Context
-   ucSTAId        : STA ID
+   callbackRoutine:   HDD Callback function.
+   callbackContext : HDD userdata context.
 
    RETURN VALUE
 
@@ -1114,55 +1112,11 @@ void WLANTL_AssocFailed(v_U8_t staId)
 ============================================================================*/
 
 VOS_STATUS WLANTL_Finish_ULA( void (*callbackRoutine) (void *callbackContext),
-                                      void *callbackContext,
-                                      v_PVOID_t pvosGCtx,
-                                      v_U8_t ucSTAId)
+                              void *callbackContext)
 {
-  WLANTL_CbType* pTLCb = NULL;
-  WLANTL_STAClientType* pClientSTA = NULL;
-
-  /*------------------------------------------------------------------------
-      Sanity check
-   ------------------------------------------------------------------------*/
-  if ( WLANTL_STA_ID_INVALID( ucSTAId ) )
-  {
-     TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
-            "WLAN TL:Invalid station id requested on WLANTL_Finish_ULA"));
-     return VOS_STATUS_E_FAULT;
-  }
-
-  /*------------------------------------------------------------------------
-     Extract TL control block and check existance
-    ------------------------------------------------------------------------*/
-  pTLCb = VOS_GET_TL_CB(pvosGCtx);
-  if ( NULL == pTLCb )
-  {
-    TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
-           "WLAN TL:Invalid TL pointer from pvosGCtx on WLANTL_Finish_ULA"));
-    return VOS_STATUS_E_FAULT;
-  }
-
-  pClientSTA = pTLCb->atlSTAClients[ucSTAId];
-  if ( NULL == pClientSTA )
-  {
-    TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
-           "WLAN TL:Client Memory was not allocated on %s", __func__));
-    return VOS_STATUS_E_FAILURE;
-  }
-
-  if (pClientSTA->isEapolM4Transmitted ||
-      pClientSTA->tlState == WLANTL_STA_AUTHENTICATED)
-  {
-    TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO,
-           "WLAN TL: M4 is already received on %s", __func__));
-    return VOS_STATUS_E_ALREADY;
-  }
-
-  pClientSTA->pfnSTAUlaComplete = (WLANTL_STAUlaCompleteCBType) callbackRoutine;
-  pClientSTA->pUlaCBCtx = callbackContext;
-
-  return VOS_STATUS_SUCCESS;
+   return WDA_DS_FinishULA( callbackRoutine, callbackContext);
 }
+
 
 /*===========================================================================
 
@@ -1293,9 +1247,6 @@ WLANTL_RegisterSTAClient
   pClientSTA->pfnSTARx       = pfnSTARx;
   pClientSTA->pfnSTAFetchPkt = pfnSTAFetchPkt;
 
-  pClientSTA->pfnSTAUlaComplete = NULL;
-  pClientSTA->pUlaCBCtx         = NULL;
-
   /* Only register if different from NULL - TL default Tx Comp Cb will
     release the vos packet */
   if ( NULL != pfnSTATxComp )
@@ -1307,7 +1258,6 @@ WLANTL_RegisterSTAClient
   pClientSTA->tlPri    = WLANTL_STA_PRI_NORMAL;
   pClientSTA->wSTADesc.ucSTAId  = pwSTADescType->ucSTAId;
   pClientSTA->ptkInstalled = 0;
-  pClientSTA->isEapolM4Transmitted = 0;
 
   TLLOG2(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO_HIGH,
              "WLAN TL:Registering STA Client ID: %d with UC %d and BC %d", 
@@ -2122,7 +2072,6 @@ WLANTL_STAPktPending
 {
   WLANTL_CbType*  pTLCb = NULL;
   WLANTL_STAClientType* pClientSTA = NULL;
-  v_U32_t     uMgmtAvailRes = 0;
   /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
   VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO,
@@ -2186,9 +2135,6 @@ WLANTL_STAPktPending
     VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO_HIGH,
       "WLAN TL:Packet pending indication for STA: %d AC: %d State: %d", 
                ucSTAId, ucAc, pClientSTA->tlState);
-
-    uMgmtAvailRes = WDA_DS_GetAvailableResCount(pvosGCtx,
-                                              WDI_MGMT_POOL_ID);
   }
 
   /*-----------------------------------------------------------------------
@@ -2211,10 +2157,8 @@ WLANTL_STAPktPending
         Check if there are enough resources for transmission and tx is not
         suspended.
         ------------------------------------------------------------------------*/
-       if ((( pTLCb->uResCount >=  WDA_TLI_MIN_RES_DATA ) &&
-           ( 0 == pTLCb->ucTxSuspended )) ||
-           (pClientSTA->ucEapolPktPending &&
-            uMgmtAvailRes >= WDA_TLI_MIN_RES_MF))
+       if (( pTLCb->uResCount >=  WDA_TLI_MIN_RES_DATA ) &&
+          ( 0 == pTLCb->ucTxSuspended ))
       {
 
         TLLOG2(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO_HIGH,
@@ -7645,18 +7589,6 @@ WLANTL_STATxConn
     return vosStatus;
   }
 
-
-
-  // call ULA complete once M4 BD is filled.
-  if (tlMetaInfo.ucEapolSubType == EAPOL_M4)
-  {
-     pClientSTA->isEapolM4Transmitted = 1;
-     if (pClientSTA->pfnSTAUlaComplete)
-         pClientSTA->pfnSTAUlaComplete(pClientSTA->pUlaCBCtx);
-     pClientSTA->pfnSTAUlaComplete = NULL;
-     pClientSTA->pUlaCBCtx = NULL;
-  }
-
   /*-----------------------------------------------------------------------
     Update tx counter for BA session query for tx side
     !1 - should this be done for EAPOL frames?
@@ -11552,10 +11484,6 @@ WLANTL_CleanSTA
   ptlSTAClient->wSTADesc.ucSwFrameTXXlation = 0;
   ptlSTAClient->wSTADesc.ucSwFrameRXXlation = 0;
   ptlSTAClient->wSTADesc.ucProtectedFrame = 0;
-
-  ptlSTAClient->pfnSTAUlaComplete = NULL;
-  ptlSTAClient->pUlaCBCtx = NULL;
-  ptlSTAClient->isEapolM4Transmitted = 0;
 
   /*-------------------------------------------------------------------------
     AMSDU information for the STA
