@@ -1919,32 +1919,6 @@ WDA_DS_GetTxFlowMask
 );
 
 /*==========================================================================
-   FUNCTION    WDA_DS_GetAvailableResCount
-
-  DESCRIPTION
-  It returns Available resource count for appropriate Pool Type
-
-  DEPENDENCIES
-
-  PARAMETERS
-
-   IN
-    pvosGCtx          vos context
-    wdiResPool       Pool Type
-
-  RETURN VALUE
-    Available resource count
-
-============================================================================*/
-uint32
-WDA_DS_GetAvailableResCount
-(
-  v_PVOID_t pvosGCtx,
-  WDI_ResPoolType wdiResPool
-);
-
-
-/*==========================================================================
    FUNCTION    WDA_HALDumpCmdReq
 
   DESCRIPTION

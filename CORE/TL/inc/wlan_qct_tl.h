@@ -402,18 +402,6 @@ typedef enum
 }WLANTL_STAPriorityType;
 
 /*---------------------------------------------------------------------------
-  EAPOL SUB TYPE
----------------------------------------------------------------------------*/
-typedef enum
-{
-  EAPOL_UNKNOWN  = 0,
-  EAPOL_M1,
-  EAPOL_M2,
-  EAPOL_M3,
-  EAPOL_M4
-}EAPOL_SubType;
-
-/*---------------------------------------------------------------------------
   Meta information requested from HDD by TL 
 ---------------------------------------------------------------------------*/      
 typedef struct
@@ -429,10 +417,6 @@ typedef struct
 
   /* notifying TL if this is an EAPOL frame or not */
   v_U8_t    ucIsEapol;
-
-  /* Store Eapol Subtype */
-  EAPOL_SubType    ucEapolSubType;
-
 #ifdef FEATURE_WLAN_WAPI
   /* notifying TL if this is a WAI frame or not */
   v_U8_t    ucIsWai;
@@ -706,22 +690,6 @@ typedef VOS_STATUS (*WLANTL_STAFetchPktCBType)(
                                             WLANTL_ACEnumType     ucAC,
                                             vos_pkt_t**           vosDataBuff,
                                             WLANTL_MetaInfoType*  tlMetaInfo);
-
-/*----------------------------------------------------------------------------
-
-  DESCRIPTION
-    ULA callback registered with TL.
-    It is called by the TL when it receives EAPOL 4/4.
-
-
-  PARAMETERS
-
-    IN
-    callbackCtx:    padapter context used in callback.
-
-----------------------------------------------------------------------------*/
-
-typedef VOS_STATUS (*WLANTL_STAUlaCompleteCBType)( v_PVOID_t callbackCtx );
 
 /*----------------------------------------------------------------------------
 
@@ -2936,8 +2904,8 @@ void WLANTL_PostResNeeded(v_PVOID_t pvosGCtx);
   FUNCTION    WLANTL_Finish_ULA
 
   DESCRIPTION
-     This function is used by HDD to notify TL to finish Upper layer
-     authentication incase the last EAPOL packet is pending in the TL queue.
+     This function is used by HDD to notify TL to finish Upper layer authentication
+     incase the last EAPOL packet is pending in the TL queue.
      To avoid the race condition between sme set key and the last EAPOL packet
      the HDD module calls this function just before calling the sme_RoamSetKey.
 
@@ -2960,9 +2928,7 @@ void WLANTL_PostResNeeded(v_PVOID_t pvosGCtx);
 ============================================================================*/
 
 VOS_STATUS WLANTL_Finish_ULA( void (*callbackRoutine) (void *callbackContext),
-                              void *callbackContext,
-                              v_PVOID_t pvosGCtx,
-                              v_U8_t ucSTAId);
+                              void *callbackContext);
 
 /*===============================================================================
   FUNCTION       WLANTL_UpdateRssiBmps

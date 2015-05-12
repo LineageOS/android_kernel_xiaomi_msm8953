@@ -1110,7 +1110,6 @@ int hdd_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
    }
 
    if ( (granted && ( pktListSize == 1 )) ||
-        (pHddStaCtx->conn_info.uIsAuthenticated == VOS_FALSE) ||
         (qid == WLANTL_AC_HIGH_PRIO))
    {
       //Let TL know we have a packet to send for this AC
@@ -1593,50 +1592,6 @@ v_BOOL_t hdd_IsEAPOLPacket( vos_pkt_t *pVosPacket )
     }  
     
    return fEAPOL;
-}
-
-/**============================================================================
-  @brief hdd_FindEapolSubType() - Find EAPOL SubType.
-
-  @param pVosPacket : [in] pointer to vos packet
-  @return         : EAPOL_SubType value
-  ===========================================================================*/
-EAPOL_SubType hdd_FindEapolSubType( vos_pkt_t *pVosPacket )
-{
-    VOS_STATUS vosStatus  = VOS_STATUS_SUCCESS;
-    void       *pBuffer   = NULL;
-    EAPOL_SubType   subType = EAPOL_UNKNOWN;
-    v_U16_t   keyInfo;
-    vosStatus = vos_pkt_peek_data( pVosPacket,
-                         (v_SIZE_t)HDD_ETHERTYPE_802_1_X_FRAME_SUB_TYPE_OFFSET,
-                         &pBuffer, HDD_ETHERTYPE_802_1_X_SIZE );
-    if ( VOS_IS_STATUS_SUCCESS( vosStatus ) )
-    {
-       if ( pBuffer )
-       {
-          keyInfo = (*(unsigned short*)pBuffer &
-                         HDD_ETHERTYPE_802_1_X_SUB_TYPE_MASK);
-
-          switch (keyInfo) {
-            case HDD_ETHERTYPE_802_1_X_M1_VALUE:
-                 subType = EAPOL_M1;
-                 break;
-            case HDD_ETHERTYPE_802_1_X_M2_VALUE:
-                 subType = EAPOL_M2;
-                 break;
-            case HDD_ETHERTYPE_802_1_X_M3_VALUE:
-                 subType = EAPOL_M3;
-                 break;
-            case HDD_ETHERTYPE_802_1_X_M4_VALUE:
-                 subType = EAPOL_M4;
-                 break;
-            default:
-                 break;
-         }
-       }
-    }
-
-   return subType;
 }
 
 /**============================================================================
@@ -2248,11 +2203,7 @@ VOS_STATUS hdd_tx_fetch_packet_cbk( v_VOID_t *vosContext,
    if(pAdapter->sessionCtx.station.conn_info.uIsAuthenticated == VOS_TRUE)
       pPktMetaInfo->ucIsEapol = 0;       
    else
-   {
       pPktMetaInfo->ucIsEapol = hdd_IsEAPOLPacket( pVosPacket ) ? 1 : 0;
-      if(pPktMetaInfo->ucIsEapol)
-         pPktMetaInfo->ucEapolSubType = hdd_FindEapolSubType( pVosPacket );
-   }
 
    if ((NULL != pHddCtx) &&
        (pHddCtx->cfg_ini->gEnableDebugLog))
@@ -2262,7 +2213,7 @@ VOS_STATUS hdd_tx_fetch_packet_cbk( v_VOID_t *vosContext,
       if (VOS_PKT_PROTO_TYPE_EAPOL & proto_type)
       {
          VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-                   "STA TX EAPOL SubType %d",pPktMetaInfo->ucEapolSubType);
+                   "STA TX EAPOL");
       }
       else if (VOS_PKT_PROTO_TYPE_DHCP & proto_type)
       {
@@ -2514,7 +2465,6 @@ VOS_STATUS hdd_rx_packet_cbk( v_VOID_t *vosContext,
    vos_pkt_t* pVosPacket;
    vos_pkt_t* pNextVosPacket;
    v_U8_t proto_type;
-   EAPOL_SubType eapolSubType = EAPOL_UNKNOWN;
 
    //Sanity check on inputs
    if ( ( NULL == vosContext ) || 
@@ -2559,12 +2509,6 @@ VOS_STATUS hdd_rx_packet_cbk( v_VOID_t *vosContext,
          VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
                          "%s: Failure walking packet chain", __func__);
          return VOS_STATUS_E_FAILURE;
-      }
-
-      if (pHddCtx->cfg_ini->gEnableDebugLog)
-      {
-         if (hdd_IsEAPOLPacket(pVosPacket))
-             eapolSubType = hdd_FindEapolSubType(pVosPacket);
       }
 
       // Extract the OS packet (skb).
@@ -2625,7 +2569,7 @@ VOS_STATUS hdd_rx_packet_cbk( v_VOID_t *vosContext,
          if (VOS_PKT_PROTO_TYPE_EAPOL & proto_type)
          {
             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-                      "STA RX EAPOL SubType %d",eapolSubType);
+                      "STA RX EAPOL");
          }
          else if (VOS_PKT_PROTO_TYPE_DHCP & proto_type)
          {
