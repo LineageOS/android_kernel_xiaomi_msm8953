@@ -8229,9 +8229,6 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
 
    if (VOS_FTM_MODE != hdd_get_conparam())
    {
-      /* This will issue a dump command which will clean up
-         BTQM queues and unblock MC thread */
-      vos_fwDumpReq(274, 0, 0, 0, 0, 1);
       // Unloading, restart logic is no more required.
       wlan_hdd_restart_deinit(pHddCtx);
 
@@ -8396,6 +8393,13 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
                 __func__, halStatus);
          /* continue -- need to clean up as much as possible */
       }
+   }
+   if ((eHAL_STATUS_SUCCESS == halStatus) ||
+       (eHAL_STATUS_PMC_PENDING == halStatus && lrc > 0))
+   {
+       /* This will issue a dump command which will clean up
+          BTQM queues and unblock MC thread */
+       vos_fwDumpReq(274, 0, 0, 0, 0, 1);
    }
 
    /* either we never sent a request, we sent a request and received a
