@@ -8226,18 +8226,9 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
 
    ENTER();
 
-#ifdef WLAN_NS_OFFLOAD
-   hddLog(LOGE, FL("Unregister IPv6 notifier"));
-   unregister_inet6addr_notifier(&pHddCtx->ipv6_notifier);
-#endif
-   hddLog(LOGE, FL("Unregister IPv4 notifier"));
-   unregister_inetaddr_notifier(&pHddCtx->ipv4_notifier);
 
    if (VOS_FTM_MODE != hdd_get_conparam())
    {
-      /* This will issue a dump command which will clean up
-         BTQM queues and unblock MC thread */
-      vos_fwDumpReq(274, 0, 0, 0, 0, 1);
       // Unloading, restart logic is no more required.
       wlan_hdd_restart_deinit(pHddCtx);
 
@@ -8403,6 +8394,13 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
          /* continue -- need to clean up as much as possible */
       }
    }
+   if ((eHAL_STATUS_SUCCESS == halStatus) ||
+       (eHAL_STATUS_PMC_PENDING == halStatus && lrc > 0))
+   {
+       /* This will issue a dump command which will clean up
+          BTQM queues and unblock MC thread */
+       vos_fwDumpReq(274, 0, 0, 0, 0, 1);
+   }
 
    /* either we never sent a request, we sent a request and received a
       response or we sent a request and timed out.  if we never sent a
@@ -8420,6 +8418,13 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
    spin_unlock(&hdd_context_lock);
 
    hdd_debugfs_exit(pHddCtx);
+
+#ifdef WLAN_NS_OFFLOAD
+   hddLog(LOGE, FL("Unregister IPv6 notifier"));
+   unregister_inet6addr_notifier(&pHddCtx->ipv6_notifier);
+#endif
+   hddLog(LOGE, FL("Unregister IPv4 notifier"));
+   unregister_inetaddr_notifier(&pHddCtx->ipv4_notifier);
 
    // Unregister the Net Device Notifier
    unregister_netdevice_notifier(&hdd_netdev_notifier);
@@ -10968,7 +10973,7 @@ VOS_STATUS wlan_hdd_restart_driver(hdd_context_t *pHddCtx)
    }
    /* Send reset FIQ to WCNSS to invoke SSR. */
 #ifdef HAVE_WCNSS_RESET_INTR
-   wcnss_reset_intr();
+   wcnss_reset_fiq(TRUE);
 #endif
  
    return status;
