@@ -15214,7 +15214,9 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                 {
                     /* get connected peer and send disable tdls off chan */
                     connPeer = wlan_hdd_tdls_get_connected_peer(pAdapter);
-                    if (connPeer && (connPeer->isOffChannelConfigured == TRUE))
+                    if ((connPeer) &&
+                        (connPeer->isOffChannelSupported == TRUE) &&
+                        (connPeer->isOffChannelConfigured == TRUE))
                     {
                         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                                   "%s: More then one peer connected, Disable "
@@ -15236,9 +15238,13 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                     {
                         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                                   "%s: No TDLS Connected Peer or "
+                                  "isOffChannelSupported %d "
                                   "isOffChannelConfigured %d",
                                   __func__,
-                                  (connPeer ? connPeer->isOffChannelConfigured : -1));
+                                  (connPeer ? (connPeer->isOffChannelSupported)
+                                    : -1),
+                                  (connPeer ? (connPeer->isOffChannelConfigured)
+                                    : -1));
                     }
                 }
 
@@ -15310,39 +15316,44 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                             }
                         }
 
-                        suppChannelLen =
-                               tdlsLinkEstablishParams.supportedChannelsLen;
                         if  ((TRUE == pTdlsPeer->isOffChannelSupported) &&
-                             (TRUE == pTdlsPeer->isOffChannelConfigured) &&
-                             (suppChannelLen > 0) &&
-                             (suppChannelLen <= SIR_MAC_MAX_SUPP_CHANNELS))
+                             (TRUE == pTdlsPeer->isOffChannelConfigured))
                         {
-                            int offChan =  pTdlsPeer->peerParams.channel;
-                            int i = 0;
-                            for (i = 0U; i < suppChannelLen; i++)
-                            {
-                                pTdlsPeer->isOffChannelConfigured = FALSE;
-                                if (
-                                   (tdlsLinkEstablishParams.supportedChannels[i]
-                                    <= offChan) &&
-                                   (tdlsLinkEstablishParams.supportedChannels[i]
-                                    == offChan))
-                                {
-                                    pTdlsPeer->isOffChannelConfigured = TRUE;
-                                    break;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            pTdlsPeer->isOffChannelConfigured = FALSE;
+                             suppChannelLen =
+                                 tdlsLinkEstablishParams.supportedChannelsLen;
+
+                             if ((suppChannelLen > 0) &&
+                                 (suppChannelLen <= SIR_MAC_MAX_SUPP_CHANNELS))
+                             {
+                                 tANI_U8 suppPeerChannel = 0;
+                                 int i = 0;
+                                 for (i = 0U; i < suppChannelLen; i++)
+                                 {
+                                    suppPeerChannel =
+                                   tdlsLinkEstablishParams.supportedChannels[i];
+
+                                    pTdlsPeer->isOffChannelSupported = FALSE;
+                                    if (suppPeerChannel ==
+                                        pTdlsPeer->peerParams.channel)
+                                    {
+                                        pTdlsPeer->isOffChannelSupported = TRUE;
+                                        break;
+                                    }
+                                 }
+                             }
+                             else
+                             {
+                                pTdlsPeer->isOffChannelSupported = FALSE;
+                             }
                         }
                         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                                   "%s: TDLS channel switch request for channel "
                                   "%d isOffChannelConfigured %d suppChannelLen "
-                                  "%d", __func__, pTdlsPeer->peerParams.channel,
+                                  "%d isOffChannelSupported %d", __func__,
+                                  pTdlsPeer->peerParams.channel,
                                   pTdlsPeer->isOffChannelConfigured,
-                                  suppChannelLen);
+                                  suppChannelLen,
+                                  pTdlsPeer->isOffChannelSupported);
 
                         /* TDLS Off Channel, Enable tdls channel switch,
                            when their is only one tdls link and it supports */
