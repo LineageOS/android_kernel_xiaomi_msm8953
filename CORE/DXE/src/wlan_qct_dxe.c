@@ -2740,7 +2740,7 @@ void dxeRXEventHandler
 
    /* Clear Interrupt handle processing bit
     * RIVA may power down */
-   if (!wpalIsFwLoggingSupported())
+   if (!(wpalIsFwLoggingSupported() && wpalIsFwLoggingEnabled()))
    {
       wpalReadRegister(WLANDXE_INT_MASK_REG_ADDRESS, &regValue);
       regValue &= WLANDXE_RX_INTERRUPT_PRO_UNMASK;
@@ -2889,7 +2889,7 @@ static void dxeRXISR
 
    /* Set Interrupt processing bit
     * During this bit set, WLAN HW may not power collapse */
-   if (!wpalIsFwLoggingSupported())
+   if (!(wpalIsFwLoggingSupported() && wpalIsFwLoggingEnabled()))
    {
       wpalReadRegister(WLANDXE_INT_MASK_REG_ADDRESS, &regValue);
       regValue |= WLANPAL_RX_INTERRUPT_PRO_MASK;
