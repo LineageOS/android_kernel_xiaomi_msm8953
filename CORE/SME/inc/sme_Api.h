@@ -3267,19 +3267,6 @@ void sme_SetTdlsPowerSaveProhibited(tHalHandle hHal, v_BOOL_t val);
     -------------------------------------------------------------------------*/
 v_BOOL_t sme_IsPmcBmps(tHalHandle hHal);
 
-#ifdef FEATURE_WLAN_TDLS_INTERNAL
-typedef struct smeTdlsDisResult
-{
-      tSirMacAddr tdlsPeerMac;
-          v_S7_t tdlsPeerRssi;
-} tSmeTdlsDisResult;
-
-VOS_STATUS sme_StartTdlsDiscoveryReq(tHalHandle hHal, tANI_U8 sessionId, tSirMacAddr peerMac);
-v_U8_t sme_GetTdlsDiscoveryResult(tHalHandle hHal,
-                                 tSmeTdlsDisResult *disResult, v_U8_t listType);
-VOS_STATUS sme_StartTdlsLinkSetupReq(tHalHandle hHal, tANI_U8 sessionId, tSirMacAddr peerMac);
-VOS_STATUS sme_StartTdlsLinkTeardownReq(tHalHandle hHal, tANI_U8 sessionId, tSirMacAddr peerMac);
-#endif /* FEATURE_WLAN_TDLS */
 eHalStatus sme_UpdateDfsSetting(tHalHandle hHal, tANI_U8 fUpdateEnableDFSChnlScan);
 
 /* ---------------------------------------------------------------------------

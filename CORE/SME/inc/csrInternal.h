@@ -805,27 +805,6 @@ typedef struct tagCsrScanStruct
     eCsrBand  scanBandPreference;  //This defines the band perference for scan
 }tCsrScanStruct;
 
-#ifdef FEATURE_WLAN_TDLS_INTERNAL
-/*
- * struct to carry TDLS discovery info..
- */
-typedef struct sCsrTdlsContext
-{
-    tDblLinkList tdlsPotentialPeerList ;
-    tANI_U16 tdlsCommonFlag ;
-    tANI_U16 tdlsCommonState ;
-    tANI_U16 tdlsPeerCount ;
-}tCsrTdlsCtxStruct;
-
-typedef struct sCsrTdlsPeerLinkInfo
-{
-    tListElem tdlsPeerStaLink ;
-    tSirTdlsPeerInfo tdlsDisPeerInfo ;
-}tCsrTdlsPeerLinkinfo ;
-#endif
-
-
-
 
 //Save the connected information. This structure + connectedProfile
 //should contain all information about the connection
