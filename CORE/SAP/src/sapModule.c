@@ -165,6 +165,14 @@ WLANSAP_Open
 
     WLANSAP_CleanCB(pSapCtx, 0 /*do not empty*/);
 
+    if (!VOS_IS_STATUS_SUCCESS(vos_spin_lock_init(&pSapCtx->staInfo_lock)))
+    {
+        VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
+                 "WLANSAP_Start failed init staInfo_lock");
+        vos_free_context(pvosGCtx, VOS_MODULE_ID_SAP, pSapCtx);
+        return VOS_STATUS_E_FAULT;
+    }
+
     // Setup the "link back" to the VOSS context
     pSapCtx->pvosGCtx = pvosGCtx;
 
@@ -254,13 +262,6 @@ WLANSAP_Start
     {
         VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
                  "WLANSAP_Start failed init lock\n");
-        return VOS_STATUS_E_FAULT;
-    }
-
-    if (!VOS_IS_STATUS_SUCCESS(vos_spin_lock_init(&pSapCtx->staInfo_lock)))
-    {
-        VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
-                 "WLANSAP_Start failed init staInfo_lock\n");
         return VOS_STATUS_E_FAULT;
     }
 
