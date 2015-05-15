@@ -1756,6 +1756,7 @@ VOS_STATUS hdd_ibss_tx_fetch_packet_cbk( v_VOID_t *vosContext,
    hdd_station_ctx_t *pHddStaCtx = NULL;
    hdd_ibss_peer_info_t *pPeerInfo = NULL;
    v_U8_t proto_type = 0;
+   v_U16_t packet_size;
 
    //Sanity check on inputs
    if ( ( NULL == vosContext ) ||
@@ -1912,6 +1913,10 @@ VOS_STATUS hdd_ibss_tx_fetch_packet_cbk( v_VOID_t *vosContext,
                    "IBSS STA TX DHCP");
       }
    }
+
+   vos_pkt_get_packet_length( pVosPacket,&packet_size );
+   if ( HDD_ETHERTYPE_ARP_SIZE == packet_size )
+       pPktMetaInfo->ucIsArp = hdd_IsARP( pVosPacket ) ? 1 : 0;
 
    pPktMetaInfo->ucUP = pktNode->userPriority;
    pPktMetaInfo->ucTID = pPktMetaInfo->ucUP;
