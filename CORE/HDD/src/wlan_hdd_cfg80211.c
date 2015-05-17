@@ -10895,6 +10895,9 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
         {
             hdd_allow_suspend();
             status = -EFAULT;
+#ifdef FEATURE_WLAN_TDLS
+        wlan_hdd_tdls_scan_done_callback(pAdapter);
+#endif
             goto free_mem;
         }
     }
