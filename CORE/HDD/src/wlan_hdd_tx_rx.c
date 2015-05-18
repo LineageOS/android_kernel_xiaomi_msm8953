@@ -1809,9 +1809,6 @@ VOS_STATUS hdd_ibss_tx_fetch_packet_cbk( v_VOID_t *vosContext,
 
    ++pAdapter->hdd_stats.hddTxRxStats.txFetchedAC[ac];
 
-   VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_FATAL,
-                              "%s: AC %d passed by TL", __func__, ac);
-
    //Get the vos packet before so that we are prepare for VOS low reseurce condition
    //This simplifies the locking and unlocking of Tx queue
    status = vos_pkt_wrap_data_packet( &pVosPacket,
