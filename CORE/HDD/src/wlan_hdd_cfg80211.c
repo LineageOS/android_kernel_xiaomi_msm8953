@@ -6904,7 +6904,8 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
 static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
                                        struct cfg80211_beacon_data *params,
                                        const u8 *ssid, size_t ssid_len,
-                                       enum nl80211_hidden_ssid hidden_ssid)
+                                       enum nl80211_hidden_ssid hidden_ssid,
+                                       v_U8_t auth_type)
 #endif
 {
     tsap_Config_t *pConfig;
@@ -7008,7 +7009,22 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
     {
         pConfig->ieee80211d = 0;
     }
-    pConfig->authType = eSAP_AUTO_SWITCH;
+
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,4,0))
+    if (params->auth_type == NL80211_AUTHTYPE_OPEN_SYSTEM)
+        pConfig->authType = eSAP_OPEN_SYSTEM;
+    else if (params->auth_type == NL80211_AUTHTYPE_SHARED_KEY)
+        pConfig->authType = eSAP_SHARED_KEY;
+    else
+        pConfig->authType = eSAP_AUTO_SWITCH;
+#else
+    if (auth_type == NL80211_AUTHTYPE_OPEN_SYSTEM)
+        pConfig->authType = eSAP_OPEN_SYSTEM;
+    else if (auth_type == NL80211_AUTHTYPE_SHARED_KEY)
+        pConfig->authType = eSAP_SHARED_KEY;
+    else
+        pConfig->authType = eSAP_AUTO_SWITCH;
+#endif
 
     capab_info = pMgmt_frame->u.beacon.capab_info;
 
@@ -7788,7 +7804,8 @@ static int __wlan_hdd_cfg80211_start_ap(struct wiphy *wiphy,
 #endif
 #endif
         status = wlan_hdd_cfg80211_start_bss(pAdapter, &params->beacon, params->ssid,
-                                             params->ssid_len, params->hidden_ssid);
+                                             params->ssid_len, params->hidden_ssid,
+                                             params->auth_type);
     }
 
     EXIT();
@@ -7857,7 +7874,8 @@ static int __wlan_hdd_cfg80211_change_beacon(struct wiphy *wiphy,
 
        pAdapter->sessionCtx.ap.beacon = new;
 
-       status = wlan_hdd_cfg80211_start_bss(pAdapter, params, NULL, 0, 0);
+       status = wlan_hdd_cfg80211_start_bss(pAdapter, params, NULL, 0, 0,
+                                   pAdapter->sessionCtx.ap.sapConfig.authType);
     }
 
     EXIT();
