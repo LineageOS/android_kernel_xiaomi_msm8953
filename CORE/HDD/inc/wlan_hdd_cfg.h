@@ -2326,7 +2326,7 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_ENABLE_BMUHW_TRACING                         "gEnableBMUHWtracing"
 #define CFG_ENABLE_BMUHW_TRACING_MIN                     (0)
 #define CFG_ENABLE_BMUHW_TRACING_MAX                     (1)
-#define CFG_ENABLE_BMUHW_TRACING_DEFAULT                 (0)
+#define CFG_ENABLE_BMUHW_TRACING_DEFAULT                 (1)
 
 #define CFG_ENABLE_CH_AVOID                                  "gEnableChannelAvoidance"
 #define CFG_ENABLE_CH_AVOID_MIN                              ( 0 )
