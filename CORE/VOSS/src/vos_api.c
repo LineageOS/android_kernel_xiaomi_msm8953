@@ -104,6 +104,7 @@
  * ------------------------------------------------------------------------*/
 static VosContextType  gVosContext;
 static pVosContextType gpVosContext;
+static v_U8_t vos_multicast_logging;
 
 /*---------------------------------------------------------------------------
  * Forward declaration
@@ -2573,5 +2574,34 @@ v_VOID_t vos_flush_delayed_work(struct delayed_work *dwork)
 #else
    wcnss_flush_delayed_work(dwork);
 #endif
+}
+
+/**
+ * vos_set_multicast_logging() - Set mutlicast logging value
+ * @value: Value of multicast logging
+ *
+ * Set the multicast logging value which will indicate
+ * whether to multicast host and fw messages even
+ * without any registration by userspace entity
+ *
+ * Return: None
+ */
+void vos_set_multicast_logging(uint8_t value)
+{
+   vos_multicast_logging = value;
+}
+
+/**
+ * vos_is_multicast_logging() - Get multicast logging value
+ *
+ * Get the multicast logging value which will indicate
+ * whether to multicast host and fw messages even
+ * without any registration by userspace entity
+ *
+ * Return: 0 - Multicast logging disabled, 1 - Multicast logging enabled
+ */
+v_U8_t vos_is_multicast_logging(void)
+{
+   return vos_multicast_logging;
 }
 

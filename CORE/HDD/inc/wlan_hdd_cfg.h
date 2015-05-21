@@ -1519,6 +1519,12 @@ typedef enum
 #define CFG_OBSS_HT40_SCAN_WIDTH_TRIGGER_INTERVAL_MAX             ( 900 )
 #define CFG_OBSS_HT40_SCAN_WIDTH_TRIGGER_INTERVAL_DEFAULT         ( 200 )
 
+#define CFG_MULTICAST_HOST_FW_MSGS          "gMulticastHostMsgs"
+#define CFG_MULTICAST_HOST_FW_MSGS_MIN      (0)
+#define CFG_MULTICAST_HOST_FW_MSGS_MAX      (1)
+#define CFG_MULTICAST_HOST_FW_MSGS_DEFAULT  (1)
+
+
 /* In cfg.dat 1=1MBPS, 2=2MBPS, 3=5_5MBPS, 4=11MBPS, 5=6MBPS, 6=9MBPS,
  * 7=12MBPS, 8=18MBPS, 9=24MBPS. But 6=9MBPS and 8=18MBPS are not basic
  * 11g rates and should not be set by gDefaultRateIndex24Ghz. So instead
@@ -2944,6 +2950,7 @@ typedef struct
    v_U8_t                      btcFastWlanConnPref;
    v_U32_t                     dxeReplenishRXTimerVal;
    v_U32_t                     dxeSSREnable;
+   v_U8_t                      multicast_host_msgs;
 } hdd_config_t;
 /*--------------------------------------------------------------------------- 
   Function declarations and documenation

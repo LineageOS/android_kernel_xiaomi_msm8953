@@ -10006,6 +10006,9 @@ int hdd_wlan_startup(struct device *dev )
 #endif
 
 
+   if (vos_is_multicast_logging())
+       wlan_logging_set_log_level();
+
    hdd_register_mcast_bcast_filter(pHddCtx);
    if (VOS_STA_SAP_MODE != hdd_get_conparam())
    {
