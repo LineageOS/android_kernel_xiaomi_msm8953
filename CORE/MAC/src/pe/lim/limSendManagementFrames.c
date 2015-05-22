@@ -2462,6 +2462,10 @@ limSendAssocReqMgmtFrame(tpAniSirGlobal   pMac,
     {
         limLog( pMac, LOG1, FL("Populate VHT IEs in Assoc Request"));
         PopulateDot11fVHTCaps( pMac, &pFrm->VHTCaps, eSIR_FALSE );
+
+        if (SIR_11B_CHANNEL_END >= psessionEntry->currentOperChannel)
+            PopulateDot11fOperatingMode(pMac, &pFrm->OperatingMode,
+                                                        psessionEntry);
     }
 #endif
     PopulateDot11fExtCap( pMac, &pFrm->ExtCap, psessionEntry);
@@ -2937,6 +2941,10 @@ limSendReassocReqWithFTIEsMgmtFrame(tpAniSirGlobal     pMac,
     {
         limLog( pMac, LOG1, FL("Populate VHT IEs in Re-Assoc Request"));
         PopulateDot11fVHTCaps( pMac, &frm.VHTCaps, eSIR_FALSE );
+
+        if (SIR_11B_CHANNEL_END >= psessionEntry->currentOperChannel)
+            PopulateDot11fOperatingMode(pMac, &frm.OperatingMode,
+                                                        psessionEntry);
     }
 #endif
     PopulateDot11fExtCap( pMac, &frm.ExtCap, psessionEntry);
@@ -3406,6 +3414,10 @@ limSendReassocReqMgmtFrame(tpAniSirGlobal     pMac,
         limLog( pMac, LOG1, FL("Populate VHT IEs in Re-Assoc Request"));
         PopulateDot11fVHTCaps( pMac, &frm.VHTCaps, eSIR_FALSE );
         PopulateDot11fExtCap( pMac, &frm.ExtCap, psessionEntry);
+
+        if (SIR_11B_CHANNEL_END >= psessionEntry->currentOperChannel)
+            PopulateDot11fOperatingMode(pMac, &frm.OperatingMode,
+                                                        psessionEntry);
     }
 #endif
 
