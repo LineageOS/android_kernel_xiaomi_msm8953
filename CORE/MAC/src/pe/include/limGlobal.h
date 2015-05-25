@@ -671,14 +671,6 @@ typedef struct sLimSpecMgmtInfo
     tANI_BOOLEAN       fRadarIntrConfigured; /* Whether radar interrupt has been configured */
 }tLimSpecMgmtInfo, *tpLimSpecMgmtInfo;
 
-#ifdef FEATURE_WLAN_TDLS_INTERNAL
-typedef struct sLimDisResultList
-{
-    struct sLimDisResultList *next ;
-    tSirTdlsPeerInfo tdlsDisPeerInfo ;
-}tLimDisResultList ;
-#endif
-
 #ifdef FEATURE_WLAN_TDLS
 /*
  * Peer info needed for TDLS setup..
