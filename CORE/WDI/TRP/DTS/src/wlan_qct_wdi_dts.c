@@ -885,6 +885,10 @@ wpt_status WDTS_openTransport( void *pContext)
 
   wpalMemoryZero(&gDsTrafficStats, sizeof(gDsTrafficStats));
 
+  WDI_DS_LoggingMbCreate(&pClientData->loggingMbContext, sizeof(tLoggingMailBox));
+  if (WDI_STATUS_SUCCESS != sWdiStatus)
+    return eWLAN_PAL_STATUS_E_NOMEM;
+
   return eWLAN_PAL_STATUS_SUCCESS;
 
 }
@@ -1090,7 +1094,9 @@ wpt_status WDTS_Close(void *pContext)
   
   /*Destroy the mem pool for mgmt BD headers*/
   WDI_DS_MemPoolDestroy(&pClientData->dataMemPool);
-  
+
+  WDI_DS_LoggingMbDestroy(&pClientData->loggingMbContext);
+
   status =  gTransportDriver.close(pDTDriverContext);
 
   wpalMemoryFree(pClientData);

@@ -191,6 +191,28 @@ void WDI_DS_MemPoolDestroy(WDI_DS_BdMemPoolType *memPool)
   wpalMemoryFree(memPool->AllocationBitmap);
   wpalMemoryZero(memPool, sizeof(*memPool));
 }
+
+WDI_Status WDI_DS_LoggingMbCreate(WDI_DS_LoggingMbType *pLoggingMailbox, wpt_uint8 size)
+{
+  pLoggingMailbox->pLoggingMbVirtAddress = wpalDmaMemoryAllocate(size,
+          &(pLoggingMailbox->pLoggingMbPhysAddress));
+  if (pLoggingMailbox->pLoggingMbVirtAddress == 0)
+    return WDI_STATUS_E_FAILURE;
+  return WDI_STATUS_SUCCESS;
+}
+
+void *WDI_DS_GetLoggingMbPhyAddr(void *pContext)
+{
+  WDI_DS_ClientDataType *pClientData = WDI_DS_GetDatapathContext(pContext);
+
+  return pClientData->loggingMbContext.pLoggingMbPhysAddress;
+}
+
+void WDI_DS_LoggingMbDestroy(WDI_DS_LoggingMbType *pLoggingMailbox)
+{
+  wpalDmaMemoryFree(pLoggingMailbox->pLoggingMbVirtAddress);
+}
+
 /*
  * Allocate chunk memory
  */

@@ -370,4 +370,5 @@ void WDI_DS_ActivateTrafficStats(void);
  */
 void WDI_DS_ClearTrafficStats(void);
 
+void *WDI_DS_GetLoggingMbPhyAddr(void *pContext);
 #endif

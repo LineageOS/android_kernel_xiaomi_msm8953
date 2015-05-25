@@ -145,10 +145,19 @@ typedef struct
    wpt_uint8   staIdx;
 } WDI_DS_staIdxPerBssIdxType;
 
+typedef struct
+{
+   void *   pLoggingMbVirtAddress;
+   void *   pLoggingMbPhysAddress;
+} WDI_DS_LoggingMbType;
+
 WDI_Status WDI_DS_MemPoolCreate(WDI_DS_BdMemPoolType *memPool, wpt_uint8 chunkSize, wpt_uint8 numChunks);
 void *WDI_DS_MemPoolAlloc(WDI_DS_BdMemPoolType *memPool, void **pPhysAddress, WDI_ResPoolType wdiResPool);
 void  WDI_DS_MemPoolFree(WDI_DS_BdMemPoolType *memPool, void *pVirtAddress, void *pPhysAddress);
 void WDI_DS_MemPoolDestroy(WDI_DS_BdMemPoolType *memPool);
+
+WDI_Status WDI_DS_LoggingMbCreate(WDI_DS_LoggingMbType *pLoggingMailbox, wpt_uint8 size);
+void WDI_DS_LoggingMbDestroy(WDI_DS_LoggingMbType *pLoggingMailbox);
 
 typedef struct
 {
@@ -161,6 +170,7 @@ typedef struct
   WDI_DS_TxCompleteCallback        txCompleteCB;
   WDI_DS_TxFlowControlCallback     txResourceCB;
   WDI_DS_staIdxPerBssIdxType       staIdxPerBssIdxTable[WDI_DS_MAX_SUPPORTED_BSS];
+  WDI_DS_LoggingMbType             loggingMbContext;
 } WDI_DS_ClientDataType;
 
 WPT_STATIC WPT_INLINE void WDI_GetBDPointers(wpt_packet *pFrame, void **pVirt, void **pPhys)
