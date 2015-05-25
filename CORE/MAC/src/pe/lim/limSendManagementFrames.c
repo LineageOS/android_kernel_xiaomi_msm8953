@@ -3929,7 +3929,7 @@ limSendAuthMgmtFrame(tpAniSirGlobal pMac,
     if(eSIR_TRUE == waitForAck)
     {
         pMac->authAckStatus = LIM_AUTH_ACK_NOT_RCD;
-        limLog(pMac, LOGE, FL("Auth frame - txBdToken %u"),
+        limLog(pMac, LOG1, FL("Auth frame - txBdToken %u"),
                 pMac->lim.txBdToken);
         halstatus = halTxFrameWithTxComplete( pMac, pPacket,
                     ( tANI_U16 ) frameLen,

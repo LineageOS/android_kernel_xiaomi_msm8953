@@ -9690,8 +9690,6 @@ static struct cfg80211_bss* wlan_hdd_cfg80211_inform_bss(
     int rssi = 0;
     struct cfg80211_bss *bss = NULL;
 
-    ENTER();
-
     if( NULL == pBssDesc )
     {
         hddLog(VOS_TRACE_LEVEL_FATAL, "%s: pBssDesc is NULL", __func__);
@@ -9887,8 +9885,8 @@ wlan_hdd_cfg80211_inform_bss_frame( hdd_adapter_t *pAdapter,
     rssi = (VOS_MIN ((bss_desc->rssi + bss_desc->sinr), 0)) * 100;
 
     hddLog(VOS_TRACE_LEVEL_INFO, "%s: BSSID:" MAC_ADDRESS_STR " Channel:%d"
-          "RSSI:%d", __func__, MAC_ADDR_ARRAY(mgmt->bssid),
-                               chan->center_freq, (int)(rssi/100));
+          " RSSI:%d", __func__, MAC_ADDR_ARRAY(mgmt->bssid),
+                      vos_freq_to_chan(chan->center_freq), (int)(rssi/100));
 
     bss_status = cfg80211_inform_bss_frame(wiphy, chan, mgmt,
             frame_len, rssi, GFP_KERNEL);

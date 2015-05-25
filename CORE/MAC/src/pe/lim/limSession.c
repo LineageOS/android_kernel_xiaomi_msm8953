@@ -286,7 +286,6 @@ tpPESession peFindSessionByBssIdx(tpAniSirGlobal pMac,  tANI_U8 bssIdx)
     {
         return(&pMac->lim.gpSession[sessionId]);
     }
-    limLog(pMac, LOG1, FL("Session %d  not active\n "), sessionId);
     return(NULL);
 
 }
