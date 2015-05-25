@@ -12535,3 +12535,45 @@ eHalStatus sme_SetTdls2040BSSCoexistence(tHalHandle hHal,
     }
     return status;
 }
+
+/* ---------------------------------------------------------------------------
+    \fn sme_SetRtsCtsHtVht
+    \brief  API to to enable/disable RTS/CTS for different modes.
+
+    \param  set_value - Bit mask value to enable RTS/CTS for different modes.
+    \- return VOS_STATUS_SUCCES if INdication is posted to
+       WDA else return eHAL_STATUS_FAILURE
+    -------------------------------------------------------------------------*/
+eHalStatus sme_SetRtsCtsHtVht(tHalHandle hHal, tANI_U32 set_value)
+{
+    tpAniSirGlobal pMac = PMAC_STRUCT(hHal);
+    vos_msg_t msg;
+
+    smsLog(pMac, LOG1, FL(" set_value = %d"), set_value);
+
+    if (ccmCfgSetInt(hHal, WNI_CFG_ENABLE_RTSCTS_HTVHT, set_value,
+                  NULL, eANI_BOOLEAN_FALSE) == eHAL_STATUS_FAILURE)
+    {
+        smsLog(pMac, LOGE,
+            FL("Failure: Could not set WNI_CFG_ENABLE_RTSCTS_HTVHT"));
+          return eHAL_STATUS_FAILURE;
+    }
+    if ( eHAL_STATUS_SUCCESS ==  sme_AcquireGlobalLock( &pMac->sme ))
+    {
+        vos_mem_zero(&msg, sizeof(vos_msg_t));
+        msg.type = WDA_SET_RTS_CTS_HTVHT;
+        msg.reserved = 0;
+        msg.bodyval = set_value;
+        if (VOS_STATUS_SUCCESS != vos_mq_post_message(VOS_MQ_ID_WDA, &msg))
+        {
+            smsLog(pMac, LOGE,
+              FL("Not able to post WDA_SET_RTS_CTS_HTVHT message to HAL"));
+            sme_ReleaseGlobalLock( &pMac->sme );
+            return eHAL_STATUS_FAILURE;
+        }
+        sme_ReleaseGlobalLock( &pMac->sme );
+        return eHAL_STATUS_SUCCESS;
+    }
+    return eHAL_STATUS_FAILURE;
+
+}

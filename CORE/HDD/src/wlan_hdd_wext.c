@@ -170,6 +170,8 @@ static const hdd_freq_chan_map_t freq_chan_map[] = { {2412, 1}, {2417, 2},
 #ifdef FEATURE_WLAN_TDLS
 #define  WE_SET_TDLS_2040_BSS_COEXISTENCE 20
 #endif
+#define  WE_SET_RTS_CTS_HTVHT             21
+
 
 /* Private ioctls and their sub-ioctls */
 #define WLAN_PRIV_SET_NONE_GET_INT    (SIOCIWFIRSTPRIV + 1)
@@ -5870,7 +5872,26 @@ static int __iw_setint_getnone(struct net_device *dev,
 
             break;
         }
+        /* Bit mask value to enable RTS/CTS for different modes
+         * for 2.4 GHz, HT20 - 0x0001, for 2.4 GHz, HT40 - 0x0002
+         * for 2.4 GHz, VHT20 - 0x0004, for 2.4 GHz, VHT40 - 0x0008
+         * for 5 GHz, HT20 - 0x0100, for 5 GHz, HT40 - 0x0200
+         * for 5 GHz, VHT20 - 0x0400, for 5 GHz, VHT40 - 0x0800
+         * for 5 GHz, VHT80 - 0x1000
+         */
+        case WE_SET_RTS_CTS_HTVHT:
+        {
 
+           hddLog( LOG1, FL("WE_SET_RTS_CTS_HTVHT set value %d"), set_value);
+
+           if (eHAL_STATUS_SUCCESS !=
+                        sme_SetRtsCtsHtVht( pHddCtx->hHal, set_value))
+           {
+                hddLog( LOGE, FL("set WE_SET_RTS_CTS_HTVHT failed"));
+                ret = -EINVAL;
+           }
+           break;
+        }
         default:
         {
             hddLog(LOGE, "Invalid IOCTL setvalue command %d value %d",
@@ -10122,6 +10143,9 @@ static const struct iw_priv_args we_private_args[] = {
         0,
         "tdls_2040bsscox" },
 #endif
+    {   WE_SET_RTS_CTS_HTVHT,
+        IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
+        0, "setRtsCtsHtVht" },
 
     /* handlers for main ioctl */
     {   WLAN_PRIV_SET_NONE_GET_INT,

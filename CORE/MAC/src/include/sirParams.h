@@ -708,6 +708,8 @@ typedef struct sSirMbMsgP2p
 
 #define SIR_HAL_NAN_REQUEST                   (SIR_HAL_ITC_MSG_TYPES_BEGIN + 267)
 
+#define SIR_HAL_SET_RTS_CTS_HTVHT            (SIR_HAL_ITC_MSG_TYPES_BEGIN + 268)
+
 #define SIR_HAL_MSG_TYPES_END              (SIR_HAL_MSG_TYPES_BEGIN + 0x1FF)
 // CFG message types
 #define SIR_CFG_MSG_TYPES_BEGIN        (SIR_CFG_MODULE_ID << 8)
