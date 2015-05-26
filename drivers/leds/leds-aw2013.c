@@ -140,6 +140,35 @@ fail_disable_reg:
 	return rc;
 }
 
+static int aw2013_configure_gpio(struct aw2013_led *led, bool on)
+{
+	struct pinctrl *pinctrl;
+	struct pinctrl_state *pinctrl_state;
+	int rc;
+
+	pinctrl = devm_pinctrl_get(&led->client->dev);
+	if (IS_ERR_OR_NULL(pinctrl)) {
+		dev_err(&led->client->dev,
+				"Failed to get pinctrl\n");
+		return -EFAULT;
+	}
+	pinctrl_state = pinctrl_lookup_state(pinctrl,
+			on ? "aw2013_led_default" : "aw2013_led_suspend");
+	if (IS_ERR_OR_NULL(pinctrl_state)) {
+		dev_err(&led->client->dev,
+				"Failed to look up pinctrl state\n");
+		return -EFAULT;
+	}
+	rc = pinctrl_select_state(pinctrl, pinctrl_state);
+	if (rc) {
+		dev_err(&led->client->dev,
+				"Failed to select pinctrl state\n");
+		return -EIO;
+	}
+
+	return 0;
+}
+
 static int aw2013_power_init(struct aw2013_led *led, bool on)
 {
 	int rc;
@@ -165,6 +194,11 @@ static int aw2013_power_init(struct aw2013_led *led, bool on)
 		}
 
 		if (led->pdata->awgpio > 0) {
+			rc = aw2013_configure_gpio(led, on);
+			if (rc) {
+				dev_dbg(&led->client->dev,
+						"Failed to configure GPIO: %d\n", rc);
+			}
 			gpio_request(led->pdata->awgpio, "aw2013-gpio");
 			gpio_direction_output(led->pdata->awgpio, 1);
 		} else {
