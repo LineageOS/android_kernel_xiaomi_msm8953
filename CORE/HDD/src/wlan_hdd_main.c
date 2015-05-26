@@ -11272,6 +11272,18 @@ v_U8_t hdd_is_fw_logging_enabled(void)
 }
 
 /*
+ * API to find if the firmware will send trace logs using DXE channel
+ */
+v_U8_t hdd_is_fw_ev_logging_enabled(void)
+{
+    hdd_context_t *pHddCtx;
+
+    pHddCtx = vos_get_context(VOS_MODULE_ID_HDD,
+                              vos_get_global_context(VOS_MODULE_ID_HDD, NULL));
+
+    return (pHddCtx && pHddCtx->cfg_ini->enableFWLogging);
+}
+/*
  * API to find if there is any session connected
  */
 VOS_STATUS hdd_is_any_session_connected(hdd_context_t *pHddCtx)

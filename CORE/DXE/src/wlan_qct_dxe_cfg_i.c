@@ -81,7 +81,8 @@ wpt_uint32 channelBaseAddressList[WLANDXE_DMA_CHANNEL_MAX] =
    WLANDXE_DMA_CHAN3_BASE_ADDRESS,
    WLANDXE_DMA_CHAN4_BASE_ADDRESS,
    WLANDXE_DMA_CHAN5_BASE_ADDRESS,
-   WLANDXE_DMA_CHAN6_BASE_ADDRESS
+   WLANDXE_DMA_CHAN6_BASE_ADDRESS,
+   WLANDXE_DMA_CHAN7_BASE_ADDRESS
 };
 
 wpt_uint32 channelInterruptMask[WLANDXE_DMA_CHANNEL_MAX] =
@@ -92,7 +93,8 @@ wpt_uint32 channelInterruptMask[WLANDXE_DMA_CHANNEL_MAX] =
    WLANDXE_INT_MASK_CHAN_3,
    WLANDXE_INT_MASK_CHAN_4,
    WLANDXE_INT_MASK_CHAN_5,
-   WLANDXE_INT_MASK_CHAN_6
+   WLANDXE_INT_MASK_CHAN_6,
+   WLANDXE_INT_MASK_CHAN_7
 };
 
 WLANDXE_ChannelConfigType chanTXLowPriConfig =
@@ -273,6 +275,45 @@ WLANDXE_ChannelConfigType chanRXLogConfig =
    WLANDXE_DESC_CTRL_XTYPE_B2H,
 
    /* Channel Priority 7(Highest) - 0(Lowest)*/
+   1,
+
+   /* BD attached to frames for this pipe */
+   eWLAN_PAL_TRUE,
+
+   /* chk_size*/
+   0,
+
+   /* bmuThdSel*/
+   8,
+
+   /* Added in Gen5 for Prefetch*/
+   eWLAN_PAL_TRUE,
+
+   /* Use short Descriptor */
+   eWLAN_PAL_TRUE
+};
+
+WLANDXE_ChannelConfigType chanRXFWLogConfig =
+{
+   /* Q handle type, Circular */
+   WLANDXE_CHANNEL_HANDLE_CIRCULA,
+
+   /* Number of Descriptors*/
+   32,
+
+   /* MAX num RX Buffer*/
+   1,
+
+   /* Reference WQ - NA as channel used for H2H */
+   0,
+
+   /* USB Only, End point info */
+   0,
+
+   /* Transfer Type */
+   WLANDXE_DESC_CTRL_XTYPE_H2H,
+
+   /* Channel Priority 7(Highest) - 0(Lowest)*/
    0,
 
    /* BD attached to frames for this pipe */
@@ -298,6 +339,7 @@ WLANDXE_ChannelMappingType channelList[WDTS_CHANNEL_MAX] =
    {WDTS_CHANNEL_RX_LOW_PRI,  WLANDXE_DMA_CHANNEL_1, &chanRXLowPriConfig},
    {WDTS_CHANNEL_RX_HIGH_PRI, WLANDXE_DMA_CHANNEL_3, &chanRXHighPriConfig},
    {WDTS_CHANNEL_RX_LOG, WLANDXE_DMA_CHANNEL_5, &chanRXLogConfig},
+   {WDTS_CHANNEL_RX_FW_LOG, WLANDXE_DMA_CHANNEL_7, &chanRXFWLogConfig},
 };
 
 WLANDXE_TxCompIntConfigType txCompInt = 
@@ -518,11 +560,15 @@ wpt_status dxeChannelDefaultConfig
    }
    else
    {
-      /* This is test H2H channel, TX, RX not use work Q
+      /* This is H2H channel, TX, RX not use work Q
        * Do Nothing */
    }
-   /* Frame Contents Swap */
-   channelEntry->extraConfig.chan_mask |= WLANDXE_CH_CTRL_SWAP_MASK;
+
+   if (WDTS_CHANNEL_RX_FW_LOG != channelEntry->channelType)
+   {
+      /* Frame Contents Swap */
+      channelEntry->extraConfig.chan_mask |= WLANDXE_CH_CTRL_SWAP_MASK;
+   }
    /* Host System Using Little Endian */
    channelEntry->extraConfig.chan_mask |= WLANDXE_CH_CTRL_ENDIAN_MASK;
    /* BMU Threshold select */
@@ -545,9 +591,14 @@ wpt_status dxeChannelDefaultConfig
     * DXE engine will reference this value before DMA transfer */
    dxeControlRead = 0;
    /* Source is a Queue ID, not flat memory address */
-   dxeControlRead |= WLANDXE_DESC_CTRL_SIQ;
+   if (WDTS_CHANNEL_RX_FW_LOG != channelEntry->channelType)
+     dxeControlRead |= WLANDXE_DESC_CTRL_SIQ;
    /* Transfer direction is BMU 2 Host */
-   dxeControlRead |= WLANDXE_DESC_CTRL_XTYPE_B2H;
+   if (WDTS_CHANNEL_RX_FW_LOG != channelEntry->channelType)
+     dxeControlRead |= WLANDXE_DESC_CTRL_XTYPE_B2H;
+   else
+     dxeControlRead |= WLANDXE_DESC_CTRL_XTYPE_H2H;
+
    /* End of Packet, RX is single fragment */
    dxeControlRead |= WLANDXE_DESC_CTRL_EOP;
    /* BD Present, default YES, B2H case it must be 0 to insert BD */
@@ -574,7 +625,8 @@ wpt_status dxeChannelDefaultConfig
    dxeControlRead |= WLANDXE_DESC_CTRL_BDT_SWAP;
    /* Host Little Endian */
    if((WDTS_CHANNEL_TX_LOW_PRI  == channelEntry->channelType) ||
-      (WDTS_CHANNEL_TX_HIGH_PRI == channelEntry->channelType))
+      (WDTS_CHANNEL_TX_HIGH_PRI == channelEntry->channelType) ||
+      (WDTS_CHANNEL_RX_FW_LOG == channelEntry->channelType))
    {
       dxeControlRead |= WLANDXE_DESC_CTRL_ENDIANNESS;
    }
@@ -655,6 +707,10 @@ wpt_status dxeChannelDefaultConfig
       channelEntry->numDesc         = mappedChannel->channelConfig->nDescs;
    }
    else if(WDTS_CHANNEL_RX_LOG == channelEntry->channelType)
+   {
+      channelEntry->numDesc         = mappedChannel->channelConfig->nDescs;
+   }
+   else if(WDTS_CHANNEL_RX_FW_LOG == channelEntry->channelType)
    {
       channelEntry->numDesc         = mappedChannel->channelConfig->nDescs;
    }

@@ -443,6 +443,19 @@ wpt_uint8 wpalIsFwLoggingEnabled(void)
 }
 
 /*---------------------------------------------------------------------------
+    wpalIsFwLoggingEnabled -  Check if Firmware will send running
+                              logs using DXE
+
+    Param:
+       None
+    Return:
+        Check the documentation of vos_is_fw_logging_enabled
+---------------------------------------------------------------------------*/
+wpt_uint8 wpalIsFwEvLoggingEnabled(void)
+{
+  return vos_is_fw_ev_logging_enabled();
+}
+/*---------------------------------------------------------------------------
     wpalIsFwLoggingSupported -  Check if Firmware supports the fw->host
                                 logging infrastructure
                                 This API can only be called after fw caps

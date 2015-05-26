@@ -108,6 +108,7 @@ static char                   *channelType[WDTS_CHANNEL_MAX] =
       "TX_HIGH_PRI",
       "RX_LOW_PRI",
       "RX_HIGH_PRI",
+      "RX_LOGS",
       "RX_FW_LOGS",
    };
 static  wpt_packet               *rx_reaped_buf[WLANDXE_MAX_REAPED_RX_FRAMES];
@@ -944,7 +945,7 @@ static wpt_status dxeDescAllocAndLink
       }
       else
       {
-         /* Just in case. H2H Test RX channel, do nothing
+         /* Just in case. H2H RX channel, do nothing
           * By Definition this must not happen */
       }
 
@@ -1222,15 +1223,6 @@ static wpt_status dxeChannelInitProgram
    else
    {
       /* H2H test channel, not use work Q */
-      /* Program pre allocated destination Address */
-      status = wpalWriteRegister(channelEntry->channelRegister.chDXEDadrlRegAddr,
-                                      WLANDXE_U32_SWAP_ENDIAN(channelEntry->DescBottomLoc->dxedesc.dxe_short_desc.phyNextL));
-      if(eWLAN_PAL_STATUS_SUCCESS != status)
-      {
-         HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
-                  "dxeChannelInitProgram Write RX DAddress register fail");
-         return status;
-      }
    }
 
    HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO_LOW,
@@ -4045,19 +4037,21 @@ void *WLANDXE_Open
    unsigned int            idx;
    WLANDXE_ChannelCBType  *currentChannel = NULL;
    int                     smsmInitState;
+   wpt_uint8               chanMask = WDTS_TRANSPORT_CHANNELS_MASK;
 
    HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO_LOW,
             "%s Enter", __func__);
 
    if (wpalIsFwLoggingEnabled())
    {
-       dxeSetEnabledChannels(WDTS_TRANSPORT_CHANNELS_MASK |
-                             WDTS_RX_LOG_CHANNEL_MASK);
+      chanMask |= WDTS_RX_LOG_CHANNEL_MASK;
    }
-   else
+
+   if (wpalIsFwEvLoggingEnabled())
    {
-       dxeSetEnabledChannels(WDTS_TRANSPORT_CHANNELS_MASK);
+      chanMask |= WDTS_RX_FW_LOG_CHANNEL_MASK;
    }
+   dxeSetEnabledChannels(chanMask);
 
    /* This is temporary allocation */
    tempDxeCtrlBlk = (WLANDXE_CtrlBlkType *)wpalMemoryAllocate(sizeof(WLANDXE_CtrlBlkType));
@@ -4083,26 +4077,7 @@ void *WLANDXE_Open
       HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_WARN,
                "WLANDXE_Open Channel %s Open Start", channelType[idx]);
       currentChannel = &tempDxeCtrlBlk->dxeChannel[idx];
-      if(idx == WDTS_CHANNEL_TX_LOW_PRI)
-      {
-         currentChannel->channelType = WDTS_CHANNEL_TX_LOW_PRI;
-      }
-      else if(idx == WDTS_CHANNEL_TX_HIGH_PRI)
-      {
-         currentChannel->channelType = WDTS_CHANNEL_TX_HIGH_PRI;
-      }
-      else if(idx == WDTS_CHANNEL_RX_LOW_PRI)
-      {
-         currentChannel->channelType = WDTS_CHANNEL_RX_LOW_PRI;
-      }
-      else if(idx == WDTS_CHANNEL_RX_HIGH_PRI)
-      {
-         currentChannel->channelType = WDTS_CHANNEL_RX_HIGH_PRI;
-      }
-      else if(idx == WDTS_CHANNEL_RX_LOG)
-      {
-         currentChannel->channelType = WDTS_CHANNEL_RX_LOG;
-      }
+      currentChannel->channelType = idx;
 
       /* Config individual channels from channel default setup table */
       status = dxeChannelDefaultConfig(tempDxeCtrlBlk,

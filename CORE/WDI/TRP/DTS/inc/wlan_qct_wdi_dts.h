@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -73,6 +73,7 @@ typedef enum
    WDTS_CHANNEL_RX_LOW_PRI,
    WDTS_CHANNEL_RX_HIGH_PRI,
    WDTS_CHANNEL_RX_LOG,
+   WDTS_CHANNEL_RX_FW_LOG,
    WDTS_CHANNEL_MAX
 }  WDTS_ChannelType;
 
@@ -81,6 +82,7 @@ typedef enum
          | 1<<WDTS_CHANNEL_RX_LOW_PRI | 1<<WDTS_CHANNEL_RX_HIGH_PRI)
 
 #define WDTS_RX_LOG_CHANNEL_MASK (1<<WDTS_CHANNEL_RX_LOG)
+#define WDTS_RX_FW_LOG_CHANNEL_MASK (1<<WDTS_CHANNEL_RX_FW_LOG)
 
 typedef enum
 {

@@ -1638,4 +1638,5 @@ VOS_STATUS wlan_hdd_handle_dfs_chan_scan(hdd_context_t *pHddCtx,
                                    tANI_U8 dfsScanMode);
 
 v_U8_t hdd_is_fw_logging_enabled(void);
+v_U8_t hdd_is_fw_ev_logging_enabled(void);
 #endif    // end #if !defined( WLAN_HDD_MAIN_H )
