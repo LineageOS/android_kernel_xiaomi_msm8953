@@ -3331,6 +3331,13 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                   CFG_MULTICAST_HOST_FW_MSGS_MIN,
                   CFG_MULTICAST_HOST_FW_MSGS_MAX),
 
+   REG_VARIABLE( CFG_TOGGLE_ARP_BDRATES_NAME, WLAN_PARAM_Integer,
+                 hdd_config_t, toggleArpBDRates,
+                 VAR_FLAGS_OPTIONAL |
+                 VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_TOGGLE_ARP_BDRATES_DEFAULT,
+                 CFG_TOGGLE_ARP_BDRATES_MIN,
+                 CFG_TOGGLE_ARP_BDRATES_MAX),
 };
 
 /*
@@ -3747,6 +3754,7 @@ static void print_hdd_cfg(hdd_context_t *pHddCtx)
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [gEnableTDLSScan] value = [%u]\n",pHddCtx->cfg_ini->fEnableTDLSScan);
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [gDxeReplenishRXTimerVal] Value = [%u] ", pHddCtx->cfg_ini->dxeReplenishRXTimerVal);
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [gDxeSSREnable] Value = [%u] ", pHddCtx->cfg_ini->dxeSSREnable);
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [toggleArpBDRates] Value = [%u] ", pHddCtx->cfg_ini->toggleArpBDRates);
 }
 
 
@@ -5258,6 +5266,15 @@ v_BOOL_t hdd_update_config_dat( hdd_context_t *pHddCtx )
        fStatus = FALSE;
        hddLog(LOGE, "Could not pass on"
                "WNI_CFG_ENABLE_RTSCTS_HTVHT to CCM");
+   }
+
+   if (ccmCfgSetInt(pHddCtx->hHal, WNI_CFG_TOGGLE_ARP_BDRATES,
+               pConfig->toggleArpBDRates,
+               NULL, eANI_BOOLEAN_FALSE) == eHAL_STATUS_FAILURE)
+   {
+       fStatus = FALSE;
+       hddLog(LOGE, "Could not pass on"
+               "WNI_CFG_TOGGLE_ARP_BDRATES to CCM");
    }
    return fStatus;
 }

@@ -138,6 +138,7 @@
 #include "vos_trace.h"
 #include "wlan_qct_tl_trace.h"
 #include "tlDebug.h"
+#include "cfgApi.h"
 #ifdef FEATURE_WLAN_WAPI
 /*Included to access WDI_RxBdType */
 #include "wlan_qct_wdi_bd.h"
@@ -1150,6 +1151,8 @@ WLANTL_RegisterSTAClient
   WLANTL_CbType*  pTLCb = NULL;
   WLANTL_STAClientType* pClientSTA = NULL;
   v_U8_t    ucTid = 0;/*Local variable to clear previous replay counters of STA on all TIDs*/
+  v_U32_t   istoggleArpEnb = 0;
+  tpAniSirGlobal pMac;
   /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
   /*------------------------------------------------------------------------
@@ -1233,10 +1236,17 @@ WLANTL_RegisterSTAClient
   pClientSTA->wSTADesc.ucSTAId  = pwSTADescType->ucSTAId;
   pClientSTA->ptkInstalled = 0;
 
+  pMac = vos_get_context(VOS_MODULE_ID_PE, pvosGCtx);
+  if ( NULL != pMac )
+  {
+    wlan_cfgGetInt(pMac, WNI_CFG_TOGGLE_ARP_BDRATES, &istoggleArpEnb);
+  }
+  pClientSTA->arpRate = (v_U8_t)istoggleArpEnb;
+
   TLLOG2(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO_HIGH,
-             "WLAN TL:Registering STA Client ID: %d with UC %d and BC %d", 
-             pwSTADescType->ucSTAId, 
-              pwSTADescType->ucUcastSig, pwSTADescType->ucBcastSig));
+   "WLAN TL:Registering STA Client ID: %d with UC %d and BC %d toggleArp :%hhu",
+    pwSTADescType->ucSTAId, pwSTADescType->ucUcastSig,
+    pwSTADescType->ucBcastSig, pClientSTA->arpRate));
 
   pClientSTA->wSTADesc.wSTAType = pwSTADescType->wSTAType;
 
@@ -7995,8 +8005,17 @@ WLANTL_STATxAuth
 #endif /* FEATURE_WLAN_TDLS */
   if( tlMetaInfo.ucIsArp )
   {
-    /*Send ARP at lowest Phy rate and through WQ5 */
-    ucTxFlag |= HAL_USE_BD_RATE_MASK;
+    if (pStaClient->arpRate == 0)
+    {
+        ucTxFlag |= HAL_USE_BD_RATE_1_MASK;
+    }
+    else if (pStaClient->arpRate == 1 || pStaClient->arpRate == 3)
+    {
+        pStaClient->arpRate ^= 0x2;
+        ucTxFlag |= HAL_USE_BD_RATE_1_MASK<<(pStaClient->arpRate-1);
+    }
+    TLLOG2(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO,
+           "arp pkt sending on BD rate: %hhu", pStaClient->arpRate));
   }
 
   vosStatus = (VOS_STATUS)WDA_DS_BuildTxPacketInfo( pvosGCtx, 
