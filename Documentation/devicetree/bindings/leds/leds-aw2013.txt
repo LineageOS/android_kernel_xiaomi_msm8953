@@ -11,6 +11,13 @@ Required properties:
  - vdd-supply		: Power supply needed to power up the device
  - vcc-supply		: Power source required to power up i2c bus
 
+Optional properties:
+ - pinctrl-names	: default, suspend pincontrol names, should be
+			  "aw2013_led_default", "aw2013_led_suspend" if
+			  necessary.
+ - pinctrl-0/1		: pincontrol entry reference for default,
+			  suspended states.
+
 LED required sub-node properties:
  - aw2013,name		: name of the LED
  - aw2013,id		: id of the LED
@@ -39,6 +46,9 @@ Example:
 		reg = <0x45>;
 		vdd-supply = <&pm8909_l17>;
 		vcc-supply = <&pm8909_l6>;
+		pinctrl-names = "aw2013_led_default", "aw2013_led_suspend";
+		pinctrl-0 = <&red_led_default &green_led_default &blue_led_default>;
+		pinctrl-1 = <&red_led_default &green_led_default &blue_led_default>;
 
 		aw2013,red {
 			aw2013,name = "red";
