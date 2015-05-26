@@ -182,11 +182,7 @@ static v_VOID_t wlan_hdd_tdls_start_peer_discover_timer(tdlsCtx_t *pHddTdlsCtx,
     }
 
     pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pHddTdlsCtx->pAdapter);
-#ifdef FEATURE_WLAN_TDLS_INTERNAL
-    wlan_hdd_tdls_timer_restart(pHddTdlsCtx->pAdapter,
-                                &pHddTdlsCtx->peerDiscoverTimer,
-                                discoveryExpiry);
-#endif
+
     VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO, "beacon rssi: %d",
                pHddTdlsCtx->ap_rssi);
 
@@ -2156,11 +2152,6 @@ void wlan_hdd_tdls_connection_callback(hdd_adapter_t *pAdapter)
        pHddTdlsCtx->discovery_sent_cnt = 0;
        wlan_hdd_tdls_check_power_save_prohibited(pHddTdlsCtx->pAdapter);
 
-#ifdef FEATURE_WLAN_TDLS_INTERNAL
-       wlan_hdd_tdls_timer_restart(pHddTdlsCtx->pAdapter,
-                                   &pHddTdlsCtx->peerDiscoverTimer,
-                                   pHddTdlsCtx->threshold_config.discovery_period_t);
-#endif
        wlan_hdd_tdls_timer_restart(pHddTdlsCtx->pAdapter,
                                    &pHddTdlsCtx->peerUpdateTimer,
                                    pHddTdlsCtx->threshold_config.tx_period_t);
@@ -2420,11 +2411,6 @@ static void wlan_hdd_tdls_implicit_enable(tdlsCtx_t *pHddTdlsCtx)
     wlan_hdd_tdls_check_power_save_prohibited(pHddTdlsCtx->pAdapter);
 
 
-#ifdef FEATURE_WLAN_TDLS_INTERNAL
-    wlan_hdd_tdls_timer_restart(pHddTdlsCtx->pAdapter,
-                                &pHddTdlsCtx->peerDiscoverTimer,
-                                pHddTdlsCtx->threshold_config.discovery_period_t);
-#endif
     wlan_hdd_tdls_timer_restart(pHddTdlsCtx->pAdapter,
                                 &pHddTdlsCtx->peerUpdateTimer,
                                 pHddTdlsCtx->threshold_config.tx_period_t);

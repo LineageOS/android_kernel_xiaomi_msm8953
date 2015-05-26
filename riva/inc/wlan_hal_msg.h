@@ -528,6 +528,14 @@ typedef enum
    WLAN_HAL_GET_FRAME_LOG_REQ               = 300,
    WLAN_HAL_GET_FRAME_LOG_RSP               = 301,
 
+   /* Monitor Mode */
+   WLAN_HAL_ENABLE_MONITOR_MODE_REQ         = 302,
+   WLAN_HAL_ENABLE_MONITOR_MODE_RSP         = 303,
+
+   WLAN_HAL_DISABLE_MONITOR_MODE_REQ        = 304,
+   WLAN_HAL_DISABLE_MONITOR_MODE_RSP        = 305,
+   WLAN_HAL_SET_RTS_CTS_HTVHT_IND           = 306,
+
    WLAN_HAL_MSG_MAX = WLAN_HAL_MSG_TYPE_MAX_ENUM_SIZE
 }tHalHostMsgType;
 
@@ -3189,6 +3197,20 @@ typedef PACKED_PRE struct PACKED_POST
    tHalMsgHeader  header;
    tHalStatsRspParams statsRspParams;
 } tHalStatsRspMsg, *tpHalStatsRspMsg;
+
+ /*---------------------------------------------------------------------------
+ * WLAN_HAL_SET_RTS_CTS_HTVHT_IND
+ *---------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U32 rtsCtsValue;
+}tHalRtsCtsHtvhtIndParams, *tpHalRtsCtsHtvhtIndParams;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader        header;
+   tHalRtsCtsHtvhtIndParams   rtsCtsHtvhtIndParams;
+} tHalRtsCtsHtvhtIndMsg, *tpHalRtsCtsHtvhtIndMsg;
 
 /*---------------------------------------------------------------------------
  * WLAN_HAL_FW_STATS_REQ

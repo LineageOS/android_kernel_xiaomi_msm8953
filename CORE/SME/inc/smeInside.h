@@ -161,23 +161,6 @@ typedef struct TdlsChanSwitchInfo
   tANI_U8 tdlsSwMode;
 } tTdlsChanSwitchCmdInfo;
 
-#ifdef FEATURE_WLAN_TDLS_INTERNAL
-typedef struct TdlsDisReqCmdinfo
-{
-      tSirMacAddr peerMac;
-          tANI_U8 tdlsDisType;
-} tTdlsDisReqCmdinfo;
-
-typedef struct tdlsLinkSetupReqCmdinfo
-{
-      tSirMacAddr peerMac;
-} tTdlsLinkSetupReqCmdinfo;
-
-typedef struct tdlsLinkTeardownCmdinfo
-{
-      tSirMacAddr peerMac;
-} tTdlsLinkTeardownCmdinfo;
-#endif
 /*
  * TDLS cmd info, CMD from SME to PE.
  */
@@ -186,13 +169,6 @@ typedef struct s_tdls_cmd
   tANI_U32 size;
   union
   {
-#ifdef FEATURE_WLAN_TDLS_INTERNAL
-    tTdlsDisReqCmdinfo tdlsDisReqCmdInfo ;
-    tTdlsLinkSetupReqCmdinfo tdlsLinkSetupReqCmdInfo ;
-    tTdlsLinkTeardownCmdinfo tdlsLinkTeardownCmdInfo ;
-    //tEnterPeerUAPSDInfo enterUapsdInfo ;
-    //tExitPeerUAPSDinfo  exitUapsdInfo ;
-#endif
     tTdlsLinkEstablishCmdInfo tdlsLinkEstablishCmdInfo;
     tTdlsSendMgmtCmdInfo tdlsSendMgmtCmdInfo;
     tTdlsAddStaCmdInfo   tdlsAddStaCmdInfo;
@@ -339,14 +315,6 @@ VOS_STATUS csrTdlsSendChanSwitchReq(tHalHandle hHal,
                                     tANI_S32 tdlsOffCh,
                                     tANI_S32 tdlsOffChBwOffset,
                                     tANI_U8 tdlsSwMode);
-#ifdef FEATURE_WLAN_TDLS_INTERNAL
-eHalStatus csrTdlsDiscoveryReq(tHalHandle hHal, tANI_U8 sessionId,
-                                          tCsrTdlsDisRequest *tdlsDisReq);
-eHalStatus csrTdlsSetupReq(tHalHandle hHal, tANI_U8 sessionId,
-                                         tCsrTdlsSetupRequest *tdlsSetupReq);
-eHalStatus csrTdlsTeardownReq(tHalHandle hHal, tANI_U8 sessionId,
-                                         tCsrTdlsTeardownRequest *teardown);
-#endif
 #endif /* FEATURE_WLAN_TDLS */
 
 #if  defined (WLAN_FEATURE_VOWIFI_11R) || defined (FEATURE_WLAN_ESE) || defined(FEATURE_WLAN_LFR)
