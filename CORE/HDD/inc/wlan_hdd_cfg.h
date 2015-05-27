@@ -2334,6 +2334,31 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_ENABLE_BMUHW_TRACING_MAX                     (1)
 #define CFG_ENABLE_BMUHW_TRACING_DEFAULT                 (1)
 
+#define CFG_ENABLE_FW_LOGGING                            "gEnableFWLogging"
+#define CFG_ENABLE_FW_LOGGING_MIN                        (0)
+#define CFG_ENABLE_FW_LOGGING_MAX                        (1)
+#define CFG_ENABLE_FW_LOGGING_DEFAULT                    (0)
+
+// firmware will wakeup the host to send logs always
+#define CFG_ENABLE_FW_CONTINIOUS_LOGGING                 "gEnableContFWLogging"
+#define CFG_ENABLE_FW_CONTINIOUS_LOGGING_MIN             (0)
+#define CFG_ENABLE_FW_CONTINIOUS_LOGGING_MAX             (1)
+#define CFG_ENABLE_FW_CONTINIOUS_LOGGING_DEFAULT         (0)
+
+/* when firmware log reaches this threshold and
+ * if host is awake it will push the logs.
+ */
+#define CFG_MIN_LOGGING_BUFFER_SIZE                      "gMinLoggingBufferSize"
+#define CFG_MIN_LOGGING_BUFFER_SIZE_MIN                  (0)
+#define CFG_MIN_LOGGING_BUFFER_SIZE_MAX                  (6)
+#define CFG_MIN_LOGGING_BUFFER_SIZE_DEFAULT              (1)
+
+// Max ring size in firmware to log msgs when host is suspended state
+#define CFG_MAX_LOGGING_BUFFER_SIZE                      "gMaxLoggingBufferSize"
+#define CFG_MAX_LOGGING_BUFFER_SIZE_MIN                  (0)
+#define CFG_MAX_LOGGING_BUFFER_SIZE_MAX                  (6)
+#define CFG_MAX_LOGGING_BUFFER_SIZE_DEFAULT              (6)
+
 #define CFG_ENABLE_CH_AVOID                                  "gEnableChannelAvoidance"
 #define CFG_ENABLE_CH_AVOID_MIN                              ( 0 )
 #define CFG_ENABLE_CH_AVOID_MAX                              ( 1 )
@@ -2926,6 +2951,10 @@ typedef struct
    v_BOOL_t                    enableMacSpoofing;
    v_BOOL_t                    enableMgmtLogging;
    v_BOOL_t                    enableBMUHWtracing;
+   v_BOOL_t                    enableFWLogging;
+   v_BOOL_t                    enableContFWLogging;
+   v_U8_t                      minLoggingBufferSize;
+   v_U8_t                      maxLoggingBufferSize;
    v_BOOL_t                    fenableCHAvoidance;
    v_U8_t                      gMaxConcurrentActiveSessions;
 

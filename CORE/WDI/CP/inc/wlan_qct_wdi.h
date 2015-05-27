@@ -152,6 +152,7 @@ of NV fragment is nt possbile.The next multiple of 1Kb is 3K */
 #define PERIODIC_TX_PTRN_MAX_SIZE 1536
 #define MAXNUM_PERIODIC_TX_PTRNS 6
 #define WDI_DISA_MAX_PAYLOAD_SIZE                1600
+#define MAX_NUM_OF_BUFFER 3
 
 /*============================================================================
  *     GENERIC STRUCTURES 
@@ -2675,14 +2676,22 @@ typedef struct
   wpt_uint32   wdiStatus;
 }WDI_GetFrameLogRspParamType;
 /*---------------------------------------------------------------------------
-  WDI_MgmtLoggingRspParamType
+  WDI_FWLoggingInitRspParamType
 ---------------------------------------------------------------------------*/
 typedef struct
 {
-  /* wdi status */
-  wpt_uint32   wdiStatus;
-
-}WDI_MgmtLoggingRspParamType;
+  //FW mail box address
+  wpt_uint64 logMailBoxAddr;
+  wpt_uint32 status;
+  //Logging mail box version
+  wpt_uint8 logMailBoxVer;
+  //Qshrink is enabled
+  wpt_boolean logCompressEnabled;
+  //Reserved for future purpose
+  wpt_uint32 reserved0;
+  wpt_uint32 reserved1;
+  wpt_uint32 reserved2;
+}WDI_FWLoggingInitRspParamType;
 /*---------------------------------------------------------------------------
   WDI_AddBAReqinfoType
 ---------------------------------------------------------------------------*/
@@ -4061,12 +4070,22 @@ typedef struct
    wpt_uint8 frameType;
    wpt_uint8 frameSize;
    wpt_uint8 bufferMode;
-}WDI_MgmtLoggingInitReqInfoType;
+   wpt_uint8 continuousFrameLogging;
+   wpt_uint8 minLogBufferSize;
+   wpt_uint8 maxLogBufferSize;
+}WDI_FWLoggingInitReqInfoType;
 
 typedef struct
 {
    wpt_uint8 flags;
 }WDI_GetFrameLogReqInfoType;
+
+typedef struct
+{
+   wpt_uint64 logBuffAddress[MAX_NUM_OF_BUFFER];
+   wpt_uint32 status;
+   wpt_uint32 logBuffLength[MAX_NUM_OF_BUFFER];
+}WDI_FWLoggingDXEdoneIndInfoType;
 
 /*---------------------------------------------------------------------------
   WDI_BeaconFilterInfoType
@@ -8002,8 +8021,8 @@ typedef void  (*WDI_FWStatsGetRspCb)(WDI_Status status,void *fwStatsResp,
                                          void *pUserData);
 
 typedef void  (*WDI_EncryptMsgRspCb)(wpt_uint8 status, void *pEventData, void* pUserData);
-typedef void  (*WDI_MgmtLoggingInitRspCb)(
-                         WDI_MgmtLoggingRspParamType *wdiRsp, void *pUserData);
+typedef void  (*WDI_FWLoggingInitRspCb)(
+                        WDI_FWLoggingInitRspParamType *wdiRsp, void *pUserData);
 typedef void  (*WDI_GetFrameLogRspCb)(
                         WDI_GetFrameLogRspParamType *wdiRsp, void *pUserData);
 
@@ -9469,7 +9488,7 @@ WDI_GetFrameLogReq
 );
 
 /**
- @brief WDI_MgmtLoggingInitReq will be called when the upper
+ @brief WDI_FWLoggingInitReq will be called when the upper
         MAC wants to initialize frame logging. Upon the call of
         this API the WLAN DAL will pack and send a HAL
         Frame logging init request message to
@@ -9479,10 +9498,10 @@ WDI_GetFrameLogReq
         be allowed in any other state.
 
 
- @param pwdiMgmtLoggingInitReqParams: the Frame Logging params
+ @param pwdiFWLoggingInitReqParams: the Frame Logging params
                       as specified by the Device Interface
 
-        wdiMgmtLoggingInitReqCb: callback for passing back the
+        wdiFWLoggingInitReqCb: callback for passing back the
         response of the frame logging init operation received
         from the device
 
@@ -9492,10 +9511,10 @@ WDI_GetFrameLogReq
  @return Result of the function call
 */
 WDI_Status
-WDI_MgmtLoggingInitReq
+WDI_FWLoggingInitReq
 (
-   WDI_MgmtLoggingInitReqInfoType      *pwdiMgmtLoggingInitReqInfo,
-   WDI_MgmtLoggingInitRspCb             wdiMgmtLoggingInitReqCb,
+   WDI_FWLoggingInitReqInfoType      *pwdiFWLoggingInitReqInfo,
+   WDI_FWLoggingInitRspCb             wdiFWLoggingInitReqCb,
    void*                                pUserData
 );
 

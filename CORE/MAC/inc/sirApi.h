@@ -3721,8 +3721,7 @@ typedef struct sSirWlanSetRxpFilters
     tANI_U8 setMcstBcstFilter;
 }tSirWlanSetRxpFilters,*tpSirWlanSetRxpFilters;
 
-typedef void(*MgmtLoggingInitReqCb)(void *mgmtlogInitCbContext,
-                                                       VOS_STATUS status);
+typedef void(*FWLoggingInitReqCb)(void *fwlogInitCbContext, VOS_STATUS status);
 typedef void ( *tGetFrameLogCallback) (void *pContext);
 
 typedef struct sAniGetFrameLogReq
@@ -3736,15 +3735,18 @@ typedef struct sAniGetFrameLogReq
 } tAniGetFrameLogReq,      *tpAniGetFrameLogReq;
 
 
-typedef struct sSirMgmtLoggingInitParam
+typedef struct sSirFWLoggingInitParam
 {
     tANI_U8                enableFlag;
     tANI_U8                frameType;
     tANI_U8                frameSize;
     tANI_U8                bufferMode;
-    MgmtLoggingInitReqCb   mgmtlogInitCallback;
-    void                   *mgmtlogInitCbContext;
-}tSirMgmtLoggingInitParam,*tpSirMgmtLoggingInitParam;
+    tANI_U8                continuousFrameLogging;
+    tANI_U8                minLogBufferSize;
+    tANI_U8                maxLogBufferSize;
+    FWLoggingInitReqCb     fwlogInitCallback;
+    void                   *fwlogInitCbContext;
+}tSirFWLoggingInitParam,*tpSirFWLoggingInitParam;
 
 #ifdef FEATURE_WLAN_SCAN_PNO
 //

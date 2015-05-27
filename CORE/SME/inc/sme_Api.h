@@ -2180,12 +2180,12 @@ eHalStatus sme_GetFramesLog(tHalHandle hHal,
 
     hHal - The handle returned by macOpen.
 
-    wlanMgmtLoggingInitParam - Params to initialize frame logging
+    wlanFWLoggingInitParam - Params to initialize frame logging
 
   \return eHalStatus
 --------------------------------------------------------------------------- */
 eHalStatus sme_InitMgmtFrameLogging( tHalHandle hHal,
-                            tpSirMgmtLoggingInitParam wlanMgmtLoggingInitParam);
+                            tpSirFWLoggingInitParam wlanFWLoggingInitParam);
 
 /* ---------------------------------------------------------------------------
 

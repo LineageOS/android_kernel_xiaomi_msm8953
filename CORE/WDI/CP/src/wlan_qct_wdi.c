@@ -203,6 +203,7 @@ static placeHolderInCapBitmap supportEnabledFeatures[] =
    ,FEATURE_NOT_SUPPORTED          //52
    ,MGMT_FRAME_LOGGING             //53
    ,ENHANCED_TXBD_COMPLETION       //54
+   ,LOGGING_ENHANCEMENT            //55
 };
 
 /*-------------------------------------------------------------------------- 
@@ -471,7 +472,7 @@ WDI_ReqProcFuncType  pfnReqProcTbl[WDI_MAX_UMAC_IND] =
 
   WDI_ProcessEncryptMsgReq,         /* WDI_ENCRYPT_MSG_REQ*/
 
-  WDI_ProcessMgmtLoggingInitReq,        /* WDI_MGMT_LOGGING_INIT_REQ*/
+  WDI_ProcessFWLoggingInitReq,          /* WDI_FW_LOGGING_INIT_REQ*/
   WDI_ProcessGetFrameLogReq,            /* WDI_GET_FRAME_LOG_REQ*/
 
   WDI_ProcessNanRequest,            /* WDI_NAN_REQUEST*/
@@ -511,7 +512,7 @@ WDI_ReqProcFuncType  pfnReqProcTbl[WDI_MAX_UMAC_IND] =
   NULL,
 #endif
   WDI_ProcessSetRtsCtsHtvhtInd,       /* WDI_SET_RTS_CTS_HTVHT_IND */
-
+  WDI_ProcessFWLoggingDXEdoneInd,       /* WDI_FW_LOGGING_DXE_DONE_IND */
 };
 
 
@@ -742,7 +743,7 @@ WDI_RspProcFuncType  pfnRspProcTbl[WDI_MAX_RESP] =
     WDI_ProcessGetFwStatsRsp,                     /*WDI_GET_FW_STATS_RSP*/
 
     WDI_ProcessEncryptMsgRsp,                  /* WDI_ENCRYPT_MSG_RSP*/
-    WDI_ProcessMgmtFrameLoggingInitRsp,        /* WDI_MGMT_LOGGING_INIT_RSP*/
+    WDI_ProcessFWFrameLoggingInitRsp,          /* WDI_FW_LOGGING_INIT_RSP*/
     WDI_ProcessGetFrameLogRsp,                 /* WDI_GET_FRAME_LOG_RSP*/
 
     WDI_ProcessNanResponse,                    /* WDI_NAN_RESPONSE */
@@ -1170,7 +1171,7 @@ static char *WDI_getReqMsgString(wpt_uint16 wdiReqMsgId)
     CASE_RETURN_STRING( WDI_SPOOF_MAC_ADDR_REQ);
     CASE_RETURN_STRING( WDI_GET_FW_STATS_REQ);
     CASE_RETURN_STRING( WDI_ENCRYPT_MSG_REQ);
-    CASE_RETURN_STRING( WDI_MGMT_LOGGING_INIT_REQ);
+    CASE_RETURN_STRING( WDI_FW_LOGGING_INIT_REQ);
     CASE_RETURN_STRING( WDI_GET_FRAME_LOG_REQ);
     CASE_RETURN_STRING( WDI_NAN_REQUEST );
     CASE_RETURN_STRING( WDI_SET_RTS_CTS_HTVHT_IND );
@@ -1309,7 +1310,7 @@ static char *WDI_getRespMsgString(wpt_uint16 wdiRespMsgId)
 #endif /* WLAN_FEATURE_EXTSCAN */
     CASE_RETURN_STRING( WDI_GET_FW_STATS_RSP);
     CASE_RETURN_STRING( WDI_ENCRYPT_MSG_RSP);
-    CASE_RETURN_STRING( WDI_MGMT_LOGGING_INIT_RSP);
+    CASE_RETURN_STRING( WDI_FW_LOGGING_INIT_RSP);
     CASE_RETURN_STRING( WDI_GET_FRAME_LOG_RSP);
     default:
         return "Unknown WDI MessageId";
@@ -1473,6 +1474,10 @@ void WDI_TraceHostFWCapabilities(tANI_U32 *capabilityBitmap)
                      case TDLS_OFF_CHANNEL: snprintf(pCapStr, sizeof("TDLS_OFF_CHANNEL"), "%s", "TDLS_OFF_CHANNEL");
                           pCapStr += strlen("TDLS_OFF_CHANNEL");
                           break;
+                     case LOGGING_ENHANCEMENT: snprintf(pCapStr, sizeof("LOGGING_ENHANCEMENT"), "%s", "LOGGING_ENHANCEMENT");
+                          pCapStr += strlen("LOGGING_ENHANCEMENT");
+                          break;
+
 
                  }
                  *pCapStr++ = ',';
@@ -4219,6 +4224,52 @@ WDI_SetUapsdAcParamsReq
 }/*WDI_SetUapsdAcParamsReq*/
 
 /**
+ @brief WDI_FWLoggingDXEdoneInd
+
+        FW Logging DXE done Indication from the upper layer will be sent
+        down to HAL
+
+ @param WDI_FWLoggingDXEdoneIndInfoType
+
+ @see
+
+ @return Status of the request
+*/
+WDI_Status
+WDI_FWLoggingDXEdoneInd
+(
+  WDI_FWLoggingDXEdoneIndInfoType*    pwdiFWLoggingDXEdoneInd
+)
+{
+
+  WDI_EventInfoType      wdiEventData;
+  /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+  /*------------------------------------------------------------------------
+    Sanity Check
+  ------------------------------------------------------------------------*/
+  if ( eWLAN_PAL_FALSE == gWDIInitialized )
+  {
+    WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+              "WDI API call before module is initialized - Fail request");
+
+    return WDI_STATUS_E_NOT_ALLOWED;
+  }
+
+  /*------------------------------------------------------------------------
+    Fill in Event data and post to the Main FSM
+  ------------------------------------------------------------------------*/
+  wdiEventData.wdiRequest      = WDI_FW_LOGGING_DXE_DONE_IND;
+  wdiEventData.pEventData      = pwdiFWLoggingDXEdoneInd;
+  wdiEventData.uEventDataSize  = sizeof(*pwdiFWLoggingDXEdoneInd);
+  wdiEventData.pCBfnc          = NULL;
+  wdiEventData.pUserData       = NULL;
+
+  return WDI_PostMainEvent(&gWDICb, WDI_REQUEST_EVENT, &wdiEventData);
+
+}/*WDI_FWLoggingDXEdoneInd*/
+
+/**
  @brief WDI_GetFrameLogReq will be called when the upper
         MAC wants to initialize frame logging. Upon the call of
         this API the WLAN DAL will pack and send a HAL
@@ -4275,7 +4326,7 @@ WDI_GetFrameLogReq
    return WDI_PostMainEvent(&gWDICb, WDI_REQUEST_EVENT, &wdiEventData);
 }
 /**
- @brief WDI_MgmtLoggingInitReq will be called when the upper
+ @brief WDI_FWLoggingInitReq will be called when the upper
         MAC wants to initialize frame logging. Upon the call of
         this API the WLAN DAL will pack and send a HAL
         Frame logging init request message to
@@ -4285,10 +4336,10 @@ WDI_GetFrameLogReq
         be allowed in any other state.
 
 
- @param pwdiMgmtLoggingInitReqParams: the Frame Logging params
+ @param pwdiFWLoggingInitReqParams: the Frame Logging params
                       as specified by the Device Interface
 
-        wdiMgmtLoggingInitReqCb: callback for passing back the
+        wdiFWLoggingInitReqCb: callback for passing back the
         response of the frame logging init operation received
         from the device
 
@@ -4298,10 +4349,10 @@ WDI_GetFrameLogReq
  @return Result of the function call
 */
 WDI_Status
-WDI_MgmtLoggingInitReq
+WDI_FWLoggingInitReq
 (
-   WDI_MgmtLoggingInitReqInfoType      *pwdiMgmtLoggingInitReqInfo,
-   WDI_MgmtLoggingInitRspCb             wdiMgmtLoggingInitRspCb,
+   WDI_FWLoggingInitReqInfoType         *pwdiFWLoggingInitReqInfo,
+   WDI_FWLoggingInitRspCb               wdiFWLoggingInitRspCb,
    void*                                pUserData
 )
 {
@@ -4321,10 +4372,10 @@ WDI_MgmtLoggingInitReq
    /*------------------------------------------------------------------------
      Fill in Event data and post to the Main FSM
    ------------------------------------------------------------------------*/
-   wdiEventData.wdiRequest      = WDI_MGMT_LOGGING_INIT_REQ;
-   wdiEventData.pEventData      = pwdiMgmtLoggingInitReqInfo;
-   wdiEventData.uEventDataSize  = sizeof(*pwdiMgmtLoggingInitReqInfo);
-   wdiEventData.pCBfnc          = wdiMgmtLoggingInitRspCb;
+   wdiEventData.wdiRequest      = WDI_FW_LOGGING_INIT_REQ;
+   wdiEventData.pEventData      = pwdiFWLoggingInitReqInfo;
+   wdiEventData.uEventDataSize  = sizeof(*pwdiFWLoggingInitReqInfo);
+   wdiEventData.pCBfnc          = wdiFWLoggingInitRspCb;
    wdiEventData.pUserData       = pUserData;
 
    return WDI_PostMainEvent(&gWDICb, WDI_REQUEST_EVENT, &wdiEventData);
@@ -24134,8 +24185,8 @@ WDI_2_HAL_REQ_TYPE
        return WLAN_HAL_FW_STATS_REQ;
   case WDI_ENCRYPT_MSG_REQ:
        return WLAN_HAL_ENCRYPT_DATA_REQ;
-  case WDI_MGMT_LOGGING_INIT_REQ:
-       return WLAN_HAL_MGMT_LOGGING_INIT_REQ;
+  case WDI_FW_LOGGING_INIT_REQ:
+       return WLAN_HAL_FW_LOGGING_INIT_REQ;
   case WDI_GET_FRAME_LOG_REQ:
        return WLAN_HAL_GET_FRAME_LOG_REQ;
   case WDI_NAN_REQUEST:
@@ -24146,6 +24197,8 @@ WDI_2_HAL_REQ_TYPE
        return WLAN_HAL_ENABLE_MONITOR_MODE_REQ;
   case WDI_MON_STOP_REQ:
        return WLAN_HAL_DISABLE_MONITOR_MODE_REQ;
+  case WDI_FW_LOGGING_DXE_DONE_IND:
+       return WLAN_HAL_FW_LOGGING_DXE_DONE_IND;
   default:
     return WLAN_HAL_MSG_MAX;
   }
@@ -24463,8 +24516,8 @@ case WLAN_HAL_DEL_STA_SELF_RSP:
        return WDI_GET_FW_STATS_RSP;
   case WLAN_HAL_ENCRYPT_DATA_RSP:
        return WDI_ENCRYPT_MSG_RSP;
-  case WLAN_HAL_MGMT_LOGGING_INIT_RSP:
-       return WDI_MGMT_LOGGING_INIT_RSP;
+  case WLAN_HAL_FW_LOGGING_INIT_RSP:
+       return WDI_FW_LOGGING_INIT_RSP;
   case WLAN_HAL_GET_FRAME_LOG_RSP:
        return WDI_GET_FRAME_LOG_RSP;
   case WLAN_HAL_NAN_RSP:
@@ -34295,7 +34348,7 @@ WDI_ProcessGetFrameLogRsp
   return WDI_STATUS_SUCCESS;
 }
 /**
- @brief Process MgmtLoggingInit Request
+ @brief Process FWLoggingInit Request
 
  @param  pWDICtx:         pointer to the WLAN DAL context
          pEventData:      pointer to the event information structure
@@ -34316,7 +34369,7 @@ WDI_ProcessGetFrameLogReq
     wpt_uint16                     usSendSize   = 0;
     WDI_Status                     wdiStatus;
     tGetFrameLogReqMsg             halGetFrameLogReq;
-    WDI_MgmtLoggingInitRspCb       wdiGetFrameLogRspCb;
+    WDI_FWLoggingInitRspCb         wdiGetFrameLogRspCb;
 
 
     VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
@@ -34355,7 +34408,7 @@ WDI_ProcessGetFrameLogReq
     halGetFrameLogReq.tGetFrameLogReqParams.flags =
                        wdiGetFrameLogReq->flags;
 
-    wdiGetFrameLogRspCb = (WDI_MgmtLoggingInitRspCb)pEventData->pCBfnc;
+    wdiGetFrameLogRspCb = (WDI_FWLoggingInitRspCb)pEventData->pCBfnc;
 
     wpalMemoryCopy( pSendBuffer+usDataOffset,
                                     &halGetFrameLogReq.tGetFrameLogReqParams,
@@ -34380,15 +34433,15 @@ WDI_ProcessGetFrameLogReq
  @return Result of the function call
 */
 WDI_Status
-WDI_ProcessMgmtFrameLoggingInitRsp
+WDI_ProcessFWFrameLoggingInitRsp
 (
   WDI_ControlBlockType*  pWDICtx,
   WDI_EventInfoType*     pEventData
 )
 {
-  tMgmtLoggingInitResp          halRsp;
-  WDI_MgmtLoggingInitRspCb      wdiMgmtFrameLoggingInitRspCb;
-  WDI_MgmtLoggingRspParamType   wdiMgmtFrameLoggingRsp;
+  tFWLoggingInitResp              halRsp;
+  WDI_FWLoggingInitRspCb          wdiFWFrameLoggingInitRspCb;
+  WDI_FWLoggingInitRspParamType   wdiFWLogginginitRsp;
 
   VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
                   "%s: %d Enter",__func__, __LINE__);
@@ -34404,24 +34457,91 @@ WDI_ProcessMgmtFrameLoggingInitRsp
      WDI_ASSERT(0);
      return WDI_STATUS_E_FAILURE;
   }
-  wdiMgmtFrameLoggingInitRspCb = (WDI_MgmtLoggingInitRspCb)pWDICtx->pfncRspCB;
+  wdiFWFrameLoggingInitRspCb = (WDI_FWLoggingInitRspCb)pWDICtx->pfncRspCB;
 
   /*-------------------------------------------------------------------------
     Extract response and send it to UMAC
   -------------------------------------------------------------------------*/
   wpalMemoryCopy( &halRsp, pEventData->pEventData, sizeof(halRsp));
 
-  wdiMgmtFrameLoggingRsp.wdiStatus = WDI_HAL_2_WDI_STATUS(halRsp.status);
+  wdiFWLogginginitRsp.status = WDI_HAL_2_WDI_STATUS(halRsp.status);
 
   /*Notify UMAC*/
-  wdiMgmtFrameLoggingInitRspCb( &wdiMgmtFrameLoggingRsp,
-                                pWDICtx->pRspCBUserData);
+  wdiFWFrameLoggingInitRspCb( &wdiFWLogginginitRsp, pWDICtx->pRspCBUserData);
 
   return WDI_STATUS_SUCCESS;
 }
 
+WDI_Status
+WDI_ProcessFWLoggingDXEdoneInd
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+)
+{
+  wpt_uint8*  pSendBuffer = NULL;
+  wpt_uint16  usDataOffset = 0;
+  wpt_uint16  usSendSize = 0;
+  WDI_FWLoggingDXEdoneIndInfoType *pwdiFWLoggingDXEdoneInd;
+  tFWLoggingDxeDoneInd  *FWLoggingDxeDoneIndParams;
+  WDI_Status wdiStatus = WDI_STATUS_SUCCESS;
+
+
+  /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+  WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
+               "%s", __func__);
+
+  /*-------------------------------------------------------------------------
+    Sanity check
+  -------------------------------------------------------------------------*/
+  if (( NULL == pEventData ) || ( NULL == pEventData->pEventData ))
+  {
+      WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_FATAL,
+             "%s: Invalid parameters", __func__);
+      WDI_ASSERT(0);
+      return WDI_STATUS_E_FAILURE;
+  }
+  pwdiFWLoggingDXEdoneInd =
+                     (WDI_FWLoggingDXEdoneIndInfoType*)pEventData->pEventData;
+  /*-----------------------------------------------------------------------
+    Get message buffer
+  -----------------------------------------------------------------------*/
+
+  if (( WDI_STATUS_SUCCESS != WDI_GetMessageBuffer( pWDICtx,
+                                     WDI_FW_LOGGING_DXE_DONE_IND,
+                                      sizeof(tHalRtsCtsHtvhtIndParams),
+                          &pSendBuffer, &usDataOffset, &usSendSize))||
+       ( usSendSize < (usDataOffset + sizeof(tHalRtsCtsHtvhtIndParams) )))
+  {
+      WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_FATAL,
+              "Unable to get send buffer in RTS CTS ind %p ",
+               pEventData);
+      WDI_ASSERT(0);
+      return WDI_STATUS_E_FAILURE;
+  }
+  FWLoggingDxeDoneIndParams =
+           (tFWLoggingDxeDoneInd*)(pSendBuffer + usDataOffset);
+
+  wpalMemoryCopy(&FWLoggingDxeDoneIndParams->logBuffAddress,
+                 &pwdiFWLoggingDXEdoneInd->logBuffAddress, MAX_NUM_OF_BUFFER *
+                 sizeof(FWLoggingDxeDoneIndParams->logBuffAddress[0]));
+  FWLoggingDxeDoneIndParams->status= pwdiFWLoggingDXEdoneInd->status;
+  wpalMemoryCopy(&FWLoggingDxeDoneIndParams->logBuffLength,
+                 &pwdiFWLoggingDXEdoneInd->logBuffLength, MAX_NUM_OF_BUFFER *
+                 sizeof(FWLoggingDxeDoneIndParams->logBuffLength[0]));
+
+  pWDICtx->pReqStatusUserData = NULL;
+  pWDICtx->pfncRspCB = NULL;
+  /*-------------------------------------------------------------------------
+    Send FW_LOGGING_DXE_DONE_IND Indication to HAL
+  -------------------------------------------------------------------------*/
+  wdiStatus =  WDI_SendIndication( pWDICtx, pSendBuffer, usSendSize);
+  return (wdiStatus != WDI_STATUS_SUCCESS) ? wdiStatus:WDI_STATUS_SUCCESS_SYNC;
+}
+
 /**
- @brief Process MgmtLoggingInit Request
+ @brief Process FWLoggingInit Request
 
  @param  pWDICtx:         pointer to the WLAN DAL context
          pEventData:      pointer to the event information structure
@@ -34430,19 +34550,19 @@ WDI_ProcessMgmtFrameLoggingInitRsp
  @return Result of the function call
 */
 WDI_Status
-WDI_ProcessMgmtLoggingInitReq
+WDI_ProcessFWLoggingInitReq
 (
   WDI_ControlBlockType*  pWDICtx,
   WDI_EventInfoType*     pEventData
 )
 {
-    WDI_MgmtLoggingInitReqInfoType*    wdiMgmtLoggingInitReq;
+    WDI_FWLoggingInitReqInfoType*      wdiFWLoggingInitReq;
     wpt_uint8*                         pSendBuffer  = NULL;
     wpt_uint16                         usDataOffset = 0;
     wpt_uint16                         usSendSize   = 0;
     WDI_Status                         wdiStatus;
-    tHalMgmtLoggingInitReqMsg          halMgmtLoggingInitReq;
-    WDI_MgmtLoggingInitRspCb           wdiMgmtLoggingInitRspCb;
+    tHalFWLoggingInitReqMsg            halFWLoggingInitReq;
+    WDI_FWLoggingInitRspCb             wdiFWLoggingInitRspCb;
 
 
     VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
@@ -34459,18 +34579,18 @@ WDI_ProcessMgmtLoggingInitReq
         WDI_ASSERT(0);
         return WDI_STATUS_E_FAILURE;
     }
-    wdiMgmtLoggingInitReq =
-                     (WDI_MgmtLoggingInitReqInfoType *)pEventData->pEventData;
+    wdiFWLoggingInitReq =
+                     (WDI_FWLoggingInitReqInfoType *)pEventData->pEventData;
 
     /*-----------------------------------------------------------------------
       Get message buffer
       -----------------------------------------------------------------------*/
     if (( WDI_STATUS_SUCCESS != WDI_GetMessageBuffer( pWDICtx,
-                    WDI_MGMT_LOGGING_INIT_REQ,
-                    sizeof(halMgmtLoggingInitReq.tMgmtLoggingInitReqParams),
+                    WDI_FW_LOGGING_INIT_REQ,
+                    sizeof(halFWLoggingInitReq.tFWLoggingInitReqParams),
                     &pSendBuffer, &usDataOffset, &usSendSize))||
             (usSendSize < (usDataOffset +
-            sizeof(halMgmtLoggingInitReq.tMgmtLoggingInitReqParams))))
+            sizeof(halFWLoggingInitReq.tFWLoggingInitReqParams))))
     {
         WPAL_TRACE( eWLAN_MODULE_DAL_CTRL,  eWLAN_PAL_TRACE_LEVEL_FATAL,
                 "Unable to get send buffer in Process Mgmt Logging Init Req");
@@ -34478,27 +34598,33 @@ WDI_ProcessMgmtLoggingInitReq
         return WDI_STATUS_E_FAILURE;
     }
 
-    halMgmtLoggingInitReq.tMgmtLoggingInitReqParams.enableFlag=
-                                    wdiMgmtLoggingInitReq->enableFlag;
-    halMgmtLoggingInitReq.tMgmtLoggingInitReqParams.frameSize=
-                                    wdiMgmtLoggingInitReq->frameSize;
-    halMgmtLoggingInitReq.tMgmtLoggingInitReqParams.frameType=
-                                    wdiMgmtLoggingInitReq->frameType;
-    halMgmtLoggingInitReq.tMgmtLoggingInitReqParams.bufferMode=
-                                    wdiMgmtLoggingInitReq->bufferMode;
+    halFWLoggingInitReq.tFWLoggingInitReqParams.enableFlag=
+                                    wdiFWLoggingInitReq->enableFlag;
+    halFWLoggingInitReq.tFWLoggingInitReqParams.frameSize=
+                                    wdiFWLoggingInitReq->frameSize;
+    halFWLoggingInitReq.tFWLoggingInitReqParams.frameType=
+                                    wdiFWLoggingInitReq->frameType;
+    halFWLoggingInitReq.tFWLoggingInitReqParams.bufferMode=
+                                    wdiFWLoggingInitReq->bufferMode;
+    halFWLoggingInitReq.tFWLoggingInitReqParams.continuousFrameLogging=
+                                    wdiFWLoggingInitReq->continuousFrameLogging;
+    halFWLoggingInitReq.tFWLoggingInitReqParams.minLogBuffSize=
+                                    wdiFWLoggingInitReq->minLogBufferSize;
+    halFWLoggingInitReq.tFWLoggingInitReqParams.maxLogBuffSize=
+                                    wdiFWLoggingInitReq->maxLogBufferSize;
 
-    wdiMgmtLoggingInitRspCb   = (WDI_MgmtLoggingInitRspCb)pEventData->pCBfnc;
+    wdiFWLoggingInitRspCb   = (WDI_FWLoggingInitRspCb)pEventData->pCBfnc;
 
     wpalMemoryCopy( pSendBuffer+usDataOffset,
-                    &halMgmtLoggingInitReq.tMgmtLoggingInitReqParams,
-                    sizeof(halMgmtLoggingInitReq.tMgmtLoggingInitReqParams));
+                    &halFWLoggingInitReq.tFWLoggingInitReqParams,
+                    sizeof(halFWLoggingInitReq.tFWLoggingInitReqParams));
 
     /*-------------------------------------------------------------------------
       Send Mgmt Logging Init Request to HAL
       ------------------------------------------------------------------------*/
     wdiStatus = WDI_SendMsg( pWDICtx, pSendBuffer, usSendSize,
-                             wdiMgmtLoggingInitRspCb, pEventData->pUserData,
-                             WDI_MGMT_LOGGING_INIT_RSP);
+                             wdiFWLoggingInitRspCb, pEventData->pUserData,
+                             WDI_FW_LOGGING_INIT_RSP);
 
     return  wdiStatus;
 }

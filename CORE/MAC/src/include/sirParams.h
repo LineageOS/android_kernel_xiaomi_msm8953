@@ -129,6 +129,7 @@ typedef enum {
 #endif
    MGMT_FRAME_LOGGING    = 53,
    ENHANCED_TXBD_COMPLETION = 54,
+   LOGGING_ENHANCEMENT   = 55,
    //MAX_FEATURE_SUPPORTED = 128
 } placeHolderInCapBitmap;
 
