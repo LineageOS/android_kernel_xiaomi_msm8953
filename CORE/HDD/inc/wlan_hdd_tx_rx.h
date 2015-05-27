@@ -288,6 +288,8 @@ extern VOS_STATUS hdd_tx_fetch_packet_cbk( v_VOID_t *vosContext,
 extern VOS_STATUS hdd_tx_low_resource_cbk( vos_pkt_t *pVosPacket, 
                                            v_VOID_t *userData );
 
+extern VOS_STATUS hdd_rx_packet_monitor_cbk(v_VOID_t *vosContext,vos_pkt_t *pVosPacket, int conversion);
+
 /**============================================================================
   @brief hdd_rx_packet_cbk() - Receive callback registered with TL.
   TL will call this to notify the HDD when a packet was received 

@@ -476,6 +476,9 @@ typedef enum
   /* NAN Request */
   WDI_NAN_REQUEST                                = 106,
 
+  WDI_MON_START_REQ                              = 107,
+  WDI_MON_STOP_REQ                               = 108,
+
   WDI_MAX_REQ,
 
   /*Send a suspend Indication down to HAL*/
@@ -811,6 +814,9 @@ typedef enum
   WDI_GET_FRAME_LOG_RSP                          = 105,
 
   WDI_NAN_RESPONSE                               = 106,
+
+  WDI_MON_START_RSP                              = 107,
+  WDI_MON_STOP_RSP                               = 108,
 
   /*-------------------------------------------------------------------------
     Indications
@@ -6226,6 +6232,33 @@ WDI_ProcessSetRtsCtsHtvhtInd
   WDI_EventInfoType*     pEventData
 );
 
+WDI_Status
+WDI_ProcessMonStartReq
+(
+   WDI_ControlBlockType*  pWDICtx,
+   WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessMonStartRsp
+(
+   WDI_ControlBlockType*  pWDICtx,
+   WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessMonStopReq
+(
+   WDI_ControlBlockType*  pWDICtx,
+   WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessMonStopRsp
+(
+   WDI_ControlBlockType*  pWDICtx,
+   WDI_EventInfoType*     pEventData
+);
 
 #endif /*WLAN_QCT_WDI_I_H*/
 

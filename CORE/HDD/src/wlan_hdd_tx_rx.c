@@ -63,6 +63,7 @@
 #include "vos_utils.h"
 #include  "sapInternal.h"
 #include  "wlan_hdd_trace.h"
+#include  "wlan_qct_wda.h"
 /*--------------------------------------------------------------------------- 
   Preprocessor definitions and constants
   -------------------------------------------------------------------------*/ 
@@ -88,6 +89,29 @@ const v_U8_t hdd_QdiscAcToTlAC[] = {
 #define HDD_TX_STALL_SSR_THRESHOLD        5
 #define HDD_TX_STALL_SSR_THRESHOLD_HIGH   13
 #define HDD_TX_STALL_RECOVERY_THRESHOLD HDD_TX_STALL_SSR_THRESHOLD - 2
+
+int gRatefromIdx[] = {
+ 10,20,55,100,
+ 10,20,55,110,
+ 60,90,120,180,240,360,480,540,
+ 65,130,195,260,390,520,585,650,
+ 72,144,217,289,434,578,650,722,
+ 65,130,195,260,390,520,585,650,
+ 135,270,405,540,810,1080,1215,1350,
+ 150,300,450,600,900,1200,1350,1500,
+ 135,270,405,540,810,1080,1215,1350,
+ 1350,1350,65,130,195,260,390, 520,
+ 585,650,780,1350,1350,1350,1350,1350,
+ 1350,1350,1350,1350,655,722,866,1350,
+ 1350,1350,135,270,405,540,810,1080,
+ 1215,1350,1350,1620,1800,1350,1350,1350,
+ 1350,1350,1350,1200,1350,1500,1350,1800,
+ 2000,1350, 292,585,877,1170,1755,2340,
+ 2632,2925,1350,3510,3900,1350,1350,1350,
+ 1350,1350,1350,1350,2925,3250,1350,3900,
+ 4333
+ };
+
 
 static DEFINE_RATELIMIT_STATE(hdd_tx_timeout_rs,                 \
                               HDD_TX_TIMEOUT_RATELIMIT_INTERVAL, \
@@ -461,158 +485,9 @@ void hdd_mon_tx_work_queue(struct work_struct *work)
 
 int hdd_mon_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
-   v_U16_t rt_hdr_len;
-   struct ieee80211_hdr *hdr;
-   hdd_adapter_t *pPgBkAdapter, *pAdapter =  WLAN_HDD_GET_PRIV_PTR(dev);
-   struct ieee80211_radiotap_header *rtap_hdr =
-                        (struct ieee80211_radiotap_header *)skb->data;
-
-   /*Supplicant sends the EAPOL packet on monitor interface*/
-   pPgBkAdapter = pAdapter->sessionCtx.monitor.pAdapterForTx;    
-   if(pPgBkAdapter == NULL)
-   {
-      VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_FATAL,
-           "%s: No Adapter to piggy back. Dropping the pkt on monitor inf",
-                                                                 __func__);
-      goto fail; /* too short to be possibly valid */
-   }
- 
-   /* check if toal skb length is greater then radio tab header length of not */
-   if (unlikely(skb->len < sizeof(struct ieee80211_radiotap_header)))
-      goto fail; /* too short to be possibly valid */
-   
-   /* check if radio tap header version is correct or not */
-   if (unlikely(rtap_hdr->it_version))
-      goto fail; /* only version 0 is supported */
- 
-   /*Strip off the radio tap header*/
-   rt_hdr_len = ieee80211_get_radiotap_len(skb->data);
- 
-   /* check if skb length if greator then total radio tap header length ot not*/
-   if (unlikely(skb->len < rt_hdr_len))
-      goto fail;
- 
-   /* Update the trans_start for this netdev */  
-   dev->trans_start = jiffies;
-   /*
-    * fix up the pointers accounting for the radiotap
-    * header still being in there.
-    */
-   skb_set_mac_header(skb, rt_hdr_len);
-   skb_set_network_header(skb, rt_hdr_len);
-   skb_set_transport_header(skb, rt_hdr_len); 
-
-   /* Pull rtap header out of the skb */
-   skb_pull(skb, rt_hdr_len);
-  
-   /*Supplicant adds: radiotap Hdr + radiotap data + 80211 Header. So after 
-    * radio tap header and 802.11 header starts 
-    */
-   hdr = (struct ieee80211_hdr *)skb->data;
- 
-   /* Send data frames through the normal Data path. In this path we will 
-    * conver rcvd 802.11 packet to 802.3 packet */
-   if ( (hdr->frame_control & HDD_FRAME_TYPE_MASK)  == HDD_FRAME_TYPE_DATA)
-   { 
-      v_U8_t da[6];
-      v_U8_t sa[6];
-
-      memcpy (da, hdr->addr1, VOS_MAC_ADDR_SIZE);
-      memcpy (sa, hdr->addr2, VOS_MAC_ADDR_SIZE);
- 
-      /* Pull 802.11 MAC header */ 
-      skb_pull(skb, HDD_80211_HEADER_LEN);
- 
-      if ( HDD_FRAME_SUBTYPE_QOSDATA == 
-          (hdr->frame_control & HDD_FRAME_SUBTYPE_MASK))
-      {
-         skb_pull(skb, HDD_80211_HEADER_QOS_CTL);
-      }
-
-      /* Pull LLC header */ 
-      skb_pull(skb, HDD_LLC_HDR_LEN);
-
-      /* Create space for Ethernet header */ 
-      skb_push(skb, HDD_MAC_HDR_SIZE*2);
-      memcpy(&skb->data[0], da, HDD_MAC_HDR_SIZE);
-      memcpy(&skb->data[HDD_DEST_ADDR_OFFSET], sa, HDD_MAC_HDR_SIZE);
-
-      /* Only EAPOL Data packets are allowed through monitor interface */ 
-      if (vos_be16_to_cpu(
-         (*(unsigned short*)&skb->data[HDD_ETHERTYPE_802_1_X_FRAME_OFFSET]) ) 
-                                                     != HDD_ETHERTYPE_802_1_X)
-      {
-         VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_FATAL,
-           "%s: Not a Eapol packet. Drop this frame", __func__);
-         //If not EAPOL frames, drop them.
-         kfree_skb(skb);
-         return NETDEV_TX_OK;
-      }
-
-      skb->protocol = htons(HDD_ETHERTYPE_802_1_X);
- 
-      hdd_hostapd_select_queue(pPgBkAdapter->dev, skb);
-      return hdd_softap_hard_start_xmit( skb, pPgBkAdapter->dev );
-   }
-   else
-   {
-      VOS_STATUS status;
-      WLANTL_ACEnumType ac = 0;
-      skb_list_node_t *pktNode = NULL;
-      v_SIZE_t pktListSize = 0;
-
-      spin_lock(&pAdapter->wmm_tx_queue[ac].lock);
-      //If we have already reached the max queue size, disable the TX queue
-      if ( pAdapter->wmm_tx_queue[ac].count == pAdapter->wmm_tx_queue[ac].max_size)
-      {
-         /* We want to process one packet at a time, so lets disable all TX queues
-           * and re-enable the queues once we get TX feedback for this packet */
-         hddLog(VOS_TRACE_LEVEL_INFO, FL("Disabling queues"));
-         netif_tx_stop_all_queues(pAdapter->dev);
-         pAdapter->isTxSuspended[ac] = VOS_TRUE;
-         spin_unlock(&pAdapter->wmm_tx_queue[ac].lock);      
-         return NETDEV_TX_BUSY;   
-      }
-      spin_unlock(&pAdapter->wmm_tx_queue[ac].lock);      
-
-      //Use the skb->cb field to hold the list node information
-      pktNode = (skb_list_node_t *)&skb->cb;
-
-      //Stick the OS packet inside this node.
-      pktNode->skb = skb;
-
-      INIT_LIST_HEAD(&pktNode->anchor);
-
-      //Insert the OS packet into the appropriate AC queue
-      spin_lock(&pAdapter->wmm_tx_queue[ac].lock);
-      status = hdd_list_insert_back_size( &pAdapter->wmm_tx_queue[ac],
-                                          &pktNode->anchor, &pktListSize );
-      spin_unlock(&pAdapter->wmm_tx_queue[ac].lock);
-
-      if ( !VOS_IS_STATUS_SUCCESS( status ) )
-      {
-         VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
-                "%s:Insert Tx queue failed. Pkt dropped", __func__);
-         kfree_skb(skb);
-         return NETDEV_TX_OK;
-      }
-
-      if ( pktListSize == 1 )
-      {
-         /* In this context we cannot acquire any mutex etc. And to transmit 
-          * this packet we need to call SME API. So to take care of this we will
-          * schedule a workqueue 
-          */
-         schedule_work(&pPgBkAdapter->monTxWorkQueue);
-      }
-      return NETDEV_TX_OK;
-   }
- 
-fail:
-   VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_WARN,
-           "%s: Packet Rcvd at Monitor interface is not proper,"
-           " Dropping the packet",
-            __func__);
+   VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
+           "%s: Packet Rcvd at Monitor interface,"
+             " Dropping the packet",__func__);
    kfree_skb(skb);
    return NETDEV_TX_OK;
 }
@@ -2440,6 +2315,138 @@ VOS_STATUS hdd_tx_low_resource_cbk( vos_pkt_t *pVosPacket,
    return VOS_STATUS_SUCCESS;
 }
 
+static void hdd_mon_add_rx_radiotap_hdr (struct sk_buff *skb,
+             int rtap_len,  v_PVOID_t  pRxPacket, hdd_mon_ctx_t *pMonCtx)
+{
+    u8 rtap_temp[20] = {0};
+    struct ieee80211_radiotap_header *rthdr;
+    unsigned char *pos;
+    u16 rx_flags = 0;
+    u16 rateIdx;
+
+    rateIdx = WDA_GET_RX_MAC_RATE_IDX(pRxPacket);
+
+    rthdr = (struct ieee80211_radiotap_header *)(&rtap_temp[0]);
+
+    /* radiotap header, set always present flags */
+    rthdr->it_present = cpu_to_le32((1 << IEEE80211_RADIOTAP_FLAGS)   |
+                                    (1 << IEEE80211_RADIOTAP_CHANNEL) |
+                                    (1 << IEEE80211_RADIOTAP_RX_FLAGS));
+    rthdr->it_len = cpu_to_le16(rtap_len);
+
+    pos = (unsigned char *) (rthdr + 1);
+
+    /* IEEE80211_RADIOTAP_FLAGS */
+    *pos = 0;
+    pos++;
+
+    /* IEEE80211_RADIOTAP_RATE */
+    rthdr->it_present |= cpu_to_le32(1 << IEEE80211_RADIOTAP_RATE);
+    *pos = gRatefromIdx[rateIdx]/5;
+
+    pos++;
+
+    /* IEEE80211_RADIOTAP_CHANNEL */
+    put_unaligned_le16(pMonCtx->ChannelNo, pos);
+    pos += 2;
+
+    if ((pos - (u8 *)rthdr) & 1)
+        pos++;
+    put_unaligned_le16(rx_flags, pos);
+    pos += 2;
+
+    memcpy(skb_push(skb, rtap_len), &rtap_temp[0], rtap_len);
+}
+
+
+VOS_STATUS  hdd_rx_packet_monitor_cbk(v_VOID_t *vosContext,vos_pkt_t *pVosPacket, int conversion)
+{
+  struct sk_buff *skb = NULL;
+  VOS_STATUS status = VOS_STATUS_E_FAILURE;
+  hdd_adapter_t *pAdapter = NULL;
+  hdd_context_t *pHddCtx = NULL;
+  hdd_mon_ctx_t *pMonCtx = NULL;
+  v_PVOID_t pvBDHeader = NULL;
+  int rxstat;
+  int needed_headroom = 0;
+
+
+  //Sanity check on inputs
+   if ( ( NULL == vosContext ) ||
+        ( NULL == pVosPacket ) )
+   {
+      VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
+                         "%s: Null params being passed", __func__);
+      return VOS_STATUS_E_FAILURE;
+   }
+
+   pHddCtx = (hdd_context_t *)vos_get_context( VOS_MODULE_ID_HDD, vosContext );
+   pAdapter = hdd_get_adapter(pHddCtx,WLAN_HDD_MONITOR);
+   if ((NULL == pAdapter)  || (WLAN_HDD_ADAPTER_MAGIC != pAdapter->magic) )
+   {
+      VOS_TRACE(VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
+                 FL("Invalid adapter %p for MONITOR MODE"), pAdapter);
+      vos_pkt_return_packet( pVosPacket );
+      return VOS_STATUS_E_FAILURE;
+   }
+
+    status =  WDA_DS_PeekRxPacketInfo( pVosPacket, (v_PVOID_t)&pvBDHeader, 1/*Swap BD*/ );
+    if ( NULL == pvBDHeader )
+    {
+      VOS_TRACE( VOS_MODULE_ID_HDD,VOS_TRACE_LEVEL_ERROR,
+                 "Cannot extract BD header");
+      /* Drop packet */
+      vos_pkt_return_packet(pVosPacket);
+      return VOS_STATUS_E_FAILURE;
+    }
+
+   ++pAdapter->hdd_stats.hddTxRxStats.rxChains;
+   status = vos_pkt_get_os_packet( pVosPacket, (v_VOID_t **)&skb, VOS_TRUE );
+   if(!VOS_IS_STATUS_SUCCESS( status ))
+    {
+        ++pAdapter->hdd_stats.hddTxRxStats.rxDropped;
+        VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
+                               "%s: Failure extracting skb from vos pkt", __func__);
+        vos_pkt_return_packet( pVosPacket );
+        return VOS_STATUS_E_FAILURE;
+    }
+
+    if(!conversion)
+    {
+         pMonCtx = WLAN_HDD_GET_MONITOR_CTX_PTR(pAdapter);
+         needed_headroom = sizeof(struct ieee80211_radiotap_header) + 9;
+         hdd_mon_add_rx_radiotap_hdr( skb, needed_headroom, pvBDHeader, pMonCtx );
+    }
+
+    skb_reset_mac_header( skb );
+    skb->dev = pAdapter->dev;
+    skb->pkt_type = PACKET_OTHERHOST;
+    skb->protocol = htons(ETH_P_802_2);
+    skb->ip_summed = CHECKSUM_NONE;
+    ++pAdapter->hdd_stats.hddTxRxStats.rxPackets;
+    ++pAdapter->stats.rx_packets;
+    pAdapter->stats.rx_bytes += skb->len;
+
+    rxstat = netif_rx_ni(skb);
+    if (NET_RX_SUCCESS == rxstat)
+    {
+       ++pAdapter->hdd_stats.hddTxRxStats.rxDelivered;
+       ++pAdapter->hdd_stats.hddTxRxStats.pkt_rx_count;
+    }
+    else
+    {
+       ++pAdapter->hdd_stats.hddTxRxStats.rxRefused;
+    }
+
+   status = vos_pkt_return_packet( pVosPacket );
+   if(!VOS_IS_STATUS_SUCCESS( status ))
+   {
+      VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,"%s: Failure returning vos pkt", __func__);
+   }
+   pAdapter->dev->last_rx = jiffies;
+
+return status;
+}
 
 /**============================================================================
   @brief hdd_rx_packet_cbk() - Receive callback registered with TL.
