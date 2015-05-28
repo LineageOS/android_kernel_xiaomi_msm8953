@@ -5390,23 +5390,25 @@ static int __iw_setint_getnone(struct net_device *dev,
     {
         return ret;
     }
-    hHal = WLAN_HDD_GET_HAL_CTX(pAdapter);
-    if (NULL == hHal)
+    if ( VOS_MONITOR_MODE != hdd_get_conparam())
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: Hal Context is NULL",__func__);
-        return -EINVAL;
-    }
-    pWextState = WLAN_HDD_GET_WEXT_STATE_PTR(pAdapter);
-    if (NULL == pWextState)
-    {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: pWextState is NULL",__func__);
-        return -EINVAL;
-    }
+      hHal = WLAN_HDD_GET_HAL_CTX(pAdapter);
+      if (NULL == hHal)
+      {
+          VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                    "%s: Hal Context is NULL",__func__);
+          return -EINVAL;
+      }
+      pWextState = WLAN_HDD_GET_WEXT_STATE_PTR(pAdapter);
+      if (NULL == pWextState)
+      {
+          VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                    "%s: pWextState is NULL",__func__);
+          return -EINVAL;
+      }
 
-    INIT_COMPLETION(pWextState->completion_var);
-
+      INIT_COMPLETION(pWextState->completion_var);
+    }
     switch(sub_cmd)
     {
         case WE_SET_11D_STATE:
@@ -7191,12 +7193,15 @@ static int __iw_set_var_ints_getnone(struct net_device *dev,
     {
         return ret;
     }
-    hHal = WLAN_HDD_GET_HAL_CTX(pAdapter);
-    if (NULL == hHal)
+    if( VOS_MONITOR_MODE != hdd_get_conparam())
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: Hal Context is NULL",__func__);
-        return -EINVAL;
+      hHal = WLAN_HDD_GET_HAL_CTX(pAdapter);
+      if (NULL == hHal)
+      {
+          VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                    "%s: Hal Context is NULL",__func__);
+          return -EINVAL;
+      }
     }
     sub_cmd = wrqu->data.flags;
 
