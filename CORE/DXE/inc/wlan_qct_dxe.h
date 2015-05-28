@@ -172,6 +172,21 @@ typedef WDTS_LowResourceCbType WLANDXE_LowResourceCbType;
 
 /*==========================================================================
   @  Type Name
+  WLANDXE_MbReceiveMsgCbType
+
+  @  Description
+  DXE Mailbox mes receive indiacation
+
+  @  Parameters
+  void
+
+  @  Return
+  void
+===========================================================================*/
+typedef WDTS_MbReceiveMsgType WLANDXE_MbReceiveMsgCbType;
+
+/*==========================================================================
+  @  Type Name
       WLANDXE_SetPowerStateCbType 
 
   @  Description 
@@ -219,9 +234,7 @@ void *WLANDXE_Open
 
   @  Parameters
       pVoid                       pDXEContext : DXE module control block
-      WDTS_RxFrameReadyCbType     rxFrameReadyCB : RX Frame ready CB function pointer
-      WDTS_TxCompleteCbType       txCompleteCB : TX complete CB function pointer
-      WDTS_LowResourceCbType      lowResourceCB : Low DXE resource notification CB function pointer
+      WDTS_ClientCallbacks        WDTSCb : Callbacks to WDTS to indicate various events
       void                       *userContext : DXE Cliennt control block
 
   @  Return
@@ -230,9 +243,7 @@ void *WLANDXE_Open
 wpt_status WLANDXE_ClientRegistration
 (
    void                       *pDXEContext,
-   WDTS_RxFrameReadyCbType     rxFrameReadyCB,
-   WDTS_TxCompleteCbType       txCompleteCB,
-   WDTS_LowResourceCbType      lowResourceCB,
+   WDTS_ClientCallbacks       WDTSCb,
    void                       *userContext
 );
 

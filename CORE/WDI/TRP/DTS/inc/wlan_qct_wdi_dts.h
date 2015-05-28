@@ -98,6 +98,8 @@ typedef wpt_status (*WDTS_TxCompleteCbType)(void *pContext, wpt_packet *pFrame, 
 typedef wpt_status (*WDTS_RxFrameReadyCbType) (void *pContext, wpt_packet *pFrame, WDTS_ChannelType channel);
 typedef wpt_status (*WDTS_LowResourceCbType)(void *pContext, WDTS_ChannelType channel, wpt_boolean on);
 typedef void  (*WDTS_SetPSCbType)(wpt_status  status, unsigned int dxePhyAddr);
+typedef void (*WDTS_MbReceiveMsgType)(void *pContext);
+
 /* DTS Set power state ACK callback. 
  * This callback function should be invoked by the DTS to notify WDI that set
  * power state request is complete.
@@ -110,12 +112,18 @@ typedef void  (*WDTS_SetPSCbType)(wpt_status  status, unsigned int dxePhyAddr);
 typedef void  (*WDTS_SetPowerStateCbType)(wpt_status   status,
                                           unsigned int dxePhyAddr,
                                           void*        pUserData);
+typedef struct
+{
+   WDTS_RxFrameReadyCbType  rxFrameReadyCB;
+   WDTS_TxCompleteCbType    txCompleteCB;
+   WDTS_LowResourceCbType   lowResourceCB;
+   WDTS_MbReceiveMsgType    receiveMbMsgCB;
+}WDTS_ClientCallbacks;
 
 typedef struct {
   void * (*open)(void);
   wpt_status (*start) (void *pContext);
-  wpt_status (*register_client)(void *pContext, WDTS_RxFrameReadyCbType, 
-      WDTS_TxCompleteCbType, WDTS_LowResourceCbType, void *clientData);
+  wpt_status (*register_client)(void *pContext, WDTS_ClientCallbacks, void *clientData);
   wpt_status (*xmit) (void *pContext, wpt_packet *packet, WDTS_ChannelType channel);
   wpt_status (*txComplete) (void *pContext, wpt_uint32 ucTxResReq);
   wpt_status (*setPowerState) (void *pContext, WDTS_PowerStateType   powerState, 

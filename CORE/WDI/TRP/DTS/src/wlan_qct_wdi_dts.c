@@ -835,6 +835,11 @@ wpt_status WDTS_OOResourceNotification(void *pContext, WDTS_ChannelType channel,
 
 }
 
+void WDTS_MbReceiveMsg(void *pContext)
+{
+  return;
+}
+
 /* DTS open  function. 
  * On open the transport device should initialize itself.
  * Parameters:
@@ -850,6 +855,7 @@ wpt_status WDTS_openTransport( void *pContext)
   void *pDTDriverContext; 
   WDI_DS_ClientDataType *pClientData;
   WDI_Status sWdiStatus = WDI_STATUS_SUCCESS;
+  WDTS_ClientCallbacks WDTSCb;
 
   pClientData = (WDI_DS_ClientDataType*) wpalMemoryAllocate(sizeof(WDI_DS_ClientDataType));
   if (!pClientData){
@@ -866,8 +872,12 @@ wpt_status WDTS_openTransport( void *pContext)
      return eWLAN_PAL_STATUS_E_FAILURE;
   }
   WDT_AssignTransportDriverContext(pContext, pDTDriverContext);
-  gTransportDriver.register_client(pDTDriverContext, WDTS_RxPacket, WDTS_TxPacketComplete, 
-    WDTS_OOResourceNotification, (void*)pClientData);
+
+  WDTSCb.rxFrameReadyCB = WDTS_RxPacket;
+  WDTSCb.txCompleteCB = WDTS_TxPacketComplete;
+  WDTSCb.lowResourceCB = WDTS_OOResourceNotification;
+  WDTSCb.receiveMbMsgCB = WDTS_MbReceiveMsg;
+  gTransportDriver.register_client(pDTDriverContext, WDTSCb, (void*)pClientData);
 
   /* Create a memory pool for Mgmt BDheaders.*/
   sWdiStatus = WDI_DS_MemPoolCreate(&pClientData->mgmtMemPool, WDI_DS_MAX_CHUNK_SIZE, 

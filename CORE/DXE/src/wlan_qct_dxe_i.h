@@ -677,6 +677,7 @@ typedef struct
    WLANDXE_RxFrameReadyCbType      rxReadyCB;
    WLANDXE_TxCompleteCbType        txCompCB;
    WLANDXE_LowResourceCbType       lowResourceCB;
+   WLANDXE_MbReceiveMsgCbType      receiveMbMsgCB;
    WLANDXE_TxCompIntConfigType     txCompInt;
    void                           *clientCtxt;
    wpt_uint32                      interruptPath;
@@ -699,6 +700,7 @@ typedef struct
    wpt_boolean                     driverReloadInProcessing;
    wpt_boolean                     smsmToggled;
    wpt_boolean                     txRingsEmpty;
+   wpt_boolean                     hostInitiatedH2H;
 #ifdef WLAN_DXE_LOW_RESOURCE_TIMER
    wpt_timer                       rxResourceAvailableTimer;
 #endif
