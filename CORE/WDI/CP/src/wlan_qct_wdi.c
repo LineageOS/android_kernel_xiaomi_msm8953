@@ -34482,8 +34482,8 @@ WDI_ProcessFWLoggingDXEdoneInd
   wpt_uint8*  pSendBuffer = NULL;
   wpt_uint16  usDataOffset = 0;
   wpt_uint16  usSendSize = 0;
-  WDI_FWLoggingDXEdoneIndInfoType *pwdiFWLoggingDXEdoneInd;
   tFWLoggingDxeDoneInd  *FWLoggingDxeDoneIndParams;
+  WDI_DS_LoggingSessionType *pLoggingSession;
   WDI_Status wdiStatus = WDI_STATUS_SUCCESS;
 
 
@@ -34495,24 +34495,25 @@ WDI_ProcessFWLoggingDXEdoneInd
   /*-------------------------------------------------------------------------
     Sanity check
   -------------------------------------------------------------------------*/
-  if (( NULL == pEventData ) || ( NULL == pEventData->pEventData ))
+  if (NULL == pEventData)
   {
       WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_FATAL,
              "%s: Invalid parameters", __func__);
       WDI_ASSERT(0);
       return WDI_STATUS_E_FAILURE;
   }
-  pwdiFWLoggingDXEdoneInd =
-                     (WDI_FWLoggingDXEdoneIndInfoType*)pEventData->pEventData;
+  pLoggingSession = (WDI_DS_LoggingSessionType *)
+                       WDI_DS_GetLoggingSession(WDI_DS_GetDatapathContext(
+                                                  (void *)pWDICtx));
   /*-----------------------------------------------------------------------
     Get message buffer
   -----------------------------------------------------------------------*/
 
   if (( WDI_STATUS_SUCCESS != WDI_GetMessageBuffer( pWDICtx,
                                      WDI_FW_LOGGING_DXE_DONE_IND,
-                                      sizeof(tHalRtsCtsHtvhtIndParams),
+                                      sizeof(tFWLoggingDxeDoneInd),
                           &pSendBuffer, &usDataOffset, &usSendSize))||
-       ( usSendSize < (usDataOffset + sizeof(tHalRtsCtsHtvhtIndParams) )))
+       ( usSendSize < (usDataOffset + sizeof(tFWLoggingDxeDoneInd) )))
   {
       WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_FATAL,
               "Unable to get send buffer in RTS CTS ind %p ",
@@ -34524,11 +34525,13 @@ WDI_ProcessFWLoggingDXEdoneInd
            (tFWLoggingDxeDoneInd*)(pSendBuffer + usDataOffset);
 
   wpalMemoryCopy(&FWLoggingDxeDoneIndParams->logBuffAddress,
-                 &pwdiFWLoggingDXEdoneInd->logBuffAddress, MAX_NUM_OF_BUFFER *
+                 &pLoggingSession->logBuffAddress, MAX_NUM_OF_BUFFER *
                  sizeof(FWLoggingDxeDoneIndParams->logBuffAddress[0]));
-  FWLoggingDxeDoneIndParams->status= pwdiFWLoggingDXEdoneInd->status;
+
+  FWLoggingDxeDoneIndParams->status = eHAL_STATUS_SUCCESS;
+
   wpalMemoryCopy(&FWLoggingDxeDoneIndParams->logBuffLength,
-                 &pwdiFWLoggingDXEdoneInd->logBuffLength, MAX_NUM_OF_BUFFER *
+                 &pLoggingSession->logBuffLength, MAX_NUM_OF_BUFFER *
                  sizeof(FWLoggingDxeDoneIndParams->logBuffLength[0]));
 
   pWDICtx->pReqStatusUserData = NULL;
@@ -34612,6 +34615,10 @@ WDI_ProcessFWLoggingInitReq
                                     wdiFWLoggingInitReq->minLogBufferSize;
     halFWLoggingInitReq.tFWLoggingInitReqParams.maxLogBuffSize=
                                     wdiFWLoggingInitReq->maxLogBufferSize;
+    halFWLoggingInitReq.tFWLoggingInitReqParams.logMailBoxAddr=
+            (tANI_U64)(uintptr_t)(WDI_DS_GetLoggingMbPhyAddr(pWDICtx));
+    halFWLoggingInitReq.tFWLoggingInitReqParams.logMailBoxVer=
+            MAILBOX_VERSION_V1;
 
     wdiFWLoggingInitRspCb   = (WDI_FWLoggingInitRspCb)pEventData->pCBfnc;
 

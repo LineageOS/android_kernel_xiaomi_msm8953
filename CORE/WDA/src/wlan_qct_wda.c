@@ -17183,6 +17183,11 @@ VOS_STATUS WDA_ProcessTxControlInd(tWDA_CbContext *pWDA,
    return wdaStatus;
 }
 
+void WDA_FWLoggingDXEdoneInd(void)
+{
+   WDI_FWLoggingDXEdoneInd(NULL);
+}
+
  /*  FUNCTION    WDA_featureCapsExchange
   *  WDA API to invoke capability exchange between host and FW.
   */

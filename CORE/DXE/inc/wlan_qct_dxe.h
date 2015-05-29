@@ -83,6 +83,8 @@ when           who        what, where, why
  * Size must be same with Vos Packet Size */
 #define WLANDXE_DEFAULT_RX_OS_BUFFER_SIZE  (VPKT_SIZE_BUFFER)
 
+#define WLANDXE_H2H_HEADER_OFFSET (80)
+
 /*The maximum number of packets that can be chained in dxe for the Low 
   priority channel
   Note: Increased it to 240 from 128 for Windows(EA) becase Windows is
@@ -184,6 +186,8 @@ typedef WDTS_LowResourceCbType WLANDXE_LowResourceCbType;
   void
 ===========================================================================*/
 typedef WDTS_MbReceiveMsgType WLANDXE_MbReceiveMsgCbType;
+
+typedef WDTS_RxLogDoneType WLANDXE_RxLogDoneType;
 
 /*==========================================================================
   @  Type Name
@@ -433,4 +437,14 @@ void WLANDXE_ChannelDebug
    wpt_uint8      debugFlags
 );
 
+wpt_uint32 WLANDXE_SetupLogTransfer
+(
+   wpt_uint64 bufferAddr,
+   wpt_uint32 bufferLen
+);
+
+wpt_status WLANDXE_StartLogTransfer
+(
+void
+);
 #endif /* WLAN_QCT_DXE_H */

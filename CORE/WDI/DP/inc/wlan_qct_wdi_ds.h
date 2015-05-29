@@ -184,6 +184,13 @@ typedef struct sPktMetaInfo
    } u;
 } WDI_DS_MetaInfoType;
 
+typedef struct
+{
+   wpt_boolean active;
+   wpt_uint64 logBuffAddress[MAX_NUM_OF_BUFFER];
+   wpt_uint32 logBuffLength[MAX_NUM_OF_BUFFER];
+} WDI_DS_LoggingSessionType;
+
 WPT_STATIC WPT_INLINE WDI_DS_RxMetaInfoType* WDI_DS_ExtractRxMetaData (wpt_packet *pFrame)
 {
   WDI_DS_RxMetaInfoType * pRxMetadata =
@@ -203,6 +210,7 @@ WPT_STATIC WPT_INLINE WDI_DS_TxMetaInfoType* WDI_DS_ExtractTxMetaData (wpt_packe
 typedef void (*WDI_DS_TxCompleteCallback)(void *pContext, wpt_packet *pFrame);
 typedef void (*WDI_DS_RxPacketCallback) (void *pContext, wpt_packet *pFrame);
 typedef void (*WDI_DS_TxFlowControlCallback)(void *pContext, wpt_uint8 ac_mask);
+typedef void (*WDI_DS_RxLogCallback)(void);
 
 
 
@@ -225,6 +233,7 @@ WDI_Status WDI_DS_Register( void *pContext,
   WDI_DS_TxCompleteCallback pfnTxCompleteCallback,
   WDI_DS_RxPacketCallback pfnRxPacketCallback, 
   WDI_DS_TxFlowControlCallback pfnTxFlowControlCallback,
+  WDI_DS_RxLogCallback pfnRxLogCallback,
   void *pCallbackContext);
 
 
@@ -371,4 +380,6 @@ void WDI_DS_ActivateTrafficStats(void);
 void WDI_DS_ClearTrafficStats(void);
 
 void *WDI_DS_GetLoggingMbPhyAddr(void *pContext);
+void *WDI_DS_GetLoggingMbAddr(void *pContext);
+void *WDI_DS_GetLoggingSession(void *pContext);
 #endif

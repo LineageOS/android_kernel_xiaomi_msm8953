@@ -99,6 +99,7 @@ typedef wpt_status (*WDTS_RxFrameReadyCbType) (void *pContext, wpt_packet *pFram
 typedef wpt_status (*WDTS_LowResourceCbType)(void *pContext, WDTS_ChannelType channel, wpt_boolean on);
 typedef void  (*WDTS_SetPSCbType)(wpt_status  status, unsigned int dxePhyAddr);
 typedef void (*WDTS_MbReceiveMsgType)(void *pContext);
+typedef void (*WDTS_RxLogDoneType)(void *pContext);
 
 /* DTS Set power state ACK callback. 
  * This callback function should be invoked by the DTS to notify WDI that set
@@ -118,6 +119,7 @@ typedef struct
    WDTS_TxCompleteCbType    txCompleteCB;
    WDTS_LowResourceCbType   lowResourceCB;
    WDTS_MbReceiveMsgType    receiveMbMsgCB;
+   WDTS_RxLogDoneType       receiveLogCompleteCB;
 }WDTS_ClientCallbacks;
 
 typedef struct {
@@ -133,6 +135,8 @@ typedef struct {
   wpt_status (*stop) (void *pContext);
   wpt_status (*close) (void *pContext);
   wpt_uint32 (*getFreeTxDataResNumber) (void *pContext);
+  wpt_uint32 (*setupLogTransfer) (wpt_uint64 bufferAddr, wpt_uint32 bufferSize);
+  wpt_status  (*startLogTransfer) (void);
 } WDTS_TransportDriverTrype;
 
 typedef struct {

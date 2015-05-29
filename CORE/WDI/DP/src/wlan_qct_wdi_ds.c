@@ -69,6 +69,7 @@ WDI_Status WDI_DS_Register( void *pContext,
   WDI_DS_TxCompleteCallback pfnTxCompleteCallback,
   WDI_DS_RxPacketCallback pfnRxPacketCallback,
   WDI_DS_TxFlowControlCallback pfnTxFlowControlCallback,
+  WDI_DS_RxLogCallback pfnRxLogCallback,
   void *pCallbackContext)
 {
   WDI_DS_ClientDataType *pClientData;
@@ -94,6 +95,7 @@ WDI_Status WDI_DS_Register( void *pContext,
   pClientData->receiveFrameCB = pfnRxPacketCallback;
   pClientData->txCompleteCB = pfnTxCompleteCallback;
   pClientData->txResourceCB = pfnTxFlowControlCallback;
+  pClientData->rxLogCB = pfnRxLogCallback;
   pClientData->pCallbackContext = pCallbackContext;
 
   for(bssLoop = 0; bssLoop < WDI_DS_MAX_SUPPORTED_BSS; bssLoop++)

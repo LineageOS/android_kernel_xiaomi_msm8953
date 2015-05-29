@@ -1885,6 +1885,10 @@ static wpt_status dxeRXFrameSingleBufferAlloc
    currentPalPacketBuffer->pBD      = NULL;
    currentPalPacketBuffer->pBDPhys  = NULL;
    currentPalPacketBuffer->BDLength = 0;
+
+   if (channelEntry->channelType == WDTS_CHANNEL_RX_FW_LOG)
+      wpalPacketRawTrimHead(currentCtrlBlock->xfrFrame, WLANDXE_H2H_HEADER_OFFSET);
+
    status = wpalLockPacketForTransfer(currentPalPacketBuffer);
 
    if(eWLAN_PAL_STATUS_SUCCESS != status)
@@ -2004,6 +2008,73 @@ static wpt_status dxeRXFrameRefillRing
    return status;
 }
 
+static wpt_uint32 dxeRXLogRefillRing
+(
+   WLANDXE_CtrlBlkType      *dxeCtxt,
+   WLANDXE_ChannelCBType    *channelEntry,
+   wpt_uint64                bufferAddr,
+   wpt_uint32                bufferLen
+)
+{
+   wpt_status                status = eWLAN_PAL_STATUS_SUCCESS;
+   WLANDXE_DescCtrlBlkType  *currentCtrlBlk = channelEntry->tailCtrlBlk;
+   WLANDXE_DescType         *currentDesc    = NULL;
+   wpt_uint32                xfrSize, allocatedLen = 0;
+
+   while(bufferLen > 0)
+   {
+      /* Current Control block is free
+       * and associated frame buffer is not linked with control block anymore
+       * allocate new frame buffer for current control block */
+      status = dxeRXFrameSingleBufferAlloc(dxeCtxt,
+                                           channelEntry,
+                                           currentCtrlBlk);
+
+      if((eWLAN_PAL_STATUS_SUCCESS != status))
+      {
+         HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_WARN,
+                  "%s, out of RX buffer pool, break here",__func__);
+         break;
+      }
+
+      if(eWLAN_PAL_STATUS_E_EXISTS == status)
+      {
+         HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                  "%s, Descriptor Non-Empty",__func__);
+      }
+
+      currentDesc = currentCtrlBlk->linkedDesc;
+      currentDesc->descCtrl.ctrl = channelEntry->extraConfig.cw_ctrl_read;
+      xfrSize = WLANDXE_DEFAULT_RX_OS_BUFFER_SIZE > bufferLen ?
+                   bufferLen : WLANDXE_DEFAULT_RX_OS_BUFFER_SIZE;
+      currentDesc->xfrSize = xfrSize;
+      allocatedLen += xfrSize;
+      bufferLen -= xfrSize;
+      wpalPacketSetRxLength(currentCtrlBlk->xfrFrame,
+                            xfrSize);
+
+      currentDesc->dxedesc.dxe_short_desc.srcMemAddrL =
+              WLANDXE_U32_SWAP_ENDIAN((wpt_uint32)(uintptr_t)bufferAddr);
+
+      /* Issue a dummy read from the DXE descriptor DDR location to ensure
+         that any posted writes are reflected in memory before DXE looks at
+         the descriptor. */
+      if(channelEntry->extraConfig.cw_ctrl_read != currentDesc->descCtrl.ctrl)
+      {
+         HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                  "%s, Descriptor write failed",__func__);
+         ++channelEntry->desc_write_fail_count;
+      }
+
+      currentCtrlBlk = currentCtrlBlk->nextCtrlBlk;
+      --channelEntry->numFreeDesc;
+      bufferAddr += xfrSize;
+   }
+
+   channelEntry->tailCtrlBlk = currentCtrlBlk;
+
+   return allocatedLen;
+}
 /*==========================================================================
   @  Function Name
       dxeRXFrameRouteUpperLayer
@@ -2068,7 +2139,8 @@ static wpt_int32 dxeRXFrameRouteUpperLayer
       currentCtrlBlk->xfrFrame = NULL;
 
       /* Now try to refill the ring with empty Rx buffers to keep DXE busy */
-      dxeRXFrameRefillRing(dxeCtxt, channelEntry);
+      if (WDTS_CHANNEL_RX_FW_LOG != channelEntry->channelType)
+          dxeRXFrameRefillRing(dxeCtxt, channelEntry);
 
       /* Test next contorl block
        * if valid, this control block also has new RX frame must be handled */
@@ -2721,6 +2793,11 @@ pull_frames:
                status = dxeRXFrameReady(dxeCtxt,
                                         channelCb,
                                         chLogRxFwStat);
+               if (channelCb->numFreeDesc == channelCb->numDesc)
+               {
+                  dxeCtxt->hostInitiatedH2H = 0;
+                  dxeCtxt->receiveLogCompleteCB(dxeCtxt->clientCtxt);
+               }
             }
          }
 
@@ -4325,6 +4402,7 @@ wpt_status WLANDXE_ClientRegistration
    dxeCtxt->txCompCB      = WDTSCb.txCompleteCB;
    dxeCtxt->lowResourceCB = WDTSCb.lowResourceCB;
    dxeCtxt->receiveMbMsgCB = WDTSCb.receiveMbMsgCB;
+   dxeCtxt->receiveLogCompleteCB = WDTSCb.receiveLogCompleteCB;
    dxeCtxt->clientCtxt    = userContext;
 
    HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO_LOW,
@@ -5323,4 +5401,43 @@ void WLANDXE_ChannelDebug
    }
 
    return;
+}
+
+wpt_uint32 WLANDXE_SetupLogTransfer(wpt_uint64 bufferAddr, wpt_uint32 bufferLen)
+{
+   WLANDXE_ChannelCBType    *channelEntry;
+
+   channelEntry = &tempDxeCtrlBlk->dxeChannel[WDTS_CHANNEL_RX_FW_LOG];
+
+
+   return dxeRXLogRefillRing(tempDxeCtrlBlk, channelEntry, bufferAddr,
+                             bufferLen);
+}
+
+wpt_status WLANDXE_StartLogTransfer(void)
+{
+   WLANDXE_ChannelCBType    *channelEntry;
+   wpt_status                status = eWLAN_PAL_STATUS_SUCCESS;
+
+   channelEntry = &tempDxeCtrlBlk->dxeChannel[WDTS_CHANNEL_RX_FW_LOG];
+
+   tempDxeCtrlBlk->hostInitiatedH2H = 1;
+   status = wpalWriteRegister(channelEntry->channelRegister.chDXEDesclRegAddr,
+                                   channelEntry->headCtrlBlk->linkedDescPhyAddr);
+   if(eWLAN_PAL_STATUS_SUCCESS != status)
+   {
+      HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
+               "%s Write DESC Address register fail", __func__);
+      return status;
+   }
+
+   wpalWriteRegister(channelEntry->channelRegister.chDXECtrlRegAddr,
+                          channelEntry->extraConfig.chan_mask);
+   if(eWLAN_PAL_STATUS_SUCCESS != status)
+   {
+      HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
+               "dxeChannelInitProgram Write RX Control register fail");
+      return status;
+   }
+   return status;
 }

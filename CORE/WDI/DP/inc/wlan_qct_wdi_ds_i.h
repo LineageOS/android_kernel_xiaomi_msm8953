@@ -47,7 +47,7 @@
 #include "wlan_qct_pal_trace.h"
 #include "wlan_qct_wdi_ds.h"
 #include "wlan_qct_dxe.h"
-
+#include "wlan_hal_msg.h"
 
 #define WDI_DS_MAX_CHUNK_SIZE 128
 #define WDI_802_11_MAX_HEADER_LEN 40
@@ -149,6 +149,7 @@ typedef struct
 {
    void *   pLoggingMbVirtAddress;
    void *   pLoggingMbPhysAddress;
+   WDI_DS_LoggingSessionType loggingSession;
 } WDI_DS_LoggingMbType;
 
 WDI_Status WDI_DS_MemPoolCreate(WDI_DS_BdMemPoolType *memPool, wpt_uint8 chunkSize, wpt_uint8 numChunks);
@@ -169,6 +170,7 @@ typedef struct
   WDI_DS_RxPacketCallback          receiveFrameCB;
   WDI_DS_TxCompleteCallback        txCompleteCB;
   WDI_DS_TxFlowControlCallback     txResourceCB;
+  WDI_DS_RxLogCallback             rxLogCB;
   WDI_DS_staIdxPerBssIdxType       staIdxPerBssIdxTable[WDI_DS_MAX_SUPPORTED_BSS];
   WDI_DS_LoggingMbType             loggingMbContext;
 } WDI_DS_ClientDataType;

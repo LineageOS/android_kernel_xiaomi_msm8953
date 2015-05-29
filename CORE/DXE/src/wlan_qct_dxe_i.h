@@ -678,6 +678,7 @@ typedef struct
    WLANDXE_TxCompleteCbType        txCompCB;
    WLANDXE_LowResourceCbType       lowResourceCB;
    WLANDXE_MbReceiveMsgCbType      receiveMbMsgCB;
+   WLANDXE_RxLogDoneType           receiveLogCompleteCB;
    WLANDXE_TxCompIntConfigType     txCompInt;
    void                           *clientCtxt;
    wpt_uint32                      interruptPath;

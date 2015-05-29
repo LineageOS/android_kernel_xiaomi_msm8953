@@ -11514,6 +11514,11 @@ WDI_SetRtsCtsHTVhtInd
   wpt_uint32 rtsCtsVal
 );
 
+WDI_Status
+WDI_FWLoggingDXEdoneInd
+(
+  WDI_FWLoggingDXEdoneIndInfoType*    pwdiFWLoggingDXEdoneInd
+);
 
 #ifdef __cplusplus
  }

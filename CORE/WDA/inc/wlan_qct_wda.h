@@ -2084,4 +2084,7 @@ void WDA_TrafficStatsTimerActivate(wpt_boolean activate);
 
 ===========================================================================*/
 void WDA_SetEnableSSR(v_BOOL_t enableSSR);
+
+
+void WDA_FWLoggingDXEdoneInd(void);
 #endif

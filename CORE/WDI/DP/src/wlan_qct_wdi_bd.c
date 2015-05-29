@@ -208,6 +208,20 @@ void *WDI_DS_GetLoggingMbPhyAddr(void *pContext)
   return pClientData->loggingMbContext.pLoggingMbPhysAddress;
 }
 
+void *WDI_DS_GetLoggingMbAddr(void *pContext)
+{
+  WDI_DS_ClientDataType *pClientData = pContext;
+
+  return pClientData->loggingMbContext.pLoggingMbVirtAddress;
+}
+
+void*WDI_DS_GetLoggingSession(void *pContext)
+{
+  WDI_DS_ClientDataType *pClientData = pContext;
+
+  return &pClientData->loggingMbContext.loggingSession;
+}
+
 void WDI_DS_LoggingMbDestroy(WDI_DS_LoggingMbType *pLoggingMailbox)
 {
   wpalDmaMemoryFree(pLoggingMailbox->pLoggingMbVirtAddress);

@@ -621,8 +621,11 @@ wpt_status dxeChannelDefaultConfig
    dxeControlRead |= WLANDXE_DESC_CTRL_INT;
    /* For ready status, this Control WORD must be VALID */
    dxeControlRead |= WLANDXE_DESC_CTRL_VALID;
+
    /* Frame Contents Swap */
-   dxeControlRead |= WLANDXE_DESC_CTRL_BDT_SWAP;
+   if (WDTS_CHANNEL_RX_FW_LOG != channelEntry->channelType)
+      dxeControlRead |= WLANDXE_DESC_CTRL_BDT_SWAP;
+
    /* Host Little Endian */
    if((WDTS_CHANNEL_TX_LOW_PRI  == channelEntry->channelType) ||
       (WDTS_CHANNEL_TX_HIGH_PRI == channelEntry->channelType) ||
