@@ -3460,7 +3460,7 @@ VOS_STATUS hdd_parse_config_ini(hdd_context_t* pHddCtx)
        * buffer address and modifying the buffer value.
        */
       line = get_next_line(buffer, (pTemp + (fw->size-1)));
-      if(line > (pTemp + fw->size)) {
+      if(line >= (pTemp + fw->size)) {
          hddLog(VOS_TRACE_LEVEL_FATAL, "%s: INI file seems to be corrupted",
                   __func__);
          vos_status = VOS_STATUS_E_FAILURE;
