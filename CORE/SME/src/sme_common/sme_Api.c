@@ -2765,6 +2765,17 @@ eHalStatus sme_Close(tHalHandle hHal)
 
    return status;
 }
+
+v_VOID_t sme_PreClose(tHalHandle hHal)
+{
+   tpAniSirGlobal pMac = PMAC_STRUCT( hHal );
+
+   smsLog(pMac, LOG1, FL("Stopping Active CMD List Timer"));
+
+   vos_timer_stop( pMac->sme.smeCmdActiveList.cmdTimeoutTimer );
+
+}
+
 #ifdef FEATURE_WLAN_LFR
 tANI_BOOLEAN csrIsScanAllowed(tpAniSirGlobal pMac)
 {

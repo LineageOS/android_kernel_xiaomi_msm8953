@@ -8514,6 +8514,12 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
    powerContext.magic = 0;
    spin_unlock(&hdd_context_lock);
 
+   /* If Device is shutdown, no point for SME to wait for responses
+      from device. Pre Close SME */
+   if(wcnss_device_is_shutdown())
+   {
+      sme_PreClose(pHddCtx->hHal);
+   }
    hdd_debugfs_exit(pHddCtx);
 
 #ifdef WLAN_NS_OFFLOAD
