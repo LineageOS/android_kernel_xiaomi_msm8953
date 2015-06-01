@@ -46,5 +46,7 @@ int wlan_logging_flush_pkt_queue(void);
 int wlan_logging_sock_deactivate_svc(void);
 int wlan_log_to_user(VOS_TRACE_LEVEL log_level, char *to_be_sent, int length);
 int wlan_queue_logpkt_for_app(vos_pkt_t *pPacket, uint32 pkt_type);
+void wlan_logging_set_log_level(void);
+
 
 #endif /* WLAN_LOGGING_SOCK_SVC_H */

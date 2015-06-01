@@ -391,3 +391,19 @@ void nl_srv_nl_close_indication
 }
 #endif /* WLAN_KD_READY_NOTIFIER */
 
+/**
+ * nl_srv_is_initialized() - This function is used check if the netlink
+ * service is initialized
+ *
+ * This function is used check if the netlink service is initialized
+ *
+ * Return: Return -EPERM if the service is not initialized
+ *
+ */
+int nl_srv_is_initialized()
+{
+   if (nl_srv_sock)
+       return 0;
+   else
+       return -EPERM;
+}

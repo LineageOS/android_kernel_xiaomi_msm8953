@@ -62,4 +62,5 @@ int nl_srv_bcast(struct sk_buff * skb);
 void nl_srv_nl_ready_indication(void);
 void nl_srv_nl_close_indication(int pid);
 #endif /* WLAN_KD_READY_NOTIFIER */
+int nl_srv_is_initialized(void);
 #endif

@@ -40,6 +40,7 @@
 #include "wlan_nlink_common.h"
 #include "vos_sched.h"
 #include "wlan_ptt_sock_svc.h"
+#include "wlan_nlink_srv.h"
 
 
 #define PTT_MSG_DIAG_CMDS_TYPE   0x5050
@@ -149,8 +150,11 @@ void vos_log_submit(v_VOID_t *plog_hdr_ptr)
     }
 #endif /* WLAN_KD_READY_NOTIFIER */
 
+    if (nl_srv_is_initialized() != 0)
+        return;
+
    /* Send the log data to the ptt app only if it is registered with the wlan driver*/
-    if(pHddCtx->ptt_pid)
+    if(vos_is_multicast_logging())
     {
         data_len = pHdr->len;
     
@@ -179,19 +183,16 @@ void vos_log_submit(v_VOID_t *plog_hdr_ptr)
     
     
         vos_mem_copy(pBuf, pHdr,data_len);
-    
-        if(pHddCtx->ptt_pid)
+
+        if (ptt_sock_send_msg_to_app(wmsg, 0,
+                  ANI_NL_MSG_PUMAC, INVALID_PID, MSG_DONTWAIT) < 0)
         {
-            if( ptt_sock_send_msg_to_app(wmsg, 0,
-                      ANI_NL_MSG_PUMAC, pHddCtx->ptt_pid, MSG_DONTWAIT) < 0) {
-        
-                VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                          ("Ptt Socket error sending message to the app!!"));
-                vos_mem_free((v_VOID_t *)wmsg);
-                return;
-            }
-       
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                     ("Ptt Socket error sending message to the app!!"));
+            vos_mem_free((v_VOID_t *)wmsg);
+            return;
         }
+
         vos_mem_free((v_VOID_t*)wmsg);
     }
     return;
@@ -246,8 +247,11 @@ void vos_event_report_payload(v_U16_t event_Id, v_U16_t length, v_VOID_t *pPaylo
     }
 #endif /* WLAN_KD_READY_NOTIFIER */
     
+    if (nl_srv_is_initialized() != 0)
+        return;
+
     /* Send the log data to the ptt app only if it is registered with the wlan driver*/
-    if(pHddCtx->ptt_pid)
+    if(vos_is_multicast_logging())
     {
         total_len = sizeof(tAniHdr)+sizeof(event_report_t)+length;
         
@@ -274,7 +278,7 @@ void vos_event_report_payload(v_U16_t event_Id, v_U16_t length, v_VOID_t *pPaylo
         vos_mem_copy(pBuf, pPayload,length);
       
         if( ptt_sock_send_msg_to_app(wmsg, 0,
-                     ANI_NL_MSG_PUMAC, pHddCtx->ptt_pid, MSG_DONTWAIT) < 0) {
+                     ANI_NL_MSG_PUMAC, INVALID_PID, MSG_DONTWAIT) < 0) {
             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                        ("Ptt Socket error sending message to the app!!"));
             vos_mem_free((v_VOID_t*)wmsg);

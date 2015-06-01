@@ -86,7 +86,9 @@
 #define FTM_CHAIN_SEL_R0_ON         1
 #define FTM_CHAIN_SEL_T0_ON         2
 #define FTM_CHAIN_SEL_R0_T0_ON      3
-#define FTM_CHAIN_SEL_MAX           3
+#define FTM_CHAIN_SEL_ANTENNA_0     7
+#define FTM_CHAIN_SEL_ANTENNA_1     8
+#define FTM_CHAIN_SEL_MAX           8
 
 #define WCNSS_TXFIR_OFFSET          0x00018000
 
@@ -1183,6 +1185,14 @@ static VOS_STATUS wlan_ftm_priv_enable_chain(hdd_adapter_t *pAdapter,v_U16_t cha
 
         case FTM_CHAIN_SEL_T0_ON:
             chainSelect = PHY_CHAIN_SEL_T0_ON;
+            break;
+
+        case FTM_CHAIN_SEL_ANTENNA_0:
+            chainSelect = PHY_CHAIN_SEL_ANT_0;
+            break;
+
+        case FTM_CHAIN_SEL_ANTENNA_1:
+            chainSelect = PHY_CHAIN_SEL_ANT_1;
             break;
     }
 

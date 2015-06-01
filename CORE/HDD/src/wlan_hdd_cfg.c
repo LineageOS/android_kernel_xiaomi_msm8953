@@ -3294,6 +3294,15 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                   CFG_DXE_SSR_ENABLE_DEFAULT,
                   CFG_DXE_SSR_ENABLE_MIN,
                   CFG_DXE_SSR_ENABLE_MAX ),
+
+   REG_VARIABLE( CFG_MULTICAST_HOST_FW_MSGS, WLAN_PARAM_Integer,
+                  hdd_config_t, multicast_host_msgs,
+                  VAR_FLAGS_OPTIONAL |
+                  VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                  CFG_MULTICAST_HOST_FW_MSGS_DEFAULT,
+                  CFG_MULTICAST_HOST_FW_MSGS_MIN,
+                  CFG_MULTICAST_HOST_FW_MSGS_MAX),
+
 };
 
 /*
@@ -5474,6 +5483,8 @@ VOS_STATUS hdd_set_sme_config( hdd_context_t *pHddCtx )
    smeConfig->fDeferIMPSTime = pHddCtx->cfg_ini->deferImpsTime;
    smeConfig->fBtcEnableIndTimerVal = pHddCtx->cfg_ini->btcEnableIndTimerVal;
    smeConfig->csrConfig.roamDelayStatsEnabled = pHddCtx->cfg_ini->gEnableRoamDelayStats;
+
+   vos_set_multicast_logging(pHddCtx->cfg_ini->multicast_host_msgs);
    halStatus = sme_UpdateConfig( pHddCtx->hHal, smeConfig);
    if ( !HAL_STATUS_SUCCESS( halStatus ) )
    {

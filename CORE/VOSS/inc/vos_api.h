@@ -343,5 +343,7 @@ v_BOOL_t  vos_get_dxeSSREnable(void);
 v_U8_t vos_is_fw_logging_enabled(void);
 
 v_U8_t vos_is_fw_logging_supported(void);
+void vos_set_multicast_logging(uint8_t value);
+v_U8_t vos_is_multicast_logging(void);
 
 #endif // if !defined __VOS_NVITEM_H
