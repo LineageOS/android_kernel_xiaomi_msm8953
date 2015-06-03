@@ -103,6 +103,9 @@ when           who        what, where, why
 
 #define WLANDXE_REGISTER_BASE_ADDRESS     0x202000
 
+#define WLAN_PMU_SPARE_OUT_ADDRESS        0x21c088
+#define WLAN_PMU_POWER_DOWN_MASK          0x04000000
+
 /* Common over the channels register addresses */
 #define WALNDEX_DMA_CSR_ADDRESS          (WLANDXE_REGISTER_BASE_ADDRESS + 0x00)
 #define WALNDEX_DMA_ENCH_ADDRESS         (WLANDXE_REGISTER_BASE_ADDRESS + 0x04)
@@ -171,7 +174,6 @@ when           who        what, where, why
 #define WLANDXE_DMA_CSR_RESERVED_OFFSET       0x10
 #define WLANDXE_DMA_CSR_RESERVED_DEFAULT      0x0
 
-#define WLANDXE_RX_INTERRUPT_HANDLE_MASK      0x80000
 
 #define WLANDXE_DMA_CSR_H2H_SYNC_EN_MASK      0x8000
 #define WLANDXE_DMA_CSR_H2H_SYNC_EN_OFFSET    0x0F

@@ -341,6 +341,21 @@ eHalStatus sme_Open(tHalHandle hHal);
 eHalStatus sme_Close(tHalHandle hHal);
 
 /*--------------------------------------------------------------------------
+
+  \brief sme_PreClose() - Stop SME resources prior to final sme_Stop.
+
+  The function stops resources in SME, PMC, CCM, CSR, etc. as needed
+  to handle fast closure during SSR/unload-load cases.
+
+  \param hHal - The handle returned by macOpen.
+  \return v_VOID_t
+
+  \sa
+
+  --------------------------------------------------------------------------*/
+v_VOID_t sme_PreClose(tHalHandle hHal);
+
+/*--------------------------------------------------------------------------
   
   \brief sme_Start() - Put all SME modules at ready state.
   

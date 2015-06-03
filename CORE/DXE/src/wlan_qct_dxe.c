@@ -2748,9 +2748,9 @@ void dxeRXEventHandler
    }
    else
    {
-      wpalReadRegister(WALNDEX_DMA_CSR_ADDRESS, &regValue);
-      regValue &= ~WLANDXE_RX_INTERRUPT_HANDLE_MASK;
-      wpalWriteRegister(WALNDEX_DMA_CSR_ADDRESS, regValue);
+      wpalReadRegister(WLAN_PMU_SPARE_OUT_ADDRESS, &regValue);
+      regValue &= (~WLAN_PMU_POWER_DOWN_MASK);
+      wpalWriteRegister(WLAN_PMU_SPARE_OUT_ADDRESS, regValue);
    }
 
    /* Enable system level ISR */
@@ -2897,9 +2897,9 @@ static void dxeRXISR
    }
    else
    {
-      wpalReadRegister(WALNDEX_DMA_CSR_ADDRESS, &regValue);
-      regValue |= WLANDXE_RX_INTERRUPT_HANDLE_MASK;
-      wpalWriteRegister(WALNDEX_DMA_CSR_ADDRESS, regValue);
+      wpalReadRegister(WLAN_PMU_SPARE_OUT_ADDRESS, &regValue);
+      regValue |= WLAN_PMU_POWER_DOWN_MASK;
+      wpalWriteRegister(WLAN_PMU_SPARE_OUT_ADDRESS, regValue);
    }
 
    /* Disable interrupt at here

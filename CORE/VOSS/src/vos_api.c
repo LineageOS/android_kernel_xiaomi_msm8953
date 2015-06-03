@@ -996,8 +996,18 @@ VOS_STATUS vos_stop( v_CONTEXT_t vosContext )
   }
   else
   {
-    vosStatus = vos_wait_single_event( &(gpVosContext->wdaCompleteEvent),
+    if(wcnss_device_is_shutdown())
+    {
+       vosStatus = VOS_STATUS_E_TIMEOUT;
+       VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+        "%s: Wait for WDA_Stop complete event not needed due to SSR",
+         __func__);
+    }
+    else
+    {
+       vosStatus = vos_wait_single_event( &(gpVosContext->wdaCompleteEvent),
                                        VOS_WDA_STOP_TIMEOUT );
+    }
 
     if ( vosStatus != VOS_STATUS_SUCCESS )
     {
