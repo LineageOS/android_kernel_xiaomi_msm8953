@@ -329,6 +329,9 @@ v_VOID_t vos_fwDumpReq(tANI_U32 cmd, tANI_U32 arg1, tANI_U32 arg2,
 v_VOID_t vos_flush_work(struct work_struct *work);
 v_VOID_t vos_flush_delayed_work(struct delayed_work *dwork);
 
+v_VOID_t vos_init_work(struct work_struct *work , void *callbackptr);
+v_VOID_t vos_init_delayed_work(struct delayed_work *dwork , void *callbackptr);
+
 v_U64_t vos_get_monotonic_boottime(void);
 
 VOS_STATUS vos_randomize_n_bytes(void *mac_addr, tANI_U32 n);

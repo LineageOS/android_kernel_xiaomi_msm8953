@@ -999,8 +999,9 @@ int wlan_hdd_sta_tdls_init(hdd_adapter_t *pAdapter)
     pHddTdlsCtx->threshold_config.rssi_trigger_threshold = pHddCtx->cfg_ini->fTDLSRSSITriggerThreshold;
     pHddTdlsCtx->threshold_config.rssi_teardown_threshold = pHddCtx->cfg_ini->fTDLSRSSITeardownThreshold;
 
-    INIT_DELAYED_WORK(&pHddCtx->tdls_scan_ctxt.tdls_scan_work, wlan_hdd_tdls_schedule_scan);
-    set_bit(TDLS_INIT_DONE, &pAdapter->event_flags);
+    vos_init_delayed_work(&pHddCtx->tdls_scan_ctxt.tdls_scan_work,
+                          wlan_hdd_tdls_schedule_scan);
+     set_bit(TDLS_INIT_DONE, &pAdapter->event_flags);
 
     return 0;
 }

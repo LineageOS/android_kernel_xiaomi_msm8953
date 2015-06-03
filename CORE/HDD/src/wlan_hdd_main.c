@@ -6844,11 +6844,11 @@ hdd_adapter_t* hdd_open_adapter( hdd_context_t *pHddCtx, tANI_U8 session_type,
          }
 
          // Workqueue which gets scheduled in IPv4 notification callback.
-         INIT_WORK(&pAdapter->ipv4NotifierWorkQueue, hdd_ipv4_notifier_work_queue);
+         vos_init_work(&pAdapter->ipv4NotifierWorkQueue, hdd_ipv4_notifier_work_queue);
 
 #ifdef WLAN_NS_OFFLOAD
          // Workqueue which gets scheduled in IPv6 notification callback.
-         INIT_WORK(&pAdapter->ipv6NotifierWorkQueue, hdd_ipv6_notifier_work_queue);
+         vos_init_work(&pAdapter->ipv6NotifierWorkQueue, hdd_ipv6_notifier_work_queue);
 #endif
          //Stop the Interface TX queue.
          hddLog(VOS_TRACE_LEVEL_INFO, FL("Disabling queues"));
@@ -6861,7 +6861,7 @@ hdd_adapter_t* hdd_open_adapter( hdd_context_t *pHddCtx, tANI_U8 session_type,
          {
              /* Initialize the work queue to defer the
               * back to back RoC request */
-             INIT_DELAYED_WORK(&pAdapter->roc_work,
+             vos_init_delayed_work(&pAdapter->roc_work,
                      hdd_p2p_roc_work_queue);
          }
 
@@ -7267,19 +7267,13 @@ VOS_STATUS hdd_stop_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter,
                   break;
                }
             }
-#ifdef WLAN_OPEN_SOURCE
-          cancel_delayed_work_sync(&pAdapter->roc_work);
-#endif
+          vos_flush_delayed_work(&pAdapter->roc_work);
        }
 #ifdef WLAN_NS_OFFLOAD
-#ifdef WLAN_OPEN_SOURCE
-         cancel_work_sync(&pAdapter->ipv6NotifierWorkQueue);
-#endif
+         vos_flush_work(&pAdapter->ipv6NotifierWorkQueue);
 #endif
 
-#ifdef WLAN_OPEN_SOURCE
-         cancel_work_sync(&pAdapter->ipv4NotifierWorkQueue);
-#endif
+         vos_flush_work(&pAdapter->ipv4NotifierWorkQueue);
 
          /* It is possible that the caller of this function does not
           * wish to close the session
@@ -7329,9 +7323,7 @@ VOS_STATUS hdd_stop_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter,
                }
             }
 
-#ifdef WLAN_OPEN_SOURCE
-            cancel_delayed_work_sync(&pAdapter->roc_work);
-#endif
+            vos_flush_delayed_work(&pAdapter->roc_work);
          }
          mutex_lock(&pHddCtx->sap_lock);
          if (test_bit(SOFTAP_BSS_STARTED, &pAdapter->event_flags)) 
