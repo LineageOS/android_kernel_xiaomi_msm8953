@@ -2065,7 +2065,7 @@ tANI_BOOLEAN pmcProcessCommand( tpAniSirGlobal pMac, tSmeCmd *pCommand )
 {
     eHalStatus status = eHAL_STATUS_SUCCESS;
     tANI_BOOLEAN fRemoveCmd = eANI_BOOLEAN_TRUE;
-    pmcLog(pMac, LOG1, FL("PMC command is %d"), pCommand->command);
+    pmcLog(pMac, LOG1, FL("PMC command is 0x%x"), pCommand->command);
     do
     {
         switch ( pCommand->command )
@@ -2495,7 +2495,7 @@ tANI_BOOLEAN pmcShouldBmpsTimerRun( tpAniSirGlobal pMac )
      * an Infra session */
     if (!csrIsInfraConnected(pMac))
     {
-        pmcLog(pMac, LOG1, FL("No Infra Session or multiple sessions. BMPS should not be started"));
+        pmcLog(pMac, LOG1, FL("No Infra Session. BMPS can't be started"));
         return eANI_BOOLEAN_FALSE;
     }
     return eANI_BOOLEAN_TRUE;

@@ -1850,7 +1850,7 @@ limPopulateOwnRateSet(tpAniSirGlobal pMac,
 
         limLog(pMac, LOG1, FL("MCS Rate Set Bitmap: "));
         for(i=0; i<SIR_MAC_MAX_SUPPORTED_MCS_SET; i++)
-            limLog(pMac, LOG1,FL("%x ") , pRates->supportedMCSSet[i]);
+            limLog(pMac, LOG2,FL("%x ") , pRates->supportedMCSSet[i]);
     }
 
 #ifdef WLAN_FEATURE_11AC
@@ -2002,7 +2002,7 @@ limPopulatePeerRateSet(tpAniSirGlobal pMac,
         }
         limLog(pMac, LOG1, FL("MCS Rate Set Bitmap: "));
         for(i=0; i<SIR_MAC_MAX_SUPPORTED_MCS_SET; i++)
-            limLog(pMac, LOG1,FL("%x ") , pRates->supportedMCSSet[i]);
+            limLog(pMac, LOG2,FL("%x ") , pRates->supportedMCSSet[i]);
     }
 #ifdef WLAN_FEATURE_11AC
     limPopulateVhtMcsSet(pMac, pRates , pVHTCaps,psessionEntry);

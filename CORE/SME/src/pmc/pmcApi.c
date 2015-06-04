@@ -1232,7 +1232,7 @@ static void pmcProcessResponse( tpAniSirGlobal pMac, tSirSmeRsp *pMsg )
     {
         pCommand = GET_BASE_ADDR(pEntry, tSmeCmd, Link);
 
-        pmcLog(pMac, LOG2, FL("process message = %d"), pMsg->messageType);
+        pmcLog(pMac, LOG2, FL("process message = 0x%x"), pMsg->messageType);
 
     /* Process each different type of message. */
     switch (pMsg->messageType)
@@ -2173,12 +2173,18 @@ eHalStatus pmcWowlAddBcastPattern (
     if(pattern == NULL)
     {
         pmcLog(pMac, LOGE, FL("Null broadcast pattern being passed"));
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
+        WLAN_VOS_DIAG_LOG_FREE(log_ptr);
+#endif
         return eHAL_STATUS_FAILURE;
     }
 
     if( pSession == NULL)
     {
         pmcLog(pMac, LOGE, FL("Session not found "));
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
+        WLAN_VOS_DIAG_LOG_FREE(log_ptr);
+#endif
         return eHAL_STATUS_FAILURE;
     }
 

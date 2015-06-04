@@ -1047,9 +1047,10 @@ static eHalStatus hdd_DisConnectHandler( hdd_adapter_t *pAdapter, tCsrRoamInfo *
             driver so not sending the status of the connection to supplicant*/
         if(pHddCtx->isLoadUnloadInProgress == WLAN_HDD_NO_LOAD_UNLOAD_IN_PROGRESS)
         {
-            hddLog(VOS_TRACE_LEVEL_INFO_HIGH,
-                    "%s: sent disconnected event to nl80211",
-                    __func__);
+            if (sendDisconInd)
+                hddLog(VOS_TRACE_LEVEL_INFO_HIGH,
+                       "%s: sent disconnected event to nl80211",
+                       __func__);
 #ifdef WLAN_FEATURE_P2P_DEBUG
             if(pAdapter->device_mode == WLAN_HDD_P2P_CLIENT)
             {
