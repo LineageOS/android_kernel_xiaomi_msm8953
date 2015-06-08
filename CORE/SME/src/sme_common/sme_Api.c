@@ -7496,14 +7496,14 @@ eHalStatus sme_GetFramesLog(tHalHandle hHal,
 
     hHal - The handle returned by macOpen.
 
-    wlanMgmtLoggingInitParam - Params to initialize frame logging
+    wlanFWLoggingInitParam - Params to initialize frame logging
 
   \return eHalStatus
 
 
 --------------------------------------------------------------------------- */
 eHalStatus sme_InitMgmtFrameLogging( tHalHandle hHal,
-                            tSirMgmtLoggingInitParam *wlanMgmtLoggingInitParam)
+                            tSirFWLoggingInitParam *wlanFWLoggingInitParam)
 {
     eHalStatus status = eHAL_STATUS_SUCCESS;
     VOS_STATUS vosStatus = VOS_STATUS_SUCCESS;
@@ -7514,7 +7514,7 @@ eHalStatus sme_InitMgmtFrameLogging( tHalHandle hHal,
                                         sme_AcquireGlobalLock( &pMac->sme ) ) )
     {
         /* serialize the req through MC thread */
-        vosMessage.bodyptr = wlanMgmtLoggingInitParam;
+        vosMessage.bodyptr = wlanFWLoggingInitParam;
         vosMessage.type         = WDA_MGMT_LOGGING_INIT_REQ;
         vosStatus = vos_mq_post_message( VOS_MQ_ID_WDA, &vosMessage );
         if ( !VOS_IS_STATUS_SUCCESS(vosStatus) )

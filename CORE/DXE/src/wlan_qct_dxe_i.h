@@ -149,6 +149,7 @@ when           who        what, where, why
 #define WLANDXE_DMA_CHAN4_BASE_ADDRESS   (WLANDXE_REGISTER_BASE_ADDRESS + 0x500)
 #define WLANDXE_DMA_CHAN5_BASE_ADDRESS   (WLANDXE_REGISTER_BASE_ADDRESS + 0x540)
 #define WLANDXE_DMA_CHAN6_BASE_ADDRESS   (WLANDXE_REGISTER_BASE_ADDRESS + 0x580)
+#define WLANDXE_DMA_CHAN7_BASE_ADDRESS   (WLANDXE_REGISTER_BASE_ADDRESS + 0x5c0)
 
 /* Channel specific register offset */
 #define WLANDXE_DMA_CH_CTRL_REG          0x0000
@@ -416,6 +417,7 @@ when           who        what, where, why
 #define WLANDXE_INT_MASK_CHAN_4          0x00000010
 #define WLANDXE_INT_MASK_CHAN_5          0x00000020
 #define WLANDXE_INT_MASK_CHAN_6          0x00000040
+#define WLANDXE_INT_MASK_CHAN_7          0x00000080
 
 #define WLANDXE_TX_LOW_RES_THRESHOLD     (5)
 
@@ -499,6 +501,7 @@ typedef enum
    WLANDXE_DMA_CHANNEL_4,
    WLANDXE_DMA_CHANNEL_5,
    WLANDXE_DMA_CHANNEL_6,
+   WLANDXE_DMA_CHANNEL_7,
    WLANDXE_DMA_CHANNEL_MAX
 } WLANDXE_DMAChannelType;
 
@@ -674,6 +677,8 @@ typedef struct
    WLANDXE_RxFrameReadyCbType      rxReadyCB;
    WLANDXE_TxCompleteCbType        txCompCB;
    WLANDXE_LowResourceCbType       lowResourceCB;
+   WLANDXE_MbReceiveMsgCbType      receiveMbMsgCB;
+   WLANDXE_RxLogDoneType           receiveLogCompleteCB;
    WLANDXE_TxCompIntConfigType     txCompInt;
    void                           *clientCtxt;
    wpt_uint32                      interruptPath;
@@ -696,6 +701,7 @@ typedef struct
    wpt_boolean                     driverReloadInProcessing;
    wpt_boolean                     smsmToggled;
    wpt_boolean                     txRingsEmpty;
+   wpt_boolean                     hostInitiatedH2H;
 #ifdef WLAN_DXE_LOW_RESOURCE_TIMER
    wpt_timer                       rxResourceAvailableTimer;
 #endif

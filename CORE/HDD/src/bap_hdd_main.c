@@ -4164,7 +4164,7 @@ static int BSL_Write(struct sk_buff *skb)
         // save away the pctx context...so it can be retrieved by the work procedure.
         pHciContext->pctx = pctx;
         pHciContext->magic = BT_AMP_HCI_CTX_MAGIC;
-        INIT_WORK(&pHciContext->hciInterfaceProcessing,
+        vos_init_work(&pHciContext->hciInterfaceProcessing,
                   bslWriteFinish);
 
         VOS_TRACE(VOS_MODULE_ID_BAP, VOS_TRACE_LEVEL_INFO_HIGH,

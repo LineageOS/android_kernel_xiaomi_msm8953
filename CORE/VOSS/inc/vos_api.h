@@ -329,6 +329,9 @@ v_VOID_t vos_fwDumpReq(tANI_U32 cmd, tANI_U32 arg1, tANI_U32 arg2,
 v_VOID_t vos_flush_work(struct work_struct *work);
 v_VOID_t vos_flush_delayed_work(struct delayed_work *dwork);
 
+v_VOID_t vos_init_work(struct work_struct *work , void *callbackptr);
+v_VOID_t vos_init_delayed_work(struct delayed_work *dwork , void *callbackptr);
+
 v_U64_t vos_get_monotonic_boottime(void);
 
 VOS_STATUS vos_randomize_n_bytes(void *mac_addr, tANI_U32 n);
@@ -341,6 +344,7 @@ v_U32_t   vos_get_dxeReplenishRXTimerVal(void);
 v_BOOL_t  vos_get_dxeSSREnable(void);
 
 v_U8_t vos_is_fw_logging_enabled(void);
+v_U8_t vos_is_fw_ev_logging_enabled(void);
 
 v_U8_t vos_is_fw_logging_supported(void);
 void vos_set_multicast_logging(uint8_t value);

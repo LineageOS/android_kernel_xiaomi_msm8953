@@ -2475,6 +2475,24 @@ v_U8_t vos_is_fw_logging_enabled(void)
 
 /**---------------------------------------------------------------------------
 
+  \brief vos_is_fw_ev_logging_enabled() -
+
+  API to check if firmware is configured to send live logs using DXE channel
+
+  \param  -  None
+
+  \return -  0: firmware logging is not enabled (it may or may not
+                be supported)
+             1: firmware logging is enabled
+
+  --------------------------------------------------------------------------*/
+v_U8_t vos_is_fw_ev_logging_enabled(void)
+{
+   return hdd_is_fw_ev_logging_enabled();
+}
+
+/**---------------------------------------------------------------------------
+
   \brief vos_is_fw_logging_supported() -
 
   API to check if firmware supports to send logs using DXE channel
@@ -2583,6 +2601,24 @@ v_VOID_t vos_flush_delayed_work(struct delayed_work *dwork)
    cancel_delayed_work_sync(dwork);
 #else
    wcnss_flush_delayed_work(dwork);
+#endif
+}
+
+v_VOID_t vos_init_work(struct work_struct *work , void *callbackptr)
+{
+#if defined (WLAN_OPEN_SOURCE)
+   INIT_WORK(work,callbackptr);
+#else
+   wcnss_init_work(work, callbackptr);
+#endif
+}
+
+v_VOID_t vos_init_delayed_work(struct delayed_work *dwork , void *callbackptr)
+{
+#if defined (WLAN_OPEN_SOURCE)
+   INIT_DELAYED_WORK(dwork,callbackptr);
+#else
+   wcnss_init_delayed_work(dwork, callbackptr);
 #endif
 }
 

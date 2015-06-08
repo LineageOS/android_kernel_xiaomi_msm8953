@@ -58,7 +58,9 @@ static WDTS_TransportDriverTrype gTransportDriver = {
   WLANDXE_ChannelDebug,
   WLANDXE_Stop,
   WLANDXE_Close,
-  WLANDXE_GetFreeTxDataResNumber
+  WLANDXE_GetFreeTxDataResNumber,
+  WLANDXE_SetupLogTransfer,
+  WLANDXE_StartLogTransfer
 };
 
 static WDTS_SetPowerStateCbInfoType gSetPowerStateCbInfo;
@@ -539,6 +541,14 @@ wpt_status WDTS_RxPacket (void *pContext, wpt_packet *pFrame, WDTS_ChannelType c
     return eWLAN_PAL_STATUS_E_FAILURE;
   }
 
+  // Normal DMA transfer does not contain RxBD
+  if (WDTS_CHANNEL_RX_FW_LOG == channel)
+  {
+      wpalFwLogPktSerialize(pFrame);
+
+      return eWLAN_PAL_STATUS_SUCCESS;
+  }
+
   /*------------------------------------------------------------------------
     Extract BD header and check if valid
     ------------------------------------------------------------------------*/
@@ -835,6 +845,61 @@ wpt_status WDTS_OOResourceNotification(void *pContext, WDTS_ChannelType channel,
 
 }
 
+void WDTS_MbReceiveMsg(void *pContext)
+{
+  tpLoggingMailBox pLoggingMb;
+  WDI_DS_LoggingSessionType *pLoggingSession;
+  wpt_int8 i, noMem = 0;
+  wpt_uint32 totalLen = 0;
+
+  pLoggingMb = (tpLoggingMailBox)WDI_DS_GetLoggingMbAddr(pContext);
+  pLoggingSession = (WDI_DS_LoggingSessionType *)
+                       WDI_DS_GetLoggingSession(pContext);
+
+  for(i = 0; i < MAX_NUM_OF_BUFFER; i++)
+  {
+     pLoggingSession->logBuffAddress[i] = pLoggingMb->logBuffAddress[i];
+     if (!noMem)
+     {
+        pLoggingSession->logBuffLength[i] = gTransportDriver.setupLogTransfer(
+                                               pLoggingMb->logBuffAddress[i],
+                                               pLoggingMb->logBuffLength[i]);
+     }
+     else
+     {
+        pLoggingSession->logBuffLength[i] = 0;
+        continue;
+     }
+
+     totalLen += pLoggingSession->logBuffLength[i];
+
+     if (pLoggingSession->logBuffLength[i] < pLoggingMb->logBuffLength[i])
+     {
+        noMem = 1;
+     }
+  }
+
+  if (totalLen)
+  {
+     if (gTransportDriver.startLogTransfer() == eWLAN_PAL_STATUS_SUCCESS)
+        return;
+  }
+
+  // Send Done event to upper layers, since we wont be getting any from DXE
+}
+
+void WDTS_LogRxDone(void *pContext)
+{
+  if (NULL == pContext)
+  {
+    return;
+  }
+
+  ((WDI_DS_ClientDataType *)(pContext))->rxLogCB();
+
+  return;
+}
+
 /* DTS open  function. 
  * On open the transport device should initialize itself.
  * Parameters:
@@ -850,6 +915,7 @@ wpt_status WDTS_openTransport( void *pContext)
   void *pDTDriverContext; 
   WDI_DS_ClientDataType *pClientData;
   WDI_Status sWdiStatus = WDI_STATUS_SUCCESS;
+  WDTS_ClientCallbacks WDTSCb;
 
   pClientData = (WDI_DS_ClientDataType*) wpalMemoryAllocate(sizeof(WDI_DS_ClientDataType));
   if (!pClientData){
@@ -866,8 +932,13 @@ wpt_status WDTS_openTransport( void *pContext)
      return eWLAN_PAL_STATUS_E_FAILURE;
   }
   WDT_AssignTransportDriverContext(pContext, pDTDriverContext);
-  gTransportDriver.register_client(pDTDriverContext, WDTS_RxPacket, WDTS_TxPacketComplete, 
-    WDTS_OOResourceNotification, (void*)pClientData);
+
+  WDTSCb.rxFrameReadyCB = WDTS_RxPacket;
+  WDTSCb.txCompleteCB = WDTS_TxPacketComplete;
+  WDTSCb.lowResourceCB = WDTS_OOResourceNotification;
+  WDTSCb.receiveMbMsgCB = WDTS_MbReceiveMsg;
+  WDTSCb.receiveLogCompleteCB = WDTS_LogRxDone;
+  gTransportDriver.register_client(pDTDriverContext, WDTSCb, (void*)pClientData);
 
   /* Create a memory pool for Mgmt BDheaders.*/
   sWdiStatus = WDI_DS_MemPoolCreate(&pClientData->mgmtMemPool, WDI_DS_MAX_CHUNK_SIZE, 
@@ -884,6 +955,10 @@ wpt_status WDTS_openTransport( void *pContext)
   }
 
   wpalMemoryZero(&gDsTrafficStats, sizeof(gDsTrafficStats));
+
+  WDI_DS_LoggingMbCreate(&pClientData->loggingMbContext, sizeof(tLoggingMailBox));
+  if (WDI_STATUS_SUCCESS != sWdiStatus)
+    return eWLAN_PAL_STATUS_E_NOMEM;
 
   return eWLAN_PAL_STATUS_SUCCESS;
 
@@ -1090,7 +1165,9 @@ wpt_status WDTS_Close(void *pContext)
   
   /*Destroy the mem pool for mgmt BD headers*/
   WDI_DS_MemPoolDestroy(&pClientData->dataMemPool);
-  
+
+  WDI_DS_LoggingMbDestroy(&pClientData->loggingMbContext);
+
   status =  gTransportDriver.close(pDTDriverContext);
 
   wpalMemoryFree(pClientData);

@@ -1014,3 +1014,24 @@ void wpalLogPktSerialize
       vos_pkt_return_packet(WPAL_TO_VOS_PKT(pFrame));
    }
 }
+
+/*---------------------------------------------------------------------------
+    wpalFwLogPktSerialize - Serialize Logging data to logger thread
+
+    Param:
+    wpt_packet pFrame - The packet which contains the logging data.
+                        This packet has to be a VALID packet, as this
+                        API will not do any checks on the validity of
+                        the packet.
+
+    Return:
+        NONE
+
+---------------------------------------------------------------------------*/
+void wpalFwLogPktSerialize
+(
+   wpt_packet *pFrame
+)
+{
+    vos_logger_pkt_serialize(WPAL_TO_VOS_PKT(pFrame),LOG_PKT_TYPE_FW_LOG);
+}

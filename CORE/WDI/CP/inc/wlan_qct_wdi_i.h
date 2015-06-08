@@ -470,7 +470,7 @@ typedef enum
   /* Send command to encrypt the given message */
   WDI_ENCRYPT_MSG_REQ                            = 103,
 
-  WDI_MGMT_LOGGING_INIT_REQ                      = 104,
+  WDI_FW_LOGGING_INIT_REQ                        = 104,
   WDI_GET_FRAME_LOG_REQ                          = 105,
 
   /* NAN Request */
@@ -518,6 +518,7 @@ typedef enum
   WDI_CH_SWITCH_REQ_V1,
   WDI_TDLS_CHAN_SWITCH_REQ,
   WDI_SET_RTS_CTS_HTVHT_IND,
+  WDI_FW_LOGGING_DXE_DONE_IND,
 
   /*Keep adding the indications to the max request
     such that we keep them sepparate */
@@ -810,7 +811,7 @@ typedef enum
   /* Send command to encrypt the given message */
   WDI_ENCRYPT_MSG_RSP                            = 103,
 
-  WDI_MGMT_LOGGING_INIT_RSP                      = 104,
+  WDI_FW_LOGGING_INIT_RSP                        = 104,
   WDI_GET_FRAME_LOG_RSP                          = 105,
 
   WDI_NAN_RESPONSE                               = 106,
@@ -6137,14 +6138,21 @@ WDI_ProcessGetFrameLogReq
 );
 
 WDI_Status
-WDI_ProcessMgmtLoggingInitReq
+WDI_ProcessFWLoggingDXEdoneInd
 (
   WDI_ControlBlockType*  pWDICtx,
   WDI_EventInfoType*     pEventData
 );
 
 WDI_Status
-WDI_ProcessMgmtFrameLoggingInitRsp
+WDI_ProcessFWLoggingInitReq
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessFWFrameLoggingInitRsp
 (
   WDI_ControlBlockType*  pWDICtx,
   WDI_EventInfoType*     pEventData

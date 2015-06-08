@@ -130,6 +130,30 @@ typedef tANI_U8 tHalIpv4Addr[4];
 #define WLAN_HAL_EXT_SCAN_MAX_SIG_CHANGE_APS         64
 #define WLAN_HAL_EXT_SCAN_MAX_RSSI_SAMPLE_SIZE       8
 
+/* For Logging enhancement feature currently max 2 address will be passed */
+/* In future we may pass 3 address and length in suspend mode corner case */
+#define MAX_NUM_OF_BUFFER 3
+
+/* Log types */
+typedef enum
+{
+    MGMT_FRAME_LOGS    = 0,
+    QXDM_LOGGING       = 1,
+    FW_MEMORY_DUMP     = 2
+}tHalFrameLoggingType;
+
+/* Log size */
+typedef enum
+{
+    LOG_SIZE_4K   = 0,
+    LOG_SIZE_8K   = 1,
+    LOG_SIZE_12K  = 2,
+    LOG_SIZE_16K  = 3,
+    LOG_SIZE_32K  = 4,
+    LOG_SIZE_64K  = 5,
+    LOG_SIZE_96K  = 6
+}tHalLogBuffSize;
+
 /* Message types for messages exchanged between WDI and HAL */
 typedef enum
 {
@@ -523,8 +547,8 @@ typedef enum
 
    WLAN_HAL_FW_STATS_REQ                    = 296,
    WLAN_HAL_FW_STATS_RSP                    = 297,
-   WLAN_HAL_MGMT_LOGGING_INIT_REQ           = 298,
-   WLAN_HAL_MGMT_LOGGING_INIT_RSP           = 299,
+   WLAN_HAL_FW_LOGGING_INIT_REQ             = 298,
+   WLAN_HAL_FW_LOGGING_INIT_RSP             = 299,
    WLAN_HAL_GET_FRAME_LOG_REQ               = 300,
    WLAN_HAL_GET_FRAME_LOG_RSP               = 301,
 
@@ -536,6 +560,12 @@ typedef enum
    WLAN_HAL_DISABLE_MONITOR_MODE_RSP        = 305,
 
    WLAN_HAL_SET_RTS_CTS_HTVHT_IND           = 306,
+   // FW Logging
+   WLAN_HAL_FATAL_EVENT_LOGGING_REQ         = 307,
+   WLAN_HAL_FATAL_EVENT_LOGGING_RSP         = 308,
+   WLAN_HAL_FW_MEMORY_DUMP_REQ              = 309,
+   WLAN_HAL_FW_MEMORY_DUMP_RSP              = 310,
+   WLAN_HAL_FW_LOGGING_DXE_DONE_IND         = 311,
 
    WLAN_HAL_MSG_MAX = WLAN_HAL_MSG_TYPE_MAX_ENUM_SIZE
 }tHalHostMsgType;
@@ -6739,6 +6769,7 @@ typedef enum {
     TDLS_OFF_CHANNEL       = 51,
     MGMT_FRAME_LOGGING     = 53,
     ENHANCED_TXBD_COMPLETION = 54,
+    LOGGING_ENHANCEMENT    = 55,
     MAX_FEATURE_SUPPORTED  = 128,
 } placeHolderInCapBitmap;
 
@@ -8496,35 +8527,104 @@ typedef PACKED_PRE struct PACKED_POST
 }  tGetFrameLogRespMsg,  * tpGetFrameLogRespMsg;
 
 /*---------------------------------------------------------------------------
- *WLAN_HAL_MGMT_LOGGING_INIT_REQ
+ *WLAN_HAL_FW_LOGGING_INIT_REQ
  *--------------------------------------------------------------------------*/
 typedef PACKED_PRE struct PACKED_POST
 {
+    /* Host mem address to be used as logmailbox */
+    tANI_U64 logMailBoxAddr;
+    /* BIT0 - enable frame logging
+     * BIT1 - enableBMUHWtracing
+     * BIT2 - enableQXDMlogging
+     * BIT3 - enableUElogDpuTxp
+     */
     tANI_U8 enableFlag;
     tANI_U8 frameType;
     tANI_U8 frameSize;
     tANI_U8 bufferMode;
-}tMgmtLoggingInitReqType, * tpMgmtLoggingInitReqType;
+    /* firmware will wakeup the host to send logs always */
+    tANI_U8 continuousFrameLogging;
+    /* Logging mail box version */
+    tANI_U8 logMailBoxVer;
+    // Max ring size in firmware to log msgs when host is suspended state
+    tANI_U8 maxLogBuffSize;
+    /* when firmware log reaches this threshold and
+     * if host is awake it will push the logs.
+     */
+    tANI_U8 minLogBuffSize;
+    /* Reserved for future purpose */
+    tANI_U32 reserved0;
+    tANI_U32 reserved1;
+    tANI_U32 reserved2;
+}tFWLoggingInitReqType, * tpFWLoggingInitReqType;
 
 typedef PACKED_PRE struct PACKED_POST
 {
     tHalMsgHeader             header;
-    tMgmtLoggingInitReqType   tMgmtLoggingInitReqParams;
-} tHalMgmtLoggingInitReqMsg, * tpHalMgmtLoggingInitReqMsg;
+    tFWLoggingInitReqType     tFWLoggingInitReqParams;
+} tHalFWLoggingInitReqMsg, * tpHalFWLoggingInitReqMsg;
 
 /*---------------------------------------------------------------------------
- * WLAN_HAL_MGMT_LOGGING_INIT_RSP
+ * WLAN_HAL_FW_LOGGING_INIT_RSP
  *-------------------------------------------------------------------------*/
 typedef PACKED_PRE struct PACKED_POST
 {
-    tANI_U32   status;
-} tMgmtLoggingInitResp, * tpMgmtLoggingInitReep;
+    tANI_U32 status;
+    /* FW mail box address */
+    tANI_U64 logMailBoxAddr;
+    /* Logging mail box version */
+    tANI_U8 logMailBoxVer;
+    /* Qshrink is enabled */
+    tANI_BOOLEAN logCompressEnabled;
+    /* Reserved for future purpose */
+    tANI_U32 reserved0;
+    tANI_U32 reserved1;
+    tANI_U32 reserved2;
+} tFWLoggingInitResp, * tpFWLoggingInitResp;
 
 typedef PACKED_PRE struct PACKED_POST
 {
     tHalMsgHeader         header;
-    tMgmtLoggingInitResp  tMgmtLoggingInitRespParams;
-}  tMgmtLoggingInitRespMsg,  * tpMgmtLoggingInitRespMsg;
+    tFWLoggingInitResp    tFWLoggingInitRespParams;
+}  tFWLoggingInitRespMsg,  * tpFWLoggingInitRespMsg;
+
+/*---------------------------------------------------------------------------
+ * WLAN_HAL_FW_LOGGING_DXE_DONE_IND
+ *-------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+    tANI_U32 status;
+    tANI_U32 logBuffLength[MAX_NUM_OF_BUFFER];
+    tANI_U64 logBuffAddress[MAX_NUM_OF_BUFFER];
+} tFWLoggingDxeDoneInd, * tpFWLoggingDxeDoneInd;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tHalMsgHeader         header;
+    tFWLoggingDxeDoneInd    tFWLoggingDxeDoneIndParams;
+}  tFWLoggingDxeDoneIndMsg,  * tpFWLoggingDxeDoneIndMsg;
+
+/*---------------------------------------------------------------------------
+ * Logging mail box structure
+ *-------------------------------------------------------------------------*/
+
+#define MAILBOX_VERSION_V1 0x1
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    /* Logging mail box version */
+    tANI_U8               logMbVersion;
+    /* Current logging buffer address */
+    tANI_U64              logBuffAddress[MAX_NUM_OF_BUFFER];
+    /* Current logging buffer length */
+    tANI_U32              logBuffLength[MAX_NUM_OF_BUFFER];
+    /* Flush reason code  0: Host requested Non zero FW FATAL event*/
+    tANI_U16              reasonCode;
+    /* Log type i.e. Mgmt frame = 0, QXDM = 1, FW Mem dump = 2 */
+    tANI_U8               logType;
+    /* Indicate if Last segment of log is received*/
+    tANI_BOOLEAN          done;
+}tLoggingMailBox, *tpLoggingMailBox;
 
 /*---------------------------------------------------------------------------
 * WLAN_HAL_ENABLE_MONITOR_MODE_REQ

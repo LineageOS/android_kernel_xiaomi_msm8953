@@ -139,6 +139,12 @@ void WDA_TLI_FastHwFwdDataFrame
 }
 #endif /*WLAN_PERF*/
 
+void WDA_DS_RxLogCallback(void)
+{
+  WDA_FWLoggingDXEdoneInd();
+  return;
+}
+
 /*==========================================================================
   FUNCTION    WDA_DS_Register
 
@@ -235,6 +241,7 @@ VOS_STATUS WDA_DS_Register
                                (WDI_DS_TxCompleteCallback)WDA_DS_TxCompleteCB,
                                (WDI_DS_RxPacketCallback)pfnRxPacketCallback,
                                WDA_DS_TxFlowControlCallback,
+                               WDA_DS_RxLogCallback,
                                pvosGCtx );
 
   if ( WDI_STATUS_SUCCESS != wdiStatus )
