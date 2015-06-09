@@ -7157,7 +7157,7 @@ WDI_MainStartStarted
   wdiStartRspCb = (WDI_StartRspCb)pEventData->pCBfnc;
 
    /*Notify UMAC*/
-  wdiStartRspCb( &pWDICtx->wdiCachedStartRspParams, pWDICtx->pRspCBUserData);
+  wdiStartRspCb( &pWDICtx->wdiCachedStartRspParams, pEventData->pUserData);
 
   /*Return Success*/
   return WDI_STATUS_SUCCESS;

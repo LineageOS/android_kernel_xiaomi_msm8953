@@ -768,11 +768,22 @@ void limLogQosMapSet(tpAniSirGlobal pMac, tSirQosMapSet *pQosMapSet)
 tSirRetStatus
 PopulateDot11fVHTCaps(tpAniSirGlobal           pMac,
                       tDot11fIEVHTCaps *pDot11f,
+                      tANI_U8 nChannelNum,
                       tAniBool isProbeRspAssocRspBeacon)
 {
     tSirRetStatus        nStatus;
     tANI_U32             nCfgValue=0;
+    tAniBool             disableMcs9 = eSIR_FALSE;
 
+    /* Always disable VHT9 in 2.4Ghz as we only
+     * support VHT20 in 2.4Ghz
+     */
+    if (nChannelNum <= SIR_11B_CHANNEL_END)
+        disableMcs9 = eSIR_TRUE;
+    else
+        disableMcs9 =
+            pMac->roam.configParam.channelBondingMode5GHz?
+                                      eSIR_FALSE: eSIR_TRUE;
     pDot11f->present = 1;
 
     CFG_GET_INT( nStatus, pMac, WNI_CFG_VHT_MAX_MPDU_LENGTH, nCfgValue );
@@ -870,6 +881,9 @@ PopulateDot11fVHTCaps(tpAniSirGlobal           pMac,
 
     nCfgValue = 0;
     CFG_GET_INT( nStatus, pMac, WNI_CFG_VHT_RX_MCS_MAP, nCfgValue );
+
+    if (eSIR_TRUE == disableMcs9)
+       nCfgValue = (nCfgValue & 0xFFFC) | 0x1;
     pDot11f->rxMCSMap = (nCfgValue & 0x0000FFFF);
 
     nCfgValue = 0;
@@ -881,6 +895,9 @@ PopulateDot11fVHTCaps(tpAniSirGlobal           pMac,
 
     nCfgValue = 0;
     CFG_GET_INT( nStatus, pMac, WNI_CFG_VHT_TX_MCS_MAP, nCfgValue );
+
+    if (eSIR_TRUE == disableMcs9)
+       nCfgValue = (nCfgValue & 0xFFFC) | 0x1;
     pDot11f->txMCSMap = (nCfgValue & 0x0000FFFF);
 
     nCfgValue = 0;
@@ -898,10 +915,22 @@ PopulateDot11fVHTCaps(tpAniSirGlobal           pMac,
 
 tSirRetStatus
 PopulateDot11fVHTOperation(tpAniSirGlobal   pMac,
-                               tDot11fIEVHTOperation  *pDot11f)
+                               tDot11fIEVHTOperation  *pDot11f,
+                               tANI_U8 nChannelNum)
 {
     tSirRetStatus        nStatus;
     tANI_U32             nCfgValue=0;
+    tAniBool             disableMcs9 = eSIR_FALSE;
+
+    /* Always disable VHT9 in 2.4Ghz as we only
+     * support VHT20 in 2.4Ghz
+     */
+    if (nChannelNum <= SIR_11B_CHANNEL_END)
+        disableMcs9 = eSIR_TRUE;
+    else
+        disableMcs9 =
+            pMac->roam.configParam.channelBondingMode5GHz?
+                                      eSIR_FALSE: eSIR_TRUE;
 
     pDot11f->present = 1;
 
@@ -920,6 +949,9 @@ PopulateDot11fVHTOperation(tpAniSirGlobal   pMac,
 
     nCfgValue = 0;
     CFG_GET_INT( nStatus, pMac, WNI_CFG_VHT_BASIC_MCS_SET,nCfgValue );
+
+    if (eSIR_TRUE == disableMcs9)
+       nCfgValue = (nCfgValue & 0xFFFC) | 0x1;
     pDot11f->basicMCSSet = (tANI_U16)nCfgValue;
 
     limLogVHTOperation(pMac,pDot11f);

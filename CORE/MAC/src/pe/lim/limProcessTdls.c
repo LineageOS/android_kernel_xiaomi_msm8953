@@ -784,7 +784,8 @@ static void PopulateDot11fTdlsHtVhtCap(tpAniSirGlobal pMac, uint32 selfDot11Mode
         IS_FEATURE_SUPPORTED_BY_FW(DOT11AC))
     {
         /* Include VHT Capability IE */
-        PopulateDot11fVHTCaps( pMac, vhtCap, eSIR_FALSE );
+        PopulateDot11fVHTCaps( pMac, vhtCap,
+                 psessionEntry->currentOperChannel, eSIR_FALSE );
     }
     else
     {
@@ -1835,7 +1836,8 @@ tSirRetStatus limSendTdlsLinkSetupCnfFrame(tpAniSirGlobal pMac, tSirMacAddr peer
      /* Check peer is VHT capable*/
     if (CHECK_BIT(peerCapability, TDLS_PEER_VHT_CAP))
     {
-       PopulateDot11fVHTOperation( pMac, &tdlsSetupCnf.VHTOperation);
+       PopulateDot11fVHTOperation( pMac, &tdlsSetupCnf.VHTOperation,
+                                      psessionEntry->currentOperChannel);
        PopulateDot11fHTInfo( pMac, &tdlsSetupCnf.HTInfo, psessionEntry );
     }
     else if (CHECK_BIT(peerCapability, TDLS_PEER_HT_CAP)) /* Check peer is HT capable */
