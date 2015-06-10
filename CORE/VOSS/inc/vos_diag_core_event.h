@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -54,6 +54,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
+
+#define WAKE_LOCK_NAME_LEN 80
+
 
 /*------------------------------------------------------------------------- 
   Event ID: EVENT_WLAN_SECURITY
@@ -257,6 +260,29 @@ struct vos_event_wlan_eapol
        uint8_t   dest_addr[6];
        uint8_t   src_addr[6];
 };
+/*-------------------------------------------------------------------------
+  Event ID: EVENT_WLAN_WAKE_LOCK
+  ------------------------------------------------------------------------*/
+/*
+ * struct vos_event_wlan_wake_lock - Structure holding the wakelock information
+ * @status: Whether the wakelock is taken/released
+ * @reason: Reason for taking this wakelock
+ * @timeout: Timeout value in case of timed wakelocks
+ * @name_len: Length of the name of the wakelock that will follow
+ * @name: Name of the wakelock
+ *
+ * This structure will hold the wakelock informations
+ */
+struct vos_event_wlan_wake_lock
+{
+       uint32_t status;
+       uint32_t reason;
+       uint32_t timeout;
+       uint32_t name_len;
+       char     name[WAKE_LOCK_NAME_LEN];
+};
+
+
 
 
 /*------------------------------------------------------------------------- 
@@ -266,6 +292,28 @@ enum wifi_connectivity_events {
        WIFI_EVENT_DRIVER_EAPOL_FRAME_TRANSMIT_REQUESTED,
        WIFI_EVENT_DRIVER_EAPOL_FRAME_RECEIVED,
 };
+
+/*
+ * enum wake_lock_reason - Reason for taking wakelock
+* @WIFI_POWER_EVENT_WAKELOCK_DRIVER_INIT: Driver initialization
+ * @WIFI_POWER_EVENT_WAKELOCK_DRIVER_REINIT: Driver re-initialization
+ * @WIFI_POWER_EVENT_WAKELOCK_SCAN: Scan request/response handling
+ * @WIFI_POWER_EVENT_WAKELOCK_RESUME_WLAN: Driver resume
+ * @WIFI_POWER_EVENT_WAKELOCK_ROC: Remain on channel request/response handling
+ * @WIFI_POWER_EVENT_WAKELOCK_HOLD_RX: Wakelocks taken for receive
+ * @WIFI_POWER_EVENT_WAKELOCK_SAP: SoftAP related wakelocks
+ * This enum has the reason codes why the wakelocks were taken/released
+ */
+enum wake_lock_reason {
+       WIFI_POWER_EVENT_WAKELOCK_DRIVER_INIT,
+       WIFI_POWER_EVENT_WAKELOCK_DRIVER_REINIT,
+       WIFI_POWER_EVENT_WAKELOCK_SCAN,
+       WIFI_POWER_EVENT_WAKELOCK_RESUME_WLAN,
+       WIFI_POWER_EVENT_WAKELOCK_ROC,
+       WIFI_POWER_EVENT_WAKELOCK_HOLD_RX,
+       WIFI_POWER_EVENT_WAKELOCK_SAP,
+};
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

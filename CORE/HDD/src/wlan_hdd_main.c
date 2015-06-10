@@ -194,9 +194,8 @@ static VOS_STATUS hdd_parse_ese_beacon_req(tANI_U8 *pValue,
 //wait time for beacon miss rate.
 #define BCN_MISS_RATE_TIME 500
 
-#ifdef WLAN_OPEN_SOURCE
-static struct wake_lock wlan_wake_lock;
-#endif
+static vos_wake_lock_t wlan_wake_lock;
+
 /* set when SSR is needed after unload */
 static e_hdd_ssr_required isSsrRequired = HDD_SSR_NOT_REQUIRED;
 
@@ -8556,14 +8555,12 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
          "%s: Failed to close VOSS Scheduler",__func__);
       VOS_ASSERT( VOS_IS_STATUS_SUCCESS( vosStatus ) );
    }
-#ifdef WLAN_OPEN_SOURCE
 #ifdef WLAN_FEATURE_HOLD_RX_WAKELOCK
    /* Destroy the wake lock */
-   wake_lock_destroy(&pHddCtx->rx_wake_lock);
+   vos_wake_lock_destroy(&pHddCtx->rx_wake_lock);
 #endif
    /* Destroy the wake lock */
-   wake_lock_destroy(&pHddCtx->sap_wake_lock);
-#endif
+   vos_wake_lock_destroy(&pHddCtx->sap_wake_lock);
 
 #ifdef CONFIG_ENABLE_LINUX_REG
    vosStatus = vos_nv_close();
@@ -8748,31 +8745,26 @@ VOS_STATUS hdd_post_voss_start_config(hdd_context_t* pHddCtx)
 }
 
 /* wake lock APIs for HDD */
-void hdd_prevent_suspend(void)
+void hdd_prevent_suspend(uint32_t reason)
 {
-#ifdef WLAN_OPEN_SOURCE
-    wake_lock(&wlan_wake_lock);
-#else
-    wcnss_prevent_suspend();
-#endif
+
+    vos_wake_lock_acquire(&wlan_wake_lock, reason);
+
 }
 
-void hdd_allow_suspend(void)
+void hdd_allow_suspend(uint32_t reason)
 {
-#ifdef WLAN_OPEN_SOURCE
-    wake_unlock(&wlan_wake_lock);
-#else
-    wcnss_allow_suspend();
-#endif
+
+    vos_wake_lock_release(&wlan_wake_lock, reason);
+
 }
 
-void hdd_prevent_suspend_timeout(v_U32_t timeout)
+void hdd_prevent_suspend_timeout(v_U32_t timeout, uint32_t reason)
 {
-#ifdef WLAN_OPEN_SOURCE
-    wake_lock_timeout(&wlan_wake_lock, msecs_to_jiffies(timeout));
-#else
-    /* Do nothing as there is no API in wcnss for timeout*/
-#endif
+
+    vos_wake_lock_timeout_release(&wlan_wake_lock, timeout,
+                                      reason);
+
 }
 
 /**---------------------------------------------------------------------------
@@ -9309,7 +9301,7 @@ int hdd_wlan_startup(struct device *dev )
    vos_mem_zero(pHddCtx, sizeof( hdd_context_t ));
 
    pHddCtx->wiphy = wiphy;
-   hdd_prevent_suspend();
+   hdd_prevent_suspend(WIFI_POWER_EVENT_WAKELOCK_DRIVER_INIT);
    pHddCtx->isLoadUnloadInProgress = WLAN_HDD_LOAD_IN_PROGRESS;
 
    vos_set_load_unload_in_progress(VOS_MODULE_ID_VOSS, TRUE);
@@ -10027,26 +10019,23 @@ int hdd_wlan_startup(struct device *dev )
    mutex_init(&pHddCtx->sap_lock);
    mutex_init(&pHddCtx->roc_lock);
 
-
-#ifdef WLAN_OPEN_SOURCE
 #ifdef WLAN_FEATURE_HOLD_RX_WAKELOCK
    /* Initialize the wake lcok */
-   wake_lock_init(&pHddCtx->rx_wake_lock,
-           WAKE_LOCK_SUSPEND,
+   vos_wake_lock_init(&pHddCtx->rx_wake_lock,
            "qcom_rx_wakelock");
+
 #endif
    /* Initialize the wake lcok */
-   wake_lock_init(&pHddCtx->sap_wake_lock,
-           WAKE_LOCK_SUSPEND,
+   vos_wake_lock_init(&pHddCtx->sap_wake_lock,
            "qcom_sap_wakelock");
-#endif
+
 
    vos_event_init(&pHddCtx->scan_info.scan_finished_event);
    pHddCtx->scan_info.scan_pending_option = WEXT_SCAN_PENDING_GIVEUP;
 
    pHddCtx->isLoadUnloadInProgress = WLAN_HDD_NO_LOAD_UNLOAD_IN_PROGRESS;
    vos_set_load_unload_in_progress(VOS_MODULE_ID_VOSS, FALSE);
-   hdd_allow_suspend();
+   hdd_allow_suspend(WIFI_POWER_EVENT_WAKELOCK_DRIVER_INIT);
 
 #ifdef FEATURE_WLAN_SCAN_PNO
    /*SME must send channel update configuration to RIVA*/
@@ -10176,7 +10165,7 @@ err_config:
    pHddCtx->cfg_ini= NULL;
 
 err_free_hdd_context:
-   hdd_allow_suspend();
+   hdd_allow_suspend(WIFI_POWER_EVENT_WAKELOCK_DRIVER_INIT);
    wiphy_free(wiphy) ;
    //kfree(wdev) ;
    VOS_BUG(1);
@@ -10227,9 +10216,7 @@ static int hdd_driver_init( void)
 
    ENTER();
 
-#ifdef WLAN_OPEN_SOURCE
-   wake_lock_init(&wlan_wake_lock, WAKE_LOCK_SUSPEND, "wlan");
-#endif
+   vos_wake_lock_init(&wlan_wake_lock, "wlan");
 
    pr_info("%s: loading driver v%s\n", WLAN_MODULE_NAME,
            QWLAN_VERSIONSTR TIMER_MANAGER_STR MEMORY_DEBUG_STR);
@@ -10250,10 +10237,7 @@ static int hdd_driver_init( void)
 
    if (max_retries >= 5) {
       hddLog(VOS_TRACE_LEVEL_FATAL,"%s: WCNSS driver not ready", __func__);
-#ifdef WLAN_OPEN_SOURCE
-      wake_lock_destroy(&wlan_wake_lock);
-#endif
-
+      vos_wake_lock_destroy(&wlan_wake_lock);
 #ifdef WLAN_LOGGING_SOCK_SVC_ENABLE
       wlan_logging_sock_deinit_svc();
 #endif
@@ -10323,11 +10307,7 @@ static int hdd_driver_init( void)
 #ifdef MEMORY_DEBUG
       vos_mem_exit();
 #endif
-
-#ifdef WLAN_OPEN_SOURCE
-      wake_lock_destroy(&wlan_wake_lock);
-#endif
-
+      vos_wake_lock_destroy(&wlan_wake_lock);
 #ifdef WLAN_LOGGING_SOCK_SVC_ENABLE
       wlan_logging_sock_deinit_svc();
 #endif
@@ -10487,9 +10467,7 @@ static void hdd_driver_exit(void)
 #endif
 
 done:
-#ifdef WLAN_OPEN_SOURCE
-   wake_lock_destroy(&wlan_wake_lock);
-#endif
+   vos_wake_lock_destroy(&wlan_wake_lock);
 
    pr_info("%s: driver unloaded\n", WLAN_MODULE_NAME);
 }
