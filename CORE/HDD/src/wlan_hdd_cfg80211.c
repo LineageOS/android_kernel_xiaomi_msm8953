@@ -10499,6 +10499,7 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
     v_U8_t* pP2pIe = NULL;
     int ret = 0;
     v_U8_t *pWpsIe=NULL;
+    bool is_p2p_scan = false;
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0))
     struct net_device *dev = NULL;
@@ -10760,8 +10761,13 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
      * the AP doesnt respond to our probe req then association
      * fails which is not desired
      */
+    if ((request->n_ssids == 1)
+            && (request->ssids != NULL)
+            && vos_mem_compare(&request->ssids[0], "DIRECT-", 7))
+        is_p2p_scan = true;
 
-    if( request->n_channels != WLAN_HDD_P2P_SINGLE_CHANNEL_SCAN )
+    if( is_p2p_scan ||
+            (request->n_channels != WLAN_HDD_P2P_SINGLE_CHANNEL_SCAN) )
     {
         hddLog(VOS_TRACE_LEVEL_DEBUG, "Flushing P2P Results");
         sme_ScanFlushP2PResult( WLAN_HDD_GET_HAL_CTX(pAdapter),
