@@ -6756,9 +6756,9 @@ void hdd_init_mon_mode (hdd_adapter_t *pAdapter)
     pMonCtx->state = 0;
     pMonCtx->ChannelNo = 1;
     pMonCtx->ChannelBW = 20;
-    pMonCtx->crcCheckEnabled = 0;
-    pMonCtx->typeSubtypeBitmap = 0xFFFFFFFFFFFF;
-    pMonCtx->is80211to803ConReq = 0;
+    pMonCtx->crcCheckEnabled = 1;
+    pMonCtx->typeSubtypeBitmap = 0xFFFF00000000;
+    pMonCtx->is80211to803ConReq = 1;
     pMonCtx->numOfMacFilters = 0;
  }
 
