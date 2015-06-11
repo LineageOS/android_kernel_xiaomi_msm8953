@@ -710,7 +710,7 @@ eHalStatus csrStop(tpAniSirGlobal pMac, tHalStopType stopType)
 
     for(sessionId = 0; sessionId < CSR_ROAM_SESSION_MAX; sessionId++)
     {
-        csrRoamCloseSession(pMac, sessionId, TRUE, NULL, NULL);
+        csrRoamCloseSession(pMac, sessionId, TRUE, TRUE, NULL, NULL);
     }
     csrScanDisable(pMac);
     pMac->scan.fCancelIdleScan = eANI_BOOLEAN_FALSE;
@@ -831,7 +831,7 @@ eHalStatus csrRoamClose(tpAniSirGlobal pMac)
     tANI_U32 sessionId;
     for(sessionId = 0; sessionId < CSR_ROAM_SESSION_MAX; sessionId++)
     {
-        csrRoamCloseSession(pMac, sessionId, TRUE, NULL, NULL);
+        csrRoamCloseSession(pMac, sessionId, TRUE, TRUE, NULL, NULL);
     }
     vos_timer_stop(&pMac->roam.hTimerWaitForKey);
     vos_timer_destroy(&pMac->roam.hTimerWaitForKey);
@@ -14815,6 +14815,7 @@ eHalStatus csrSendMBDelSelfStaReqMsg( tpAniSirGlobal pMac, tSirMacAddr macAddr )
    return( status );
 }
 eHalStatus csrIssueDelStaForSessionReq(tpAniSirGlobal pMac, tANI_U32 sessionId,
+                                       tANI_BOOLEAN fHighPriority,
                                        tSirMacAddr sessionMacAddr,
                                        csrRoamSessionCloseCallback callback,
                                        void *pContext)
@@ -14834,7 +14835,7 @@ eHalStatus csrIssueDelStaForSessionReq(tpAniSirGlobal pMac, tANI_U32 sessionId,
       pCommand->u.delStaSessionCmd.pContext = pContext;
       vos_mem_copy(pCommand->u.delStaSessionCmd.selfMacAddr, sessionMacAddr,
                    sizeof( tSirMacAddr ));
-      status = csrQueueSmeCommand(pMac, pCommand, TRUE);
+      status = csrQueueSmeCommand(pMac, pCommand, fHighPriority);
       if( !HAL_STATUS_SUCCESS( status ) )
       {
          //Should be panic??
@@ -14911,8 +14912,20 @@ void csrCleanupSession(tpAniSirGlobal pMac, tANI_U32 sessionId)
     }
 }
 
+void csrPurgeSmeCmdList(tpAniSirGlobal pMac, tANI_U32 sessionId)
+{
+    purgeSmeSessionCmdList(pMac, sessionId,
+            &pMac->sme.smeCmdPendingList);
+    if (pMac->fScanOffload)
+    {
+        purgeSmeSessionCmdList(pMac, sessionId,
+                &pMac->sme.smeScanCmdPendingList);
+    }
+    purgeCsrSessionCmdList(pMac, sessionId);
+}
+
 eHalStatus csrRoamCloseSession( tpAniSirGlobal pMac, tANI_U32 sessionId,
-                                tANI_BOOLEAN fSync, 
+                                tANI_BOOLEAN fSync, tANI_U8 bPurgeList,
                                 csrRoamSessionCloseCallback callback,
                                 void *pContext )
 {
@@ -14925,16 +14938,15 @@ eHalStatus csrRoamCloseSession( tpAniSirGlobal pMac, tANI_U32 sessionId,
             csrCleanupSession(pMac, sessionId);
         }
         else
-        { 
-            purgeSmeSessionCmdList(pMac, sessionId,
-                    &pMac->sme.smeCmdPendingList);
-            if (pMac->fScanOffload)
-            {
-                purgeSmeSessionCmdList(pMac, sessionId,
-                        &pMac->sme.smeScanCmdPendingList);
-            }
-            purgeCsrSessionCmdList(pMac, sessionId);
-            status = csrIssueDelStaForSessionReq( pMac, sessionId,
+        {
+            if(bPurgeList)
+                csrPurgeSmeCmdList(pMac, sessionId);
+           /*  If bPurgeList is FALSE, it means HDD already free all the
+            *  cmd and later queue few essential cmd. Now sme should process
+            *  the cmd in  pending queue order only.Hence we should
+            *  avoid DEL_SELF_STA as high priority cmd.
+            */
+            status = csrIssueDelStaForSessionReq( pMac, sessionId, bPurgeList,
                                         pSession->selfMacAddr, callback, pContext);
         }
     }
@@ -17337,6 +17349,12 @@ eHalStatus csrIsFullPowerNeeded( tpAniSirGlobal pMac, tSmeCmd *pCommand,
             reason = eSME_FULL_PWR_NEEDED_BY_TDLS_PEER_SETUP;
         }
 #endif
+        else if (eSmeCommandDelStaSession == pCommand->command)
+        {
+            //need full power for all
+            fNeedFullPower = eANI_BOOLEAN_TRUE;
+        }
+
         break;
     case REQUEST_STOP_UAPSD:
     case REQUEST_EXIT_WOWL:

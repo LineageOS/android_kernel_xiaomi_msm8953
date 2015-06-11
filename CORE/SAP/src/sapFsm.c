@@ -1132,7 +1132,7 @@ sapFsm
                     }
                     else if (eHAL_STATUS_SUCCESS ==
                          sme_CloseSession(hHal,
-                                         sapContext->sessionId, NULL, NULL))
+                                         sapContext->sessionId, VOS_TRUE, NULL, NULL))
                      {
                          sapContext->isSapSessionOpen = eSAP_FALSE;
                      }
@@ -1214,7 +1214,7 @@ sapFsm
                         sapContext->isSapSessionOpen = eSAP_FALSE;
                         if (!HAL_STATUS_SUCCESS(
                             sme_CloseSession(hHal,
-                                     sapContext->sessionId,
+                                     sapContext->sessionId, VOS_TRUE,
                                      sapRoamSessionCloseCallback, sapContext)))
                         {
                             vosStatus = sapSignalHDDevent(sapContext, NULL,

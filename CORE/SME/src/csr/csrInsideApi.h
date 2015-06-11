@@ -418,9 +418,10 @@ eHalStatus csrRoamOpenSession(tpAniSirGlobal pMac,
                               tANI_U8 *pbSessionId);
 //fSync: TRUE means cleanupneeds to handle synchronously.
 eHalStatus csrRoamCloseSession( tpAniSirGlobal pMac, tANI_U32 sessionId,
-                                tANI_BOOLEAN fSync, 
+                                tANI_BOOLEAN fSync, tANI_U8 bPurgeList,
                                 csrRoamSessionCloseCallback callback,
                                 void *pContext );
+void csrPurgeSmeCmdList(tpAniSirGlobal pMac, tANI_U32 sessionId);
 void csrCleanupSession(tpAniSirGlobal pMac, tANI_U32 sessionId);
 eHalStatus csrRoamGetSessionIdFromBSSID( tpAniSirGlobal pMac, tCsrBssid *bssid, tANI_U32 *pSessionId );
 eCsrCfgDot11Mode csrFindBestPhyMode( tpAniSirGlobal pMac, tANI_U32 phyMode );

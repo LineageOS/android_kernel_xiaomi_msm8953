@@ -434,22 +434,39 @@ void sme_SetCurrDeviceMode (tHalHandle hHal, tVOS_CON_MODE currDeviceMode);
   
   This is a synchronous API.
 
-  
   \param hHal - The handle returned by macOpen.
 
   \param sessionId - A previous opened session's ID.
-  
+
+  \param bPurgeSmeCmdList  - Whether sme cmd list purging is required or not.
+                             TRUE -Purging require FALSE - Purging not require
+
   \return eHAL_STATUS_SUCCESS - session is closed. 
   
           Other status means SME is failed to open the session.  
           eHAL_STATUS_INVALID_PARAMETER - session is not opened. 
   \sa
-  
+
+
   --------------------------------------------------------------------------*/
 eHalStatus sme_CloseSession(tHalHandle hHal, tANI_U8 sessionId,
-                         csrRoamSessionCloseCallback callback, void *pContext);
+                            tANI_U8 bPurgeSmeCmdList,
+                            csrRoamSessionCloseCallback callback,
+                            void *pContext);
+/*--------------------------------------------------------------------------
+
+  \brief sme_PurgeCmdList() - Purge all the sme cmd list
+
+  This is a synchronous API.
 
 
+  \param hHal - The handle returned by macOpen.
+
+  \param sessionId - A previous opened session's ID.
+
+--------------------------------------------------------------------------*/
+
+eHalStatus sme_PurgeCmdList(tHalHandle hHal, tANI_U8 sessionId);
 
 /*--------------------------------------------------------------------------
   

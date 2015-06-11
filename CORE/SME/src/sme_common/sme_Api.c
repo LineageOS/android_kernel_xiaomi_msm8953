@@ -3486,7 +3486,7 @@ eHalStatus sme_RoamDisconnect(tHalHandle hHal, tANI_U8 sessionId, eCsrRoamDiscon
    {
       if( CSR_IS_SESSION_VALID( pMac, sessionId ) )
       {
-         status = csrRoamDisconnect( pMac, sessionId, reason );
+          status = csrRoamDisconnect( pMac, sessionId, reason );
       }
       else
       {
@@ -6711,7 +6711,9 @@ eHalStatus sme_OpenSession(tHalHandle hHal, csrRoamCompleteCallback callback,
 
   --------------------------------------------------------------------------*/
 eHalStatus sme_CloseSession(tHalHandle hHal, tANI_U8 sessionId,
-                          csrRoamSessionCloseCallback callback, void *pContext)
+                            tANI_U8 bPurgeSmeCmdList,
+                            csrRoamSessionCloseCallback callback,
+                            void *pContext)
 {
    eHalStatus status;
    tpAniSirGlobal pMac = PMAC_STRUCT( hHal );
@@ -6721,12 +6723,25 @@ eHalStatus sme_CloseSession(tHalHandle hHal, tANI_U8 sessionId,
    status = sme_AcquireGlobalLock( &pMac->sme );
    if ( HAL_STATUS_SUCCESS( status ) )
    {
-      status = csrRoamCloseSession( pMac, sessionId, FALSE,
+      status = csrRoamCloseSession( pMac, sessionId, FALSE, bPurgeSmeCmdList,
                                     callback, pContext );
 
       sme_ReleaseGlobalLock( &pMac->sme );
    }
 
+   return ( status );
+}
+
+eHalStatus sme_PurgeCmdList(tHalHandle hHal, tANI_U8 sessionId)
+{
+   eHalStatus status;
+   tpAniSirGlobal pMac = PMAC_STRUCT( hHal );
+   status = sme_AcquireGlobalLock( &pMac->sme );
+   if ( HAL_STATUS_SUCCESS( status ) )
+   {
+      csrPurgeSmeCmdList( pMac, sessionId );
+      sme_ReleaseGlobalLock( &pMac->sme );
+   }
    return ( status );
 }
 
