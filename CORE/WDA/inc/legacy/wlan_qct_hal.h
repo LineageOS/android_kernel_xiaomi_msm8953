@@ -293,7 +293,7 @@ typedef struct sUapsdInfo {
   for UMAC in prima so declared it here */
 #define DPU_FEEDBACK_WPI_UNPROTECTED 0x20   
 #define WLANHAL_RX_IS_UNPROTECTED_WPI_FRAME(_pvBDHeader)  \
-        (DPU_FEEDBACK_WPI_UNPROTECTED == ((WDI_RxBdType *)_pvBDHeader)->dpuFeedback)
+        (DPU_FEEDBACK_WPI_UNPROTECTED == ((WDI_DS_RxMetaInfoType *)_pvBDHeader)->dpuFeedback)
 
 /*==========================================================================
 
