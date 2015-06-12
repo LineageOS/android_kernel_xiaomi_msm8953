@@ -7973,6 +7973,19 @@ eHalStatus sme_HandleChangeCountryCode(tpAniSirGlobal pMac,  void *pMsgBuf)
    static uNvTables nvTables;
    pMsg = (tAniChangeCountryCodeReq *)pMsgBuf;
 
+    if (pMac->scan.fcc_constraint)
+    {
+       pMac->scan.fcc_constraint = false;
+       if (VOS_TRUE== vos_mem_compare(pMac->scan.countryCodeCurrent,
+                                          pMsg->countryCode, 2))
+       {
+           csrInitGetChannels(pMac);
+           csrResetCountryInformation(pMac, eANI_BOOLEAN_TRUE, eANI_BOOLEAN_TRUE);
+           csrScanFilterResults(pMac);
+           return status ;
+       }
+   }
+
 
    /* if the reset Supplicant country code command is triggered, enable 11D, reset the NV country code and return */
    if( VOS_TRUE == vos_mem_compare(pMsg->countryCode, SME_INVALID_COUNTRY_CODE, 2) )
@@ -12617,4 +12630,32 @@ eHalStatus sme_SetRtsCtsHtVht(tHalHandle hHal, tANI_U32 set_value)
     }
     return eHAL_STATUS_FAILURE;
 
+}
+
+/**
+ * sme_handleSetFccChannel() - handle fcc constraint request
+ * @hal: HAL pointer
+ * @fcc_constraint: whether to apply or remove fcc constraint
+ *
+ * Return: tANI_BOOLEAN.
+ */
+tANI_BOOLEAN sme_handleSetFccChannel(tHalHandle hHal, tANI_U8 fcc_constraint)
+{
+    eHalStatus status = eHAL_STATUS_SUCCESS;
+    tpAniSirGlobal pMac = PMAC_STRUCT(hHal);
+
+    status = sme_AcquireGlobalLock(&pMac->sme);
+
+    if (eHAL_STATUS_SUCCESS == status &&
+                 (!sme_Is11dSupported(hHal)) )
+    {
+           pMac->scan.fcc_constraint = !fcc_constraint;
+           /* update the channel list to the firmware */
+           csrUpdateFCCChannelList(pMac);
+
+    }
+
+        sme_ReleaseGlobalLock(&pMac->sme);
+
+    return status;
 }

@@ -2192,6 +2192,35 @@ static int hdd_set_dwell_time(hdd_adapter_t *pAdapter, tANI_U8 *command)
 
     return ret;
 }
+static int hdd_cmd_setFccChannel(hdd_context_t *pHddCtx, tANI_U8 *cmd,
+                                                                 tANI_U8 cmd_len)
+{
+    tANI_U8 *value;
+    tANI_U8 fcc_constraint;
+
+    eHalStatus status;
+    int ret = 0;
+    value =  cmd + cmd_len + 1;
+
+    ret = kstrtou8(value, 10, &fcc_constraint);
+    if ((ret < 0) || (fcc_constraint > 1)) {
+       /*
+        *  If the input value is greater than max value of datatype,
+        *  then also it is a failure
+        */
+        hddLog(VOS_TRACE_LEVEL_ERROR,
+        "%s: value out of range", __func__);
+        return -EINVAL;
+    }
+
+    status = sme_handleSetFccChannel(pHddCtx->hHal, fcc_constraint);
+    if (status != eHAL_STATUS_SUCCESS)
+        ret = -EPERM;
+
+    return ret;
+}
+
+
 
 static int hdd_driver_command(hdd_adapter_t *pAdapter,
                               hdd_priv_data_t *ppriv_data)
@@ -4397,6 +4426,19 @@ static int hdd_driver_command(hdd_adapter_t *pAdapter,
                goto exit;
            }
 
+       }
+       else if (strncasecmp(command, "SET_FCC_CHANNEL", 15) == 0)
+       {
+          /*
+           * this command wld be called by user-space when it detects WLAN
+           * ON after airplane mode is set. When APM is set, WLAN turns off.
+           * But it can be turned back on. Otherwise; when APM is turned back
+           * off, WLAN wld turn back on. So at that point the command is
+           * expected to come down. 0 means disable, 1 means enable. The
+           * constraint is removed when parameter 1 is set or different
+           * country code is set
+           */
+           ret = hdd_cmd_setFccChannel(pHddCtx, command, 15);
        }
        else {
            MTRACE(vos_trace(VOS_MODULE_ID_HDD,

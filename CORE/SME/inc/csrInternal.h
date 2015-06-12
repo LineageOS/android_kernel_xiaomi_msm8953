@@ -804,6 +804,7 @@ typedef struct tagCsrScanStruct
 
     csrScanCompleteCallback callback11dScanDone;
     eCsrBand  scanBandPreference;  //This defines the band perference for scan
+    bool fcc_constraint;
 }tCsrScanStruct;
 
 

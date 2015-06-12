@@ -3580,6 +3580,30 @@ void csrApplyChannelPowerCountryInfo( tpAniSirGlobal pMac, tCsrChannel *pChannel
     csrSetCfgCountryCode(pMac, countryCode);
 }
 
+void csrUpdateFCCChannelList(tpAniSirGlobal pMac)
+{
+    tCsrChannel ChannelList;
+    tANI_U8 chnlIndx = 0;
+    int i;
+    chnlIndx = pMac->scan.base20MHzChannels.numChannels;
+
+    for ( i = 0; i < pMac->scan.base20MHzChannels.numChannels; i++ )
+    {
+        if (pMac->scan.fcc_constraint &&
+                    ((pMac->scan.base20MHzChannels.channelList[i] == 12) ||
+                    (pMac->scan.base20MHzChannels.channelList[i] == 13)))
+        {
+            VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_INFO,
+                          FL("removing channel %d"),
+                          pMac->scan.base20MHzChannels.channelList[i]);
+            continue;
+        }
+        ChannelList.channelList[i] = pMac->scan.base20MHzChannels.channelList[i];
+        chnlIndx++;
+    }
+    csrSetCfgValidChannelList(pMac, ChannelList.channelList, chnlIndx);
+
+}
 
 void csrResetCountryInformation( tpAniSirGlobal pMac, tANI_BOOLEAN fForce, tANI_BOOLEAN updateRiva )
 {
@@ -6238,6 +6262,16 @@ eHalStatus csrScanCopyRequest(tpAniSirGlobal pMac, tCsrScanRequest *pDstReq, tCs
                           /* Skip CH 144 if firmware support not present */
                           if (pSrcReq->ChannelInfo.ChannelList[index] == 144 && !ch144_support)
                               continue;
+                          /* Skip channel 12 and 13 when FCC constraint is true */
+                          if ((pMac->scan.fcc_constraint) &&
+                                 ((pSrcReq->ChannelInfo.ChannelList[index] ==12) ||
+                                 (pSrcReq->ChannelInfo.ChannelList[index] ==13)))
+                          {
+                              VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_INFO,
+                                  FL("Ignoring channel : %d "),
+                                  pSrcReq->ChannelInfo.ChannelList[index]);
+                              continue;
+                          }
 
                           NVchannel_state = vos_nv_getChannelEnabledState(
                                   pSrcReq->ChannelInfo.ChannelList[index]);
