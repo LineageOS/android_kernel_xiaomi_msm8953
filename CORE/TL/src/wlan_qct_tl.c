@@ -8590,6 +8590,7 @@ WLANTL_STARxAuth
    v_U8_t                   ucTid;
 #ifdef FEATURE_WLAN_WAPI
    v_U16_t                  usEtherType = 0;
+   tSirMacMgmtHdr           *hdr;
 #endif
    v_U16_t                  usPktLen;
    vos_pkt_t*               vosDataBuff ;
@@ -8709,15 +8710,16 @@ WLANTL_STARxAuth
     if( VOS_IS_STATUS_SUCCESS(vosStatus) )
     {
       if ( WLANTL_LLC_WAI_TYPE  == usEtherType )
-      {        
-        if ( !( WLANHAL_RX_IS_UNPROTECTED_WPI_FRAME(aucBDHeader)) )
+      {
+        hdr = WDA_GET_RX_MAC_HEADER(aucBDHeader);
+        if ( hdr->fc.wep )
         {
           TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
                      "WLAN TL:WAI frame was received encrypted - dropping"));
           /* Drop packet */
           /*Temporary fix added to fix wapi rekey issue*/
-          //vos_pkt_return_packet(vosDataBuff);
-          //return vosStatus; //returning success
+          vos_pkt_return_packet(vosDataBuff);
+          return vosStatus; //returning success
         }
       }
       else
