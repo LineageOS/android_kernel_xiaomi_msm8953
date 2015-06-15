@@ -21455,8 +21455,10 @@ WDI_ProcessTxCompleteInd
 
   /*Fill in the indication parameters*/
   wdiInd.wdiIndicationType = WDI_TX_COMPLETE_IND;
-  wdiInd.wdiIndicationData.tx_complete_status
-                               = halTxComplIndMsg.txComplParams.status;
+
+  wpalMemoryCopy( &wdiInd.wdiIndicationData,
+                  &halTxComplIndMsg.txComplParams,
+                  sizeof(WDI_TxBDStatus) );
 
   if ( pWDICtx->wdiLowLevelIndCB )
   {
