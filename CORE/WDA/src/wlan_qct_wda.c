@@ -15918,12 +15918,13 @@ void WDA_ConvertSirAuthToWDIAuth(WDI_AuthType *AuthType, v_U8_t csrAuthType)
       case eCSR_AUTH_TYPE_AUTOSWITCH:
            *AuthType = eWDA_AUTH_TYPE_OPEN_SYSTEM;
            break;
-#if 0
-      case eCSR_AUTH_TYPE_SHARED_KEY:
-           *AuthType = eWDA_AUTH_TYPE_SHARED_KEY;
+#ifdef WLAN_FEATURE_11W
+      case eCSR_AUTH_TYPE_RSN_PSK_SHA256:
+           *AuthType = eWDA_AUTH_TYPE_RSN_PSK_SHA256;
            break;
-      case eCSR_AUTH_TYPE_AUTOSWITCH:
-           *AuthType = eWDA_AUTH_TYPE_AUTOSWITCH;
+      case eCSR_AUTH_TYPE_RSN_8021X_SHA256:
+           *AuthType = eWDA_AUTH_TYPE_RSN_8021X_SHA256;
+           break;
 #endif
       default:
       VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,

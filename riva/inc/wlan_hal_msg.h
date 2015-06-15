@@ -6019,6 +6019,8 @@ typedef enum
     eAUTH_TYPE_WAPI_WAI_PSK          = 9,
     eAUTH_TYPE_CCKM_WPA              = 10,
     eAUTH_TYPE_CCKM_RSN              = 11,
+    eAUTH_TYPE_RSN_PSK_SHA256        = 12,
+    eAUTH_TYPE_RSN_8021X_SHA256      = 13,
 
     eAUTH_TYPE_MAX = WLAN_HAL_MAX_ENUM_SIZE
 
