@@ -9990,6 +9990,8 @@ static int wlan_hdd_cfg80211_update_bss( struct wiphy *wiphy,
     {
         hddLog(VOS_TRACE_LEVEL_INFO, "%s: No scan result Status %d",
                                                       __func__, status);
+        wlan_hdd_get_frame_logs(pAdapter,
+                                WLAN_HDD_GET_FRAME_LOG_CMD_SEND_AND_CLEAR);
         return status;
     }
 
@@ -10948,7 +10950,7 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
             goto free_mem;
         }
     }
-
+    wlan_hdd_get_frame_logs(pAdapter, WLAN_HDD_GET_FRAME_LOG_CMD_CLEAR);
     status = sme_ScanRequest( WLAN_HDD_GET_HAL_CTX(pAdapter),
                               pAdapter->sessionId, &scanRequest, &scanId,
                               &hdd_cfg80211_scan_done_callback, dev );
