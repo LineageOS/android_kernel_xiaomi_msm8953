@@ -3486,7 +3486,7 @@ eHalStatus sme_RoamDisconnect(tHalHandle hHal, tANI_U8 sessionId, eCsrRoamDiscon
    {
       if( CSR_IS_SESSION_VALID( pMac, sessionId ) )
       {
-         status = csrRoamDisconnect( pMac, sessionId, reason );
+          status = csrRoamDisconnect( pMac, sessionId, reason );
       }
       else
       {
@@ -6711,7 +6711,9 @@ eHalStatus sme_OpenSession(tHalHandle hHal, csrRoamCompleteCallback callback,
 
   --------------------------------------------------------------------------*/
 eHalStatus sme_CloseSession(tHalHandle hHal, tANI_U8 sessionId,
-                          csrRoamSessionCloseCallback callback, void *pContext)
+                            tANI_U8 bPurgeSmeCmdList,
+                            csrRoamSessionCloseCallback callback,
+                            void *pContext)
 {
    eHalStatus status;
    tpAniSirGlobal pMac = PMAC_STRUCT( hHal );
@@ -6721,12 +6723,25 @@ eHalStatus sme_CloseSession(tHalHandle hHal, tANI_U8 sessionId,
    status = sme_AcquireGlobalLock( &pMac->sme );
    if ( HAL_STATUS_SUCCESS( status ) )
    {
-      status = csrRoamCloseSession( pMac, sessionId, FALSE,
+      status = csrRoamCloseSession( pMac, sessionId, FALSE, bPurgeSmeCmdList,
                                     callback, pContext );
 
       sme_ReleaseGlobalLock( &pMac->sme );
    }
 
+   return ( status );
+}
+
+eHalStatus sme_PurgeCmdList(tHalHandle hHal, tANI_U8 sessionId)
+{
+   eHalStatus status;
+   tpAniSirGlobal pMac = PMAC_STRUCT( hHal );
+   status = sme_AcquireGlobalLock( &pMac->sme );
+   if ( HAL_STATUS_SUCCESS( status ) )
+   {
+      csrPurgeSmeCmdList( pMac, sessionId );
+      sme_ReleaseGlobalLock( &pMac->sme );
+   }
    return ( status );
 }
 
@@ -7957,6 +7972,19 @@ eHalStatus sme_HandleChangeCountryCode(tpAniSirGlobal pMac,  void *pMsgBuf)
    VOS_STATUS vosStatus = VOS_STATUS_SUCCESS;
    static uNvTables nvTables;
    pMsg = (tAniChangeCountryCodeReq *)pMsgBuf;
+
+    if (pMac->scan.fcc_constraint)
+    {
+       pMac->scan.fcc_constraint = false;
+       if (VOS_TRUE== vos_mem_compare(pMac->scan.countryCodeCurrent,
+                                          pMsg->countryCode, 2))
+       {
+           csrInitGetChannels(pMac);
+           csrResetCountryInformation(pMac, eANI_BOOLEAN_TRUE, eANI_BOOLEAN_TRUE);
+           csrScanFilterResults(pMac);
+           return status ;
+       }
+   }
 
 
    /* if the reset Supplicant country code command is triggered, enable 11D, reset the NV country code and return */
@@ -12602,4 +12630,32 @@ eHalStatus sme_SetRtsCtsHtVht(tHalHandle hHal, tANI_U32 set_value)
     }
     return eHAL_STATUS_FAILURE;
 
+}
+
+/**
+ * sme_handleSetFccChannel() - handle fcc constraint request
+ * @hal: HAL pointer
+ * @fcc_constraint: whether to apply or remove fcc constraint
+ *
+ * Return: tANI_BOOLEAN.
+ */
+tANI_BOOLEAN sme_handleSetFccChannel(tHalHandle hHal, tANI_U8 fcc_constraint)
+{
+    eHalStatus status = eHAL_STATUS_SUCCESS;
+    tpAniSirGlobal pMac = PMAC_STRUCT(hHal);
+
+    status = sme_AcquireGlobalLock(&pMac->sme);
+
+    if (eHAL_STATUS_SUCCESS == status &&
+                 (!sme_Is11dSupported(hHal)) )
+    {
+           pMac->scan.fcc_constraint = !fcc_constraint;
+           /* update the channel list to the firmware */
+           csrUpdateFCCChannelList(pMac);
+
+    }
+
+        sme_ReleaseGlobalLock(&pMac->sme);
+
+    return status;
 }

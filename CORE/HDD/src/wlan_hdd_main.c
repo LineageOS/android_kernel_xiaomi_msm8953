@@ -2192,6 +2192,35 @@ static int hdd_set_dwell_time(hdd_adapter_t *pAdapter, tANI_U8 *command)
 
     return ret;
 }
+static int hdd_cmd_setFccChannel(hdd_context_t *pHddCtx, tANI_U8 *cmd,
+                                                                 tANI_U8 cmd_len)
+{
+    tANI_U8 *value;
+    tANI_U8 fcc_constraint;
+
+    eHalStatus status;
+    int ret = 0;
+    value =  cmd + cmd_len + 1;
+
+    ret = kstrtou8(value, 10, &fcc_constraint);
+    if ((ret < 0) || (fcc_constraint > 1)) {
+       /*
+        *  If the input value is greater than max value of datatype,
+        *  then also it is a failure
+        */
+        hddLog(VOS_TRACE_LEVEL_ERROR,
+        "%s: value out of range", __func__);
+        return -EINVAL;
+    }
+
+    status = sme_handleSetFccChannel(pHddCtx->hHal, fcc_constraint);
+    if (status != eHAL_STATUS_SUCCESS)
+        ret = -EPERM;
+
+    return ret;
+}
+
+
 
 static int hdd_driver_command(hdd_adapter_t *pAdapter,
                               hdd_priv_data_t *ppriv_data)
@@ -4398,6 +4427,19 @@ static int hdd_driver_command(hdd_adapter_t *pAdapter,
            }
 
        }
+       else if (strncasecmp(command, "SET_FCC_CHANNEL", 15) == 0)
+       {
+          /*
+           * this command wld be called by user-space when it detects WLAN
+           * ON after airplane mode is set. When APM is set, WLAN turns off.
+           * But it can be turned back on. Otherwise; when APM is turned back
+           * off, WLAN wld turn back on. So at that point the command is
+           * expected to come down. 0 means disable, 1 means enable. The
+           * constraint is removed when parameter 1 is set or different
+           * country code is set
+           */
+           ret = hdd_cmd_setFccChannel(pHddCtx, command, 15);
+       }
        else {
            MTRACE(vos_trace(VOS_MODULE_ID_HDD,
                             TRACE_CODE_HDD_UNSUPPORTED_IOCTL,
@@ -6363,7 +6405,7 @@ error_register_wext:
    {
       INIT_COMPLETION(pAdapter->session_close_comp_var);
       if (eHAL_STATUS_SUCCESS == sme_CloseSession(pHddCtx->hHal,
-                                    pAdapter->sessionId,
+                                    pAdapter->sessionId, VOS_TRUE,
                                     hdd_smeCloseSessionCallback, pAdapter))
       {
          unsigned long rc;
@@ -7282,7 +7324,7 @@ VOS_STATUS hdd_stop_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter,
          {
             INIT_COMPLETION(pAdapter->session_close_comp_var);
             if (eHAL_STATUS_SUCCESS ==
-                  sme_CloseSession(pHddCtx->hHal, pAdapter->sessionId,
+                  sme_CloseSession(pHddCtx->hHal, pAdapter->sessionId, VOS_FALSE,
                      hdd_smeCloseSessionCallback, pAdapter))
             {
                unsigned long ret;
@@ -8131,6 +8173,27 @@ void hdd_wlan_initial_scan(hdd_adapter_t *pAdapter)
         vos_mem_free(scanReq.ChannelInfo.ChannelList);
 }
 
+void hdd_purge_cmd_list_all_adapters( hdd_context_t *pHddCtx )
+{
+   hdd_adapter_list_node_t *pAdapterNode = NULL, *pNext = NULL;
+   VOS_STATUS status;
+   hdd_adapter_t      *pAdapter;
+
+   ENTER();
+
+   status = hdd_get_front_adapter ( pHddCtx, &pAdapterNode );
+
+   while ( NULL != pAdapterNode && VOS_STATUS_SUCCESS == status )
+   {
+      pAdapter = pAdapterNode->pAdapter;
+
+      status = sme_PurgeCmdList(pHddCtx->hHal, pAdapter->sessionId);
+      status = hdd_get_next_adapter ( pHddCtx, pAdapterNode, &pNext );
+      pAdapterNode = pNext;
+   }
+
+   EXIT();
+}
 /**---------------------------------------------------------------------------
 
   \brief hdd_full_power_callback() - HDD full power callback function
@@ -8371,6 +8434,10 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
          vosStatus = hdd_get_next_adapter ( pHddCtx, pAdapterNode, &pNext );
          pAdapterNode = pNext;
       }
+
+       //Purge all sme cmd's for all interface
+       hdd_purge_cmd_list_all_adapters(pHddCtx);
+
       // Cancel any outstanding scan requests.  We are about to close all
       // of our adapters, but an adapter structure is what SME passes back
       // to our callback function. Hence if there are any outstanding scan
