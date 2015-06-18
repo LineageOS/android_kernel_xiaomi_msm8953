@@ -879,6 +879,9 @@ void WDTS_MbReceiveMsg(void *pContext)
      }
   }
 
+  // Done using Mailbox, zero out the memory.
+  wpalMemoryZero(pLoggingMb, sizeof(tLoggingMailBox));
+
   if (totalLen)
   {
      if (gTransportDriver.startLogTransfer() == eWLAN_PAL_STATUS_SUCCESS)

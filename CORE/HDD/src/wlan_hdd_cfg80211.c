@@ -13335,16 +13335,16 @@ static int __wlan_hdd_cfg80211_get_station(struct wiphy *wiphy, struct net_devic
                         if (supported_mcs_rate[j].beacon_rate_index == MCSRates[i])
                         {
                             currentRate = supported_mcs_rate[j].supported_rate[rateFlag];
+                            maxMCSIdx   = supported_mcs_rate[j].beacon_rate_index;
                             break;
                         }
                     }
                     if ((j < temp) && (currentRate > maxRate))
                     {
                         maxRate     = currentRate;
-                        maxSpeedMCS = 1;
-                        maxMCSIdx   = supported_mcs_rate[j].beacon_rate_index;
                     }
                 }
+                maxSpeedMCS = 1;
             }
         }
 

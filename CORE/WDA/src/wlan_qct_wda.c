@@ -12956,6 +12956,7 @@ VOS_STATUS WDA_TxPacket(tWDA_CbContext *pWDA,
    tANI_U8 eventIdx = 0;
    tBssSystemRole systemRole = eSYSTEM_UNKNOWN_ROLE;
    tpAniSirGlobal pMac;
+   tpSirTxBdStatus txBdStatus = {0};
 
    if((NULL == pWDA)||(NULL == pFrmBuf)) 
    {
@@ -12988,7 +12989,7 @@ VOS_STATUS WDA_TxPacket(tWDA_CbContext *pWDA,
            /* Already TxComp is active no need to active again */
            VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR, 
                    "There is already one request pending for tx complete");
-           pWDA->pAckTxCbFunc( pMac, 0);
+           pWDA->pAckTxCbFunc( pMac, &txBdStatus);
            pWDA->pAckTxCbFunc = NULL;
 
            if( VOS_STATUS_SUCCESS !=
@@ -15600,11 +15601,14 @@ void WDA_TimerHandler(v_VOID_t* pContext, tANI_U32 timerInfo)
 void WDA_ProcessTxCompleteTimeOutInd(tWDA_CbContext* pWDA)
 {
    tpAniSirGlobal pMac = (tpAniSirGlobal )VOS_GET_MAC_CTXT(pWDA->pVosContext) ;
+   tpSirTxBdStatus txBdStatus = {0};
+
    if( pWDA->pAckTxCbFunc )
    {
       VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
                                       "TxComplete timer expired");
-      pWDA->pAckTxCbFunc( pMac, 0);
+      /*Indicate failure*/
+      pWDA->pAckTxCbFunc( pMac, &txBdStatus);
       pWDA->pAckTxCbFunc = NULL;
    }
    else

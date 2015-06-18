@@ -1794,6 +1794,11 @@ VOS_STATUS hdd_ibss_tx_fetch_packet_cbk( v_VOID_t *vosContext,
          VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                    "IBSS STA TX DHCP");
       }
+      else if (VOS_PKT_PROTO_TYPE_ARP & proto_type)
+      {
+         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                   "IBSS STA TX ARP");
+      }
    }
 
    vos_pkt_get_packet_length( pVosPacket,&packet_size );
@@ -2105,6 +2110,11 @@ VOS_STATUS hdd_tx_fetch_packet_cbk( v_VOID_t *vosContext,
       {
          VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                    "STA TX DHCP");
+      }
+      else if (VOS_PKT_PROTO_TYPE_ARP & proto_type)
+      {
+         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                   "STA TX ARP");
       }
    }
 
@@ -2610,6 +2620,11 @@ VOS_STATUS hdd_rx_packet_cbk( v_VOID_t *vosContext,
          {
             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                       "STA RX DHCP");
+         }
+         else if (VOS_PKT_PROTO_TYPE_ARP & proto_type)
+         {
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                      "STA RX ARP");
          }
       }
 

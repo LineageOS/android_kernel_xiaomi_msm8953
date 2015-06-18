@@ -2795,6 +2795,15 @@ pull_frames:
                                         chLogRxFwStat);
                if (channelCb->numFreeDesc == channelCb->numDesc)
                {
+                  /*
+                   * We have already cleared the interrupts before coming here,
+                   * but it can happen that DXE will copy some new packets after
+                   * that and raise interrupts for those. The packets will be
+                   * processed above but the interrupts will still be pending.
+                   * Its safe to clear those interrupts here because we have
+                   * pulled data from all the allocated descriptors.
+                   */
+                  dxeChannelCleanInt(channelCb,&chLogRxFwStat);
                   dxeCtxt->hostInitiatedH2H = 0;
                   dxeCtxt->receiveLogCompleteCB(dxeCtxt->clientCtxt);
                }
