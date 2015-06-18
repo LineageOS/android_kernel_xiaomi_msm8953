@@ -880,7 +880,7 @@ enum qca_wlan_vendor_attr_set_no_dfs_flag
 
 
 #ifdef FEATURE_WLAN_CH_AVOID
-#define HDD_MAX_AVOID_FREQ_RANGES   4
+#define HDD_MAX_AVOID_FREQ_RANGES   15
 typedef struct sHddAvoidFreqRange
 {
    u32 startFreq;

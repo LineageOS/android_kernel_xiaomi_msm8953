@@ -30948,6 +30948,10 @@ WDI_ProcessChAvoidInd
                  pEventData->pEventData,
                  sizeof(tHalAvoidFreqRangeIndParams));
 
+  /* Avoid Over flow */
+  if (WLAN_HAL_MAX_AVOID_FREQ_RANGE < chAvoidIndicationParam.avoidCnt)
+     chAvoidIndicationParam.avoidCnt = WLAN_HAL_MAX_AVOID_FREQ_RANGE;
+
   wdiInd.wdiIndicationType = WDI_CH_AVOID_IND;
   wdiInd.wdiIndicationData.wdiChAvoidInd.avoidRangeCount =
                chAvoidIndicationParam.avoidCnt;
