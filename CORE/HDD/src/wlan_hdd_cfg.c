@@ -3346,6 +3346,22 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                  CFG_TOGGLE_ARP_BDRATES_DEFAULT,
                  CFG_TOGGLE_ARP_BDRATES_MIN,
                  CFG_TOGGLE_ARP_BDRATES_MAX),
+
+   REG_VARIABLE( CFG_BTC_STATIC_OPP_WLAN_IDLE_WLAN_LEN , WLAN_PARAM_Integer,
+                 hdd_config_t, btcStaticOppWlanIdleWlanLen,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_BTC_STATIC_OPP_WLAN_IDLE_WLAN_LEN_DEFAULT,
+                 CFG_BTC_STATIC_OPP_WLAN_IDLE_WLAN_LEN_MIN,
+                 CFG_BTC_STATIC_OPP_WLAN_IDLE_WLAN_LEN_MAX ),
+
+
+   REG_VARIABLE( CFG_BTC_STATIC_OPP_WLAN_IDLE_BT_LEN , WLAN_PARAM_Integer,
+                 hdd_config_t, btcStaticOppWlanIdleBtLen,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_BTC_STATIC_OPP_WLAN_IDLE_BT_LEN_DEFAULT,
+                 CFG_BTC_STATIC_OPP_WLAN_IDLE_BT_LEN_MIN,
+                 CFG_BTC_STATIC_OPP_WLAN_IDLE_BT_LEN_MAX ),
+
 };
 
 /*
@@ -5287,6 +5303,23 @@ v_BOOL_t hdd_update_config_dat( hdd_context_t *pHddCtx )
        hddLog(LOGE, "Could not pass on"
                "WNI_CFG_TOGGLE_ARP_BDRATES to CCM");
    }
+
+   if (ccmCfgSetInt(pHddCtx->hHal, WNI_CFG_BTC_STATIC_OPP_WLAN_IDLE_WLAN_LEN,
+                    pConfig->btcStaticOppWlanIdleWlanLen, NULL,
+                    eANI_BOOLEAN_FALSE) == eHAL_STATUS_FAILURE)
+   {
+      fStatus = FALSE;
+      hddLog(LOGE, "Could not pass on WNI_CFG_BTC_STATIC_OPP_WLAN_IDLE_WLAN_LEN ");
+   }
+
+   if (ccmCfgSetInt(pHddCtx->hHal, WNI_CFG_BTC_STATIC_OPP_WLAN_IDLE_BT_LEN,
+                    pConfig->btcStaticOppWlanIdleBtLen, NULL,
+                    eANI_BOOLEAN_FALSE) == eHAL_STATUS_FAILURE)
+   {
+      fStatus = FALSE;
+      hddLog(LOGE, "Could not pass on WNI_CFG_BTC_STATIC_OPP_WLAN_IDLE_BT_LEN ");
+   }
+
    return fStatus;
 }
 
