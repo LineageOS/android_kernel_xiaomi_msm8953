@@ -97,6 +97,7 @@
 
 #define WLAN_FTM_PRIV_SET_VAR_INT_GET_NONE   (SIOCIWFIRSTPRIV + 7)
 #define WE_SET_TX_WF_GAIN  1
+#define WE_SET_DUMP        2
 
 #define WE_FTM_MAX_STR_LEN 1024
 #define MAX_FTM_VAR_ARGS  7
