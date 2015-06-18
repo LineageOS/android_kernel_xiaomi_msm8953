@@ -2959,7 +2959,12 @@ pull_frames:
    wpalWriteRegister(dxeCtxt->dxeChannel[WDTS_CHANNEL_RX_LOW_PRI].channelRegister.chDXECtrlRegAddr,
                      chanMask);
 
-   if (WLANDXE_IS_VALID_CHANNEL(WDTS_CHANNEL_RX_LOG))
+   /* We do not have knowledge of firmare capabilities when the
+    * RX_LOG channel is enabled. But when we get the first interrupt
+    * we have all the required information. So if MGMT Logging is not
+    * supported by the firmware, do not re-enable RX_LOG channel
+    */
+   if (WLANDXE_IS_VALID_CHANNEL(WDTS_CHANNEL_RX_LOG) && wpalIsFwLoggingSupported())
    {
       if(!(dxeCtxt->dxeChannel[WDTS_CHANNEL_RX_LOG].extraConfig.chan_mask & WLANDXE_CH_CTRL_EN_MASK))
       {
