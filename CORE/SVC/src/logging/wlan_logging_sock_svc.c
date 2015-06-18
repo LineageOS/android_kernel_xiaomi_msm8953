@@ -698,6 +698,12 @@ static int wlan_logging_proc_sock_rx_msg(struct sk_buff *skb)
 	int type;
 	int ret;
 
+        if (TRUE == vos_isUnloadInProgress())
+        {
+                pr_info("%s: unload in progress\n",__func__);
+                return -ENODEV;
+        }
+
 	wnl = (tAniNlHdr *) skb->data;
 	radio = wnl->radio;
 	type = wnl->nlh.nlmsg_type;
