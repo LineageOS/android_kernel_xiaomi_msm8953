@@ -15025,6 +15025,7 @@ int wlan_hdd_tdls_extctrl_config_peer(hdd_adapter_t *pAdapter,
 
     /* check FW TDLS Off Channel capability */
     if ((TRUE == sme_IsFeatureSupportedByFW(TDLS_OFF_CHANNEL)) &&
+        (TRUE == pHddCtx->cfg_ini->fEnableTDLSOffChannel) &&
         (NULL != tdls_peer_params))
     {
         pTdlsPeer->peerParams.channel = tdls_peer_params->channel;
@@ -15060,9 +15061,10 @@ int wlan_hdd_tdls_extctrl_config_peer(hdd_adapter_t *pAdapter,
     else
     {
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: TDLS off channel FW capability %d or "
-                  "Invalid TDLS Peer Params", __func__,
-                  sme_IsFeatureSupportedByFW(TDLS_OFF_CHANNEL));
+                  "%s: TDLS off channel FW capability %d, "
+                  "host capab %d or Invalid TDLS Peer Params", __func__,
+                  sme_IsFeatureSupportedByFW(TDLS_OFF_CHANNEL),
+                  pHddCtx->cfg_ini->fEnableTDLSOffChannel);
     }
 
     if ( 0 != wlan_hdd_tdls_set_force_peer(pAdapter, peer, TRUE) ) {

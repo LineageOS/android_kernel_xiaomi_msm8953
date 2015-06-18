@@ -105,6 +105,7 @@ void wlan_hdd_tdls_disable_offchan_and_teardown_links(hdd_context_t *hddctx)
             hddLog(LOG1, FL("%s: Concurrency detected, Disable "
                                  "TDLS channel switch"), __func__);
 
+            curr_peer->isOffChannelEstablished = FALSE;
             sme_SendTdlsChanSwitchReq(WLAN_HDD_GET_HAL_CTX(adapter),
                                          adapter->sessionId,
                                          curr_peer->peerMac,

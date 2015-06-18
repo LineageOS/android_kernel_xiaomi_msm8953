@@ -834,7 +834,7 @@ typedef struct
 }  WDI_FWStatsResults;
 
 #ifdef FEATURE_WLAN_CH_AVOID
-#define WDI_CH_AVOID_MAX_RANGE   4
+#define WDI_CH_AVOID_MAX_RANGE   15
 
 typedef struct
 {

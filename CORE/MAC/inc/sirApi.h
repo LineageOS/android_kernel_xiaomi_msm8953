@@ -4671,7 +4671,7 @@ typedef PACKED_PRE struct PACKED_POST
 #endif // FEATURE_WLAN_BATCH_SCAN
 
 #ifdef FEATURE_WLAN_CH_AVOID
-#define SIR_CH_AVOID_MAX_RANGE   4
+#define SIR_CH_AVOID_MAX_RANGE   15
 
 typedef struct sSirChAvoidFreqType
 {

@@ -7786,7 +7786,7 @@ typedef PACKED_PRE struct PACKED_POST
  * WLAN_HAL_AVOID_FREQ_RANGE_IND
  *-------------------------------------------------------------------------*/
 
-#define WLAN_HAL_MAX_AVOID_FREQ_RANGE           4
+#define WLAN_HAL_MAX_AVOID_FREQ_RANGE           15
 
 typedef PACKED_PRE struct PACKED_POST
 {
