@@ -7127,12 +7127,16 @@ void hdd_wmm_tx_snapshot(hdd_adapter_t *pAdapter)
              hddLog(LOGE, "******STAIndex: %d*********", i);
              for ( j=0; j< NUM_TX_QUEUES; j++)
              {
-                spin_lock_bh(&pSapCtx->aStaInfo[i].wmm_tx_queue[j].lock);
-                hddLog(LOGE, "HDD TxQueue Info For AC: %d Count: %d PrevAdress:%p, NextAddress:%p",
-                       j, pSapCtx->aStaInfo[i].wmm_tx_queue[j].count,
-                       pSapCtx->aStaInfo[i].wmm_tx_queue[j].anchor.prev,
-                       pSapCtx->aStaInfo[i].wmm_tx_queue[j].anchor.next);
-                spin_unlock_bh(&pSapCtx->aStaInfo[i].wmm_tx_queue[j].lock);
+                if( pSapCtx->aStaInfo[i].wmm_tx_queue[j].count )
+                {
+                   spin_lock_bh(&pSapCtx->aStaInfo[i].wmm_tx_queue[j].lock);
+                   hddLog(LOGE, "HDD TxQueue Info For AC: %d Count: %d"
+                         "PrevAdress:%p, NextAddress:%p",
+                         j, pSapCtx->aStaInfo[i].wmm_tx_queue[j].count,
+                         pSapCtx->aStaInfo[i].wmm_tx_queue[j].anchor.prev,
+                         pSapCtx->aStaInfo[i].wmm_tx_queue[j].anchor.next);
+                  spin_unlock_bh(&pSapCtx->aStaInfo[i].wmm_tx_queue[j].lock);
+                }
              }
         }
     }
