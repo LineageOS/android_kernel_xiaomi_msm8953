@@ -5147,9 +5147,10 @@ typedef struct
     tANI_U32      maxScanReportingThreshold;
 
     tANI_U32      maxHotlistAPs;
-    tANI_U32      maxSignificantWifiChangeAPs;
+    tANI_U32      maxHotlistSSIDs;
 
     tANI_U32      maxBsidHistoryEntries;
+
 } tSirEXTScanCapabilitiesEvent, *tpSirEXTScanCapabilitiesEvent;
 
 /* WLAN_HAL_EXT_SCAN_RESULT_IND */

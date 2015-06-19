@@ -12108,8 +12108,6 @@ eHalStatus sme_EXTScanGetCapabilities (tHalHandle hHal,
 
     *pGetEXTScanCapabilitiesReq = *pReq;
 
-    MTRACE(vos_trace(VOS_MODULE_ID_SME,
-               TRACE_CODE_SME_RX_HDD_EXTSCAN_GET_CAPABILITIES, NO_SESSION, 0));
     if (eHAL_STATUS_SUCCESS == (status = sme_AcquireGlobalLock(&pMac->sme))) {
         /* Serialize the req through MC thread */
         vosMessage.bodyptr = pGetEXTScanCapabilitiesReq;

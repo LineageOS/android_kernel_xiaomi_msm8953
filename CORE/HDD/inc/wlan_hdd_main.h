@@ -234,6 +234,9 @@ typedef v_U8_t tWlanHddMacAddr[HDD_MAC_ADDR_LEN];
 #define MIN(a, b) (a > b ? b : a)
 
 #endif
+
+#define WLAN_WAIT_TIME_EXTSCAN  1000
+
 /*
  * Generic asynchronous request/response support
  *
@@ -1228,6 +1231,24 @@ struct hdd_ll_stats_context {
     struct completion response_event;
 };
 #endif /* End of WLAN_FEATURE_LINK_LAYER_STATS */
+#ifdef WLAN_FEATURE_EXTSCAN
+/**
+ * struct hdd_ext_scan_context - hdd ext scan context
+ *
+ * @request_id: userspace-assigned ID associated with the request
+ * @response_status: Status returned by FW in response to a request
+ * @ignore_cached_results: Flag to ignore cached results or not
+ * @capability_response: Ext scan capability response data from target
+ */
+
+struct hdd_ext_scan_context {
+    v_U32_t request_id;
+    int response_status;
+    bool ignore_cached_results;
+    struct completion response_event;
+    tSirEXTScanCapabilitiesEvent capability_response;
+};
+#endif /* End of WLAN_FEATURE_EXTSCAN */
 
 /** Adapter stucture definition */
 
@@ -1453,6 +1474,10 @@ struct hdd_context_s
 #ifdef WLAN_FEATURE_LINK_LAYER_STATS
     struct hdd_ll_stats_context ll_stats_context;
 #endif /* End of WLAN_FEATURE_LINK_LAYER_STATS */
+
+#ifdef WLAN_FEATURE_EXTSCAN
+    struct hdd_ext_scan_context ext_scan_context;
+#endif /* WLAN_FEATURE_EXTSCAN */
 };
 
 

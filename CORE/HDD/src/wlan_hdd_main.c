@@ -9592,6 +9592,10 @@ int hdd_wlan_startup(struct device *dev )
    init_completion(&pHddCtx->driver_crda_req);
 #endif
 
+#ifdef WLAN_FEATURE_EXTSCAN
+   init_completion(&pHddCtx->ext_scan_context.response_event);
+#endif /* WLAN_FEATURE_EXTSCAN */
+
    spin_lock_init(&pHddCtx->schedScan_lock);
 
    hdd_list_init( &pHddCtx->hddAdapters, MAX_NUMBER_OF_ADAPTERS );
