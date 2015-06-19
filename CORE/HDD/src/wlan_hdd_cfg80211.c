@@ -10515,6 +10515,8 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
     int ret = 0;
     v_U8_t *pWpsIe=NULL;
     bool is_p2p_scan = false;
+    v_S7_t rssi=0;
+    hdd_station_ctx_t *pHddStaCtx=NULL;
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0))
     struct net_device *dev = NULL;
@@ -10551,6 +10553,13 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
     }
     cfg_param = pHddCtx->cfg_ini;
     pScanInfo = &pHddCtx->scan_info;
+
+    pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
+    if ( (pHddStaCtx != NULL) && (TRUE == hdd_connIsConnected(pHddStaCtx)))
+    {
+        wlan_hdd_get_roam_rssi(pAdapter, &rssi);
+        hddLog(VOS_TRACE_LEVEL_INFO, FL("rssi: %d"), rssi);
+    }
 
 #ifdef WLAN_BTAMP_FEATURE
     //Scan not supported when AMP traffic is on.
