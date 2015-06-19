@@ -9868,8 +9868,23 @@ wlan_hdd_cfg80211_inform_bss_frame( hdd_adapter_t *pAdapter,
        kfree(mgmt);
        return NULL;
     }
-    /* Supplicant takes the signal strength in terms of mBm(100*dBm) */
-    rssi = (VOS_MIN ((bss_desc->rssi + bss_desc->sinr), 0)) * 100;
+    /*To keep the rssi icon of the connected AP in the scan window
+    *and the rssi icon of the wireless networks in sync
+    * */
+    if (( eConnectionState_Associated ==
+             pAdapter->sessionCtx.station.conn_info.connState ) &&
+             ( VOS_TRUE == vos_mem_compare(bss_desc->bssId,
+                             pAdapter->sessionCtx.station.conn_info.bssId,
+                             WNI_CFG_BSSID_LEN)) &&
+                             (pHddCtx->hdd_wlan_suspended == FALSE))
+    {
+       /* supplicant takes the signal strength in terms of mBm(100*dBm) */
+       rssi = (pAdapter->rssi * 100);
+    }
+    else
+    {
+       rssi = (VOS_MIN ((bss_desc->rssi + bss_desc->sinr), 0))*100;
+    }
 
     hddLog(VOS_TRACE_LEVEL_INFO, "%s: BSSID:" MAC_ADDRESS_STR " Channel:%d"
           " RSSI:%d", __func__, MAC_ADDR_ARRAY(mgmt->bssid),
