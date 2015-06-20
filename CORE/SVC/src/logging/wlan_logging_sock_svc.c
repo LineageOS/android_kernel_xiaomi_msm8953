@@ -649,8 +649,9 @@ static int wlan_logging_thread(void *Arg)
 		ret_wait_status = wait_event_interruptible(
 		  gwlan_logging.wait_queue,
 		  (test_bit(HOST_LOG_POST_MASK, &gwlan_logging.event_flag) ||
-		  gwlan_logging.exit ||
-		  test_bit(LOGGER_MGMT_DATA_PKT_POST_MASK, &gwlan_logging.event_flag)));
+		  gwlan_logging.exit || test_bit(LOGGER_MGMT_DATA_PKT_POST_MASK,
+		  &gwlan_logging.event_flag) || test_bit(
+		  LOGGER_FW_LOG_PKT_POST_MASK, &gwlan_logging.event_flag)));
 
 		if (ret_wait_status == -ERESTARTSYS) {
 			pr_err("%s: wait_event return -ERESTARTSYS", __func__);
@@ -697,6 +698,12 @@ static int wlan_logging_proc_sock_rx_msg(struct sk_buff *skb)
 	int radio;
 	int type;
 	int ret;
+
+        if (TRUE == vos_isUnloadInProgress())
+        {
+                pr_info("%s: unload in progress\n",__func__);
+                return -ENODEV;
+        }
 
 	wnl = (tAniNlHdr *) skb->data;
 	radio = wnl->radio;

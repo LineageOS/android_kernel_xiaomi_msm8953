@@ -8533,8 +8533,6 @@ typedef PACKED_PRE struct PACKED_POST
  *--------------------------------------------------------------------------*/
 typedef PACKED_PRE struct PACKED_POST
 {
-    /* Host mem address to be used as logmailbox */
-    tANI_U64 logMailBoxAddr;
     /* BIT0 - enable frame logging
      * BIT1 - enableBMUHWtracing
      * BIT2 - enableQXDMlogging
@@ -8544,16 +8542,18 @@ typedef PACKED_PRE struct PACKED_POST
     tANI_U8 frameType;
     tANI_U8 frameSize;
     tANI_U8 bufferMode;
+    /* Host mem address to be used as logmailbox */
+    tANI_U64 logMailBoxAddr;
     /* firmware will wakeup the host to send logs always */
     tANI_U8 continuousFrameLogging;
     /* Logging mail box version */
     tANI_U8 logMailBoxVer;
+    /* Max ring size in firmware to log msgs when host is suspended state */
+    tANI_U8 maxLogBuffSize;
     /* when firmware log reaches this threshold and
      * if host is awake it will push the logs.
      */
     tANI_U8 minLogBuffSize;
-    // Max ring size in firmware to log msgs when host is suspended state
-    tANI_U8 maxLogBuffSize;
     /* Reserved for future purpose */
     tANI_U32 reserved0;
     tANI_U32 reserved1;
