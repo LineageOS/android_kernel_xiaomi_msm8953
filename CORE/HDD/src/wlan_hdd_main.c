@@ -7810,6 +7810,11 @@ void hdd_set_ssr_required( e_hdd_ssr_required value)
     isSsrRequired = value;
 }
 
+void hdd_set_pre_close( hdd_context_t *pHddCtx)
+{
+   sme_PreClose(pHddCtx->hHal);
+}
+
 VOS_STATUS hdd_get_front_adapter( hdd_context_t *pHddCtx,
                                   hdd_adapter_list_node_t** ppAdapterNode)
 {
