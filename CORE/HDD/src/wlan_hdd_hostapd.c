@@ -4797,6 +4797,9 @@ VOS_STATUS hdd_init_ap_mode( hdd_adapter_t *pAdapter )
        // Allocate the Wireless Extensions state structure
     phostapdBuf = WLAN_HDD_GET_HOSTAP_STATE_PTR( pAdapter );
 
+    spin_lock_init(&pAdapter->sta_hash_lock);
+    pAdapter->is_sta_id_hash_initialized = VOS_FALSE;
+
     sme_SetCurrDeviceMode(pHddCtx->hHal, pAdapter->device_mode);
 
 #ifdef FEATURE_WLAN_CH_AVOID

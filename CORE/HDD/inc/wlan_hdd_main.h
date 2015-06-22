@@ -1066,6 +1066,15 @@ struct hdd_adapter_s
    struct work_struct  monTxWorkQueue;
    struct sk_buff *skb_to_tx;
 
+   /* sta_id to mac addr hash*/
+   spinlock_t sta_hash_lock;
+   tANI_U8 is_sta_id_hash_initialized;
+   struct sta_hash{
+      tANI_U16 mask;
+      tANI_U16 idx_bits;
+      hdd_list_t *bins;
+   } sta_id_hash;
+
    union {
       hdd_station_ctx_t station;
       hdd_ap_ctx_t  ap;
@@ -1633,4 +1642,31 @@ VOS_STATUS wlan_hdd_handle_dfs_chan_scan(hdd_context_t *pHddCtx,
 
 v_U8_t hdd_is_fw_logging_enabled(void);
 v_U8_t hdd_is_fw_ev_logging_enabled(void);
+
+#define HDD_STA_ID_HASH_MULTIPLIER 2
+
+struct hdd_align_mac_addr_t {
+    uint16 bytes_ab;
+    uint16 bytes_cd;
+    uint16 bytes_ef;
+};
+
+typedef struct hdd_staid_hash_node
+{
+    hdd_list_node_t node;
+    v_U8_t sta_id;
+    v_MACADDR_t mac_addr;
+}hdd_staid_hash_node_t;
+
+/* sta_id hash related APIs */
+VOS_STATUS hdd_sta_id_hash_attach(hdd_adapter_t *pAdapter);
+VOS_STATUS hdd_sta_id_hash_detach(hdd_adapter_t *pAdapter);
+int hdd_sta_id_hash_calculate_index(hdd_adapter_t *pAdapter,
+                               v_MACADDR_t *mac_addr_in);
+VOS_STATUS hdd_sta_id_hash_add_entry(hdd_adapter_t *pAdapter,
+                                    v_U8_t sta_id, v_MACADDR_t *mac_addr);
+VOS_STATUS hdd_sta_id_hash_remove_entry(hdd_adapter_t *pAdapter,
+                                       v_U8_t sta_id, v_MACADDR_t *mac_addr);
+int hdd_sta_id_find_from_mac_addr(hdd_adapter_t *pAdapter,
+                                  v_MACADDR_t *mac_addr_in);
 #endif    // end #if !defined( WLAN_HDD_MAIN_H )

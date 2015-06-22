@@ -6318,6 +6318,9 @@ VOS_STATUS hdd_init_station_mode( hdd_adapter_t *pAdapter )
    VOS_STATUS status = VOS_STATUS_E_FAILURE;
    long rc = 0;
 
+   spin_lock_init( &pAdapter->sta_hash_lock);
+   pAdapter->is_sta_id_hash_initialized = VOS_FALSE;
+
    INIT_COMPLETION(pAdapter->session_open_comp_var);
    sme_SetCurrDeviceMode(pHddCtx->hHal, pAdapter->device_mode);
    //Open a SME session for future operation
@@ -6929,6 +6932,15 @@ hdd_adapter_t* hdd_open_adapter( hdd_context_t *pHddCtx, tANI_U8 session_type,
          if( VOS_STATUS_SUCCESS != status )
             goto err_free_netdev;
 
+         status = hdd_sta_id_hash_attach(pAdapter);
+         if (VOS_STATUS_SUCCESS != status)
+         {
+             hddLog(VOS_TRACE_LEVEL_FATAL,
+                    FL("failed to attach hash for session %d"), session_type);
+             hdd_deinit_adapter(pHddCtx, pAdapter, rtnl_held);
+             goto err_free_netdev;
+         }
+
          status = hdd_register_hostapd( pAdapter, rtnl_held );
          if( VOS_STATUS_SUCCESS != status )
          {
@@ -7207,6 +7219,7 @@ VOS_STATUS hdd_stop_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter,
    union iwreq_data wrqu;
    v_U8_t retry = 0;
    long ret;
+   VOS_STATUS status;
 
    if (pHddCtx->isLogpInProgress) {
        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
@@ -7215,6 +7228,11 @@ VOS_STATUS hdd_stop_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter,
    }
 
    ENTER();
+
+   status = hdd_sta_id_hash_detach(pAdapter);
+   if (status != VOS_STATUS_SUCCESS)
+       hddLog(VOS_TRACE_LEVEL_ERROR,
+                 FL("sta id hash detach failed"));
 
    pScanInfo =  &pHddCtx->scan_info;
    switch(pAdapter->device_mode)
@@ -7520,6 +7538,12 @@ VOS_STATUS hdd_reset_all_adapters( hdd_context_t *pHddCtx )
 
       if(pAdapter->device_mode == WLAN_HDD_IBSS )
          hdd_ibss_deinit_tx_rx(pAdapter);
+
+      status = hdd_sta_id_hash_detach(pAdapter);
+      if (status != VOS_STATUS_SUCCESS)
+          hddLog(VOS_TRACE_LEVEL_ERROR,
+                 FL("sta id hash detach failed for session id %d"),
+                 pAdapter->sessionId);
 
       wlan_hdd_decr_active_session(pHddCtx, pAdapter->device_mode);
 
@@ -11515,6 +11539,286 @@ VOS_STATUS wlan_hdd_handle_dfs_chan_scan(hdd_context_t *pHddCtx,
     }
 
     return status;
+}
+
+static int hdd_log2_ceil(unsigned value)
+{
+    /* need to switch to unsigned math so that negative values
+     * will right-shift towards 0 instead of -1
+     */
+    unsigned tmp = value;
+    int log2 = -1;
+
+    if (value == 0)
+        return 0;
+
+    while (tmp) {
+        log2++;
+        tmp >>= 1;
+    }
+    if (1U << log2 != value)
+        log2++;
+
+    return log2;
+}
+
+/**
+ * hdd_sta_id_hash_attach() - initialize sta id to macaddr hash
+ * @pAdapter: adapter handle
+ *
+ * Return: vos status
+ */
+VOS_STATUS hdd_sta_id_hash_attach(hdd_adapter_t *pAdapter)
+{
+    int hash_elem, log2, i;
+
+    spin_lock_bh( &pAdapter->sta_hash_lock);
+    if (pAdapter->is_sta_id_hash_initialized == VOS_TRUE) {
+        spin_unlock_bh( &pAdapter->sta_hash_lock);
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  "%s: hash already attached for session id %d",
+                  __func__, pAdapter->sessionId);
+        return VOS_STATUS_SUCCESS;
+    }
+    spin_unlock_bh( &pAdapter->sta_hash_lock);
+
+    hash_elem = WLAN_MAX_STA_COUNT;
+    hash_elem *= HDD_STA_ID_HASH_MULTIPLIER;
+    log2 = hdd_log2_ceil(hash_elem);
+    hash_elem = 1 << log2;
+
+    pAdapter->sta_id_hash.mask = hash_elem - 1;
+    pAdapter->sta_id_hash.idx_bits = log2;
+    pAdapter->sta_id_hash.bins =
+        vos_mem_malloc(hash_elem *sizeof(hdd_list_t));
+    if (!pAdapter->sta_id_hash.bins) {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  "%s: malloc failed for session %d",
+                  __func__, pAdapter->sessionId);
+        return VOS_STATUS_E_NOMEM;
+    }
+
+    for (i = 0; i < hash_elem; i++)
+        hdd_list_init(&pAdapter->sta_id_hash.bins[i], WLAN_MAX_STA_COUNT);
+
+    spin_lock_bh( &pAdapter->sta_hash_lock);
+    pAdapter->is_sta_id_hash_initialized = VOS_TRUE;
+    spin_unlock_bh( &pAdapter->sta_hash_lock);
+    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+              "%s: Station ID Hash attached for session id %d",
+              __func__, pAdapter->sessionId);
+
+    return VOS_STATUS_SUCCESS;
+}
+
+/**
+ * hdd_sta_id_hash_detach() - deinit sta_id to macaddr hash
+ * @pAdapter: adapter handle
+ *
+ * Return: vos status
+ */
+VOS_STATUS hdd_sta_id_hash_detach(hdd_adapter_t *pAdapter)
+{
+    int hash_elem, i;
+    v_SIZE_t size;
+
+    spin_lock_bh( &pAdapter->sta_hash_lock);
+    if (pAdapter->is_sta_id_hash_initialized != VOS_TRUE) {
+        spin_unlock_bh( &pAdapter->sta_hash_lock);
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                  "%s: hash not initialized for session id %d",
+                  __func__, pAdapter->sessionId);
+        return VOS_STATUS_SUCCESS;
+    }
+
+    pAdapter->is_sta_id_hash_initialized = VOS_FALSE;
+    spin_unlock_bh( &pAdapter->sta_hash_lock);
+
+    hash_elem = 1 << pAdapter->sta_id_hash.idx_bits;
+
+    /* free all station info*/
+    for (i = 0; i < hash_elem; i++) {
+        hdd_list_size(&pAdapter->sta_id_hash.bins[i], &size);
+        if (size != 0) {
+            VOS_STATUS status;
+            hdd_staid_hash_node_t *sta_info_node = NULL;
+            hdd_staid_hash_node_t *next_node = NULL;
+            status = hdd_list_peek_front ( &pAdapter->sta_id_hash.bins[i],
+                                           (hdd_list_node_t**) &sta_info_node );
+
+            while ( NULL != sta_info_node && VOS_STATUS_SUCCESS == status )
+            {
+                status = hdd_list_remove_node( &pAdapter->sta_id_hash.bins[i],
+                                               &sta_info_node->node);
+                vos_mem_free(sta_info_node);
+
+                status = hdd_list_peek_next (&pAdapter->sta_id_hash.bins[i],
+                                            (hdd_list_node_t*)sta_info_node,
+                                            (hdd_list_node_t**)&next_node);
+                sta_info_node = next_node;
+            }
+        }
+    }
+
+    vos_mem_free(pAdapter->sta_id_hash.bins);
+    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+              "%s: Station ID Hash detached for session id %d",
+              __func__, pAdapter->sessionId);
+    return VOS_STATUS_SUCCESS;
+}
+
+/**
+ * hdd_sta_id_hash_calculate_index() - derive index from macaddr
+ * @pAdapter: adapter handle
+ * @mac_addr_in: input mac address
+ *
+ * Return: index derived from mac address
+ */
+int hdd_sta_id_hash_calculate_index(hdd_adapter_t *pAdapter,
+                               v_MACADDR_t *mac_addr_in)
+{
+    uint16 index;
+    struct hdd_align_mac_addr_t * mac_addr =
+                     (struct hdd_align_mac_addr_t *)mac_addr_in;
+
+    index = mac_addr->bytes_ab ^
+            mac_addr->bytes_cd ^ mac_addr->bytes_ef;
+    index ^= index >> pAdapter->sta_id_hash.idx_bits;
+    index &= pAdapter->sta_id_hash.mask;
+    return index;
+}
+
+/**
+ * hdd_sta_id_hash_add_entry() - add entry in hash
+ * @pAdapter: adapter handle
+ * @sta_id: station id
+ * @mac_addr: mac address
+ *
+ * Return: vos status
+ */
+VOS_STATUS hdd_sta_id_hash_add_entry(hdd_adapter_t *pAdapter,
+                                    v_U8_t sta_id, v_MACADDR_t *mac_addr)
+{
+    uint16 index;
+    hdd_staid_hash_node_t *sta_info_node = NULL;
+
+    spin_lock_bh( &pAdapter->sta_hash_lock);
+    if (pAdapter->is_sta_id_hash_initialized != VOS_TRUE) {
+        spin_unlock_bh( &pAdapter->sta_hash_lock);
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  "%s: hash is not initialized for session id %d",
+                  __func__, pAdapter->sessionId);
+        return VOS_STATUS_E_FAILURE;
+    }
+
+    index = hdd_sta_id_hash_calculate_index(pAdapter, mac_addr);
+    sta_info_node = vos_mem_malloc(sizeof(hdd_staid_hash_node_t));
+    if (!sta_info_node) {
+        spin_unlock_bh( &pAdapter->sta_hash_lock);
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  "%s: malloc failed", __func__);
+        return VOS_STATUS_E_NOMEM;
+    }
+
+    sta_info_node->sta_id = sta_id;
+    vos_mem_copy(&sta_info_node->mac_addr, mac_addr, sizeof(v_MACADDR_t));
+
+    hdd_list_insert_back ( &pAdapter->sta_id_hash.bins[index],
+                           (hdd_list_node_t*) sta_info_node );
+    spin_unlock_bh( &pAdapter->sta_hash_lock);
+    return VOS_STATUS_SUCCESS;
+}
+
+/**
+ * hdd_sta_id_hash_remove_entry() - remove entry from hash
+ * @pAdapter: adapter handle
+ * @sta_id: station id
+ * @mac_addr: mac address
+ *
+ * Return: vos status
+ */
+VOS_STATUS hdd_sta_id_hash_remove_entry(hdd_adapter_t *pAdapter,
+                                       v_U8_t sta_id, v_MACADDR_t *mac_addr)
+{
+    uint16 index;
+    VOS_STATUS status;
+    hdd_staid_hash_node_t *sta_info_node = NULL;
+    hdd_staid_hash_node_t *next_node = NULL;
+
+    spin_lock_bh( &pAdapter->sta_hash_lock);
+    if (pAdapter->is_sta_id_hash_initialized != VOS_TRUE) {
+        spin_unlock_bh( &pAdapter->sta_hash_lock);
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  "%s: hash is not initialized for session id %d",
+                  __func__, pAdapter->sessionId);
+        return VOS_STATUS_E_FAILURE;
+    }
+
+    index = hdd_sta_id_hash_calculate_index(pAdapter, mac_addr);
+    status = hdd_list_peek_front ( &pAdapter->sta_id_hash.bins[index],
+                                   (hdd_list_node_t**) &sta_info_node );
+
+    while ( NULL != sta_info_node && VOS_STATUS_SUCCESS == status )
+    {
+        if (sta_info_node->sta_id == sta_id) {
+            status = hdd_list_remove_node( &pAdapter->sta_id_hash.bins[index],
+                                       &sta_info_node->node);
+            vos_mem_free(sta_info_node);
+            break;
+        }
+        status = hdd_list_peek_next (&pAdapter->sta_id_hash.bins[index],
+                (hdd_list_node_t*)sta_info_node, (hdd_list_node_t**)&next_node);
+        sta_info_node = next_node;
+    }
+    spin_unlock_bh( &pAdapter->sta_hash_lock);
+    return status;
+}
+
+/**
+ * hdd_sta_id_find_from_mac_addr() - find sta id from mac address
+ * @pAdapter: adapter handle
+ * @mac_addr_in: mac address
+ *
+ * Return: station id
+ */
+int hdd_sta_id_find_from_mac_addr(hdd_adapter_t *pAdapter,
+                                  v_MACADDR_t *mac_addr_in)
+{
+    uint8 is_found = 0;
+    uint8 sta_id = HDD_WLAN_INVALID_STA_ID;
+    uint16 index;
+    VOS_STATUS status;
+    hdd_staid_hash_node_t *sta_info_node = NULL;
+    hdd_staid_hash_node_t *next_node = NULL;
+
+    spin_lock_bh( &pAdapter->sta_hash_lock);
+    if (pAdapter->is_sta_id_hash_initialized != VOS_TRUE) {
+        spin_unlock_bh( &pAdapter->sta_hash_lock);
+        hddLog(VOS_TRACE_LEVEL_ERROR,
+                  FL("hash is not initialized for session id %d"),
+                  pAdapter->sessionId);
+        return HDD_WLAN_INVALID_STA_ID;
+    }
+
+    index = hdd_sta_id_hash_calculate_index(pAdapter, mac_addr_in);
+    status = hdd_list_peek_front ( &pAdapter->sta_id_hash.bins[index],
+                                   (hdd_list_node_t**) &sta_info_node );
+
+    while ( NULL != sta_info_node && VOS_STATUS_SUCCESS == status )
+    {
+        if (vos_mem_compare(&sta_info_node->mac_addr,
+                            mac_addr_in, sizeof(v_MACADDR_t))) {
+            is_found = 1;
+            sta_id = sta_info_node->sta_id;
+            break;
+        }
+        status = hdd_list_peek_next (&pAdapter->sta_id_hash.bins[index],
+                                     (hdd_list_node_t*)sta_info_node,
+                                     (hdd_list_node_t**)&next_node);
+        sta_info_node = next_node;
+    }
+    spin_unlock_bh( &pAdapter->sta_hash_lock);
+    return sta_id;
 }
 
 //Register the module init/exit functions

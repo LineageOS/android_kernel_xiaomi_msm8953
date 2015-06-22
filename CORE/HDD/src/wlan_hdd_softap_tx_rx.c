@@ -341,7 +341,7 @@ int hdd_softap_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
    }
    else
    {
-      STAId = *(v_U8_t *)(((v_U8_t *)(skb->data)) - 1);
+      STAId = hdd_sta_id_find_from_mac_addr(pAdapter, pDestMacAddress);
       if (STAId == HDD_WLAN_INVALID_STA_ID)
       {
          VOS_TRACE( VOS_MODULE_ID_HDD_SAP_DATA, VOS_TRACE_LEVEL_WARN,
@@ -938,8 +938,10 @@ static VOS_STATUS hdd_softap_flush_tx_queues_sta( hdd_adapter_t *pAdapter, v_U8_
 VOS_STATUS hdd_softap_init_tx_rx_sta( hdd_adapter_t *pAdapter, v_U8_t STAId, v_MACADDR_t *pmacAddrSTA)
 {
    v_U8_t i = 0;
+   VOS_STATUS status;
    v_CONTEXT_t pVosContext = ( WLAN_HDD_GET_CTX(pAdapter))->pvosContext;
    ptSapContext pSapCtx = NULL;
+
    pSapCtx = VOS_GET_SAP_CB(pVosContext);
    if(pSapCtx == NULL){
        VOS_TRACE(VOS_MODULE_ID_HDD_SAP_DATA, VOS_TRACE_LEVEL_ERROR,
@@ -967,6 +969,19 @@ VOS_STATUS hdd_softap_init_tx_rx_sta( hdd_adapter_t *pAdapter, v_U8_t STAId, v_M
    vos_copy_macaddr( &pSapCtx->aStaInfo[STAId].macAddrSTA, pmacAddrSTA);
 
    spin_unlock_bh( &pSapCtx->staInfo_lock );
+
+   status = hdd_sta_id_hash_add_entry(pAdapter, STAId, pmacAddrSTA);
+   if (status != VOS_STATUS_SUCCESS) {
+       VOS_TRACE(VOS_MODULE_ID_HDD_SAP_DATA, VOS_TRACE_LEVEL_ERROR,
+                 FL("Not able to add staid hash %d"), STAId);
+       return VOS_STATUS_E_FAILURE;
+   }
+
+   VOS_TRACE(VOS_MODULE_ID_HDD_SAP_DATA, VOS_TRACE_LEVEL_INFO,
+             FL("New station added sta_id %d mac:"
+             MAC_ADDRESS_STR), STAId,
+             MAC_ADDR_ARRAY(pmacAddrSTA->bytes));
+
    return VOS_STATUS_SUCCESS;
 }
 
@@ -1012,6 +1027,20 @@ VOS_STATUS hdd_softap_deinit_tx_rx_sta ( hdd_adapter_t *pAdapter, v_U8_t STAId )
 
    pSapCtx->aStaInfo[STAId].isUsed = FALSE;
    pSapCtx->aStaInfo[STAId].isDeauthInProgress = FALSE;
+
+   status = hdd_sta_id_hash_remove_entry(pAdapter,
+                STAId, &pSapCtx->aStaInfo[STAId].macAddrSTA);
+   if (status != VOS_STATUS_SUCCESS) {
+       VOS_TRACE(VOS_MODULE_ID_HDD_SAP_DATA, VOS_TRACE_LEVEL_ERROR,
+                 FL("Not able to remove staid hash %d"), STAId);
+       return VOS_STATUS_E_FAILURE;
+   }
+
+   VOS_TRACE(VOS_MODULE_ID_HDD_SAP_DATA, VOS_TRACE_LEVEL_INFO,
+             FL("station removed sta_id %d mac:"
+             MAC_ADDRESS_STR), STAId,
+             MAC_ADDR_ARRAY(pSapCtx->aStaInfo[STAId].macAddrSTA.bytes));
+
    /* if this STA had any of its WMM TX queues suspended, then the
       associated queue on the network interface was disabled.  check
       to see if that is the case, in which case we need to re-enable

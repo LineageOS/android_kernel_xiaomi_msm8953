@@ -646,8 +646,7 @@ void hdd_dump_dhcp_pkt(struct sk_buff *skb, int path)
         return NETDEV_TX_OK;
     }
 
-     STAId = *(v_U8_t *)(((v_U8_t *)(skb->data)) - 1);
-
+     STAId = hdd_sta_id_find_from_mac_addr(pAdapter, pDestMacAddress);
      if ((STAId == HDD_WLAN_INVALID_STA_ID) &&
            (vos_is_macaddr_broadcast( pDestMacAddress ) ||
             vos_is_macaddr_group(pDestMacAddress)))
