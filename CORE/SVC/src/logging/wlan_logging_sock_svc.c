@@ -60,6 +60,13 @@
 #define LOGGER_MAX_DATA_MGMT_PKT_Q_LEN   (8)
 #define LOGGER_MAX_FW_LOG_PKT_Q_LEN   (16)
 
+#define NL_BDCAST_RATELIMIT_INTERVAL 5*HZ
+#define NL_BDCAST_RATELIMIT_BURST    1
+
+static DEFINE_RATELIMIT_STATE(errCnt,		\
+		NL_BDCAST_RATELIMIT_INTERVAL,	\
+		NL_BDCAST_RATELIMIT_BURST);
+
 struct log_msg {
 	struct list_head node;
 	unsigned int radio;
@@ -673,8 +680,12 @@ static int send_filled_buffers_to_user(void)
 
 		ret = nl_srv_bcast(skb);
 		if (ret < 0) {
-			pr_err("%s: Send Failed %d drop_count = %u\n",
-				__func__, ret, ++gwlan_logging.drop_count);
+			if (__ratelimit(&errCnt))
+			{
+			    pr_info("%s: Send Failed %d drop_count = %u\n",
+				  __func__, ret, gwlan_logging.drop_count);
+			}
+			gwlan_logging.drop_count++;
 			skb = NULL;
 			break;
 		} else {
