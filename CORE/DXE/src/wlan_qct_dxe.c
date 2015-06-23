@@ -1108,15 +1108,14 @@ static wpt_status dxeSetInterruptPath
                                DXE host driver main control block
 
   @  Return
-      wpt_status
+      void
 
 ===========================================================================*/
-static wpt_status dxeEngineCoreStart
+static void dxeEngineCoreStart
 (
    WLANDXE_CtrlBlkType     *dxeCtrlBlk
 )
 {
-   wpt_status                 status = eWLAN_PAL_STATUS_SUCCESS;
    wpt_uint32                 registerData = 0;
    wpt_uint8                  readRetry;
 
@@ -1174,7 +1173,6 @@ static wpt_status dxeEngineCoreStart
    dxeSetInterruptPath(dxeCtrlBlk);
    HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO_LOW,
             "%s Exit", __func__);
-   return status;
 }
 
 /*==========================================================================
@@ -1291,7 +1289,7 @@ static wpt_status dxeChannelInitProgram
       }
 
       /* RX Channels, default Control registers MUST BE ENABLED */
-      wpalWriteRegister(channelEntry->channelRegister.chDXECtrlRegAddr,
+      status = wpalWriteRegister(channelEntry->channelRegister.chDXECtrlRegAddr,
                              channelEntry->extraConfig.chan_mask);
       if(eWLAN_PAL_STATUS_SUCCESS != status)
       {
@@ -2731,7 +2729,7 @@ pull_frames:
       }
       else
       {
-         channelCb->rxDoneHistogram &= ~1;
+         channelCb->rxDoneHistogram &= ~((wpt_uint64)1);
       }
    }
 
@@ -2779,7 +2777,7 @@ pull_frames:
       }
       else
       {
-         channelCb->rxDoneHistogram &= ~1;
+         channelCb->rxDoneHistogram &= ~((wpt_uint64)1);
       }
       HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO,
                "RX LOW CH EVNT STAT 0x%x, %d frames handled", chLowStat, channelCb->numFragmentCurrentChain);
@@ -3262,18 +3260,18 @@ static wpt_status dxeTXPushFrame
                                 palPacket,
                                 &sourcePhysicalAddress,
                                 &xferSize);
+      if(eWLAN_PAL_STATUS_SUCCESS != status)
+      {
+         HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                  "dxeTXPushFrame Get next frame fail");
+         return status;
+      }
       if((NULL == sourcePhysicalAddress) ||
          (0    == xferSize))
       {
          HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO_LOW,
                   "dxeTXPushFrame end of current frame");
          break;
-      }
-      if(eWLAN_PAL_STATUS_SUCCESS != status)
-      {
-         HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
-                  "dxeTXPushFrame Get next frame fail");
-         return status;
       }
 
       /* This is the LAST descriptor valid for this transaction */
@@ -4521,14 +4519,7 @@ void *WLANDXE_Open
    }
    wpalMemoryZero(tempDxeCtrlBlk, sizeof(WLANDXE_CtrlBlkType));
 
-   status = dxeCommonDefaultConfig(tempDxeCtrlBlk);
-   if(eWLAN_PAL_STATUS_SUCCESS != status)
-   {
-      HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
-               "WLANDXE_Open Common Configuration Fail");
-      WLANDXE_Close(tempDxeCtrlBlk);
-      return NULL;         
-   }
+   dxeCommonDefaultConfig(tempDxeCtrlBlk);
 
    foreach_valid_channel(idx)
    {
@@ -4749,13 +4740,7 @@ wpt_status WLANDXE_Start
    /* WLANDXE_Start called means DXE engine already initiates
     * And DXE HW is reset and init finished
     * But here to make sure HW is initialized, reset again */
-   status = dxeEngineCoreStart(dxeCtxt);
-   if(eWLAN_PAL_STATUS_SUCCESS != status)
-   {
-      HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
-               "WLANDXE_Start DXE HW init Fail");
-      return status;         
-   }
+   dxeEngineCoreStart(dxeCtxt);
 
    /* Individual Channel Start */
    foreach_valid_channel(idx)

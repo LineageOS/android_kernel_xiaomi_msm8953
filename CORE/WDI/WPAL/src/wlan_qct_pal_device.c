@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -332,6 +332,7 @@ wpt_status wpalEnableInterrupt
 )
 {
    int ret;
+   wpt_status status = eWLAN_PAL_STATUS_SUCCESS;
    
    switch (intType) 
    {
@@ -398,11 +399,12 @@ wpt_status wpalEnableInterrupt
       WPAL_TRACE(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
                     "%s: unknown interrupt: %d",
                     __func__, (int)intType);
+      status = eWLAN_PAL_STATUS_E_INVAL;
       break;
    }
    /* on the integrated platform there is no platform-specific
       interrupt control */
-   return eWLAN_PAL_STATUS_SUCCESS;
+   return status;
 }
 
 /**
@@ -425,7 +427,9 @@ wpt_status wpalDisableInterrupt
    wpt_uint32    intType
 )
 {
-   switch (intType) 
+   wpt_status status = eWLAN_PAL_STATUS_SUCCESS;
+
+   switch (intType)
    {
    case DXE_INTERRUPT_RX_READY:
       gpEnv->rx_disable_return = VOS_RETURN_ADDRESS;
@@ -439,12 +443,13 @@ wpt_status wpalDisableInterrupt
       WPAL_TRACE(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
                     "%s: unknown interrupt: %d",
                     __func__, (int)intType);
+      status = eWLAN_PAL_STATUS_E_INVAL;
       break;
    }
 
    /* on the integrated platform there is no platform-specific
       interrupt control */
-   return eWLAN_PAL_STATUS_SUCCESS;
+   return status;
 }
 
 /**

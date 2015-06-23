@@ -723,10 +723,10 @@ typedef struct
                                DXE host driver main control block
 
   @  Return
-      wpt_status
+      void
 
 ===========================================================================*/
-extern wpt_status dxeCommonDefaultConfig
+extern void dxeCommonDefaultConfig
 (
    WLANDXE_CtrlBlkType     *dxeCtrlBlk
 );

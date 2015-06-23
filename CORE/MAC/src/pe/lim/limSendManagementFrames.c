@@ -2469,9 +2469,6 @@ limSendAssocReqMgmtFrame(tpAniSirGlobal   pMac,
         PopulateDot11fVHTCaps( pMac, &pFrm->VHTCaps,
                         psessionEntry->currentOperChannel, eSIR_FALSE );
 
-        if (SIR_11B_CHANNEL_END >= psessionEntry->currentOperChannel)
-            PopulateDot11fOperatingMode(pMac, &pFrm->OperatingMode,
-                                                        psessionEntry);
     }
 #endif
     PopulateDot11fExtCap( pMac, &pFrm->ExtCap, psessionEntry);
@@ -2949,9 +2946,6 @@ limSendReassocReqWithFTIEsMgmtFrame(tpAniSirGlobal     pMac,
         PopulateDot11fVHTCaps( pMac, &frm.VHTCaps,
                          psessionEntry->currentOperChannel, eSIR_FALSE );
 
-        if (SIR_11B_CHANNEL_END >= psessionEntry->currentOperChannel)
-            PopulateDot11fOperatingMode(pMac, &frm.OperatingMode,
-                                                        psessionEntry);
     }
 #endif
     PopulateDot11fExtCap( pMac, &frm.ExtCap, psessionEntry);
@@ -3422,10 +3416,6 @@ limSendReassocReqMgmtFrame(tpAniSirGlobal     pMac,
         PopulateDot11fVHTCaps( pMac, &frm.VHTCaps,
                      psessionEntry->currentOperChannel, eSIR_FALSE );
         PopulateDot11fExtCap( pMac, &frm.ExtCap, psessionEntry);
-
-        if (SIR_11B_CHANNEL_END >= psessionEntry->currentOperChannel)
-            PopulateDot11fOperatingMode(pMac, &frm.OperatingMode,
-                                                        psessionEntry);
     }
 #endif
 
