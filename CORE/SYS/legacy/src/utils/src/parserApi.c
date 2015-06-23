@@ -807,6 +807,12 @@ PopulateDot11fVHTCaps(tpAniSirGlobal           pMac,
                                                                 nCfgValue );
     pDot11f->shortGI160and80plus80MHz = (nCfgValue & 0x0001);
 
+    if (nChannelNum && (SIR_BAND_2_4_GHZ == limGetRFBand(nChannelNum)))
+    {
+        pDot11f->shortGI80MHz = 0;
+        pDot11f->shortGI160and80plus80MHz = 0;
+    }
+
     nCfgValue = 0;
     CFG_GET_INT( nStatus, pMac, WNI_CFG_VHT_TXSTBC, nCfgValue );
     pDot11f->txSTBC = (nCfgValue & 0x0001);
