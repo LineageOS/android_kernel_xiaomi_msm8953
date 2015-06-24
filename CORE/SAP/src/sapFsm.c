@@ -720,8 +720,8 @@ sapSignalHDDevent
     /* Format the Start BSS Complete event to return... */
     if (NULL == sapContext->pfnSapEventCallback)
     {
-         VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR, "%s: HDD Event"
-                " callaback invalid", __func__);
+         VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
+               FL("HDD Event callaback invalid"));
         return VOS_STATUS_E_INVAL;
     }
 
@@ -749,8 +749,9 @@ sapSignalHDDevent
             }
             break;
        case eSAP_START_BSS_EVENT:
-            VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH, "In %s, SAP event callback event = %s",
-                __func__, "eSAP_START_BSS_EVENT");
+            VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH,
+                       FL("SAP event callback event = %s"),
+                       "eSAP_START_BSS_EVENT");
             sapApAppEvent.sapHddEventCode = eSAP_START_BSS_EVENT;
             sapApAppEvent.sapevt.sapStartBssCompleteEvent.status = (eSapStatus )context;
             if(pCsrRoamInfo != NULL ){
@@ -762,16 +763,18 @@ sapSignalHDDevent
             break;
 
         case eSAP_STOP_BSS_EVENT:
-            VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH, "In %s, SAP event callback event = %s",
-                       __func__, "eSAP_STOP_BSS_EVENT");
+            VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH,
+                       FL("SAP event callback event = %s"),
+                          "eSAP_STOP_BSS_EVENT");
             sapApAppEvent.sapHddEventCode = eSAP_STOP_BSS_EVENT;
             sapApAppEvent.sapevt.sapStopBssCompleteEvent.status = (eSapStatus )context;
             break;
 
         case eSAP_STA_ASSOC_EVENT:
         {
-            VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH, "In %s, SAP event callback event = %s",
-                __func__, "eSAP_STA_ASSOC_EVENT");
+            VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH,
+                       FL("SAP event callback event = %s"),
+                          "eSAP_STA_ASSOC_EVENT");
             if (pCsrRoamInfo->fReassocReq)
                 sapApAppEvent.sapHddEventCode = eSAP_STA_REASSOC_EVENT;
             else
@@ -803,8 +806,9 @@ sapSignalHDDevent
         }
 
         case eSAP_STA_DISASSOC_EVENT:
-            VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH, "In %s, SAP event callback event = %s",
-                       __func__, "eSAP_STA_DISASSOC_EVENT");
+            VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH,
+                       FL("SAP event callback event = %s"),
+                          "eSAP_STA_DISASSOC_EVENT");
             sapApAppEvent.sapHddEventCode = eSAP_STA_DISASSOC_EVENT;
 
             vos_mem_copy( &sapApAppEvent.sapevt.sapStationDisassocCompleteEvent.staMac,
@@ -820,8 +824,9 @@ sapSignalHDDevent
             break;
 
         case eSAP_STA_SET_KEY_EVENT:
-            VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH, "In %s, SAP event callback event = %s",
-                       __func__, "eSAP_STA_SET_KEY_EVENT");
+            VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH,
+                       FL("SAP event callback event = %s"),
+                          "eSAP_STA_SET_KEY_EVENT");
             sapApAppEvent.sapHddEventCode = eSAP_STA_SET_KEY_EVENT;
             sapApAppEvent.sapevt.sapStationSetKeyCompleteEvent.status = (eSapStatus )context;
             vos_mem_copy(&sapApAppEvent.sapevt.sapStationSetKeyCompleteEvent.peerMacAddr,
@@ -829,8 +834,9 @@ sapSignalHDDevent
             break;
 
         case eSAP_STA_DEL_KEY_EVENT :
-            VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH, "In %s, SAP event callback event = %s",
-                       __func__, "eSAP_STA_DEL_KEY_EVENT");
+            VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH,
+                       FL("SAP event callback event = %s"),
+                          "eSAP_STA_DEL_KEY_EVENT");
             sapApAppEvent.sapHddEventCode = eSAP_STA_DEL_KEY_EVENT;
             sapApAppEvent.sapevt.sapStationDeleteKeyCompleteEvent.status = (eSapStatus )context;
             //TODO: Should we need to send the key information
@@ -838,8 +844,9 @@ sapSignalHDDevent
             break;
 
         case eSAP_STA_MIC_FAILURE_EVENT :
-            VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH, "In %s, SAP event callback event = %s",
-                        __func__, "eSAP_STA_MIC_FAILURE_EVENT");
+            VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH,
+                       FL("SAP event callback event = %s"),
+                          "eSAP_STA_MIC_FAILURE_EVENT");
             sapApAppEvent.sapHddEventCode = eSAP_STA_MIC_FAILURE_EVENT;
             vos_mem_copy( &sapApAppEvent.sapevt.sapStationMICFailureEvent.srcMacAddr,
                           pCsrRoamInfo->u.pMICFailureInfo->srcMacAddr,
@@ -859,11 +866,15 @@ sapSignalHDDevent
             break;
 
         case eSAP_ASSOC_STA_CALLBACK_EVENT:
-            VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH, "In %s, SAP event callback event = %s",
-                       __func__, "eSAP_ASSOC_STA_CALLBACK_EVENT");
+            VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH,
+                       FL("SAP event callback event = %s"),
+                          "eSAP_ASSOC_STA_CALLBACK_EVENT");
             break;
 
         case eSAP_WPS_PBC_PROBE_REQ_EVENT:
+            VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH,
+                       FL("SAP event callback event = %s"),
+                          "eSAP_WPS_PBC_PROBE_REQ_EVENT");
             sapApAppEvent.sapHddEventCode = eSAP_WPS_PBC_PROBE_REQ_EVENT;
 
             vos_mem_copy( &sapApAppEvent.sapevt.sapPBCProbeReqEvent.WPSPBCProbeReq,
@@ -873,8 +884,8 @@ sapSignalHDDevent
 
        case eSAP_INDICATE_MGMT_FRAME:
             VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH,
-                                 "In %s, SAP event callback event = %s",
-                                __func__, "eSAP_INDICATE_MGMT_FRAME");
+                       FL("SAP event callback event = %s"),
+                          "eSAP_INDICATE_MGMT_FRAME");
             sapApAppEvent.sapHddEventCode = eSAP_INDICATE_MGMT_FRAME;
             sapApAppEvent.sapevt.sapManagementFrameInfo.nFrameLength
                                            = pCsrRoamInfo->nFrameLength;
@@ -888,30 +899,30 @@ sapSignalHDDevent
             break;
        case eSAP_REMAIN_CHAN_READY:
             VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH,
-                                 "In %s, SAP event callback event = %s",
-                                __func__, "eSAP_REMAIN_CHAN_READY");
+                       FL("SAP event callback event = %s"),
+                          "eSAP_REMAIN_CHAN_READY");
            sapApAppEvent.sapHddEventCode = eSAP_REMAIN_CHAN_READY;
             break;
        case eSAP_SEND_ACTION_CNF:
             VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH,
-                                 "In %s, SAP event callback event = %s",
-                                __func__, "eSAP_SEND_ACTION_CNF");
+                       FL("SAP event callback event = %s"),
+                          "eSAP_SEND_ACTION_CNF");
             sapApAppEvent.sapHddEventCode = eSAP_SEND_ACTION_CNF;
             sapApAppEvent.sapevt.sapActionCnf.actionSendSuccess = (eSapStatus)context;
             break;
 
        case eSAP_DISCONNECT_ALL_P2P_CLIENT:
             VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH,
-                             "In %s, SAP event callback event = %s",
-                            __func__, "eSAP_DISCONNECT_ALL_P2P_CLIENT");
+                       FL("SAP event callback event = %s"),
+                          "eSAP_DISCONNECT_ALL_P2P_CLIENT");
             sapApAppEvent.sapHddEventCode = eSAP_DISCONNECT_ALL_P2P_CLIENT;
             sapApAppEvent.sapevt.sapActionCnf.actionSendSuccess = (eSapStatus)context;
             break;
 
        case eSAP_MAC_TRIG_STOP_BSS_EVENT :
             VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH,
-                             "In %s, SAP event callback event = %s",
-                            __func__, "eSAP_MAC_TRIG_STOP_BSS_EVENT");
+                       FL("SAP event callback event = %s"),
+                          "eSAP_MAC_TRIG_STOP_BSS_EVENT");
             sapApAppEvent.sapHddEventCode = eSAP_MAC_TRIG_STOP_BSS_EVENT;
             sapApAppEvent.sapevt.sapActionCnf.actionSendSuccess = (eSapStatus)context;
             break;
@@ -919,8 +930,8 @@ sapSignalHDDevent
 
         case eSAP_UNKNOWN_STA_JOIN:
             VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH,
-                       "In %s, SAP event callback event = %s",
-                       __func__, "eSAP_UNKNOWN_STA_JOIN");
+                       FL("SAP event callback event = %s"),
+                          "eSAP_UNKNOWN_STA_JOIN");
             sapApAppEvent.sapHddEventCode = eSAP_UNKNOWN_STA_JOIN;
             vos_mem_copy((v_PVOID_t)sapApAppEvent.sapevt.sapUnknownSTAJoin.macaddr.bytes,
                          (v_PVOID_t)context, sizeof(v_MACADDR_t));
@@ -928,16 +939,17 @@ sapSignalHDDevent
 
         case eSAP_MAX_ASSOC_EXCEEDED:
             VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH,
-                    "In %s, SAP event callback event = %s",
-                    __func__, "eSAP_MAX_ASSOC_EXCEEDED");
+                       FL("SAP event callback event = %s"),
+                          "eSAP_MAX_ASSOC_EXCEEDED");
             sapApAppEvent.sapHddEventCode = eSAP_MAX_ASSOC_EXCEEDED;
             vos_mem_copy((v_PVOID_t)sapApAppEvent.sapevt.sapMaxAssocExceeded.macaddr.bytes,
                     (v_PVOID_t)pCsrRoamInfo->peerMac, sizeof(v_MACADDR_t));
             break;
 
         default:
-            VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR, "In %s, SAP Unknown callback event = %d",
-                       __func__,sapHddevent);
+            VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
+                       FL("SAP Unknown callback event = %d"),
+                       sapHddevent);
             break;
     }
     vosStatus = (*sapContext->pfnSapEventCallback)

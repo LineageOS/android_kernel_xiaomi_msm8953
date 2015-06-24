@@ -664,7 +664,7 @@ static void
 limIndicateProbeReqToHDD(tpAniSirGlobal pMac, tANI_U8 *pBd,
                          tpPESession psessionEntry)
 {
-    limLog( pMac, LOG1, "Received a probe request frame");
+    limLog( pMac, LOG1, FL("Received a probe request frame"));
 
     //send the probe req to SME.
     limSendSmeMgmtFrameInd( pMac, psessionEntry->smeSessionId, pBd,
