@@ -163,7 +163,7 @@ eHalStatus pmcEnterFullPowerState (tHalHandle hHal)
 {
     tpAniSirGlobal pMac = PMAC_STRUCT(hHal);
 
-    pmcLog(pMac, LOG1, FL("Enter. PMC state is %d"), pMac->pmc.pmcState);
+    pmcLog(pMac, LOG1, FL("PMC state is %d"), pMac->pmc.pmcState);
 
     /* Take action based on the current state. */
     switch (pMac->pmc.pmcState)
@@ -841,7 +841,7 @@ void pmcDoCallbacks (tHalHandle hHal, eHalStatus callbackStatus)
     tListElem *pEntry;
     tpRequestFullPowerEntry pRequestFullPowerEntry;
 
-    pmcLog(pMac, LOG2, FL("Entering pmcDoCallbacks"));
+    pmcLog(pMac, LOG2, FL("Enter"));
 
     /* Call IMPS callback routine. */
     if (pMac->pmc.impsCallbackRoutine != NULL)
