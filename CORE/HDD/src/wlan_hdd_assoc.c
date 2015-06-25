@@ -2042,6 +2042,7 @@ static void hdd_RoamIbssIndicationHandler( hdd_adapter_t *pAdapter,
    hdd_context_t *pHddCtx = (hdd_context_t*)pAdapter->pHddCtx;
    v_MACADDR_t broadcastMacAddr = VOS_MAC_ADDR_BROADCAST_INITIALIZER;
    struct cfg80211_bss *bss;
+   hdd_station_ctx_t *pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
 
    hddLog(VOS_TRACE_LEVEL_INFO, "%s: %s: id %d, status %d, result %d",
           __func__, pAdapter->dev->name, roamId, roamStatus, roamResult);
@@ -2105,6 +2106,35 @@ static void hdd_RoamIbssIndicationHandler( hdd_adapter_t *pAdapter,
          {
              VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                        "%s: NULL Bss Desc",__func__);
+         }
+
+         /* Set Broadcast key again in case IBSS_COALESCED as DEL BSS,
+          * in IBSS_COALESCED will remove the BC key.
+          */
+         if ((eCSR_ROAM_RESULT_IBSS_COALESCED == roamResult) &&
+             ( eCSR_ENCRYPT_TYPE_WEP40_STATICKEY
+                                           == pHddStaCtx->ibss_enc_key.encType
+               ||eCSR_ENCRYPT_TYPE_WEP104_STATICKEY
+                                           == pHddStaCtx->ibss_enc_key.encType
+               ||eCSR_ENCRYPT_TYPE_TKIP == pHddStaCtx->ibss_enc_key.encType
+               ||eCSR_ENCRYPT_TYPE_AES == pHddStaCtx->ibss_enc_key.encType ))
+         {
+             u8 grpmacaddr[WNI_CFG_BSSID_LEN] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
+             VOS_STATUS vosStatus;
+
+             pHddStaCtx->ibss_enc_key.keyDirection = eSIR_TX_RX;
+
+             memcpy(&pHddStaCtx->ibss_enc_key.peerMac,
+                            grpmacaddr, WNI_CFG_BSSID_LEN);
+             hddLog(VOS_TRACE_LEVEL_INFO,
+                       FL(" SET GTK in case of COALESCED"));
+             vosStatus = sme_RoamSetKey( WLAN_HDD_GET_HAL_CTX(pAdapter),
+                      pAdapter->sessionId, &pHddStaCtx->ibss_enc_key, &roamId );
+             if ( VOS_STATUS_SUCCESS != vosStatus )
+             {
+                hddLog(VOS_TRACE_LEVEL_ERROR,
+                       FL("sme_RoamSetKey failed, returned %d"),vosStatus);
+             }
          }
          break;
       }
@@ -2382,6 +2412,8 @@ static eHalStatus hdd_RoamSetKeyCompleteHandler( hdd_adapter_t *pAdapter, tCsrRo
          {
             vosStatus = WLANTL_STAPtkInstalled( pHddCtx->pvosContext,
                                                 IBSS_BROADCAST_STAID);
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+                "WLAN TL STA GTK Installed for STAID=%d", IBSS_BROADCAST_STAID);
             pHddStaCtx->roam_info.roamingState = HDD_ROAM_STATE_NONE;
          }
          else
@@ -2576,6 +2608,7 @@ static eHalStatus roamRoamConnectStatusUpdateHandler( hdd_adapter_t *pAdapter, t
             ||eCSR_ENCRYPT_TYPE_AES == pHddStaCtx->ibss_enc_key.encType )
          {
             pHddStaCtx->ibss_enc_key.keyDirection = eSIR_TX_RX;
+
             memcpy(&pHddStaCtx->ibss_enc_key.peerMac,
                               pRoamInfo->peerMac, WNI_CFG_BSSID_LEN);
 

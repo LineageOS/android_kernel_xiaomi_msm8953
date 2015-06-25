@@ -60,6 +60,13 @@
 #define LOGGER_MAX_DATA_MGMT_PKT_Q_LEN   (8)
 #define LOGGER_MAX_FW_LOG_PKT_Q_LEN   (16)
 
+#define NL_BDCAST_RATELIMIT_INTERVAL 5*HZ
+#define NL_BDCAST_RATELIMIT_BURST    1
+
+static DEFINE_RATELIMIT_STATE(errCnt,		\
+		NL_BDCAST_RATELIMIT_INTERVAL,	\
+		NL_BDCAST_RATELIMIT_BURST);
+
 struct log_msg {
 	struct list_head node;
 	unsigned int radio;
@@ -123,6 +130,64 @@ static struct log_msg *gplog_msg;
 
 /* PID of the APP to log the message */
 static int gapp_pid = INVALID_PID;
+static char wlan_logging_ready[] = "WLAN LOGGING READY";
+
+/*
+ * Broadcast Logging service ready indication to any Logging application
+ * Each netlink message will have a message of type tAniMsgHdr inside.
+ */
+void wlan_logging_srv_nl_ready_indication(void)
+{
+	struct sk_buff *skb = NULL;
+	struct nlmsghdr *nlh;
+	tAniNlHdr *wnl = NULL;
+	int payload_len;
+	int    err;
+	static int rate_limit;
+
+	payload_len = sizeof(tAniHdr) + sizeof(wlan_logging_ready) +
+		sizeof(wnl->radio);
+	skb = dev_alloc_skb(NLMSG_SPACE(payload_len));
+	if (NULL == skb) {
+		if (!rate_limit) {
+			LOGGING_TRACE(VOS_TRACE_LEVEL_ERROR,
+					"NLINK: skb alloc fail %s", __func__);
+		}
+		rate_limit = 1;
+		return;
+	}
+	rate_limit = 0;
+
+	nlh = nlmsg_put(skb, 0, 0, ANI_NL_MSG_LOG, payload_len,
+			NLM_F_REQUEST);
+	if (NULL == nlh) {
+		LOGGING_TRACE(VOS_TRACE_LEVEL_ERROR,
+				"%s: nlmsg_put() failed for msg size[%d]",
+				__func__, payload_len);
+		kfree_skb(skb);
+		return;
+	}
+
+	wnl = (tAniNlHdr *) nlh;
+	wnl->radio = 0;
+	wnl->wmsg.type = ANI_NL_MSG_READY_IND_TYPE;
+	wnl->wmsg.length = sizeof(wlan_logging_ready);
+	memcpy((char*)&wnl->wmsg + sizeof(tAniHdr),
+			wlan_logging_ready,
+			sizeof(wlan_logging_ready));
+
+	/* sender is in group 1<<0 */
+	NETLINK_CB(skb).dst_group = WLAN_NLINK_MCAST_GRP_ID;
+
+	/*multicast the message to all listening processes*/
+	err = nl_srv_bcast(skb);
+	if (err) {
+		LOGGING_TRACE(VOS_TRACE_LEVEL_INFO_LOW,
+			"NLINK: Ready Indication Send Fail %s, err %d",
+			__func__, err);
+	}
+	return;
+}
 
 /* Utility function to send a netlink message to an application
  * in user space
@@ -615,8 +680,12 @@ static int send_filled_buffers_to_user(void)
 
 		ret = nl_srv_bcast(skb);
 		if (ret < 0) {
-			pr_err("%s: Send Failed %d drop_count = %u\n",
-				__func__, ret, ++gwlan_logging.drop_count);
+			if (__ratelimit(&errCnt))
+			{
+			    pr_info("%s: Send Failed %d drop_count = %u\n",
+				  __func__, ret, gwlan_logging.drop_count);
+			}
+			gwlan_logging.drop_count++;
 			skb = NULL;
 			break;
 		} else {
@@ -801,6 +870,8 @@ int wlan_logging_sock_activate_svc(int log_fe_to_console, int num_buf)
 
 	nl_srv_register(ANI_NL_MSG_LOG, wlan_logging_proc_sock_rx_msg);
 
+	//Broadcast SVC ready message to logging app/s running
+	wlan_logging_srv_nl_ready_indication();
 	pr_info("%s: Activated wlan_logging svc\n", __func__);
 	return 0;
 }

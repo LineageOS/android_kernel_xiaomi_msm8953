@@ -1818,7 +1818,6 @@ __limProcessSmeJoinReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
             }
         }
 
-        handleHTCapabilityandHTInfo(pMac, psessionEntry);
         psessionEntry->isAmsduSupportInAMPDU = pSmeJoinReq->isAmsduSupportInAMPDU;
 
         /* Store Session related parameters */
@@ -1930,6 +1929,7 @@ __limProcessSmeJoinReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
         /*Phy mode*/
         psessionEntry->gLimPhyMode = pSmeJoinReq->bssDescription.nwType;
 
+        handleHTCapabilityandHTInfo(pMac, psessionEntry);
         /* Copy The channel Id to the session Table */
         psessionEntry->currentOperChannel = pSmeJoinReq->bssDescription.channelId;
         psessionEntry->htSupportedChannelWidthSet = (pSmeJoinReq->cbMode)?1:0; // This is already merged value of peer and self - done by csr in csrGetCBModeFromIes
@@ -3198,7 +3198,7 @@ __limProcessSmeSetContextReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
             limLog(pMac, LOGP, FL("call to AllocateMemory failed for mlmSetKeysReq"));
             goto end;
         }
-
+        vos_mem_zero(pMlmSetKeysReq,sizeof(tLimMlmSetKeysReq));
         pMlmSetKeysReq->edType  = pSetContextReq->keyMaterial.edType;
         pMlmSetKeysReq->numKeys = pSetContextReq->keyMaterial.numKeys;
         if(pMlmSetKeysReq->numKeys > SIR_MAC_MAX_NUM_OF_DEFAULT_KEYS)
