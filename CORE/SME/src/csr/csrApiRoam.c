@@ -10325,11 +10325,6 @@ void csrRoamCheckForLinkStatusChange( tpAniSirGlobal pMac, tSirSmeRsp *pSirMsg )
                                     }
 #endif
                          /* OBSS SCAN Indication will be sent to Firmware to start OBSS Scan */
-                                    smsLog(pMac, LOG1, FL("Current channel is %d,"
-                                           "OBSS cap is %d, Persona is %d"),
-                                           pSession->connectedProfile.operationChannel,
-                                           IS_HT40_OBSS_SCAN_FEATURE_ENABLE,
-                                           pSession->pCurRoamProfile->csrPersona);
                                     if( CSR_IS_CHANNEL_24GHZ(pSession->connectedProfile.operationChannel)
                                        && IS_HT40_OBSS_SCAN_FEATURE_ENABLE
                                        && (pSession->connectState ==
