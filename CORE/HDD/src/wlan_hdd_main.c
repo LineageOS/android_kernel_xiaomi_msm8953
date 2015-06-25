@@ -10088,6 +10088,7 @@ int hdd_wlan_startup(struct device *dev )
 
    if (pHddCtx->cfg_ini->wlanLoggingEnable &&
                (pHddCtx->cfg_ini->enableFWLogging ||
+                pHddCtx->cfg_ini->enableMgmtLogging ||
                 pHddCtx->cfg_ini->enableContFWLogging))
    {
        hdd_init_frame_logging(pHddCtx);
