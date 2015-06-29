@@ -3847,3 +3847,59 @@ tSirRetStatus limProcessSmeSetTdls2040BSSCoexReq(tpAniSirGlobal pMac,
     return eSIR_SUCCESS;
 }
 
+tSirRetStatus limProcessSmeDelAllTdlsPeers(tpAniSirGlobal pMac,
+                                                 tANI_U32 *pMsgBuf)
+{
+    tSirDelAllTdlsPeers *pMsg = NULL;
+    tpDphHashNode pStaDs = NULL ;
+    tpPESession psessionEntry = NULL;
+    uint8_t sessionId;
+    int i, aid;
+    pMsg = (tSirDelAllTdlsPeers*) pMsgBuf ;
+
+    if (pMsg == NULL) {
+        limLog(pMac, LOGE, FL("NULL pMsg"));
+        return eSIR_FAILURE;
+    }
+
+    psessionEntry = peFindSessionByBssid(pMac, pMsg->bssid, &sessionId);
+    if (NULL == psessionEntry)
+    {
+        limLog(pMac, LOGE, FL("NULL psessionEntry"));
+        return eSIR_FAILURE;
+    }
+
+    /* Check all the set bit in peerAIDBitmap and delete the
+     * peer (with that aid) entry from the hash table and add
+     * the aid in free pool
+     */
+    for (i = 0; i < sizeof(psessionEntry->peerAIDBitmap)/sizeof(tANI_U32); i++)
+    {
+        for (aid = 0; aid < (sizeof(tANI_U32) << 3); aid++)
+        {
+            if (CHECK_BIT(psessionEntry->peerAIDBitmap[i], aid))
+            {
+                pStaDs = dphGetHashEntry(pMac,
+                                         (aid + i*(sizeof(tANI_U32) << 3)),
+                                         &psessionEntry->dph.dphHashTable);
+                if (NULL != pStaDs)
+                {
+                    limLog(pMac, LOGE, FL("Deleting "MAC_ADDRESS_STR),
+                           MAC_ADDR_ARRAY(pStaDs->staAddr));
+
+                    limSendDeauthMgmtFrame(pMac,
+                                           eSIR_MAC_DEAUTH_LEAVING_BSS_REASON,
+                                           pStaDs->staAddr, psessionEntry,
+                                           FALSE);
+                    dphDeleteHashEntry(pMac, pStaDs->staAddr, pStaDs->assocId,
+                                       &psessionEntry->dph.dphHashTable);
+                }
+                limReleasePeerIdx(pMac, (aid + i*(sizeof(tANI_U32) << 3)),
+                                  psessionEntry) ;
+                CLEAR_BIT(psessionEntry->peerAIDBitmap[i], aid);
+            }
+        }
+    }
+
+    return eSIR_SUCCESS;
+}

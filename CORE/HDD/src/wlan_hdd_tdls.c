@@ -43,6 +43,8 @@
 #include <net/ieee80211_radiotap.h>
 #include "wlan_hdd_tdls.h"
 #include "wlan_hdd_cfg80211.h"
+#include "wlan_hdd_assoc.h"
+#include "sme_Api.h"
 #include "vos_sched.h"
 
 static tANI_S32 wlan_hdd_get_tdls_discovery_peer_cnt(tdlsCtx_t *pHddTdlsCtx);
@@ -75,8 +77,7 @@ static u8 wlan_hdd_tdls_hash_key (u8 *mac)
 void wlan_hdd_tdls_disable_offchan_and_teardown_links(hdd_context_t *hddctx)
 {
     u16 connected_tdls_peers = 0;
-    u8 staidx;
-    hddTdlsPeer_t *curr_peer = NULL;
+    u8 staIdx;
     hdd_adapter_t *adapter = NULL;
 
     if (eTDLS_SUPPORT_NOT_ENABLED == hddctx->tdls_mode) {
@@ -92,51 +93,36 @@ void wlan_hdd_tdls_disable_offchan_and_teardown_links(hdd_context_t *hddctx)
     }
 
     connected_tdls_peers = wlan_hdd_tdlsConnectedPeers(adapter);
+    if (!connected_tdls_peers) {
+         hddLog(LOG1, FL("No TDLS connected peers to delete TDLS peers"));
+         return;
+    }
 
-    if (!connected_tdls_peers)
-        return ;
+    /*Send Msg to PE for deleting all the TDLS peers*/
+    sme_DeleteAllTDLSPeers(hddctx->hHal, adapter->sessionId);
+    /* 0 staIdx is assigned to AP we dont want to touch that */
+    for ( staIdx = 0; staIdx < HDD_MAX_NUM_TDLS_STA; staIdx++ )
+    {
+        if (hddctx->tdlsConnInfo[staIdx].staId)
+        {
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_WARN,
+                    ("hdd_tdlsStatusUpdate: staIdx %d " MAC_ADDRESS_STR),
+                    hddctx->tdlsConnInfo[staIdx].staId,
+                    MAC_ADDR_ARRAY(hddctx->tdlsConnInfo[staIdx].peerMac.bytes));
+            wlan_hdd_tdls_reset_peer(
+                                adapter,
+                                hddctx->tdlsConnInfo[staIdx].peerMac.bytes);
+            hdd_roamDeregisterTDLSSTA(adapter,
+                                      hddctx->tdlsConnInfo[staIdx].staId );
+            wlan_hdd_tdls_decrement_peer_count(adapter);
 
-    /* TDLS is not supported in case of concurrency
-     * Disable TDLS Offchannel to avoid more than two concurrent channels.
-     */
-    if (connected_tdls_peers == 1) {
-        curr_peer = wlan_hdd_tdls_get_connected_peer(adapter);
-        if (curr_peer && (curr_peer->isOffChannelConfigured == TRUE)) {
-            hddLog(LOG1, FL("%s: Concurrency detected, Disable "
-                                 "TDLS channel switch"), __func__);
-
-            curr_peer->isOffChannelEstablished = FALSE;
-            sme_SendTdlsChanSwitchReq(WLAN_HDD_GET_HAL_CTX(adapter),
-                                         adapter->sessionId,
-                                         curr_peer->peerMac,
-                                         curr_peer->peerParams.channel,
-                                         TDLS_OFF_CHANNEL_BW_OFFSET,
-                                         TDLS_CHANNEL_SWITCH_DISABLE);
+            vos_mem_zero(&hddctx->tdlsConnInfo[staIdx].peerMac,
+                    sizeof(v_MACADDR_t)) ;
+            hddctx->tdlsConnInfo[staIdx].staId = 0 ;
+            hddctx->tdlsConnInfo[staIdx].sessionId = 255;
         }
     }
-
-    /* As mentioned above TDLS is not supported in case of concurrency
-     * Find the connected peer and generate TDLS teardown indication to
-     * supplicant.
-     */
-    for (staidx = 0; staidx < HDD_MAX_NUM_TDLS_STA; staidx++) {
-        if (!hddctx->tdlsConnInfo[staidx].staId)
-            continue;
-
-        curr_peer = wlan_hdd_tdls_find_all_peer(hddctx,
-                                   hddctx->tdlsConnInfo[staidx].peerMac.bytes);
-
-        if (!curr_peer)
-            continue;
-
-        hddLog(LOG1, FL("indicate TDLS teardown (staId %d)"),
-                                         curr_peer->staId);
-
-        wlan_hdd_tdls_indicate_teardown(
-                                    curr_peer->pHddTdlsCtx->pAdapter,
-                                    curr_peer,
-                                    eSIR_MAC_TDLS_TEARDOWN_UNSPEC_REASON);
-    }
+    wlan_hdd_tdls_check_bmps(adapter);
     wlan_hdd_tdls_set_mode(hddctx, eTDLS_SUPPORT_DISABLED, FALSE);
     hddLog(LOG1, FL("TDLS Support Disabled"));
 }

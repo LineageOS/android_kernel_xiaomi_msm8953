@@ -12682,3 +12682,25 @@ tANI_BOOLEAN sme_handleSetFccChannel(tHalHandle hHal, tANI_U8 fcc_constraint)
 
     return status;
 }
+
+eHalStatus sme_DeleteAllTDLSPeers(tHalHandle hHal, uint8_t sessionId)
+{
+    tSirDelAllTdlsPeers *pMsg;
+    eHalStatus status = eHAL_STATUS_SUCCESS;
+    tpAniSirGlobal pMac = PMAC_STRUCT(hHal);
+    tCsrRoamSession *pSession = CSR_GET_SESSION(pMac, sessionId);
+
+    pMsg = vos_mem_malloc(sizeof(tSirDelAllTdlsPeers));
+    if (NULL == pMsg)
+    {
+        smsLog(pMac, LOGE, FL("memory alloc failed"));
+        return eHAL_STATUS_FAILURE;
+    }
+    vos_mem_set(pMsg, sizeof( tSirDelAllTdlsPeers ), 0);
+    pMsg->mesgType = pal_cpu_to_be16((tANI_U16)eWNI_SME_DEL_ALL_TDLS_PEERS);
+    pMsg->mesgLen = pal_cpu_to_be16((tANI_U16)sizeof( tSirDelAllTdlsPeers ));
+    vos_mem_copy(pMsg->bssid, pSession->connectedProfile.bssid,
+                 sizeof(tSirMacAddr));
+    status = palSendMBMessage( pMac->hHdd, pMsg );
+    return status;
+}

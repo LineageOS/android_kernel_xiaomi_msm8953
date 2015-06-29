@@ -5579,4 +5579,11 @@ typedef struct
     tANI_U16    msgLen;     // length of the entire request
     tANI_U8     SetTdls2040BSSCoex; //enabled or disabled
 } tAniSetTdls2040BSSCoex, *tpAniSetTdls2040BSSCoex;
+
+typedef struct
+{
+    tANI_U16   mesgType;
+    tANI_U16   mesgLen;
+    tSirMacAddr bssid;
+}tSirDelAllTdlsPeers, *ptSirDelAllTdlsPeers;
 #endif /* __SIR_API_H */
