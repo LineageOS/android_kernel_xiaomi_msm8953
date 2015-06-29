@@ -3515,9 +3515,6 @@ static unsigned int get_primary_channel(unsigned int center_channel,unsigned int
 {
     unsigned int primary_channel = center_channel;
 
-        if (center_channel <= 14)
-                return primary_channel ;
-
     switch (cb)
     {
         case PHY_DOUBLE_CHANNEL_LOW_PRIMARY:
