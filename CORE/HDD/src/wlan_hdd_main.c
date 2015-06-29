@@ -9267,7 +9267,8 @@ void hdd_init_frame_logging_done(void *fwlogInitCbContext, VOS_STATUS status)
       return;
    }
 
-   if (VOS_STATUS_SUCCESS == status)
+   if ((VOS_STATUS_SUCCESS == status) &&
+       (TRUE == pHddCtx->cfg_ini->enableMgmtLogging))
    {
       hddLog(VOS_TRACE_LEVEL_INFO, FL("Mgmt Frame Logging init successful"));
       pHddCtx->mgmt_frame_logging = TRUE;
