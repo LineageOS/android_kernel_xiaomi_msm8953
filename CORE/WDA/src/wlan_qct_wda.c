@@ -13120,6 +13120,15 @@ VOS_STATUS WDA_TxPacket(tWDA_CbContext *pWDA,
           txFlag |= HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME;
        }
    }
+#ifdef FEATURE_WLAN_TDLS
+   /* TDLS Management frames are sent using Peer Sta mask */
+   else if ((pFc->type == SIR_MAC_DATA_FRAME) &&
+            (txFlag & HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME))
+   {
+       txFlag |= HAL_USE_PEER_STA_REQUESTED_MASK;
+
+   }
+#endif
    vos_atomic_set((uintptr_t*)&pWDA->VosPacketToFree, (uintptr_t)pFrmBuf);/*set VosPacket_freed to pFrmBuf*/
 
    /*Set frame tag to 0 
