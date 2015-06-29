@@ -9403,6 +9403,16 @@ int hdd_wlan_startup(struct device *dev )
 
    vos_set_load_unload_in_progress(VOS_MODULE_ID_VOSS, TRUE);
 
+   /* register for riva power on lock to platform driver
+    * Locking power early to ensure FW doesn't reset by kernel while
+    * host driver is busy initializing itself */
+   if (req_riva_power_on_lock("wlan"))
+   {
+      hddLog(VOS_TRACE_LEVEL_FATAL,"%s: req riva power on lock failed",
+                                     __func__);
+      goto err_free_hdd_context;
+   }
+
    /*Get vos context here bcoz vos_open requires it*/
    pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
 
@@ -10025,21 +10035,13 @@ int hdd_wlan_startup(struct device *dev )
       goto err_unregister_pmops;
    }
 
-   /* register for riva power on lock to platform driver */
-   if (req_riva_power_on_lock("wlan"))
-   {
-      hddLog(VOS_TRACE_LEVEL_FATAL,"%s: req riva power on lock failed",
-                                     __func__);
-      goto err_unregister_pmops;
-   }
-
    // register net device notifier for device change notification
    ret = register_netdevice_notifier(&hdd_netdev_notifier);
 
    if(ret < 0)
    {
       hddLog(VOS_TRACE_LEVEL_ERROR,"%s: register_netdevice_notifier failed",__func__);
-      goto err_free_power_on_lock;
+      goto err_unregister_pmops;
    }
 
    //Initialize the nlink service
@@ -10210,9 +10212,6 @@ err_nl_srv:
 err_reg_netdev:
    unregister_netdevice_notifier(&hdd_netdev_notifier);
 
-err_free_power_on_lock:
-   free_riva_power_on_lock("wlan");
-
 err_unregister_pmops:
    hddDevTmUnregisterNotifyCallback(pHddCtx);
    hddDeregisterPmOps(pHddCtx);
@@ -10264,6 +10263,7 @@ err_config:
 
 err_free_hdd_context:
    hdd_allow_suspend(WIFI_POWER_EVENT_WAKELOCK_DRIVER_INIT);
+   free_riva_power_on_lock("wlan");
    wiphy_free(wiphy) ;
    //kfree(wdev) ;
    VOS_BUG(1);
