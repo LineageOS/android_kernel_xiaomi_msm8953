@@ -647,6 +647,10 @@ eHalStatus csrUpdateChannelList(tpAniSirGlobal pMac)
     }
     pChanList->regId = csrGetCurrentRegulatoryDomain(pMac);
 
+    VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_INFO,
+             "%s : regID : %d \n", __func__,
+              pChanList->regId);
+
     msg.type = WDA_UPDATE_CHAN_LIST_REQ;
     msg.reserved = 0;
     msg.bodyptr = pChanList;
