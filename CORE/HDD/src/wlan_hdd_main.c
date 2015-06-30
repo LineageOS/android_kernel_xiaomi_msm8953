@@ -11368,6 +11368,7 @@ int wlan_hdd_scan_abort(hdd_adapter_t *pAdapter)
     tSirAbortScanStatus abortScanStatus;
 
     pScanInfo = &pHddCtx->scan_info;
+    INIT_COMPLETION(pScanInfo->abortscan_event_var);
     if (pScanInfo->mScanPending)
     {
         abortScanStatus = hdd_abort_mac_scan(pHddCtx, pScanInfo->sessionId,
@@ -11381,7 +11382,6 @@ int wlan_hdd_scan_abort(hdd_adapter_t *pAdapter)
          */
         if (abortScanStatus == eSIR_ABORT_ACTIVE_SCAN_LIST_NOT_EMPTY)
         {
-            INIT_COMPLETION(pScanInfo->abortscan_event_var);
             status = wait_for_completion_interruptible_timeout(
                            &pScanInfo->abortscan_event_var,
                            msecs_to_jiffies(5000));
