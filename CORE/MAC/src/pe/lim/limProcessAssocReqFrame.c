@@ -300,7 +300,8 @@ limProcessAssocReqFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,
 
     if (status != eSIR_SUCCESS)
     {
-        limLog(pMac, LOGE, FL("Parse error AssocRequest, length=%d from "MAC_ADDRESS_STR),
+        limLog(pMac, LOGW,
+               FL("Parse error AssocRequest, length=%d from "MAC_ADDRESS_STR),
                              framelen, MAC_ADDR_ARRAY(pHdr->sa));
         limSendAssocRspMgmtFrame(pMac, eSIR_MAC_UNSPEC_FAILURE_STATUS, 1, pHdr->sa, subType, 0, psessionEntry);
         goto error;

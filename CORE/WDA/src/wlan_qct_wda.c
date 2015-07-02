@@ -13057,7 +13057,7 @@ VOS_STATUS WDA_TxPacket(tWDA_CbContext *pWDA,
        if( NULL != pWDA->pAckTxCbFunc )
        {
            /* Already TxComp is active no need to active again */
-           VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR, 
+           VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
                    "There is already one request pending for tx complete");
            pWDA->pAckTxCbFunc( pMac, &txBdStatus);
            pWDA->pAckTxCbFunc = NULL;
@@ -13070,7 +13070,7 @@ VOS_STATUS WDA_TxPacket(tWDA_CbContext *pWDA,
            }
            else
            {
-               VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
                        "Tx Complete timeout Timer Stop Success ");
            }
        }
