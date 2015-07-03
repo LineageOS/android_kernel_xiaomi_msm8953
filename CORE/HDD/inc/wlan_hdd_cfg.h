@@ -2495,7 +2495,21 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_TOGGLE_ARP_BDRATES_MAX         1
 #define CFG_TOGGLE_ARP_BDRATES_DEFAULT     0
 
+/*
+ * If within gLinkFailTimeout period(values is mentioned in msec) if FW
+ * doesn't receive acks for gLinkFailTxCnt number of packets, then link will
+ * be disconnected.
+ */
 
+#define CFG_LINK_FAIL_TIMEOUT_NAME    "gLinkFailTimeout"
+#define CFG_LINK_FAIL_TIMEOUT_MIN     ( 1000 )
+#define CFG_LINK_FAIL_TIMEOUT_MAX     ( 60000 )
+#define CFG_LINK_FAIL_TIMEOUT_DEF     ( 6000 )
+
+#define CFG_LINK_FAIL_TX_CNT_NAME    "gLinkFailTxCnt"
+#define CFG_LINK_FAIL_TX_CNT_MIN     ( 50 )
+#define CFG_LINK_FAIL_TX_CNT_MAX     ( 1000 )
+#define CFG_LINK_FAIL_TX_CNT_DEF     ( 200 )
 
 /*--------------------------------------------------------------------------- 
   Type declarations
@@ -3005,6 +3019,8 @@ typedef struct
    v_BOOL_t                    toggleArpBDRates;
    v_U32_t                     btcStaticOppWlanIdleWlanLen;
    v_U32_t                     btcStaticOppWlanIdleBtLen;
+   v_U32_t                     linkFailTimeout;
+   v_U32_t                     linkFailTxCnt;
 } hdd_config_t;
 /*--------------------------------------------------------------------------- 
   Function declarations and documenation
