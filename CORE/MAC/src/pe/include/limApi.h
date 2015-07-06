@@ -190,6 +190,8 @@ void limHandleLowRssiInd(tpAniSirGlobal pMac);
 void limHandleBmpsStatusInd(tpAniSirGlobal pMac);
 void limHandleMissedBeaconInd(tpAniSirGlobal pMac, tpSirMsgQ pMsg);
 tMgmtFrmDropReason limIsPktCandidateForDrop(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tANI_U32 subType);
+boolean limIsDeauthDiassocForDrop(tpAniSirGlobal pMac,
+                                          tANI_U8 *pRxPacketInfo);
 void limMicFailureInd(tpAniSirGlobal pMac, tpSirMsgQ pMsg);
 /* ----------------------------------------------------------------------- */
 // These used to be in DPH

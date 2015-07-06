@@ -134,6 +134,10 @@ sysBbtProcessMessageCore(tpAniSirGlobal pMac, tpSirMsgQ pMsg, tANI_U32 type,
 
     if(type == SIR_MAC_MGMT_FRAME)
     {
+            if ((subType == SIR_MAC_MGMT_DEAUTH ||
+                 subType == SIR_MAC_MGMT_DISASSOC)&&
+                limIsDeauthDiassocForDrop(pMac, pBd))
+                goto fail;
 
             if( (dropReason = limIsPktCandidateForDrop(pMac, pBd, subType)) != eMGMT_DROP_NO_DROP)
             {

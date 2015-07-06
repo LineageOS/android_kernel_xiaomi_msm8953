@@ -2251,7 +2251,76 @@ void limMicFailureInd(tpAniSirGlobal pMac, tpSirMsgQ pMsg)
     return;
 }
 
+/** ----------------------------------------------------------------------
+ *\brief limIsDeauthDiassocForDrop()..decides to drop deauth\diassoc frames.
+ *This function is called before enqueuing the frame to PE queue.
+ *This prevents deauth/diassoc frames getting into PE Queue.
 
+------------------------------------------------------------------------ */
+
+
+boolean limIsDeauthDiassocForDrop(tpAniSirGlobal pMac,
+                                          tANI_U8 *pRxPacketInfo)
+{
+    tANI_U8         sessionId;
+    tANI_U16          aid;
+    tpPESession     psessionEntry;
+    tpSirMacMgmtHdr pMacHdr;
+    tpDphHashNode     pStaDs;
+
+    pMacHdr = WDA_GET_RX_MAC_HEADER(pRxPacketInfo);
+    psessionEntry = peFindSessionByBssid(pMac,pMacHdr->bssId,&sessionId);
+    if (!psessionEntry)
+    {
+        PELOG1(sysLog(pMac, LOG1,
+               FL("session does not exist for given STA [%pM]"),
+                  pMacHdr->sa););
+        return TRUE;
+    }
+    pStaDs = dphLookupHashEntry(pMac, pMacHdr->sa, &aid,
+                               &psessionEntry->dph.dphHashTable);
+    if (!pStaDs)
+    {
+        PELOG1(sysLog(pMac, LOG1,FL("pStaDs is NULL")););
+        return TRUE;
+    }
+#ifdef WLAN_FEATURE_11W
+    if (psessionEntry->limRmfEnabled)
+    {
+        if ((WDA_GET_RX_DPU_FEEDBACK(pRxPacketInfo) &
+                               DPU_FEEDBACK_UNPROTECTED_ERROR))
+        {
+            /* It may be possible that deauth/diassoc frames from a spoofy
+             * AP is received. So if all further deauth/diassoc frmaes are
+             * dropped, then it may result in lossing deauth/diassoc frames
+             * from genuine AP. So process all deauth/diassoc frames with
+             * a time difference of 1 sec.
+             */
+            if (vos_timer_get_system_time() - pStaDs->last_unprot_deauth_disassoc < 1000)
+                return TRUE;
+            pStaDs->last_unprot_deauth_disassoc =
+                              vos_timer_get_system_time();
+        }
+/* PMF enabed, Management frames are protected */
+        else
+        {
+            if (pStaDs->proct_deauh_disassoc_cnt)
+                return TRUE;
+            else
+                pStaDs->proct_deauh_disassoc_cnt++;
+        }
+    }
+    else
+#endif
+/* PMF disabled */
+    {
+        if (pStaDs->isDisassocDeauthInProgress)
+            return TRUE;
+         else
+            pStaDs->isDisassocDeauthInProgress++;
+    }
+    return FALSE;
+}
 /** -----------------------------------------------------------------
   \brief limIsPktCandidateForDrop() - decides whether to drop the frame or not
 
