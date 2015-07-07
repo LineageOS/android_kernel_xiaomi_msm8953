@@ -40,6 +40,7 @@
 #include <vos_types.h>
 #include <kthread.h>
 #include "vos_memory.h"
+#include <linux/ratelimit.h>
 
 #define LOGGING_TRACE(level, args...) \
 		VOS_TRACE(VOS_MODULE_ID_SVC, level, ## args)
@@ -60,7 +61,7 @@
 #define LOGGER_MAX_DATA_MGMT_PKT_Q_LEN   (8)
 #define LOGGER_MAX_FW_LOG_PKT_Q_LEN   (16)
 
-#define NL_BDCAST_RATELIMIT_INTERVAL 5*HZ
+#define NL_BDCAST_RATELIMIT_INTERVAL (5*HZ)
 #define NL_BDCAST_RATELIMIT_BURST    1
 
 static DEFINE_RATELIMIT_STATE(errCnt,		\

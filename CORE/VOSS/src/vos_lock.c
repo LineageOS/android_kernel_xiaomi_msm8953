@@ -50,7 +50,6 @@
 #include "vos_memory.h"
 #include "vos_trace.h"
 #include "i_vos_diag_core_event.h"
-#include <net/cnss.h>
 #include "vos_diag_core_event.h"
 #include <linux/wcnss_wlan.h>
 
