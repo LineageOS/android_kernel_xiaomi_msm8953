@@ -2801,8 +2801,10 @@ v_VOID_t sme_PreClose(tHalHandle hHal)
 {
    tpAniSirGlobal pMac = PMAC_STRUCT( hHal );
 
-   smsLog(pMac, LOGW, FL("Stopping Active CMD List Timer"));
+   if(!pMac)
+       return;
 
+   smsLog(pMac, LOGW, FL("Stopping Active CMD List Timer"));
    vos_timer_stop( pMac->sme.smeCmdActiveList.cmdTimeoutTimer );
 
 }
