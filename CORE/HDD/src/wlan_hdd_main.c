@@ -9323,6 +9323,10 @@ void hdd_init_frame_logging(hdd_context_t* pHddCtx)
       wlanFWLoggingInitParam->enableFlag |= WLAN_QXDM_LOG_EN;
    }
 
+   if (pHddCtx->cfg_ini->enableMgmtLogging)
+   {
+      wlanFWLoggingInitParam->enableFlag |= WLAN_FRAME_LOG_EN;
+   }
    if (pHddCtx->cfg_ini->enableBMUHWtracing)
    {
       wlanFWLoggingInitParam->enableFlag |= WLAN_BMUHW_TRACE_LOG_EN;
