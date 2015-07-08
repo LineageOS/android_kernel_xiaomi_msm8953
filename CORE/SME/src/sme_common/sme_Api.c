@@ -856,6 +856,9 @@ sme_process_cmd:
                     status = pmcPrepareCommand( pMac, pmcCommand, pv, size, &pPmcCmd );
                     if( HAL_STATUS_SUCCESS( status ) && pPmcCmd )
                     {
+                        /* Set the time out to 30 sec */
+                        pMac->sme.smeCmdActiveList.cmdTimeoutDuration =
+                                          CSR_ACTIVE_LIST_CMD_TIMEOUT_VALUE;
                         //Force this command to wake up the chip
                         csrLLInsertHead( &pMac->sme.smeCmdActiveList, &pPmcCmd->Link, LL_ACCESS_NOLOCK );
                         MTRACE(vos_trace(VOS_MODULE_ID_SME,
@@ -885,6 +888,19 @@ sme_process_cmd:
                 {
                     // we can reuse the pCommand
 
+                    /* For roam command set timeout to 30 * 2 sec.
+                     * There are cases where we try to connect to different
+                     * APs with same SSID one by one until sucessfully conneted
+                     * and thus roam command might take more time if connection
+                     * is rejected by too many APs.
+                     */
+                    if ((eSmeCommandRoam == pCommand->command) &&
+                        (eCsrHddIssued == pCommand->u.roamCmd.roamReason))
+                        pMac->sme.smeCmdActiveList.cmdTimeoutDuration =
+                                         CSR_ACTIVE_LIST_CMD_TIMEOUT_VALUE * 2;
+                    else
+                        pMac->sme.smeCmdActiveList.cmdTimeoutDuration =
+                                             CSR_ACTIVE_LIST_CMD_TIMEOUT_VALUE;
                     // Insert the command onto the ActiveList...
                     csrLLInsertHead( &pMac->sme.smeCmdActiveList, &pCommand->Link, LL_ACCESS_NOLOCK );
 
@@ -11431,7 +11447,11 @@ eHalStatus sme_AddChAvoidCallback
 
 void activeListCmdTimeoutHandle(void *userData)
 {
-    if (NULL == userData)
+    /* Return if no cmd pending in active list as
+     * in this case we should not be here.
+     */
+    if ((NULL == userData) ||
+        (0 == csrLLCount(&((tpAniSirGlobal) userData)->sme.smeCmdActiveList)))
         return;
     VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
         "%s: Active List command timeout Cmd List Count %d", __func__,
