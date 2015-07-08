@@ -3352,6 +3352,7 @@ static wpt_status dxeTXPushFrame
                   "SMSM_ret LO=%d HI=%d",
                   tempDxeCtrlBlk->dxeChannel[WDTS_CHANNEL_TX_LOW_PRI].numRsvdDesc,
                   tempDxeCtrlBlk->dxeChannel[WDTS_CHANNEL_TX_HIGH_PRI].numRsvdDesc );
+         dxeNotifySmsm(eWLAN_PAL_FALSE, eWLAN_PAL_TRUE);
          dxeNotifySmsm(eWLAN_PAL_TRUE, eWLAN_PAL_FALSE);
          tempDxeCtrlBlk->smsmToggled = eWLAN_PAL_TRUE;
       }
@@ -4183,7 +4184,8 @@ void dxeTXCompleteProcessing
           * Then when push frame, no SMSM toggle happen
           * To avoid permanent TX stall, SMSM toggle is needed at here
           * With this toggle, host should gaurantee SMSM state should be changed */
-         dxeNotifySmsm(eWLAN_PAL_TRUE, dxeCtxt->txRingsEmpty);
+         dxeNotifySmsm(eWLAN_PAL_FALSE, eWLAN_PAL_TRUE);
+         dxeNotifySmsm(eWLAN_PAL_TRUE, eWLAN_PAL_FALSE);
       }
    }
    
