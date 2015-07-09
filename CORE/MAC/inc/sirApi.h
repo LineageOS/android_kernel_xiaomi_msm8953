@@ -3728,10 +3728,7 @@ typedef struct sAniGetFrameLogReq
 {
     tANI_U16               msgType;
     tANI_U16               msgLen;
-    tGetFrameLogCallback   getFramelogCallback;
-    void                   *pDevContext;       //device context
     tANI_U8                getFrameLogCmdFlag;
-    tANI_U32               rspStatus;
 } tAniGetFrameLogReq,      *tpAniGetFrameLogReq;
 
 

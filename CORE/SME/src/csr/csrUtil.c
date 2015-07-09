@@ -2081,8 +2081,6 @@ eHalStatus csrProcessGetFrameLogCommand( tpAniSirGlobal pMac,
    pMsg->msgType= pal_cpu_to_be16((tANI_U16)WDA_GET_FRAME_LOG_REQ);
    pMsg->msgLen= pal_cpu_to_be16(msgLen);
 
-   pMsg->pDevContext = pCommand->u.getFramelogCmd.pDevContext;
-   pMsg->getFramelogCallback= pCommand->u.getFramelogCmd.getFramelogCallback;
    pMsg->getFrameLogCmdFlag = pCommand->u.getFramelogCmd.getFrameLogCmdFlag;
 
    status = palSendMBMessage(pMac->hHdd, pMsg);

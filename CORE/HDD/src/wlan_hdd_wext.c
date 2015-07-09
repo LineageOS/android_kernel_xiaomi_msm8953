@@ -925,50 +925,6 @@ VOS_STATUS wlan_hdd_get_rssi(hdd_adapter_t *pAdapter, v_S7_t *rssi_value)
 
    return VOS_STATUS_SUCCESS;
 }
-
-static void hdd_GetFrameLogCB( void *pContext )
-{
-   struct getFrameLogCtx *pGetFrameLogCtx;
-   hdd_adapter_t *pAdapter;
-
-   if (NULL == pContext)
-   {
-      hddLog(VOS_TRACE_LEVEL_ERROR,
-             "%s: Bad param, pContext [%p]", __func__, pContext);
-      return;
-   }
-
-   pGetFrameLogCtx = pContext;
-   pAdapter        = pGetFrameLogCtx->pAdapter;
-
-   /* there is a race condition that exists between this callback
-      function and the caller since the caller could time out either
-      before or while this code is executing.  we use a spinlock to
-      serialize these actions */
-   spin_lock(&hdd_context_lock);
-
-   if (GET_FRAME_LOG_MAGIC != pGetFrameLogCtx->magic)
-   {
-      /* the caller presumably timed out so there is nothing we can do */
-      spin_unlock(&hdd_context_lock);
-      hddLog(VOS_TRACE_LEVEL_WARN,
-             "%s: Invalid context, pAdapter [%p] magic [%08x]",
-              __func__, pAdapter, pGetFrameLogCtx->magic);
-      return;
-   }
-
-   /* context is valid so caller is still waiting */
-
-   /* paranoia: invalidate the magic */
-   pGetFrameLogCtx->magic = 0;
-
-   /* notify the caller */
-   complete(&pGetFrameLogCtx->completion);
-
-   /* serialization is complete */
-   spin_unlock(&hdd_context_lock);
-}
-
 /**---------------------------------------------------------------------------
 
   \brief wlan_hdd_get_frame_logs() -
@@ -984,10 +940,8 @@ static void hdd_GetFrameLogCB( void *pContext )
   --------------------------------------------------------------------------*/
 VOS_STATUS wlan_hdd_get_frame_logs(hdd_adapter_t *pAdapter, v_U8_t flag)
 {
-   struct getFrameLogCtx context;
    hdd_context_t *pHddCtx;
    eHalStatus hstatus;
-   long lrc;
 
    if (NULL == pAdapter)
    {
@@ -1018,31 +972,12 @@ VOS_STATUS wlan_hdd_get_frame_logs(hdd_adapter_t *pAdapter, v_U8_t flag)
       return VOS_STATUS_E_INVAL;
    }
 
-   init_completion(&context.completion);
-   context.pAdapter = pAdapter;
-   context.magic = GET_FRAME_LOG_MAGIC;
-
-   hstatus = sme_GetFramesLog(pHddCtx->hHal, hdd_GetFrameLogCB,
-                         flag, &context);
+   hstatus = sme_GetFramesLog(pHddCtx->hHal, flag);
    if (eHAL_STATUS_SUCCESS != hstatus)
    {
        hddLog(VOS_TRACE_LEVEL_ERROR,"%s: Unable to get Frame Logs", __func__);
+       return VOS_STATUS_E_FAILURE;
    }
-   else
-   {
-       /* request was sent -- wait for the response */
-       lrc = wait_for_completion_interruptible_timeout(&context.completion,
-                                    msecs_to_jiffies(WLAN_WAIT_TIME_FRAME_LOG));
-       if (lrc <= 0)
-       {
-          hddLog(VOS_TRACE_LEVEL_ERROR, "%s: SME %s while fetching Frame logs",
-                 __func__, (0 == lrc) ? "timeout" : "interrupt");
-       }
-   }
-
-   spin_lock(&hdd_context_lock);
-   context.magic = 0;
-   spin_unlock(&hdd_context_lock);
 
    return VOS_STATUS_SUCCESS;
 }

@@ -5252,21 +5252,10 @@ void WDA_GetFrameLogRspCallback(WDI_GetFrameLogRspParamType* wdiRsp,
       return;
    }
 
-   pGetFrameLogReqParams->rspStatus = wdiRsp->wdiStatus;
    if (wdiRsp->wdiStatus != WDI_STATUS_SUCCESS) {
       VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-              "%s:GetFrameLog with rsp status %d", __func__, wdiRsp->wdiStatus);
-   }
-
-   if(pGetFrameLogReqParams->getFramelogCallback)
-   {
-      pGetFrameLogReqParams->getFramelogCallback(
-                                       pGetFrameLogReqParams->pDevContext);
-   }
-   else
-   {
-      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                  "%s: pGetFrameLogReqParams callback is NULL", __func__);
+              "%s:GetFrameLog with rsp status %d flag %d", __func__,
+               wdiRsp->wdiStatus,pGetFrameLogReqParams->getFrameLogCmdFlag);
    }
 
    /* free WDI command buffer only */

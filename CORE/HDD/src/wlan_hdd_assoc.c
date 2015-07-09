@@ -1892,7 +1892,8 @@ static eHalStatus hdd_AssociationCompletionHandler( hdd_adapter_t *pAdapter, tCs
                     MAC_ADDR_ARRAY(pWextState->req_bssId),
                     roamResult, roamStatus);
 
-        wlan_hdd_get_frame_logs(pAdapter,
+        if ( eCSR_ROAM_ASSOCIATION_FAILURE == roamStatus)
+            wlan_hdd_get_frame_logs(pAdapter,
                                 WLAN_HDD_GET_FRAME_LOG_CMD_SEND_AND_CLEAR);
 
         /* Set connection state to eConnectionState_NotConnected only when CSR
