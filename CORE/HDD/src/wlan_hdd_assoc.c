@@ -3305,7 +3305,6 @@ eHalStatus hdd_smeRoamCallback( void *pContext, tCsrRoamInfo *pRoamInfo, tANI_U3
                        before the ENTER_BMPS_REQ ensures Listen Interval is
                        regained back to LI * Modulated DTIM */
                     hdd_set_pwrparams(pHddCtx);
-                    pHddStaCtx->hdd_ReassocScenario = VOS_FALSE;
 
                     /* At this point, device should not be in BMPS;
                        if due to unexpected scenario, if we are in BMPS,
@@ -3320,6 +3319,21 @@ eHalStatus hdd_smeRoamCallback( void *pContext, tCsrRoamInfo *pRoamInfo, tANI_U3
                                          eSME_FULL_PWR_NEEDED_BY_HDD);
                     }
                 }
+
+                if ((pHddCtx) &&
+                     FULL_POWER == pmcGetPmcState(pHddCtx->hHal) &&
+                     VOS_TRUE == pHddStaCtx->hdd_ReassocScenario)
+                {
+                    hddLog( LOG1, FL("Device in full power."
+                           "Stop and start traffic timer for roaming"));
+                    pmcStopTrafficTimer(pHddCtx->hHal);
+                    if (pmcStartTrafficTimer(pHddCtx->hHal,
+                        TRAFFIC_TIMER_ROAMING) != eHAL_STATUS_SUCCESS)
+                    {
+                       hddLog(LOGP, FL("Cannot start traffic timer"));
+                    }
+                }
+
                 halStatus = hdd_RoamSetKeyCompleteHandler( pAdapter, pRoamInfo, roamId, roamStatus, roamResult );
                 pHddStaCtx->hdd_ReassocScenario = FALSE;
             }
