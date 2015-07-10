@@ -1068,6 +1068,10 @@ static eHalStatus hdd_DisConnectHandler( hdd_adapter_t *pAdapter, tCsrRoamInfo *
                 }
             }
 #endif
+               if ((roamStatus == eCSR_ROAM_LOSTLINK) &&
+                    !pRoamInfo->reasonCode)
+                   wlan_hdd_get_frame_logs(pAdapter,
+                                WLAN_HDD_GET_FRAME_LOG_CMD_SEND_AND_CLEAR);
             /*Only send indication to kernel if not initiated by kernel*/
             if ( sendDisconInd )
             {
