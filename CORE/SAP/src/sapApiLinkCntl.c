@@ -99,6 +99,9 @@
 /*----------------------------------------------------------------------------
  * Externalized Function Definitions
  * -------------------------------------------------------------------------*/
+#ifdef FEATURE_WLAN_CH_AVOID
+   extern safeChannelType safeChannels[];
+#endif /* FEATURE_WLAN_CH_AVOID */
 
 /*----------------------------------------------------------------------------
  * Function Declarations and Documentation
@@ -161,6 +164,19 @@ void sapSetOperatingChannel(ptSapContext psapContext, v_U8_t operChannel)
                    BAND(2.4GHz) as 2.4 channels are available in all the
                    countries*/
                    psapContext->channel = SAP_DEFAULT_CHANNEL;
+
+#ifdef FEATURE_WLAN_CH_AVOID
+                for( i = 0; i < NUM_20MHZ_RF_CHANNELS; i++ )
+                {
+                    if((NV_CHANNEL_ENABLE ==
+                        vos_nv_getChannelEnabledState(safeChannels[i].channelNumber))
+                            && (VOS_TRUE == safeChannels[i].isSafe))
+                    {
+                        psapContext->channel = safeChannels[i].channelNumber;
+                        break;
+                    }
+                }
+#endif
             }
         }
         else
