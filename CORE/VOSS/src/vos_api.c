@@ -877,11 +877,13 @@ VOS_STATUS vos_start( v_CONTEXT_t vosContext )
   if ( vStatus != VOS_STATUS_SUCCESS )
   {
      VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
-                 "%s: Failed to start WDA - WDA_shutdown needed", __func__);
+                 "%s: Failed to start WDA - WDA_shutdown needed %d ",
+                   __func__, vStatus);
      if ( vStatus == VOS_STATUS_E_TIMEOUT )
-      {
+     {
          WDA_setNeedShutdown(vosContext);
-      }
+     }
+     VOS_ASSERT(0);
      return VOS_STATUS_E_FAILURE;
   }
   VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_INFO,
