@@ -13057,6 +13057,9 @@ static int __wlan_hdd_cfg80211_get_txpower(struct wiphy *wiphy,
         return -ENOENT;
     }
 
+    MTRACE(vos_trace(VOS_MODULE_ID_HDD,
+                     TRACE_CODE_HDD_CFG80211_GET_TXPOWER,
+                     pAdapter->sessionId, pAdapter->device_mode));
     wlan_hdd_get_classAstats(pAdapter);
     *dbm = pAdapter->hdd_stats.ClassA_stat.max_pwr;
 
@@ -14005,6 +14008,9 @@ static int __wlan_hdd_cfg80211_del_pmksa(struct wiphy *wiphy, struct net_device 
     /*Retrieve halHandle*/
     halHandle = WLAN_HDD_GET_HAL_CTX(pAdapter);
 
+    MTRACE(vos_trace(VOS_MODULE_ID_HDD,
+                     TRACE_CODE_HDD_CFG80211_DEL_PMKSA,
+                     pAdapter->sessionId, 0));
     /* Delete the PMKID CSR cache */
     if (eHAL_STATUS_SUCCESS !=
         sme_RoamDelPMKIDfromCache(halHandle,
@@ -14312,6 +14318,9 @@ static int __wlan_hdd_cfg80211_sched_scan_start(struct wiphy *wiphy,
                   "%s: HAL context  is Null!!!", __func__);
         return -EINVAL;
     }
+    MTRACE(vos_trace(VOS_MODULE_ID_HDD,
+                     TRACE_CODE_HDD_CFG80211_SCHED_SCAN_START,
+                     pAdapter->sessionId, pAdapter->device_mode));
     sme_ScanFlushResult(hHal, pAdapter->sessionId);
     ret = wlan_hdd_scan_abort(pAdapter);
     if (ret < 0)
@@ -14685,6 +14694,9 @@ static int __wlan_hdd_cfg80211_sched_scan_stop(struct wiphy *wiphy,
     pnoRequest.enable = 0; /* Disable PNO */
     pnoRequest.ucNetworksCount = 0;
 
+    MTRACE(vos_trace(VOS_MODULE_ID_HDD,
+                     TRACE_CODE_HDD_CFG80211_SCHED_SCAN_STOP,
+                     pAdapter->sessionId, pAdapter->device_mode));
     status = sme_SetPreferredNetworkList(hHal, &pnoRequest,
                                 pAdapter->sessionId,
                                 NULL, pAdapter);
@@ -15888,6 +15900,9 @@ static int __wlan_hdd_cfg80211_set_mac_acl(struct wiphy *wiphy,
 
     VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,"acl policy: = %d"
              "no acl entries = %d", params->acl_policy, params->n_acl_entries);
+    MTRACE(vos_trace(VOS_MODULE_ID_HDD,
+                     TRACE_CODE_HDD_CFG80211_SET_MAC_ACL,
+                     pAdapter->sessionId, pAdapter->device_mode));
 
     if (WLAN_HDD_SOFTAP == pAdapter->device_mode)
     {
@@ -16086,6 +16101,9 @@ static int __wlan_hdd_cfg80211_testmode(struct wiphy *wiphy, void *data, int len
         return -EINVAL;
     }
 
+    MTRACE(vos_trace(VOS_MODULE_ID_HDD,
+                     TRACE_CODE_HDD_CFG80211_TESTMODE,
+                     NO_SESSION, nla_get_u32(tb[WLAN_HDD_TM_ATTR_CMD])));
     switch (nla_get_u32(tb[WLAN_HDD_TM_ATTR_CMD]))
     {
 #ifdef FEATURE_WLAN_LPHB
@@ -16220,6 +16238,9 @@ static int __wlan_hdd_cfg80211_dump_survey(struct wiphy *wiphy,
     wlan_hdd_get_snr(pAdapter, &snr);
     wlan_hdd_get_rssi(pAdapter, &rssi);
 
+    MTRACE(vos_trace(VOS_MODULE_ID_HDD,
+                     TRACE_CODE_HDD_CFG80211_DUMP_SURVEY,
+                     pAdapter->sessionId, pAdapter->device_mode));
     sme_GetOperationChannel(halHandle, &channel, pAdapter->sessionId);
     hdd_wlan_get_freq(channel, &freq);
 
@@ -16296,6 +16317,8 @@ int __wlan_hdd_cfg80211_resume_wlan(struct wiphy *wiphy)
         return 0;
     }
 
+    MTRACE(vos_trace(VOS_MODULE_ID_HDD, TRACE_CODE_HDD_CFG80211_RESUME_WLAN,
+                     NO_SESSION, pHddCtx->isWiphySuspended));
     spin_lock(&pHddCtx->schedScan_lock);
     pHddCtx->isWiphySuspended = FALSE;
     if (TRUE != pHddCtx->isSchedScanUpdatePending)
@@ -16308,7 +16331,6 @@ int __wlan_hdd_cfg80211_resume_wlan(struct wiphy *wiphy)
     // Reset flag to avoid updatating cfg80211 data old results again
     pHddCtx->isSchedScanUpdatePending = FALSE;
     spin_unlock(&pHddCtx->schedScan_lock);
-
 
     status =  hdd_get_front_adapter ( pHddCtx, &pAdapterNode );
 
@@ -16382,6 +16404,9 @@ int __wlan_hdd_cfg80211_suspend_wlan(struct wiphy *wiphy,
     }
 
 
+    MTRACE(vos_trace(VOS_MODULE_ID_HDD,
+                     TRACE_CODE_HDD_CFG80211_SUSPEND_WLAN,
+                     NO_SESSION, pHddCtx->isWiphySuspended));
     pHddCtx->isWiphySuspended = TRUE;
 
     EXIT();
