@@ -4123,6 +4123,71 @@ WLANTL_TxFCFrame
 (
   v_PVOID_t       pvosGCtx
 );
+
+/*==========================================================================
+
+  FUNCTION    WLANTL_IsEAPOLPending
+
+  DESCRIPTION
+
+    HDD calls this function when hdd_tx_timeout occurs. This checks whether
+    EAPOL is pending.
+
+  DEPENDENCIES
+
+    HDD must have registered with TL at least one STA before this function
+    can be called.
+
+  PARAMETERS
+
+    IN
+    pvosGCtx:       pointer to the global vos context
+
+  RETURN VALUE
+
+    The result code associated with performing the operation
+
+    Success : Indicates EAPOL frame is pending and sta is in connected state
+
+    Failure : EAPOL frame is not pending
+
+  SIDE EFFECTS
+============================================================================*/
+VOS_STATUS
+WLANTL_IsEAPOLPending
+(
+  v_PVOID_t       pvosGCtx
+)
+{
+   WLANTL_CbType*      pTLCb = NULL;
+   v_U32_t             i = 0;
+  /*------------------------------------------------------------------------
+    Sanity check
+    Extract TL control block
+   ------------------------------------------------------------------------*/
+    pTLCb = VOS_GET_TL_CB(pvosGCtx);
+    if (NULL == pTLCb)
+    {
+      TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
+           "WLAN TL:Invalid TL pointer for pvosGCtx"));
+      return VOS_STATUS_E_FAILURE;
+    }
+    /*---------------------------------------------------------------------
+     Check to see if there was any EAPOL packet is pending
+     *--------------------------------------------------------------------*/
+    for ( i = 0; i < WLAN_MAX_STA_COUNT; i++)
+    {
+       if ((NULL != pTLCb->atlSTAClients[i]) &&
+           (pTLCb->atlSTAClients[i]->ucExists) &&
+           (0 == pTLCb->atlSTAClients[i]->ucTxSuspended) &&
+           (WLANTL_STA_CONNECTED == pTLCb->atlSTAClients[i]->tlState) &&
+           (pTLCb->atlSTAClients[i]->ucPktPending)
+           )
+           return VOS_STATUS_SUCCESS;
+    }
+    return VOS_STATUS_E_FAILURE;
+}
+
 /*============================================================================
                       TL INTERNAL API DEFINITION
 ============================================================================*/

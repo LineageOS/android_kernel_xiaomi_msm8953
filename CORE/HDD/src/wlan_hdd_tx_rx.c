@@ -1152,6 +1152,10 @@ void __hdd_tx_timeout(struct net_device *dev)
    //update last jiffies after the check
    pAdapter->hdd_stats.hddTxRxStats.jiffiesLastTxTimeOut = jiffies;
 
+   if (WLANTL_IsEAPOLPending(pHddCtx->pvosContext) == VOS_STATUS_SUCCESS) {
+      pAdapter->hdd_stats.hddTxRxStats.continuousTxTimeoutCount = 0;
+      goto print_log;
+   }
    if (pAdapter->hdd_stats.hddTxRxStats.continuousTxTimeoutCount ==
           HDD_TX_STALL_RECOVERY_THRESHOLD)
    {
@@ -1197,6 +1201,7 @@ void __hdd_tx_timeout(struct net_device *dev)
       }
    }
 
+print_log:
    /* If Tx stalled for a long time then *hdd_tx_timeout* is called
     * every 5sec. The TL debug spits out a lot of information on the
     * serial console, if it is called every time *hdd_tx_timeout* is
