@@ -3517,6 +3517,29 @@ eHalStatus sme_RoamDisconnect(tHalHandle hHal, tANI_U8 sessionId, eCsrRoamDiscon
 }
 
 /* ---------------------------------------------------------------------------
+    \fn.sme_abortConnection
+    \brief a wrapper function to request CSR to stop from connecting a network
+    \retun void.
+---------------------------------------------------------------------------*/
+
+void sme_abortConnection(tHalHandle hHal, tANI_U8 sessionId)
+{
+   tpAniSirGlobal pMac = PMAC_STRUCT( hHal );
+   eHalStatus status = eHAL_STATUS_FAILURE;
+
+   status = sme_AcquireGlobalLock( &pMac->sme );
+   if ( HAL_STATUS_SUCCESS( status ) )
+   {
+      if( CSR_IS_SESSION_VALID( pMac, sessionId ) )
+      {
+          csr_abortConnection( pMac, sessionId);
+      }
+      sme_ReleaseGlobalLock( &pMac->sme );
+   }
+   return;
+}
+
+/* ---------------------------------------------------------------------------
     \fn sme_RoamStopBss
     \brief To stop BSS for Soft AP. This is an asynchronous API.
     \param hHal - Global structure

@@ -883,6 +883,14 @@ eHalStatus csrRoamConnectToLastProfile(tpAniSirGlobal pMac, tANI_U32 sessionId);
 eHalStatus csrRoamDisconnect(tpAniSirGlobal pMac, tANI_U32 sessionId, eCsrRoamDisconnectReason reason);
 
 /* ---------------------------------------------------------------------------
+    \fn csr_abortConnection
+    \brief To disconnect from a connecting network
+    \retutn void.
+----------------------------------------------------------------------------*/
+
+void csr_abortConnection(tpAniSirGlobal pMac, tANI_U32 sessionId);
+
+/* ---------------------------------------------------------------------------
     \fn csrScanGetPMKIDCandidateList
     \brief return the PMKID candidate list
     \param pPmkidList - caller allocated buffer point to an array of tPmkidCandidateInfo

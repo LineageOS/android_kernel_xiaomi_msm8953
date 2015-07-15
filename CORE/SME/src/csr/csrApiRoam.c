@@ -7390,6 +7390,18 @@ eHalStatus csrRoamDisconnect(tpAniSirGlobal pMac, tANI_U32 sessionId, eCsrRoamDi
     return (csrRoamDisconnectInternal(pMac, sessionId, reason));
 }
 
+void csr_abortConnection(tpAniSirGlobal pMac, tANI_U32 sessionId)
+{
+    tCsrRoamSession *pSession = CSR_GET_SESSION( pMac, sessionId );
+    if(!pSession)
+    {
+        smsLog(pMac, LOGE, FL(" session %d not found "), sessionId);
+        return;
+    }
+    pSession->abortConnection = TRUE;
+    return;
+}
+
 eHalStatus csrRoamSaveConnectedInfomation(tpAniSirGlobal pMac, tANI_U32 sessionId, tCsrRoamProfile *pProfile, 
                                           tSirBssDescription *pSirBssDesc, tDot11fBeaconIEs *pIes)
 {
@@ -7536,12 +7548,14 @@ static void csrRoamJoinRspProcessor( tpAniSirGlobal pMac, tSirSmeJoinRsp *pSmeJo
 {
    tListElem *pEntry = NULL;
    tSmeCmd *pCommand = NULL;
+   tCsrRoamSession *pSession = NULL;
    //The head of the active list is the request we sent
    pEntry = csrLLPeekHead(&pMac->sme.smeCmdActiveList, LL_ACCESS_LOCK);
    if(pEntry)
    {
        pCommand = GET_BASE_ADDR(pEntry, tSmeCmd, Link);
    }
+   pSession = CSR_GET_SESSION( pMac, pSmeJoinRsp->sessionId );
    if ( eSIR_SME_SUCCESS == pSmeJoinRsp->statusCode ) 
    {
             if(pCommand && eCsrSmeIssuedAssocToSimilarAP == pCommand->u.roamCmd.roamReason)
@@ -7551,18 +7565,31 @@ static void csrRoamJoinRspProcessor( tpAniSirGlobal pMac, tSirSmeJoinRsp *pSmeJo
 #endif
             }
             csrRoamComplete( pMac, eCsrJoinSuccess, (void *)pSmeJoinRsp );
+        if(!pSession)
+        {
+            smsLog(pMac, LOGE, FL(" session %d not found "),
+                                    pSmeJoinRsp->sessionId);
+            return;
+        }
+        pSession->abortConnection = FALSE;
    }
    else
    {
         tANI_U32 roamId = 0;
-        tCsrRoamSession *pSession = CSR_GET_SESSION( pMac, pSmeJoinRsp->sessionId );
         if(!pSession)
         {
-            smsLog(pMac, LOGE, FL("  session %d not found "), pSmeJoinRsp->sessionId);
+            smsLog(pMac, LOGE, FL(" session %d not found "),
+                                    pSmeJoinRsp->sessionId);
             return;
         }
-        
-        
+        if (pSession->abortConnection)
+        {
+            smsLog(pMac, LOG1, FL("Disconnection in progess"
+                                  "abort Join request"));
+            csrRoamComplete( pMac, eCsrNothingToJoin, NULL );
+            pSession->abortConnection = FALSE;
+            return;
+        }
         //The head of the active list is the request we sent
         //Try to get back the same profile and roam again
         if(pCommand)
