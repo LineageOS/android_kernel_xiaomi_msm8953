@@ -2654,6 +2654,33 @@ v_U8_t vos_is_multicast_logging(void)
 }
 
 /**
+ * vos_isLoadUnloadInProgress()
+ *
+ * Return TRUE if load/unload is in progress.
+ *
+ */
+v_BOOL_t vos_isLoadUnloadInProgress(void)
+{
+    hdd_context_t *pHddCtx = NULL;
+    v_CONTEXT_t pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+
+    if(!pVosContext)
+    {
+       hddLog(VOS_TRACE_LEVEL_FATAL,"%s: Global VOS context is Null", __func__);
+       return FALSE;
+    }
+
+    pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD, pVosContext );
+    if(!pHddCtx) {
+       VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+                "%s: HDD context is Null", __func__);
+       return FALSE;
+    }
+
+    return ( 0 != pHddCtx->isLoadUnloadInProgress);
+}
+
+/**
  * vos_isUnloadInProgress()
  *
  * Return TRUE if unload is in progress.
