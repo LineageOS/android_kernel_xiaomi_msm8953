@@ -83,7 +83,12 @@ when           who        what, where, why
  * Size must be same with Vos Packet Size */
 #define WLANDXE_DEFAULT_RX_OS_BUFFER_SIZE  (VPKT_SIZE_BUFFER)
 
-#define WLANDXE_H2H_HEADER_OFFSET (80)
+/*reserve 30B of skb buff, to add NL header*/
+#define WLANDXE_NL_HEADER_SZ (30)
+
+/*MAX data transferred in one skb*/
+#define WLANDXE_FW_LOGGING_XFSIZE  (WLANDXE_DEFAULT_RX_OS_BUFFER_SIZE - \
+                                    WLANDXE_NL_HEADER_SZ)
 
 /*The maximum number of packets that can be chained in dxe for the Low 
   priority channel
