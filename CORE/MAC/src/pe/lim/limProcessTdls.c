@@ -1254,7 +1254,9 @@ tSirRetStatus limSendTdlsLinkSetupReqFrame(tpAniSirGlobal pMac,
     /* fill out the buffer descriptor */
 
     header_offset = limPrepareTdlsFrameHeader(pMac, pFrame,
-                     LINK_IDEN_ADDR_OFFSET(tdlsSetupReq), TDLS_LINK_AP, TDLS_INITIATOR, TID_AC_BK, psessionEntry) ;
+                          LINK_IDEN_ADDR_OFFSET(tdlsSetupReq),
+                          TDLS_LINK_AP, TDLS_INITIATOR,
+                          TID_AC_VI, psessionEntry) ;
 
 #ifdef FEATURE_WLAN_TDLS_NEGATIVE
     if(pMac->lim.gLimTdlsNegativeBehavior & LIM_TDLS_NEGATIVE_WRONG_BSSID_IN_SETUP_REQ)
@@ -1711,7 +1713,7 @@ static tSirRetStatus limSendTdlsSetupRspFrame(tpAniSirGlobal pMac,
     header_offset = limPrepareTdlsFrameHeader(pMac, pFrame, 
                                  LINK_IDEN_ADDR_OFFSET(tdlsSetupRsp), 
                                        TDLS_LINK_AP, TDLS_RESPONDER,
-                                       TID_AC_BK, psessionEntry) ;
+                                       TID_AC_VI, psessionEntry) ;
 
 #ifdef FEATURE_WLAN_TDLS_NEGATIVE
     if(pMac->lim.gLimTdlsNegativeBehavior & LIM_TDLS_NEGATIVE_WRONG_BSSID_IN_SETUP_RSP)
