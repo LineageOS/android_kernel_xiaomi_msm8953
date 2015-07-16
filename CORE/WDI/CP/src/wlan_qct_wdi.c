@@ -22841,12 +22841,14 @@ WDI_PALCtrlMsgCB
     return;
   }
 
+  /*Access to the global state must be locked */
+  wpalMutexAcquire(&pWDICtx->wptMutex);
+
   /*Transition back to the state that we had before serialization
   - serialization transitions us to BUSY to stop any incomming requests
-  ! TO DO L: possible race condition here if a request comes in between the
-   state transition and the post function*/
-
+  */
   WDI_STATE_TRANSITION( pWDICtx, pMsg->val);
+  wpalMutexRelease(&pWDICtx->wptMutex);
 
   /*-----------------------------------------------------------------------
      Check to see what type of event we are serializing
