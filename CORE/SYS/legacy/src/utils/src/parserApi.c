@@ -775,11 +775,9 @@ PopulateDot11fVHTCaps(tpAniSirGlobal           pMac,
     tANI_U32             nCfgValue=0;
     tAniBool             disableMcs9 = eSIR_FALSE;
 
-    /* Always disable VHT9 in 2.4Ghz as we only
-     * support VHT20 in 2.4Ghz
-     */
     if (nChannelNum <= SIR_11B_CHANNEL_END)
-        disableMcs9 = eSIR_TRUE;
+        disableMcs9 =  pMac->roam.configParam.channelBondingMode24GHz?
+                       eSIR_FALSE:eSIR_TRUE;
     else
         disableMcs9 =
             pMac->roam.configParam.channelBondingMode5GHz?
@@ -928,11 +926,9 @@ PopulateDot11fVHTOperation(tpAniSirGlobal   pMac,
     tANI_U32             nCfgValue=0;
     tAniBool             disableMcs9 = eSIR_FALSE;
 
-    /* Always disable VHT9 in 2.4Ghz as we only
-     * support VHT20 in 2.4Ghz
-     */
     if (nChannelNum <= SIR_11B_CHANNEL_END)
-        disableMcs9 = eSIR_TRUE;
+        disableMcs9 =  pMac->roam.configParam.channelBondingMode24GHz?
+                       eSIR_FALSE:eSIR_TRUE;
     else
         disableMcs9 =
             pMac->roam.configParam.channelBondingMode5GHz?
