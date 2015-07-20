@@ -19203,8 +19203,8 @@ void WDA_MonStopRspCallback(void* pUserData)
 {
    tWDA_ReqParams *pWdaParams = (tWDA_ReqParams *)pUserData;
 
-   VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
-                                          "<------ %s " ,__func__);
+   VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                                          "%s: Mon stop request cb " ,__func__);
    if (NULL == pWdaParams)
    {
       VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
@@ -19238,6 +19238,8 @@ VOS_STATUS WDA_ProcessMonStopReq( tWDA_CbContext *pWDA, void* wdaRequest)
     pWdaParams->wdaMsgParam = wdaRequest;
     pWdaParams->wdaWdiApiMsgParam = NULL;
 
+    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+            "%s: Processing Mon stop request", __func__);
     status = WDI_MonStopReq((WDI_MonStopRspCb)WDA_MonStopRspCallback,
                              (void *)pWdaParams);
 

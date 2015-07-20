@@ -719,6 +719,9 @@ VOS_STATUS vos_mon_stop( v_CONTEXT_t vosContext )
 
   vos_event_reset( &(gpVosContext->wdaCompleteEvent) );
 
+  VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+         "%s: HAL_STOP is requested", __func__);
+
   vosStatus = WDA_stop( vosContext, HAL_STOP_TYPE_RF_KILL );
 
   if (!VOS_IS_STATUS_SUCCESS(vosStatus))
