@@ -7527,26 +7527,30 @@ eHalStatus sme_GetFramesLog(tHalHandle hHal, tANI_U8 flag)
    eHalStatus status = eHAL_STATUS_SUCCESS;
    tSmeCmd *pGetFrameLogCmd;
 
-   pGetFrameLogCmd = csrGetCommandBuffer(pMac);
-   if (pGetFrameLogCmd)
-   {
-       pGetFrameLogCmd->command = eSmeCommandGetFrameLogRequest;
-       pGetFrameLogCmd->u.getFramelogCmd.getFrameLogCmdFlag= flag;
-
-       status = csrQueueSmeCommand(pMac, pGetFrameLogCmd, eANI_BOOLEAN_TRUE);
-       if ( !HAL_STATUS_SUCCESS( status ) )
+    status = sme_AcquireGlobalLock( &pMac->sme );
+    if ( HAL_STATUS_SUCCESS( status ) )
+    {
+       pGetFrameLogCmd = csrGetCommandBuffer(pMac);
+       if (pGetFrameLogCmd)
        {
-           smsLog( pMac, LOGE, FL("fail to send msg status = %d\n"), status );
-           csrReleaseCommandScan(pMac, pGetFrameLogCmd);
-       }
-   }
-   else
-   {
-       //log error
-       smsLog(pMac, LOGE, FL("can not obtain a common buffer\n"));
-       status = eHAL_STATUS_RESOURCES;
-   }
+           pGetFrameLogCmd->command = eSmeCommandGetFrameLogRequest;
+           pGetFrameLogCmd->u.getFramelogCmd.getFrameLogCmdFlag= flag;
 
+           status = csrQueueSmeCommand(pMac, pGetFrameLogCmd, eANI_BOOLEAN_TRUE);
+           if ( !HAL_STATUS_SUCCESS( status ) )
+           {
+               smsLog( pMac, LOGE, FL("fail to send msg status = %d\n"), status );
+               csrReleaseCommandScan(pMac, pGetFrameLogCmd);
+           }
+       }
+       else
+       {
+           //log error
+           smsLog(pMac, LOGE, FL("can not obtain a common buffer\n"));
+           status = eHAL_STATUS_RESOURCES;
+       }
+       sme_ReleaseGlobalLock( &pMac->sme);
+   }
    return (status);
 }
 
@@ -11791,29 +11795,33 @@ eHalStatus sme_SpoofMacAddrReq(tHalHandle hHal, v_MACADDR_t *macaddr)
    eHalStatus status = eHAL_STATUS_SUCCESS;
    tSmeCmd *pMacSpoofCmd;
 
-   pMacSpoofCmd = csrGetCommandBuffer(pMac);
-   if (pMacSpoofCmd)
-   {
-       pMacSpoofCmd->command = eSmeCommandMacSpoofRequest;
-       vos_mem_set(&pMacSpoofCmd->u.macAddrSpoofCmd,
-                                                sizeof(tSirSpoofMacAddrReq), 0);
-       vos_mem_copy(pMacSpoofCmd->u.macAddrSpoofCmd.macAddr,
-                                           macaddr->bytes, VOS_MAC_ADDRESS_LEN);
-
-       status = csrQueueSmeCommand(pMac, pMacSpoofCmd, eANI_BOOLEAN_TRUE);
-       if ( !HAL_STATUS_SUCCESS( status ) )
+    status = sme_AcquireGlobalLock( &pMac->sme );
+    if ( HAL_STATUS_SUCCESS( status ) )
+    {
+       pMacSpoofCmd = csrGetCommandBuffer(pMac);
+       if (pMacSpoofCmd)
        {
-           smsLog( pMac, LOGE, FL("fail to send msg status = %d\n"), status );
-           csrReleaseCommandScan(pMac, pMacSpoofCmd);
-       }
-   }
-   else
-   {
-       //log error
-       smsLog(pMac, LOGE, FL("can not obtain a common buffer\n"));
-       status = eHAL_STATUS_RESOURCES;
-   }
+           pMacSpoofCmd->command = eSmeCommandMacSpoofRequest;
+           vos_mem_set(&pMacSpoofCmd->u.macAddrSpoofCmd,
+                                                    sizeof(tSirSpoofMacAddrReq), 0);
+           vos_mem_copy(pMacSpoofCmd->u.macAddrSpoofCmd.macAddr,
+                                               macaddr->bytes, VOS_MAC_ADDRESS_LEN);
 
+           status = csrQueueSmeCommand(pMac, pMacSpoofCmd, eANI_BOOLEAN_TRUE);
+           if ( !HAL_STATUS_SUCCESS( status ) )
+           {
+               smsLog( pMac, LOGE, FL("fail to send msg status = %d\n"), status );
+               csrReleaseCommandScan(pMac, pMacSpoofCmd);
+           }
+       }
+       else
+       {
+           //log error
+           smsLog(pMac, LOGE, FL("can not obtain a common buffer\n"));
+           status = eHAL_STATUS_RESOURCES;
+       }
+       sme_ReleaseGlobalLock( &pMac->sme);
+   }
    return (status);
 }
 
