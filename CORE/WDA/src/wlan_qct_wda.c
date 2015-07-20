@@ -17264,8 +17264,6 @@ VOS_STATUS WDA_ProcessTxControlInd(tWDA_CbContext *pWDA,
 
 void WDA_FWLoggingDXEdoneInd(void)
 {
-   VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
-      " ----> %s", __func__ );
    WDI_FWLoggingDXEdoneInd(NULL);
 }
 
