@@ -331,7 +331,49 @@ VOS_STATUS WDA_ProcessNanRequest(tWDA_CbContext *pWDA,
    return CONVERT_WDI2VOS_STATUS(status) ;
 }
 
+/**
+ * wda_state_info_dump() - prints state information of wda layer
+ */
+static void wda_state_info_dump(void)
+{
+    v_CONTEXT_t vos_ctx_ptr = NULL;
+    tWDA_CbContext *wda = NULL ;
 
+    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                                       "<------ %s " ,__func__);
+
+    /* Get the Global VOSS Context */
+    vos_ctx_ptr = vos_get_global_context(VOS_MODULE_ID_VOSS, NULL);
+
+    if (NULL != vos_ctx_ptr)
+        wda = (tWDA_CbContext *)vos_get_context( VOS_MODULE_ID_WDA,
+                                                            vos_ctx_ptr );
+    else {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_FATAL,
+                  "%s: Invalid Global VOSS Context", __func__);
+        VOS_ASSERT(0);
+        return;
+    }
+
+    if (NULL != wda)
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                   "wdaState: %d linkState: %d", wda->wdaState,
+                                                 wda->linkState);
+    else {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                           "%s: Invalid WDA Context", __func__);
+        VOS_ASSERT(0);
+    }
+}
+
+/**
+ * wda_register_debug_callback() - registration function for wda layer
+ * to print wda state information
+ */
+static void wda_register_debug_callback(void)
+{
+    vos_register_debug_callback(VOS_MODULE_ID_WDA, &wda_state_info_dump);
+}
 
 /*
  * FUNCTION: WDA_open
@@ -411,6 +453,9 @@ VOS_STATUS WDA_open(v_PVOID_t pVosContext, v_PVOID_t devHandle,
        */
       wdaContext->frameTransRequired = wdiDevCapability.bFrameXtlSupported;
    }
+
+   wda_register_debug_callback();
+
    return status;
 
 error:

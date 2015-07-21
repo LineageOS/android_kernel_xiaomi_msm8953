@@ -465,6 +465,8 @@ tSmeCmd *smeGetCommandBuffer( tpAniSirGlobal pMac )
         smeCommandQueueFull++;
         csrLLUnlock(&pMac->roam.roamCmdPendingList);
 
+        vos_state_info_dump_all();
+
         if (pMac->roam.configParam.enableFatalEvent)
         {
             vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
@@ -1368,6 +1370,7 @@ eHalStatus sme_Open(tHalHandle hHal)
 #endif
       sme_p2pOpen(pMac);
       smeTraceInit(pMac);
+      sme_register_debug_callback();
 
    }while (0);
 
@@ -7915,6 +7918,21 @@ tANI_S8 sme_GetInfraSessionId(tHalHandle hHal)
    return (sessionid);
 }
 
+tANI_U32 sme_get_sessionid_from_activeList(tpAniSirGlobal mac)
+{
+    tListElem *entry = NULL;
+    tSmeCmd *command = NULL;
+    tANI_U32  session_id = 0;
+
+    entry = csrLLPeekHead( &mac->sme.smeCmdActiveList, LL_ACCESS_LOCK );
+    if ( entry ) {
+        command = GET_BASE_ADDR( entry, tSmeCmd, Link );
+        session_id = command->sessionId;
+    }
+
+    return (session_id);
+}
+
 /* ---------------------------------------------------------------------------
 
     \fn sme_GetInfraOperationChannel
@@ -11895,6 +11913,8 @@ void activeListCmdTimeoutHandle(void *userData)
         "%s: Active List command timeout Cmd List Count %d", __func__,
         csrLLCount(&pMac->sme.smeCmdActiveList) );
     smeGetCommandQStatus(hHal);
+
+    vos_state_info_dump_all();
 
     if (pMac->roam.configParam.enableFatalEvent)
     {

@@ -303,6 +303,49 @@ void limTraceDump(tpAniSirGlobal pMac, tpvosTraceRecord pRecord, tANI_U16 recInd
     }
 }
 
+/**
+ * lim_state_info_dump() - print state information of lim layer
+  */
+static void lim_state_info_dump(void)
+{
+    tHalHandle hal;
+    tpAniSirGlobal mac;
+    v_CONTEXT_t vos_ctx_ptr;
+
+    /* get the global voss context */
+    vos_ctx_ptr = vos_get_global_context(VOS_MODULE_ID_VOSS, NULL);
+
+    if (NULL == vos_ctx_ptr) {
+        limLog( mac, LOGE, FL("Invalid Global VOSS Context"));
+        VOS_ASSERT(0);
+        return;
+    }
+
+    hal = vos_get_context(VOS_MODULE_ID_PE, vos_ctx_ptr);
+    if (NULL == hal) {
+        limLog( mac, LOGE, FL("Invalid smeContext"));
+        VOS_ASSERT(0);
+        return;
+    }
+
+    mac = PMAC_STRUCT(hal);
+
+    limLog(mac, LOG1, FL("SmeState: %d PrevSmeState: %d MlmState: %d"
+           "PrevMlmState: %d SystemInScanLearnMode: %d ProcessDefdMsgs: %d"
+           "gLimHalScanState: %d"), mac->lim.gLimSmeState,
+           mac->lim.gLimPrevSmeState, mac->lim.gLimMlmState,
+           mac->lim.gLimPrevMlmState, mac->lim.gLimSystemInScanLearnMode,
+           mac->lim.gLimProcessDefdMsgs, mac->lim.gLimHalScanState);
+}
+
+/**
+ * lim_register_debug_callback() - registration function for lim layer
+ * to print lim state information
+  */
+void lim_register_debug_callback()
+{
+    vos_register_debug_callback(VOS_MODULE_ID_PE, &lim_state_info_dump);
+}
 
 void macTraceMsgTx(tpAniSirGlobal pMac, tANI_U8 session, tANI_U32 data)
 {

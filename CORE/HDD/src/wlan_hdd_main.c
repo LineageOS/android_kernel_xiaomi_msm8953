@@ -10628,6 +10628,8 @@ static int hdd_driver_init( void)
    }
 
    hddTraceInit();
+   hdd_register_debug_callback();
+
 #ifndef MODULE
       /* For statically linked driver, call hdd_set_conparam to update curr_con_mode
        */

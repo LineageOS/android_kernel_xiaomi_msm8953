@@ -1575,6 +1575,30 @@ static char *WDI_getHALStatusMsgString(wpt_uint16 halStatusId)
   }
 }
 
+/**
+ * wdi_state_info_dump() - prints state information of wdi layer
+ */
+static void wdi_state_info_dump(void)
+{
+    WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                "%s pending commands: %d", __func__,
+                gWDICb.wptPendingQueue.count);
+    WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                "uGlobalState %d wdiExpectedResponse: %d",
+                gWDICb.uGlobalState, gWDICb.wdiExpectedResponse);
+}
+
+
+/**
+ * wdi_register_debug_callback() - registration function for wdi layer
+ * to print WDI state information
+  */
+static void wdi_register_debug_callback(void)
+{
+    vos_register_debug_callback(VOS_MODULE_ID_WDI, &wdi_state_info_dump);
+}
+
+
 /*========================================================================
 
                              INITIALIZATION APIs
@@ -1810,6 +1834,9 @@ WDI_Init
   pWdiDevCapability->bFrameXtlSupported = eWLAN_PAL_FALSE;
   pWdiDevCapability->ucMaxSTASupported  = gWDICb.ucMaxStations;
   pWdiDevCapability->ucMaxBSSSupported  = gWDICb.ucMaxBssids;
+
+  wdi_register_debug_callback();
+
   return WDI_STATUS_SUCCESS;
 
   /* ERROR handlers

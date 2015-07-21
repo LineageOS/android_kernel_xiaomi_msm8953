@@ -114,6 +114,8 @@ enum
 
 extern void hddTraceDump(void *pMac, tpvosTraceRecord pRecord, tANI_U16 recIndex);
 extern void hddTraceInit(void);
+void hdd_register_debug_callback(void);
+
 #endif
 
 

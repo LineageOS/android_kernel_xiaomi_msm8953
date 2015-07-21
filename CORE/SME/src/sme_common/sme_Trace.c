@@ -38,6 +38,8 @@
 #include "macTrace.h"
 #include "sme_Trace.h"
 #include "smeInternal.h"
+#include "smeInside.h"
+
 #ifndef SME_TRACE_RECORD
 void smeTraceInit(tpAniSirGlobal pMac)
 {
@@ -237,5 +239,53 @@ static void smeTraceDump(tpAniSirGlobal pMac, tpvosTraceRecord pRecord,
 void smeTraceInit(tpAniSirGlobal pMac)
 {
     vosTraceRegister(VOS_MODULE_ID_SME, (tpvosTraceCb)&smeTraceDump);
+}
+
+/**
+ * sme_state_info_dump() - prints state information of sme layer
+ */
+static void sme_state_info_dump(void)
+{
+    tANI_U32  session_id = 0;
+    tHalHandle hal;
+    tpAniSirGlobal mac;
+    v_CONTEXT_t vos_ctx_ptr;
+
+    /* get the global voss context */
+    vos_ctx_ptr = vos_get_global_context(VOS_MODULE_ID_VOSS, NULL);
+
+    if (NULL == vos_ctx_ptr) {
+        smsLog( mac, LOGE, FL("Invalid Global VOSS Context"));
+        VOS_ASSERT(0);
+        return;
+    }
+
+    hal = vos_get_context(VOS_MODULE_ID_SME, vos_ctx_ptr);
+    if (NULL == hal) {
+        smsLog( mac, LOGE, FL("Invalid smeContext"));
+        VOS_ASSERT(0);
+        return;
+    }
+
+    mac = PMAC_STRUCT(hal);
+
+    session_id = sme_get_sessionid_from_activeList(mac);
+    smsLog( mac, LOG1, FL(" SessionId %d for active command"), session_id);
+
+    smsLog(mac, LOG1, FL("NeighborRoamState: %d RoamState: %d"
+           "RoamSubState: %d ConnectState: %d pmcState: %d PmmState: %d"),
+           mac->roam.neighborRoamInfo.neighborRoamState,
+           mac->roam.curState[session_id], mac->roam.curSubState[session_id],
+           mac->roam.roamSession[session_id].connectState, mac->pmc.pmcState,
+           mac->pmm.gPmmState);
+}
+
+/**
+ * sme_register_debug_callback() - registration function sme layer
+ * to print sme state information
+ */
+void sme_register_debug_callback()
+{
+    vos_register_debug_callback(VOS_MODULE_ID_SME, &sme_state_info_dump);
 }
 #endif
