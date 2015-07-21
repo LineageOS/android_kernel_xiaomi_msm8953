@@ -2047,15 +2047,9 @@ VOS_STATUS hdd_tx_fetch_packet_cbk( v_VOID_t *vosContext,
    }
 
 #ifdef WLAN_FEATURE_LINK_LAYER_STATS
+   if (vos_is_macaddr_multicast((v_MACADDR_t*)skb->data))
    {
-       v_MACADDR_t *pDestMacAddress = (v_MACADDR_t*)skb->data;
-       /* vos_is_macaddr_group expects data in v_MACADDR_t format
-        */
-       if (vos_is_macaddr_group(pDestMacAddress))
-       {
-            pAdapter->hdd_stats.hddTxRxStats.txMcast[actualAC]++;
-       }
-
+        pAdapter->hdd_stats.hddTxRxStats.txMcast[actualAC]++;
    }
 
 #endif
