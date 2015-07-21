@@ -3707,4 +3707,7 @@ tANI_BOOLEAN sme_handleSetFccChannel(tHalHandle hHal,
                                       tANI_U8 fcc_constraint);
 
 eHalStatus sme_DeleteAllTDLSPeers(tHalHandle hHal, uint8_t sessionId);
+eHalStatus sme_fatal_event_logs_req(tHalHandle hHal, tANI_U32 is_fatal,
+                               tANI_U32 indicator, tANI_U32 reason_code);
+
 #endif //#if !defined( __SME_API_H )

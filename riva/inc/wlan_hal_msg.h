@@ -8529,6 +8529,35 @@ typedef PACKED_PRE struct PACKED_POST
 }  tGetFrameLogRespMsg,  * tpGetFrameLogRespMsg;
 
 /*---------------------------------------------------------------------------
+ * WLAN_HAL_FATAL_EVENT_LOGGING_REQ
+ *-------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+    tANI_U32 reasonCode;
+}tHalFatalEventLoggingReqParams, *tpHalFatalEventLoggingReqParams;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tHalMsgHeader header;
+    tHalFatalEventLoggingReqParams tFatalEventLoggingReqParams;
+}tHalFatalEventLoggingReqMsg, *tpHalFatalEventLoggingReqMsg;
+
+/*---------------------------------------------------------------------------
+ * WLAN_HAL_FATAL_EVENT_LOGGING_RSP
+ *-------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{   tANI_U32 status;
+}tHalFatalEventLoggingRspParams, *tpHalFatalEventLoggingRspParams;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tHalMsgHeader header;
+    tHalFatalEventLoggingRspParams tFatalEventLoggingRspParams;
+}tHalFatalEventLoggingRspMsg, *tpHalFatalEventLoggingRspMsg;
+
+
+
+/*---------------------------------------------------------------------------
  *WLAN_HAL_FW_LOGGING_INIT_REQ
  *--------------------------------------------------------------------------*/
 typedef PACKED_PRE struct PACKED_POST

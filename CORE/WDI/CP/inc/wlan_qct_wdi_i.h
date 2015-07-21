@@ -478,6 +478,7 @@ typedef enum
 
   WDI_MON_START_REQ                              = 107,
   WDI_MON_STOP_REQ                               = 108,
+  WDI_FATAL_EVENT_LOGGING_REQ                    = 109,
 
   WDI_MAX_REQ,
 
@@ -818,6 +819,7 @@ typedef enum
 
   WDI_MON_START_RSP                              = 107,
   WDI_MON_STOP_RSP                               = 108,
+  WDI_FATAL_EVENT_LOGGING_RSP                    = 109,
 
   /*-------------------------------------------------------------------------
     Indications
@@ -6139,6 +6141,21 @@ WDI_ProcessGetFrameLogReq
 
 WDI_Status
 WDI_ProcessFWLoggingDXEdoneInd
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessFatalEventLogsReq
+
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessFatalEventLogsRsp
 (
   WDI_ControlBlockType*  pWDICtx,
   WDI_EventInfoType*     pEventData

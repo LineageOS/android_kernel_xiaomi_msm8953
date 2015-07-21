@@ -58,6 +58,7 @@
 #define LOGGER_MGMT_DATA_PKT_POST_MASK   0x001
 #define HOST_LOG_POST_MASK   0x002
 #define LOGGER_FW_LOG_PKT_POST_MASK   0x003
+#define LOGGER_FATAL_EVENT_POST_MASK  0x004
 
 #define LOGGER_MAX_DATA_MGMT_PKT_Q_LEN   (8)
 #define LOGGER_MAX_FW_LOG_PKT_Q_LEN   (16)
@@ -83,6 +84,14 @@ struct log_msg {
 	 * tAniHdr + log
 	 */
 	char logbuf[MAX_LOGMSG_LENGTH];
+};
+
+struct logger_log_complete {
+	uint32_t is_fatal;
+	uint32_t indicator;
+	uint32_t reason_code;
+	bool is_report_in_progress;
+	bool is_flush_complete;
 };
 
 struct wlan_logging {
@@ -128,6 +137,9 @@ struct wlan_logging {
 	unsigned long event_flag;
 	/* Indicates logger thread is activated */
 	bool is_active;
+	/* data structure for log complete event*/
+	struct logger_log_complete log_complete;
+	spinlock_t bug_report_lock;
 };
 
 static struct wlan_logging gwlan_logging;
@@ -722,9 +734,10 @@ static int wlan_logging_thread(void *Arg)
 		ret_wait_status = wait_event_interruptible(
 		  gwlan_logging.wait_queue,
 		  (test_bit(HOST_LOG_POST_MASK, &gwlan_logging.event_flag) ||
-		  gwlan_logging.exit || test_bit(LOGGER_MGMT_DATA_PKT_POST_MASK,
-		  &gwlan_logging.event_flag) || test_bit(
-		  LOGGER_FW_LOG_PKT_POST_MASK, &gwlan_logging.event_flag)));
+		   gwlan_logging.exit ||
+		   test_bit(LOGGER_MGMT_DATA_PKT_POST_MASK,&gwlan_logging.event_flag) ||
+		   test_bit(LOGGER_FW_LOG_PKT_POST_MASK, &gwlan_logging.event_flag) ||
+		   test_bit(LOGGER_FATAL_EVENT_POST_MASK, &gwlan_logging.event_flag)));
 
 		if (ret_wait_status == -ERESTARTSYS) {
 			pr_err("%s: wait_event return -ERESTARTSYS", __func__);
@@ -752,6 +765,21 @@ static int wlan_logging_thread(void *Arg)
 		if (test_and_clear_bit(LOGGER_MGMT_DATA_PKT_POST_MASK,
 			&gwlan_logging.event_flag)) {
 			send_data_mgmt_log_pkt_to_user();
+		}
+
+		if (test_and_clear_bit(LOGGER_FATAL_EVENT_POST_MASK,
+			&gwlan_logging.event_flag)) {
+			if (gwlan_logging.log_complete.is_flush_complete == true) {
+				gwlan_logging.log_complete.is_flush_complete = false;
+				vos_send_fatal_event_done();
+			}
+			else {
+				gwlan_logging.log_complete.is_flush_complete = true;
+				set_bit(HOST_LOG_POST_MASK,&gwlan_logging.event_flag);
+				set_bit(LOGGER_FW_LOG_PKT_POST_MASK,&gwlan_logging.event_flag);
+				set_bit(LOGGER_FATAL_EVENT_POST_MASK,&gwlan_logging.event_flag);
+				wake_up_interruptible(&gwlan_logging.wait_queue);
+			}
 		}
 	}
 
@@ -817,6 +845,67 @@ static int wlan_logging_proc_sock_rx_msg(struct sk_buff *skb)
 	return ret;
 }
 
+void wlan_init_log_completion(void)
+{
+	gwlan_logging.log_complete.indicator = WLAN_LOG_TYPE_NON_FATAL;
+	gwlan_logging.log_complete.is_fatal = WLAN_LOG_INDICATOR_UNUSED;
+	gwlan_logging.log_complete.is_report_in_progress = false;
+	gwlan_logging.log_complete.reason_code = WLAN_LOG_REASON_CODE_UNUSED;
+
+	spin_lock_init(&gwlan_logging.bug_report_lock);
+}
+
+int wlan_set_log_completion(uint32 is_fatal,
+                            uint32 indicator,
+                            uint32 reason_code)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&gwlan_logging.bug_report_lock, flags);
+	gwlan_logging.log_complete.indicator = indicator;
+	gwlan_logging.log_complete.is_fatal = is_fatal;
+	gwlan_logging.log_complete.is_report_in_progress = true;
+	gwlan_logging.log_complete.reason_code = reason_code;
+	spin_unlock_irqrestore(&gwlan_logging.bug_report_lock, flags);
+
+	return 0;
+}
+void wlan_get_log_completion(uint32 *is_fatal,
+                             uint32 *indicator,
+                             uint32 *reason_code)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&gwlan_logging.bug_report_lock, flags);
+	*indicator = gwlan_logging.log_complete.indicator;
+	*is_fatal = gwlan_logging.log_complete.is_fatal;
+	*reason_code = gwlan_logging.log_complete.reason_code;
+	gwlan_logging.log_complete.is_report_in_progress = false;
+
+	spin_unlock_irqrestore(&gwlan_logging.bug_report_lock, flags);
+
+}
+bool wlan_is_log_report_in_progress(void)
+{
+	return gwlan_logging.log_complete.is_report_in_progress;
+}
+
+void wlan_reset_log_report_in_progress(void)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&gwlan_logging.bug_report_lock, flags);
+	gwlan_logging.log_complete.is_report_in_progress = false;
+	spin_unlock_irqrestore(&gwlan_logging.bug_report_lock, flags);
+}
+
+
+void wlan_deinit_log_completion(void)
+{
+	return;
+}
+
+
 int wlan_logging_sock_activate_svc(int log_fe_to_console, int num_buf)
 {
 	int i = 0;
@@ -856,6 +945,8 @@ int wlan_logging_sock_activate_svc(int log_fe_to_console, int num_buf)
 	gwlan_logging.exit = false;
 	clear_bit(HOST_LOG_POST_MASK, &gwlan_logging.event_flag);
 	clear_bit(LOGGER_MGMT_DATA_PKT_POST_MASK, &gwlan_logging.event_flag);
+	clear_bit(LOGGER_FW_LOG_PKT_POST_MASK, &gwlan_logging.event_flag);
+	clear_bit(LOGGER_FATAL_EVENT_POST_MASK, &gwlan_logging.event_flag);
 	init_completion(&gwlan_logging.shutdown_comp);
 	gwlan_logging.thread = kthread_create(wlan_logging_thread, NULL,
 					"wlan_logging_thread");
@@ -955,6 +1046,8 @@ int wlan_logging_sock_init_svc(void)
 	gapp_pid = INVALID_PID;
 	gwlan_logging.pcur_node = NULL;
 
+	wlan_init_log_completion();
+
 	return 0;
 }
 
@@ -963,7 +1056,8 @@ int wlan_logging_sock_deinit_svc(void)
 	gwlan_logging.pcur_node = NULL;
 	gapp_pid = INVALID_PID;
 
-       return 0;
+	wlan_deinit_log_completion();
+	return 0;
 }
 
 int wlan_queue_data_mgmt_pkt_for_app(vos_pkt_t *pPacket)
@@ -1119,6 +1213,17 @@ int wlan_queue_logpkt_for_app(vos_pkt_t *pPacket, uint32 pkt_type)
 	};
 
 	return status;
+}
+
+
+void wlan_process_done_indication(uint8 type, uint32 reason_code)
+{
+    if ((type == WLAN_QXDM_LOGGING) && (wlan_is_log_report_in_progress() == TRUE))
+    {
+        pr_info("%s: Setting LOGGER_FATAL_EVENT\n", __func__);
+        set_bit(LOGGER_FATAL_EVENT_POST_MASK, &gwlan_logging.event_flag);
+        wake_up_interruptible(&gwlan_logging.wait_queue);
+    }
 }
 
 #endif /* WLAN_LOGGING_SOCK_SVC_ENABLE */

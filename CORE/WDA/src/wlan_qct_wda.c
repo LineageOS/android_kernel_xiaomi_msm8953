@@ -9778,6 +9778,122 @@ VOS_STATUS WDA_ProcessGetFrameLogReq(tWDA_CbContext *pWDA,
    return status;
 }
 
+
+/*
+ * FUNCTION: WDA_FatalEventLogsRspCallback
+ * recieves Flush Logs response from FW
+ */
+
+void WDA_FatalEventLogsRspCallback(WDI_FatalEventLogsRspParamType* wdiRsp,
+                                        void* pUserData)
+{
+    tWDA_ReqParams *pWdaParams = (tWDA_ReqParams *)pUserData;
+
+    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                     "<------ %s,wdiStatus:%d  " ,
+                     __func__, wdiRsp->wdiStatus);
+    if(NULL == pWdaParams)
+    {
+       VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               "%s: pWdaParams received NULL", __func__);
+       VOS_ASSERT(0);
+       return ;
+    }
+
+    if(NULL == pWdaParams->wdaMsgParam)
+    {
+       VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               "%s: pWdaParams->wdaMsgParam is NULL", __func__);
+       VOS_ASSERT(0);
+       vos_mem_free(pWdaParams);
+       return ;
+    }
+
+    if(IS_WDI_STATUS_FAILURE(wdiRsp->wdiStatus))
+    {
+        /*
+              * If it is failure, it means JOb is already posted by FW
+              * for logging, so for failure scenario also we will get the
+              * done indication
+              */
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               "%s: Fatal Event Rsp Failure,wdiStatus : %d ",
+               __func__, wdiRsp->wdiStatus);
+    }
+
+    vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
+    vos_mem_free(pWdaParams->wdaMsgParam);
+    vos_mem_free(pWdaParams);
+
+    return;
+
+}
+
+/*
+ * FUNCTION: WDA_ProcessFatalEventLogsReq
+ * Request to WDI to send the fatal Event Logs Req.
+ */
+
+VOS_STATUS WDA_ProcessFatalEventLogsReq(tWDA_CbContext *pWDA,
+                              tSirFatalEventLogsReqParam *pFatalEventLogsReqParam)
+{
+    VOS_STATUS status = VOS_STATUS_SUCCESS;
+    WDI_FatalEventLogsReqInfoType *wdiFatalEventLogsReqInfo;
+    tWDA_ReqParams *pWdaParams ;
+    WDI_Status wstatus;
+
+
+    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                                          "------> %s " ,__func__);
+    if (NULL == pFatalEventLogsReqParam)
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                           "%s: pMgmtLoggingInitParam received NULL", __func__);
+        VOS_ASSERT(0) ;
+        return VOS_STATUS_E_FAULT;
+    }
+    wdiFatalEventLogsReqInfo = (WDI_FatalEventLogsReqInfoType *)vos_mem_malloc(
+                                       sizeof(WDI_FatalEventLogsReqInfoType));
+    if(NULL == wdiFatalEventLogsReqInfo)
+    {
+       VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                            "%s: VOS MEM Alloc Failure", __func__);
+       VOS_ASSERT(0);
+       vos_mem_free(pFatalEventLogsReqParam);
+       return VOS_STATUS_E_NOMEM;
+    }
+    pWdaParams = (tWDA_ReqParams *)vos_mem_malloc(sizeof(tWDA_ReqParams)) ;
+    if(NULL == pWdaParams)
+    {
+       VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                            "%s: VOS MEM Alloc Failure", __func__);
+       VOS_ASSERT(0);
+       vos_mem_free(wdiFatalEventLogsReqInfo);
+       vos_mem_free(pFatalEventLogsReqParam);
+       return VOS_STATUS_E_NOMEM;
+    }
+    wdiFatalEventLogsReqInfo->reason_code = pFatalEventLogsReqParam->reason_code;
+    pWdaParams->pWdaContext = pWDA;
+    pWdaParams->wdaMsgParam = pFatalEventLogsReqParam;
+    pWdaParams->wdaWdiApiMsgParam = (void *)wdiFatalEventLogsReqInfo;
+
+   wstatus = WDI_FatalEventLogsReq(wdiFatalEventLogsReqInfo,
+                       (WDI_FatalEventLogsRspCb)WDA_FatalEventLogsRspCallback,
+                        pWdaParams);
+   if(IS_WDI_STATUS_FAILURE(wstatus))
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "Failure in Mgmt Logging init REQ WDI API, free all the memory" );
+      status = CONVERT_WDI2VOS_STATUS(wstatus);
+      vos_mem_free(pWdaParams->wdaWdiApiMsgParam) ;
+      vos_mem_free(pWdaParams->wdaMsgParam);
+      vos_mem_free(pWdaParams);
+   }
+
+   return status;
+
+}
+
 /*
  * FUNCTION: WDA_ProcessFWLoggingInitReq
  *
@@ -13764,6 +13880,12 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
       {
          WDA_ProcessGetFrameLogReq(pWDA,
                                         (tAniGetFrameLogReq *)pMsg->bodyptr);
+         break;
+      }
+      case WDA_FATAL_EVENT_LOGS_REQ:
+      {
+         WDA_ProcessFatalEventLogsReq(pWDA,
+                                       (tSirFatalEventLogsReqParam *)pMsg->bodyptr);
          break;
       }
       case WDA_SET_HOST_OFFLOAD:

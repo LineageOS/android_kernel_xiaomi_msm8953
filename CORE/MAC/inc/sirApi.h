@@ -3745,6 +3745,11 @@ typedef struct sSirFWLoggingInitParam
     void                   *fwlogInitCbContext;
 }tSirFWLoggingInitParam,*tpSirFWLoggingInitParam;
 
+typedef struct sSirFatalEventLogsReqParam
+{
+    tANI_U32 reason_code;
+}tSirFatalEventLogsReqParam, *tpSirFatalEventLogsReqParam;
+
 #ifdef FEATURE_WLAN_SCAN_PNO
 //
 // PNO Messages

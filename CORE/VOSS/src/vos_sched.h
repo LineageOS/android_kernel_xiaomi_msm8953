@@ -336,6 +336,9 @@ typedef struct _VosContextType
 
    /* Roam delay statistic enabled in ini*/
    v_U8_t             roamDelayStatsEnabled;
+
+   /*Fw log complete Event*/
+   vos_event_t fwLogsComplete;
 } VosContextType, *pVosContextType;
 
 

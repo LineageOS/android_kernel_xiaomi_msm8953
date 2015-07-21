@@ -240,6 +240,7 @@ static const hdd_freq_chan_map_t freq_chan_map[] = { {2412, 1}, {2417, 2},
 #define WE_STOP_OBSS_SCAN    11
 #define WE_DUMP_ROAM_TIMER_LOG     12
 #define WE_RESET_ROAM_TIMER_LOG    13
+#define WE_GET_FW_LOGS             14
 
 /* Private ioctls and their sub-ioctls */
 #define WLAN_PRIV_SET_VAR_INT_GET_NONE   (SIOCIWFIRSTPRIV + 7)
@@ -981,6 +982,7 @@ VOS_STATUS wlan_hdd_get_frame_logs(hdd_adapter_t *pAdapter, v_U8_t flag)
 
    return VOS_STATUS_SUCCESS;
 }
+
 
 VOS_STATUS wlan_hdd_get_snr(hdd_adapter_t *pAdapter, v_S7_t *snr)
 {
@@ -7002,6 +7004,14 @@ static int __iw_setnone_getnone(struct net_device *dev,
             vos_reset_roam_timer_log();
             break;
         }
+        case WE_GET_FW_LOGS:
+        {
+            vos_fatal_event_logs_req(WLAN_LOG_TYPE_NON_FATAL,
+                     WLAN_LOG_INDICATOR_IOCTL,
+                     WLAN_LOG_REASON_CODE_UNUSED,
+                     TRUE);
+            break;
+        }
         default:
         {
             hddLog(LOGE, "%s: unknown ioctl %d", __func__, sub_cmd);
@@ -10434,11 +10444,18 @@ static const struct iw_priv_args we_private_args[] = {
         0,
         0,
         "resetRoamDelay" },
+    {
+        WE_GET_FW_LOGS,
+        0,
+        0,
+        "getFwLogs" },
     /* handlers for main ioctl */
     {   WLAN_PRIV_SET_VAR_INT_GET_NONE,
         IW_PRIV_TYPE_INT | MAX_VAR_ARGS,
         0,
         "" },
+
+
 
     /* handlers for sub-ioctl */
     {   WE_LOG_DUMP_CMD,

@@ -479,6 +479,7 @@ WDI_ReqProcFuncType  pfnReqProcTbl[WDI_MAX_UMAC_IND] =
 
   WDI_ProcessMonStartReq,          /* WDI_MON_START_REQ */
   WDI_ProcessMonStopReq,           /* WDI_MON_STOP_REQ */
+  WDI_ProcessFatalEventLogsReq,     /*WDI_FATAL_EVENT_LOGGING_REQ*/
   /*-------------------------------------------------------------------------
     Indications
   -------------------------------------------------------------------------*/
@@ -750,6 +751,7 @@ WDI_RspProcFuncType  pfnRspProcTbl[WDI_MAX_RESP] =
 
     WDI_ProcessMonStartRsp,                    /* WDI_MON_START_RSP*/
     WDI_ProcessMonStopRsp,                    /* WDI_MON_STOP_RSP*/
+    WDI_ProcessFatalEventLogsRsp,              /*WDI_FATAL_EVENT_LOGGING_RSP*/
   /*---------------------------------------------------------------------
     Indications
   ---------------------------------------------------------------------*/
@@ -1177,6 +1179,7 @@ static char *WDI_getReqMsgString(wpt_uint16 wdiReqMsgId)
     CASE_RETURN_STRING( WDI_SET_RTS_CTS_HTVHT_IND );
     CASE_RETURN_STRING( WDI_MON_START_REQ );
     CASE_RETURN_STRING( WDI_MON_STOP_REQ );
+    CASE_RETURN_STRING( WDI_FATAL_EVENT_LOGGING_REQ );
     default:
         return "Unknown WDI MessageId";
   }
@@ -1312,6 +1315,7 @@ static char *WDI_getRespMsgString(wpt_uint16 wdiRespMsgId)
     CASE_RETURN_STRING( WDI_ENCRYPT_MSG_RSP);
     CASE_RETURN_STRING( WDI_FW_LOGGING_INIT_RSP);
     CASE_RETURN_STRING( WDI_GET_FRAME_LOG_RSP);
+    CASE_RETURN_STRING (WDI_FATAL_EVENT_LOGGING_RSP);
     default:
         return "Unknown WDI MessageId";
   }
@@ -4325,6 +4329,66 @@ WDI_GetFrameLogReq
 
    return WDI_PostMainEvent(&gWDICb, WDI_REQUEST_EVENT, &wdiEventData);
 }
+
+
+/**
+ @brief WDI_FatalEventLogsReq will be called when the upper
+        MAC wants to send the flush command. Upon the call of
+        this API the WLAN DAL will pack and send a HAL
+        Fatal Event Req message to the lower RIVA sub-system.
+
+        In state BUSY this request will be queued. Request won't
+        be allowed in any other state.
+
+
+ @param pwdiFlushLogsReqInfo: the Flush Logs params
+                      as specified by the Device Interface
+
+        wdiFlushLogsRspCb: callback for passing back the
+        response of the Flush Logs operation received
+        from the device
+
+        pUserData: user data will be passed back with the
+        callback
+
+ @return Result of the function call
+*/
+
+WDI_Status
+WDI_FatalEventLogsReq
+(
+   WDI_FatalEventLogsReqInfoType      *pwdiFatalEventLogsReqInfo,
+   WDI_FatalEventLogsRspCb             wdiFatalEventLogsRspCb,
+   void*                               pUserData
+)
+{
+    WDI_EventInfoType      wdiEventData;
+
+    /*------------------------------------------------------------------------
+      Sanity Check
+    ------------------------------------------------------------------------*/
+    if ( eWLAN_PAL_FALSE == gWDIInitialized )
+    {
+      WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                "WDI API call before module is initialized - Fail request");
+
+      return WDI_STATUS_E_NOT_ALLOWED;
+    }
+
+    /*------------------------------------------------------------------------
+      Fill in Event data and post to the Main FSM
+    ------------------------------------------------------------------------*/
+    wdiEventData.wdiRequest      = WDI_FATAL_EVENT_LOGGING_REQ;
+    wdiEventData.pEventData      = pwdiFatalEventLogsReqInfo;
+    wdiEventData.uEventDataSize  = sizeof(*pwdiFatalEventLogsReqInfo);
+    wdiEventData.pCBfnc          = wdiFatalEventLogsRspCb;
+    wdiEventData.pUserData       = pUserData;
+
+    return WDI_PostMainEvent(&gWDICb, WDI_REQUEST_EVENT, &wdiEventData);
+
+}
+
+
 /**
  @brief WDI_FWLoggingInitReq will be called when the upper
         MAC wants to initialize frame logging. Upon the call of
@@ -24203,6 +24267,9 @@ WDI_2_HAL_REQ_TYPE
        return WLAN_HAL_DISABLE_MONITOR_MODE_REQ;
   case WDI_FW_LOGGING_DXE_DONE_IND:
        return WLAN_HAL_FW_LOGGING_DXE_DONE_IND;
+  case WDI_FATAL_EVENT_LOGGING_REQ:
+       return WLAN_HAL_FATAL_EVENT_LOGGING_REQ;
+
   default:
     return WLAN_HAL_MSG_MAX;
   }
@@ -24532,6 +24599,8 @@ case WLAN_HAL_DEL_STA_SELF_RSP:
        return WDI_MON_START_RSP;
   case WLAN_HAL_DISABLE_MONITOR_MODE_RSP:
        return WDI_MON_STOP_RSP;
+  case WLAN_HAL_FATAL_EVENT_LOGGING_RSP:
+       return WDI_FATAL_EVENT_LOGGING_RSP;
   default:
     return eDRIVER_TYPE_MAX;
   }
@@ -34550,6 +34619,139 @@ WDI_ProcessFWLoggingDXEdoneInd
   wdiStatus =  WDI_SendIndication( pWDICtx, pSendBuffer, usSendSize);
   return (wdiStatus != WDI_STATUS_SUCCESS) ? wdiStatus:WDI_STATUS_SUCCESS_SYNC;
 }
+
+
+/**
+ @brief Process Fatal Event Logs Rsp function
+        (called when a response is being received over the bus from HAL)
+
+ @param  pWDICtx:         pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+WDI_Status
+WDI_ProcessFatalEventLogsRsp
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+)
+{
+    tHalFatalEventLoggingRspParams           halRsp;
+    WDI_FatalEventLogsRspCb                 wdiFatalEventLogsRspCb;
+    WDI_FatalEventLogsRspParamType          wdiFatalEventLogsRsp;
+
+    VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
+                    "%s: %d Enter",__func__, __LINE__);
+
+    /*-------------------------------------------------------------------------
+      Sanity check
+    -------------------------------------------------------------------------*/
+    if (( NULL == pWDICtx ) || ( NULL == pEventData ) ||
+        ( NULL == pEventData->pEventData))
+    {
+       WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
+                   "%s: Invalid parameters", __func__);
+       WDI_ASSERT(0);
+       return WDI_STATUS_E_FAILURE;
+    }
+    wdiFatalEventLogsRspCb = (WDI_FatalEventLogsRspCb)pWDICtx->pfncRspCB;
+
+    /*-------------------------------------------------------------------------
+      Extract response and send it to UMAC
+    -------------------------------------------------------------------------*/
+    wpalMemoryCopy( &halRsp, pEventData->pEventData, sizeof(halRsp));
+
+    wdiFatalEventLogsRsp.wdiStatus = WDI_HAL_2_WDI_STATUS(halRsp.status);
+
+    /*Notify UMAC*/
+    wdiFatalEventLogsRspCb( &wdiFatalEventLogsRsp,
+                                  pWDICtx->pRspCBUserData);
+
+    return WDI_STATUS_SUCCESS;
+}
+
+/**
+ @brief Process FatalEventLogs Request
+
+ @param  pWDICtx:         pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+
+WDI_Status
+WDI_ProcessFatalEventLogsReq
+
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+)
+{
+    WDI_FatalEventLogsReqInfoType*     wdiFatalEventLogsReq;
+    wpt_uint8*                         pSendBuffer  = NULL;
+    wpt_uint16                         usDataOffset = 0;
+    wpt_uint16                         usSendSize   = 0;
+    WDI_Status                         wdiStatus;
+    tHalFatalEventLoggingReqMsg        halFatalEventLoggingReq;
+    WDI_FatalEventLogsRspCb            wdiFatalEventLogsRspCb;
+
+
+    VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
+            "%s: %d Enter",__func__, __LINE__);
+
+    /*-------------------------------------------------------------------------
+      Sanity check
+      ------------------------------------------------------------------------*/
+    if (( NULL == pWDICtx ) || ( NULL == pEventData ) ||
+            ( NULL == pEventData->pEventData))
+    {
+        WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
+                "%s: Invalid parameters", __func__);
+        WDI_ASSERT(0);
+        return WDI_STATUS_E_FAILURE;
+    }
+    wdiFatalEventLogsReq =
+                     (WDI_FatalEventLogsReqInfoType *)pEventData->pEventData;
+
+    /*-----------------------------------------------------------------------
+      Get message buffer
+      -----------------------------------------------------------------------*/
+    if (( WDI_STATUS_SUCCESS != WDI_GetMessageBuffer( pWDICtx,
+                    WDI_FATAL_EVENT_LOGGING_REQ,
+                    sizeof(halFatalEventLoggingReq.tFatalEventLoggingReqParams),
+                    &pSendBuffer, &usDataOffset, &usSendSize))||
+            (usSendSize < (usDataOffset +
+            sizeof(halFatalEventLoggingReq.tFatalEventLoggingReqParams))))
+    {
+        WPAL_TRACE( eWLAN_MODULE_DAL_CTRL,  eWLAN_PAL_TRACE_LEVEL_FATAL,
+                "Unable to get send buffer in Fatal Event Req");
+        WDI_ASSERT(0);
+        return WDI_STATUS_E_FAILURE;
+    }
+    halFatalEventLoggingReq.tFatalEventLoggingReqParams.reasonCode =
+                                    wdiFatalEventLogsReq->reason_code;
+
+    wdiFatalEventLogsRspCb   = (WDI_FatalEventLogsRspCb)pEventData->pCBfnc;
+
+    wpalMemoryCopy( pSendBuffer+usDataOffset,
+                    &halFatalEventLoggingReq.tFatalEventLoggingReqParams,
+                    sizeof(halFatalEventLoggingReq.tFatalEventLoggingReqParams));
+
+    /*-------------------------------------------------------------------------
+      Send Mgmt Logging Init Request to HAL
+      ------------------------------------------------------------------------*/
+    wdiStatus = WDI_SendMsg( pWDICtx, pSendBuffer, usSendSize,
+                             wdiFatalEventLogsRspCb, pEventData->pUserData,
+                             WDI_FATAL_EVENT_LOGGING_RSP);
+
+    return  wdiStatus;
+
+
+}
+
 
 /**
  @brief Process FWLoggingInit Request

@@ -628,6 +628,15 @@ static VOS_STATUS wlan_ftm_vos_open( v_CONTEXT_t pVosContext, v_PVOID_t devHandl
       goto err_probe_event;
    }
 
+   if(vos_event_init(&(gpVosContext->fwLogsComplete)) != VOS_STATUS_SUCCESS )
+   {
+      VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+                "%s: Unable to init fwLogsComplete",__func__);
+      VOS_ASSERT(0);
+
+      goto err_wda_complete_event;
+   }
+
    /* Initialize the free message queue */
    vStatus = vos_mq_init(&gpVosContext->freeVosMq);
    if (! VOS_IS_STATUS_SUCCESS(vStatus))
@@ -637,7 +646,7 @@ static VOS_STATUS wlan_ftm_vos_open( v_CONTEXT_t pVosContext, v_PVOID_t devHandl
                 "%s: Failed to initialize VOS free message queue %d",
                  __func__, vStatus);
       VOS_ASSERT(0);
-      goto err_wda_complete_event;
+      goto err_fw_logs_complete_event;
    }
 
    for (iter = 0; iter < VOS_CORE_MAX_MESSAGES; iter++)
@@ -759,6 +768,9 @@ err_sched_close:
 err_msg_queue:
    vos_mq_deinit(&gpVosContext->freeVosMq);
 
+err_fw_logs_complete_event:
+   vos_event_destroy(&gpVosContext->fwLogsComplete);
+
 err_wda_complete_event:
    vos_event_destroy(&gpVosContext->wdaCompleteEvent);
 
@@ -846,6 +858,14 @@ static VOS_STATUS wlan_ftm_vos_close( v_CONTEXT_t vosContext )
   {
      VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
          "%s: Failed to destroy wdaCompleteEvent %d", __func__, vosStatus);
+     VOS_ASSERT( VOS_IS_STATUS_SUCCESS( vosStatus ) );
+  }
+
+  vosStatus = vos_event_destroy(&gpVosContext->fwLogsComplete);
+  if (!VOS_IS_STATUS_SUCCESS(vosStatus))
+  {
+     VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+         "%s: Failed to destroy fwLogsComplete %d", __func__, vosStatus);
      VOS_ASSERT( VOS_IS_STATUS_SUCCESS( vosStatus ) );
   }
 

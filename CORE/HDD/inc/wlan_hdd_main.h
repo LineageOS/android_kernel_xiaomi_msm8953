@@ -136,6 +136,7 @@
 #define CRDA_WAIT_TIME 300
 #endif
 
+#define WAIT_TIME_FW_LOGS 2000
 /* Scan Req Timeout */
 #define WLAN_WAIT_TIME_SCAN_REQ 100
 
@@ -1263,7 +1264,6 @@ struct hdd_context_s
 #else
    struct completion driver_crda_req;
 #endif
-
    /* Completion variable to indicate updation of channel */
    struct completion wiphy_channel_update_event;
 

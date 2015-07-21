@@ -712,6 +712,7 @@ typedef struct sSirMbMsgP2p
 #define SIR_HAL_SET_RTS_CTS_HTVHT            (SIR_HAL_ITC_MSG_TYPES_BEGIN + 268)
 #define SIR_HAL_MON_START_REQ               (SIR_HAL_ITC_MSG_TYPES_BEGIN + 269)
 #define SIR_HAL_MON_STOP_REQ                (SIR_HAL_ITC_MSG_TYPES_BEGIN + 270)
+#define SIR_HAL_FATAL_EVENT_LOGS_REQ         (SIR_HAL_ITC_MSG_TYPES_BEGIN + 271)
 
 #define SIR_HAL_MSG_TYPES_END              (SIR_HAL_MSG_TYPES_BEGIN + 0x1FF)
 // CFG message types
