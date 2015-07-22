@@ -938,7 +938,11 @@ int __wlan_hdd_cfg80211_cancel_remain_on_channel( struct wiphy *wiphy,
            hddLog( LOGE,
                    "%s: timeout waiting for remain on channel ready indication %d",
                    __func__, status);
-           pRemainChanCtx->is_pending_roc_cancelled = TRUE;
+           mutex_lock(&pHddCtx->roc_lock);
+           if (cfgState->remain_on_chan_ctx)
+               cfgState->remain_on_chan_ctx->is_pending_roc_cancelled = TRUE;
+           mutex_unlock(&pHddCtx->roc_lock);
+
            return 0;
 
        }
