@@ -7243,10 +7243,13 @@ VOS_STATUS hdd_stop_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter,
 
    ENTER();
 
-   status = hdd_sta_id_hash_detach(pAdapter);
-   if (status != VOS_STATUS_SUCCESS)
-       hddLog(VOS_TRACE_LEVEL_ERROR,
-                 FL("sta id hash detach failed"));
+   if ( VOS_TRUE == bCloseSession )
+   {
+      status = hdd_sta_id_hash_detach(pAdapter);
+      if (status != VOS_STATUS_SUCCESS)
+          hddLog(VOS_TRACE_LEVEL_ERROR,
+                    FL("sta id hash detach failed"));
+   }
 
    pScanInfo =  &pHddCtx->scan_info;
    switch(pAdapter->device_mode)
@@ -11730,7 +11733,7 @@ VOS_STATUS hdd_sta_id_hash_add_entry(hdd_adapter_t *pAdapter,
     spin_lock_bh( &pAdapter->sta_hash_lock);
     if (pAdapter->is_sta_id_hash_initialized != VOS_TRUE) {
         spin_unlock_bh( &pAdapter->sta_hash_lock);
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                   "%s: hash is not initialized for session id %d",
                   __func__, pAdapter->sessionId);
         return VOS_STATUS_E_FAILURE;
