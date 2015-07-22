@@ -153,6 +153,7 @@ of NV fragment is nt possbile.The next multiple of 1Kb is 3K */
 #define MAXNUM_PERIODIC_TX_PTRNS 6
 #define WDI_DISA_MAX_PAYLOAD_SIZE                1600
 #define MAX_NUM_OF_BUFFER 3
+#define VALID_FW_LOG_TYPES      2
 
 /*============================================================================
  *     GENERIC STRUCTURES 

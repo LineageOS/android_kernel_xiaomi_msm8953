@@ -47,6 +47,7 @@
 #include "wlan_qct_wdi_dp.h"
 #include "wlan_qct_wdi_sta.h"
 #include "vos_utils.h"
+#include "vos_api.h"
 
 static WDTS_TransportDriverTrype gTransportDriver = {
   WLANDXE_Open, 
@@ -879,6 +880,8 @@ void WDTS_MbReceiveMsg(void *pContext)
      }
   }
 
+  pLoggingSession->done = pLoggingMb->done;
+  pLoggingSession->logType = pLoggingMb->logType;
   // Done using Mailbox, zero out the memory.
   wpalMemoryZero(pLoggingMb, sizeof(tLoggingMailBox));
 
@@ -893,11 +896,21 @@ void WDTS_MbReceiveMsg(void *pContext)
 
 void WDTS_LogRxDone(void *pContext)
 {
-  if (NULL == pContext)
+  WDI_DS_LoggingSessionType *pLoggingSession;
+
+  pLoggingSession = (WDI_DS_LoggingSessionType *)
+                       WDI_DS_GetLoggingSession(pContext);
+
+  if (NULL == pContext || pLoggingSession == NULL)
   {
     return;
   }
+  /* check for done and Log type Mgmt frame = 0, QXDM = 1, FW Mem dump = 2 */
+  if (pLoggingSession->done && pLoggingSession->logType <= VALID_FW_LOG_TYPES)
+     vos_process_done_indication(pLoggingSession->logType, 0);
 
+  pLoggingSession->done = 0;
+  pLoggingSession->logType = 0;
   ((WDI_DS_ClientDataType *)(pContext))->rxLogCB();
 
   return;

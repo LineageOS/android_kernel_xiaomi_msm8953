@@ -189,6 +189,10 @@ typedef struct
    wpt_boolean active;
    wpt_uint64 logBuffAddress[MAX_NUM_OF_BUFFER];
    wpt_uint32 logBuffLength[MAX_NUM_OF_BUFFER];
+   /* Log type i.e. Mgmt frame = 0, QXDM = 1, FW Mem dump = 2 */
+   wpt_uint8   logType;
+   /* Indicate if Last segment of log is received*/
+   wpt_boolean done;
 } WDI_DS_LoggingSessionType;
 
 WPT_STATIC WPT_INLINE WDI_DS_RxMetaInfoType* WDI_DS_ExtractRxMetaData (wpt_packet *pFrame)
