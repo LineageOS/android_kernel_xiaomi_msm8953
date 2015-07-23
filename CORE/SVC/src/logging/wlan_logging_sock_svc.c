@@ -329,8 +329,8 @@ int wlan_log_to_user(VOS_TRACE_LEVEL log_level, char *to_be_sent, int length)
 	bool wake_up_thread = false;
 	unsigned long flags;
 
-	struct timeval tv,qtv;
-	struct rtc_time tm,qtm;
+	struct timeval tv;
+	struct rtc_time tm;
 	unsigned long local_time;
         u64 qtimer_ticks;
 
@@ -354,15 +354,10 @@ int wlan_log_to_user(VOS_TRACE_LEVEL log_level, char *to_be_sent, int length)
 	rtc_time_to_tm(local_time, &tm);
         /* Firmware Time Stamp */
         qtimer_ticks =  arch_counter_get_cntpct();
-        qtv.tv_sec = (qtimer_ticks / QTIMER_FREQ);
-        qtv.tv_usec = ((qtimer_ticks % QTIMER_FREQ) * 1000 * 1000);
-        local_time = (u32)(qtv.tv_sec - (sys_tz.tz_minuteswest * 60));
-        rtc_time_to_tm(local_time, &qtm);
 
-        tlen = snprintf(tbuf, sizeof(tbuf), "[%s] [%02d:%02d:%02d.%06lu] FW: "
-            "[%02d:%02d:%02d.%06lu] ",current->comm,tm.tm_hour,tm.tm_min,
-                tm.tm_sec,tv.tv_usec,qtm.tm_hour,qtm.tm_min, qtm.tm_sec,
-                    qtv.tv_usec);
+        tlen = snprintf(tbuf, sizeof(tbuf), "[%02d:%02d:%02d.%06lu] [%016llX]"
+                        " [%s] ", tm.tm_hour, tm.tm_min, tm.tm_sec, tv.tv_usec,
+                        qtimer_ticks, current->comm);
 	/* 1+1 indicate '\n'+'\0' */
 	total_log_len = length + tlen + 1 + 1;
 
