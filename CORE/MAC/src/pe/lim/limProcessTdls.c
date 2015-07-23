@@ -3893,6 +3893,9 @@ tSirRetStatus limProcessSmeDelAllTdlsPeers(tpAniSirGlobal pMac,
                                            eSIR_MAC_DEAUTH_LEAVING_BSS_REASON,
                                            pStaDs->staAddr, psessionEntry,
                                            FALSE);
+
+                    limTdlsDelSta(pMac, pStaDs->staAddr, psessionEntry);
+
                     dphDeleteHashEntry(pMac, pStaDs->staAddr, pStaDs->assocId,
                                        &psessionEntry->dph.dphHashTable);
                 }
