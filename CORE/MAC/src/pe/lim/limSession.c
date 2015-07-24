@@ -376,6 +376,15 @@ void peDeleteSession(tpAniSirGlobal pMac, tpPESession psessionEntry)
 
 #endif
 
+    if (psessionEntry->peSessionId ==
+            pMac->lim.mgmtFrameSessionId)
+    {
+        /* Mgmt frame tx is pending for this session */
+        /* Return failure */
+        limSendSmeMgmtTXCompletion(pMac, psessionEntry, 0);
+        pMac->lim.mgmtFrameSessionId = 0xff;
+    }
+
     if (psessionEntry->pLimStartBssReq != NULL)
     {
         vos_mem_free( psessionEntry->pLimStartBssReq );
