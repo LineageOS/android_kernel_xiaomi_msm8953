@@ -5758,12 +5758,16 @@ int wlan_hdd_cfg80211_init(struct device *dev,
     wiphy->max_acl_mac_addrs = MAX_ACL_MAC_ADDRESS;
 
     /* Supports STATION & AD-HOC modes right now */
-    wiphy->interface_modes =   BIT(NL80211_IFTYPE_STATION)
-                             | BIT(NL80211_IFTYPE_ADHOC)
-                             | BIT(NL80211_IFTYPE_P2P_CLIENT)
-                             | BIT(NL80211_IFTYPE_P2P_GO)
-                             | BIT(NL80211_IFTYPE_AP)
-                             | BIT(NL80211_IFTYPE_MONITOR);
+    wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION)
+                            | BIT(NL80211_IFTYPE_ADHOC)
+                            | BIT(NL80211_IFTYPE_P2P_CLIENT)
+                            | BIT(NL80211_IFTYPE_P2P_GO)
+                            | BIT(NL80211_IFTYPE_AP);
+
+    if (VOS_MONITOR_MODE == hdd_get_conparam())
+    {
+        wiphy->interface_modes |= BIT(NL80211_IFTYPE_MONITOR);
+    }
 
     if( pCfg->advertiseConcurrentOperation )
     {
