@@ -1958,8 +1958,6 @@ void vos_ssr_protect(const char *caller_func)
 {
      int count;
      count = atomic_inc_return(&ssr_protect_entry_count);
-     VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-               "%s: ENTRY ACTIVE %d", caller_func, count);
 }
 
 /**
@@ -1974,6 +1972,4 @@ void vos_ssr_unprotect(const char *caller_func)
 {
    int count;
    count = atomic_dec_return(&ssr_protect_entry_count);
-   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-               "%s: ENTRY INACTIVE %d", caller_func, count);
 }

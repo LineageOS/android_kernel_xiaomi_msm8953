@@ -1144,7 +1144,6 @@ hddTdlsPeer_t *wlan_hdd_tdls_get_peer(hdd_adapter_t *pAdapter, u8 *mac)
     tdlsCtx_t *pHddTdlsCtx;
     hdd_context_t *pHddCtx;
 
-    ENTER();
 
     if (!pAdapter) {
         hddLog(VOS_TRACE_LEVEL_ERROR, FL("HDD adpater is NULL"));
@@ -1200,7 +1199,6 @@ hddTdlsPeer_t *wlan_hdd_tdls_get_peer(hdd_adapter_t *pAdapter, u8 *mac)
 
     list_add_tail(&peer->node, head);
 
-    EXIT();
     return peer;
 }
 
@@ -1797,7 +1795,6 @@ hddTdlsPeer_t *wlan_hdd_tdls_find_peer(hdd_adapter_t *pAdapter, u8 *mac,
     tdlsCtx_t *pHddTdlsCtx;
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
 
-    ENTER();
     if(0 != (wlan_hdd_validate_context(pHddCtx)))
     {
         return 0;
@@ -1832,7 +1829,6 @@ hddTdlsPeer_t *wlan_hdd_tdls_find_peer(hdd_adapter_t *pAdapter, u8 *mac,
     if ( mutexLock )
         mutex_unlock(&pHddCtx->tdls_lock);
 
-    EXIT();
     return NULL;
 }
 

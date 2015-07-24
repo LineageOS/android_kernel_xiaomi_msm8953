@@ -237,10 +237,6 @@ static int wlan_send_sock_msg_to_app(tAniHdr *wmsg, int radio,
 	vos_mem_copy(&wnl->wmsg, wmsg, wmsg_length);
 
 	err = nl_srv_ucast(skb, pid, MSG_DONTWAIT);
-	if (err) {
-		pr_info("%s: Failed sending Msg Type [0x%X] to pid[%d]\n",
-				__func__, wmsg->type, pid);
-	}
 
 	return err;
 }
