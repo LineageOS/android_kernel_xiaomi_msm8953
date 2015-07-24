@@ -13559,7 +13559,7 @@ eHalStatus csrSendJoinReqMsg( tpAniSirGlobal pMac, tANI_U32 sessionId, tSirBssDe
 
         // txBFCsnValue
         txBFCsnValue = (tANI_U8)pMac->roam.configParam.txBFCsnValue;
-        if (pIes->VHTCaps.present)
+        if (pIes->VHTCaps.present && pIes->VHTCaps.numSoundingDim)
         {
             txBFCsnValue = CSR_ROAM_MIN(txBFCsnValue, pIes->VHTCaps.numSoundingDim);
         }
