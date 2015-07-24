@@ -2107,10 +2107,11 @@ static wpt_uint32 dxeRXLogRefillRing
                                            channelEntry,
                                            currentCtrlBlk);
 
-      if((eWLAN_PAL_STATUS_SUCCESS != status))
+      if((eWLAN_PAL_STATUS_SUCCESS != status) &&
+         (eWLAN_PAL_STATUS_E_EXISTS != status))
       {
          HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_WARN,
-                  "%s, out of RX buffer pool, break here",__func__);
+                  "dxeRXFrameRefillRing, out of RX buffer pool, break here");
          break;
       }
 

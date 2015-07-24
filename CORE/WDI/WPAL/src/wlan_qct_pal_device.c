@@ -103,6 +103,7 @@ typedef struct {
    u64              *rx_enable_return;
    u8               rx_isr_enable_failure;
    u8               rx_isr_enable_partial_failure;
+   u8               tx_isr_enabled;
 } wcnss_env;
 
 static wcnss_env  gEnv;
@@ -360,13 +361,12 @@ wpt_status wpalEnableInterrupt
            gpEnv->rx_isr_enable_partial_failure = 1;
             /* not fatal -- keep on going */
          }
-         gpEnv->rx_isr_enabled = 1;
       }
       else
       {
          enable_irq(gpEnv->rx_irq);
-         gpEnv->rx_isr_enabled = 1;
       }
+      gpEnv->rx_isr_enabled = 1;
       break;
    case DXE_INTERRUPT_TX_COMPLE:
       if (!gpEnv->tx_registered) 
@@ -394,6 +394,7 @@ wpt_status wpalEnableInterrupt
       {
          enable_irq(gpEnv->tx_irq);
       }
+      gpEnv->tx_isr_enabled = 1;
       break;
    default:
       WPAL_TRACE(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
@@ -438,6 +439,7 @@ wpt_status wpalDisableInterrupt
       break;
    case DXE_INTERRUPT_TX_COMPLE:
       disable_irq_nosync(gpEnv->tx_irq);
+      gpEnv->tx_isr_enabled = 0;
       break;
    default:
       WPAL_TRACE(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
