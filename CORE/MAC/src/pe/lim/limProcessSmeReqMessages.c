@@ -2854,6 +2854,21 @@ __limProcessSmeDisassocCnf(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
                      MAC_ADDR_ARRAY(smeDisassocCnf.peerMacAddr));)
             return;
         }
+        /*
+         * If MlM state is either of del_sta or del_bss state, then no need to
+         * go ahead and clean up further as there must be some cleanup in
+         * progress from upper layer disassoc/deauth request.
+         */
+        if((pStaDs->mlmStaContext.mlmState == eLIM_MLM_WT_DEL_STA_RSP_STATE) ||
+           (pStaDs->mlmStaContext.mlmState == eLIM_MLM_WT_DEL_BSS_RSP_STATE))
+        {
+            limLog(pMac, LOGE, FL("No need to cleanup for addr:"MAC_ADDRESS_STR
+                   "as Mlm state is %d"),
+                   MAC_ADDR_ARRAY(smeDisassocCnf.peerMacAddr),
+                   pStaDs->mlmStaContext.mlmState);
+           return;
+        }
+
         /* Delete FT session if there exists one */
         limFTCleanup(pMac);
         limCleanupRxPath(pMac, pStaDs, psessionEntry);
@@ -2966,6 +2981,15 @@ __limProcessSmeDeauthReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
                     limLog(pMac, LOG1, FL("Rcvd SME_DEAUTH_REQ while in "
                        "SME_WT_DEAUTH_STATE. "));
                     break;
+                case eLIM_SME_WT_DISASSOC_STATE:
+                     /*
+                      * PE Recieved a Disassoc frame. Normally it gets
+                      * DISASSOC_CNF but it received DEAUTH_REQ. This means
+                      * host is also trying to disconnect.
+                      */
+                      limLog(pMac, LOG1, FL("Rcvd SME_DEAUTH_REQ while in "
+                             "SME_WT_DISASSOC_STATE. "));
+                      break;
                 default:
                     /**
                      * STA is not in a state to deauthenticate with
