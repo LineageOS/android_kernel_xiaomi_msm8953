@@ -6581,7 +6581,7 @@ static int __iw_get_char_setnone(struct net_device *dev,
                 len += buf;
 
                 /*printing the PE Sme and Mlm states for valid lim sessions*/
-                while ( check < 3 && count < 255)
+                while ( check < 3 && count < pMac->lim.maxBssId)
                 {
                     if ( pMac->lim.gpSession[count].valid )
                     {
