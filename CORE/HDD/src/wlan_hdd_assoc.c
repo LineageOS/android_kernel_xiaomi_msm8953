@@ -3322,8 +3322,9 @@ eHalStatus hdd_smeRoamCallback( void *pContext, tCsrRoamInfo *pRoamInfo, tANI_U3
                 }
 
                 if ((pHddCtx) &&
-                     FULL_POWER == pmcGetPmcState(pHddCtx->hHal) &&
-                     VOS_TRUE == pHddStaCtx->hdd_ReassocScenario)
+                    (FULL_POWER == pmcGetPmcState(pHddCtx->hHal)) &&
+                    (VOS_TRUE == pHddStaCtx->hdd_ReassocScenario) &&
+                    (eCSR_ROAM_RESULT_NONE == roamResult))
                 {
                     hddLog( LOG1, FL("Device in full power."
                            "Stop and start traffic timer for roaming"));
@@ -3336,7 +3337,8 @@ eHalStatus hdd_smeRoamCallback( void *pContext, tCsrRoamInfo *pRoamInfo, tANI_U3
                 }
 
                 halStatus = hdd_RoamSetKeyCompleteHandler( pAdapter, pRoamInfo, roamId, roamStatus, roamResult );
-                pHddStaCtx->hdd_ReassocScenario = FALSE;
+                if (eCSR_ROAM_RESULT_NONE == roamResult)
+                    pHddStaCtx->hdd_ReassocScenario = FALSE;
             }
             break;
 #ifdef WLAN_FEATURE_VOWIFI_11R
