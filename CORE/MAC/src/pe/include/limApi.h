@@ -97,6 +97,7 @@ typedef enum eMgmtFrmDropReason
     eMGMT_DROP_SCAN_MODE_FRAME,
     eMGMT_DROP_NON_SCAN_MODE_FRAME,
     eMGMT_DROP_INVALID_SIZE,
+    eMGMT_DROP_SPURIOUS_FRAME,
 }tMgmtFrmDropReason;
 
 
@@ -192,6 +193,9 @@ void limHandleMissedBeaconInd(tpAniSirGlobal pMac, tpSirMsgQ pMsg);
 tMgmtFrmDropReason limIsPktCandidateForDrop(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tANI_U32 subType);
 boolean limIsDeauthDiassocForDrop(tpAniSirGlobal pMac,
                                           tANI_U8 *pRxPacketInfo);
+#ifdef WLAN_FEATURE_11W
+bool lim_is_assoc_req_for_drop(tpAniSirGlobal mac, uint8_t *rx_pkt_info);
+#endif
 void limMicFailureInd(tpAniSirGlobal pMac, tpSirMsgQ pMsg);
 /* ----------------------------------------------------------------------- */
 // These used to be in DPH

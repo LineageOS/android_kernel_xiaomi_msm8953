@@ -2247,6 +2247,60 @@ void limMicFailureInd(tpAniSirGlobal pMac, tpSirMsgQ pMsg)
     return;
 }
 
+#ifdef WLAN_FEATURE_11W
+/** --------------------------------------------------------------------
+ * lim_is_assoc_req_for_drop()- function to decides to drop assoc\reassoc
+ *  frames.
+ * @mac: pointer to global mac structure
+ * @rx_pkt_info: rx packet meta information
+ *
+ * This function is called before enqueuing the frame to PE queue to
+ * drop flooded assoc/reassoc frames getting into PE Queue.
+ *
+ * Return: true for dropping the frame otherwise false
+----------------------------------------------------------------------*/
+
+bool lim_is_assoc_req_for_drop(tpAniSirGlobal pMac, uint8_t *rx_pkt_info)
+{
+    tANI_U8 session_id;
+    tANI_U16 aid;
+    tpPESession session_entry;
+    tpSirMacMgmtHdr pMacHdr;
+    tpDphHashNode sta_ds;
+
+    pMacHdr = WDA_GET_RX_MAC_HEADER(rx_pkt_info);
+    session_entry = peFindSessionByBssid(pMac, pMacHdr->bssId, &session_id);
+    if (!session_entry)
+    {
+       PELOG1(limLog(pMac, LOG1,
+       FL("session does not exist for given STA [%pM]"),
+       pMacHdr->sa););
+       return false;
+    }
+    sta_ds = dphLookupHashEntry(pMac, pMacHdr->sa, &aid,
+                       &session_entry->dph.dphHashTable);
+    if (!sta_ds)
+    {
+       PELOG1(limLog(pMac, LOG1, FL("pStaDs is NULL")););
+       return false;
+    }
+
+    if (!sta_ds->rmfEnabled)
+       return false;
+
+    if (sta_ds->pmfSaQueryState == DPH_SA_QUERY_IN_PROGRESS)
+       return true;
+
+    if (sta_ds->last_assoc_received_time &&
+       ((vos_timer_get_system_time() -
+         sta_ds->last_assoc_received_time) < 1000))
+       return true;
+
+    sta_ds->last_assoc_received_time = vos_timer_get_system_time();
+    return false;
+}
+#endif
+
 /** ----------------------------------------------------------------------
  *\brief limIsDeauthDiassocForDrop()..decides to drop deauth\diassoc frames.
  *This function is called before enqueuing the frame to PE queue.
@@ -2392,6 +2446,12 @@ tMgmtFrmDropReason limIsPktCandidateForDrop(tpAniSirGlobal pMac, tANI_U8 *pRxPac
         return eMGMT_DROP_NO_DROP;
 #endif
 
+#ifdef WLAN_FEATURE_11W
+    if ((subType == SIR_MAC_MGMT_ASSOC_REQ ||
+         subType == SIR_MAC_MGMT_REASSOC_REQ) &&
+         lim_is_assoc_req_for_drop(pMac, pRxPacketInfo))
+        return eMGMT_DROP_SPURIOUS_FRAME;
+#endif
     //Drop INFRA Beacons and Probe Responses in IBSS Mode
     if( (subType == SIR_MAC_MGMT_BEACON) ||
         (subType == SIR_MAC_MGMT_PROBE_RSP))
