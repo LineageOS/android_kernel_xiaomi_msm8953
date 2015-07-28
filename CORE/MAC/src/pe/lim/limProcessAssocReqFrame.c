@@ -1163,8 +1163,36 @@ sendIndToSme:
         pStaDs->htMaxAmsduLength = (tANI_U8)pAssocReq->HTCaps.maximalAMSDUsize;
         pStaDs->htMaxRxAMpduFactor = pAssocReq->HTCaps.maxRxAMPDUFactor;
         pStaDs->htMIMOPSState = pAssocReq->HTCaps.mimoPowerSave;
-        pStaDs->htShortGI20Mhz = (tANI_U8)pAssocReq->HTCaps.shortGI20MHz;
-        pStaDs->htShortGI40Mhz = (tANI_U8)pAssocReq->HTCaps.shortGI40MHz;
+
+        /* pAssocReq will be copied to psessionEntry->parsedAssocReq later */
+        /* check whether AP is enabled with shortGI */
+        if (wlan_cfgGetInt(pMac, WNI_CFG_SHORT_GI_20MHZ, &val) !=
+                           eSIR_SUCCESS) {
+           limLog(pMac, LOGE,
+                         FL("could not retrieve shortGI 20Mhz CFG"));
+           goto error;
+        }
+        if (val) {
+            pStaDs->htShortGI20Mhz = (tANI_U8)pAssocReq->HTCaps.shortGI20MHz;
+        } else {
+            /* Unset htShortGI20Mhz in ht_caps*/
+            pAssocReq->HTCaps.shortGI20MHz = 0;
+            pStaDs->htShortGI20Mhz = 0;
+        }
+
+        if (wlan_cfgGetInt(pMac, WNI_CFG_SHORT_GI_40MHZ, &val) !=
+                           eSIR_SUCCESS) {
+           limLog(pMac, LOGE,
+                         FL("could not retrieve shortGI 40Mhz CFG"));
+           goto error;
+        }
+        if (val) {
+            pStaDs->htShortGI40Mhz = (tANI_U8)pAssocReq->HTCaps.shortGI40MHz;
+        } else {
+            /* Unset htShortGI40Mhz in ht_caps */
+            pAssocReq->HTCaps.shortGI40MHz = 0;
+            pStaDs->htShortGI40Mhz = 0;
+        }
         pStaDs->htSupportedChannelWidthSet = (tANI_U8)pAssocReq->HTCaps.supportedChannelWidthSet;
         /* peer just follows AP; so when we are softAP/GO, we just store our session entry's secondary channel offset here in peer INFRA STA
          * However, if peer's 40MHz channel width support is disabled then secondary channel will be zero
