@@ -902,7 +902,8 @@ __limProcessQosMapConfigureFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,
          FL("QosMapConfigure frame parsing failed (error %d)"), retval);)
          return;
      }
-     limSendSmeMgmtFrameInd(pMac, 0, pRxPacketInfo, psessionEntry, 0);
+     limSendSmeMgmtFrameInd(pMac, psessionEntry->smeSessionId,
+                                        pRxPacketInfo, psessionEntry, 0);
 }
 
 #ifdef ANI_SUPPORT_11H
@@ -2119,7 +2120,8 @@ static void __limProcessSAQueryResponseActionFrame(tpAniSirGlobal pMac, tANI_U8 
        Forward to SME to HDD to wpa_supplicant. */
     if (eLIM_STA_ROLE == psessionEntry->limSystemRole)
     {
-        limSendSmeMgmtFrameInd(pMac, 0, pRxPacketInfo, psessionEntry, 0);
+        limSendSmeMgmtFrameInd(pMac, psessionEntry->smeSessionId,
+                                    pRxPacketInfo, psessionEntry, 0);
         return;
     }
 
@@ -2405,7 +2407,8 @@ limProcessActionFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,tpPESession ps
                tANI_S8 rssi = WDA_GET_RX_RSSI_DB(pRxPacketInfo);
                pHdr = WDA_GET_RX_MAC_HEADER(pRxPacketInfo);
                /* Forward to the SME to HDD to wpa_supplicant */
-               limSendSmeMgmtFrameInd(pMac, 0, pRxPacketInfo,
+               limSendSmeMgmtFrameInd(pMac, psessionEntry->smeSessionId,
+                                       pRxPacketInfo,
                                        psessionEntry, rssi);
                break;
             }
@@ -2463,7 +2466,8 @@ limProcessActionFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,tpPESession ps
                          pVendorSpecific->Oui[0], pVendorSpecific->Oui[1], pVendorSpecific->Oui[2]);)
                  /* Forward to the SME to HDD to wpa_supplicant */
                  // type is ACTION
-                  limSendSmeMgmtFrameInd(pMac, 0, pRxPacketInfo,
+                  limSendSmeMgmtFrameInd(pMac, psessionEntry->smeSessionId,
+                                         pRxPacketInfo,
                                          psessionEntry, 0);
               }
               else
@@ -2491,7 +2495,8 @@ limProcessActionFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,tpPESession ps
               {
                  /* Forward to the SME to HDD to wpa_supplicant */
                  // type is ACTION
-                 limSendSmeMgmtFrameInd(pMac, 0, pRxPacketInfo,
+                 limSendSmeMgmtFrameInd(pMac, psessionEntry->smeSessionId,
+                                        pRxPacketInfo,
                                         psessionEntry, 0);
               }
               else
@@ -2524,7 +2529,8 @@ limProcessActionFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,tpPESession ps
                rssi = WDA_GET_RX_RSSI_DB(pRxPacketInfo);
                VOS_TRACE(VOS_MODULE_ID_PE, VOS_TRACE_LEVEL_INFO, 
                                     ("Public Action TDLS Discovery RSP ..")) ;
-               limSendSmeMgmtFrameInd(pMac, 0, pRxPacketInfo,
+               limSendSmeMgmtFrameInd(pMac, psessionEntry->smeSessionId,
+                                      pRxPacketInfo,
                                       psessionEntry, rssi);
            }
                break;
