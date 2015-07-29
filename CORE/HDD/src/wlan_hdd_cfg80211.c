@@ -4707,7 +4707,12 @@ static int wlan_hdd_cfg80211_exttdls_get_status(struct wiphy *wiphy,
     return ret;
 }
 
-static int wlan_hdd_cfg80211_exttdls_callback(tANI_U8* mac,
+static int wlan_hdd_cfg80211_exttdls_callback(
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
+                                              const tANI_U8* mac,
+#else
+                                              tANI_U8* mac,
+#endif
                                               tANI_S32 state,
                                               tANI_S32 reason,
                                               void *ctx)
@@ -6316,10 +6321,16 @@ int wlan_hdd_cfg80211_alloc_new_beacon(hdd_adapter_t *pAdapter,
 
 }
 
-v_U8_t* wlan_hdd_cfg80211_get_ie_ptr(v_U8_t *pIes, int length, v_U8_t eid)
+v_U8_t* wlan_hdd_cfg80211_get_ie_ptr(
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0))
+                                     const v_U8_t *pIes,
+#else
+                                     v_U8_t *pIes,
+#endif
+                                     int length, v_U8_t eid)
 {
     int left = length;
-    v_U8_t *ptr = pIes;
+    v_U8_t *ptr =  (v_U8_t *)pIes;
     v_U8_t elem_id,elem_len;
 
     while(left >= 2)
@@ -8548,7 +8559,13 @@ int wlan_hdd_cfg80211_change_iface( struct wiphy *wiphy,
 
 #ifdef FEATURE_WLAN_TDLS
 static int wlan_hdd_tdls_add_station(struct wiphy *wiphy,
-          struct net_device *dev, u8 *mac, bool update, tCsrStaParams *StaParams)
+          struct net_device *dev,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
+          const u8 *mac,
+#else
+          u8 *mac,
+#endif
+          bool update, tCsrStaParams *StaParams)
 {
     hdd_context_t *pHddCtx = wiphy_priv(wiphy);
     hddTdlsPeer_t *pTdlsPeer;
@@ -8767,7 +8784,11 @@ error:
 
 static int __wlan_hdd_change_station(struct wiphy *wiphy,
                                          struct net_device *dev,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
+                                         const u8 *mac,
+#else
                                          u8 *mac,
+#endif
                                          struct station_parameters *params)
 {
     VOS_STATUS status = VOS_STATUS_SUCCESS;
@@ -8940,10 +8961,17 @@ static int __wlan_hdd_change_station(struct wiphy *wiphy,
     return status;
 }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,16,0))
+static int wlan_hdd_change_station(struct wiphy *wiphy,
+                                         struct net_device *dev,
+                                         const u8 *mac,
+                                         struct station_parameters *params)
+#else
 static int wlan_hdd_change_station(struct wiphy *wiphy,
                                          struct net_device *dev,
                                          u8 *mac,
                                          struct station_parameters *params)
+#endif
 {
     int ret;
 
@@ -11602,12 +11630,20 @@ static int wlan_hdd_cfg80211_set_cipher( hdd_adapter_t *pAdapter,
  * This function is used to parse WPA/RSN IE's.
  */
 int wlan_hdd_cfg80211_set_ie( hdd_adapter_t *pAdapter,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
+                              const u8 *ie,
+#else
                               u8 *ie,
+#endif
                               size_t ie_len
                               )
 {
     hdd_wext_state_t *pWextState = WLAN_HDD_GET_WEXT_STATE_PTR(pAdapter);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
+    const u8 *genie = ie;
+#else
     u8 *genie = ie;
+#endif
     v_U16_t remLen = ie_len;
 #ifdef FEATURE_WLAN_WAPI
     v_U32_t akmsuite[MAX_NUM_AKM_SUITES];
@@ -11768,7 +11804,7 @@ int wlan_hdd_cfg80211_set_ie( hdd_adapter_t *pAdapter,
 
                    /* populating as ADDIE in beacon frames */
                    if (ccmCfgSetStr(WLAN_HDD_GET_HAL_CTX(pAdapter),
-                       WNI_CFG_PROBE_RSP_BCN_ADDNIE_DATA, genie - 2, eLen + 2,
+                       WNI_CFG_PROBE_RSP_BCN_ADDNIE_DATA, (u8 *)genie - 2, eLen + 2,
                        NULL, eANI_BOOLEAN_FALSE)== eHAL_STATUS_SUCCESS)
                    {
                        if (ccmCfgSetInt(WLAN_HDD_GET_HAL_CTX(pAdapter),
@@ -11975,7 +12011,13 @@ int wlan_hdd_cfg80211_set_ie( hdd_adapter_t *pAdapter,
  * Parse the received IE to find the WPA IE
  *
  */
-static bool hdd_isWPAIEPresent(u8 *ie, u8 ie_len)
+static bool hdd_isWPAIEPresent(
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0))
+                               const u8 *ie,
+#else
+                               u8 *ie,
+#endif
+                               u8 ie_len)
 {
     v_U8_t eLen = 0;
     v_U16_t remLen = ie_len;
@@ -12011,9 +12053,9 @@ static bool hdd_isWPAIEPresent(u8 *ie, u8 ie_len)
  * This function is used to initialize the security
  * parameters during connect operation.
  */
-int wlan_hdd_cfg80211_set_privacy( hdd_adapter_t *pAdapter,
+int wlan_hdd_cfg80211_set_privacy(hdd_adapter_t *pAdapter,
                                    struct cfg80211_connect_params *req
-                                   )
+                                  )
 {
     int status = 0;
     hdd_wext_state_t *pWextState = WLAN_HDD_GET_WEXT_STATE_PTR(pAdapter);
@@ -12675,9 +12717,9 @@ static int __wlan_hdd_cfg80211_join_ibss( struct wiphy *wiphy,
     hdd_wext_state_t *pWextState = WLAN_HDD_GET_WEXT_STATE_PTR(pAdapter);
     tCsrRoamProfile          *pRoamProfile;
     int status;
-    bool alloc_bssid = VOS_FALSE;
     hdd_station_ctx_t *pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+    tSirMacAddr bssid;
 
     ENTER();
 
@@ -12733,6 +12775,7 @@ static int __wlan_hdd_cfg80211_join_ibss( struct wiphy *wiphy,
                   "%s:ccmCfgStInt faild for WNI_CFG_IBSS_AUTO_BSSID", __func__);
            return -EIO;
        }
+       vos_mem_copy((v_U8_t *)bssid, (v_U8_t *)params->bssid, sizeof(bssid));
     }
     else if(pHddCtx->cfg_ini->isCoalesingInIBSSAllowed == 0)
     {
@@ -12743,17 +12786,10 @@ static int __wlan_hdd_cfg80211_join_ibss( struct wiphy *wiphy,
                     "%s:ccmCfgStInt faild for WNI_CFG_IBSS_AUTO_BSSID", __func__);
             return -EIO;
         }
-        params->bssid = vos_mem_malloc(VOS_MAC_ADDR_SIZE);
-        if (!params->bssid)
-        {
-            hddLog (VOS_TRACE_LEVEL_ERROR,
-                    "%s:Failed memory allocation", __func__);
-            return -EIO;
-        }
-        vos_mem_copy((v_U8_t *)params->bssid,
+
+        vos_mem_copy((v_U8_t *)bssid,
                      (v_U8_t *)&pHddCtx->cfg_ini->IbssBssid.bytes[0],
-                     VOS_MAC_ADDR_SIZE);
-        alloc_bssid = VOS_TRUE;
+                      sizeof(bssid));
     }
 
     /* Set Channel */
@@ -12824,19 +12860,10 @@ static int __wlan_hdd_cfg80211_join_ibss( struct wiphy *wiphy,
             pHddStaCtx->conn_info.operationChannel);
 
     if (0 > status)
-    {
         hddLog(VOS_TRACE_LEVEL_ERROR, "%s: connect failed", __func__);
-        return status;
-    }
 
-    if (NULL != params->bssid &&
-        pHddCtx->cfg_ini->isCoalesingInIBSSAllowed == 0 &&
-        alloc_bssid == VOS_TRUE)
-    {
-        vos_mem_free(params->bssid);
-    }
     EXIT();
-    return 0;
+    return status;
 }
 
 static int wlan_hdd_cfg80211_join_ibss( struct wiphy *wiphy,
@@ -13224,9 +13251,13 @@ static int wlan_hdd_cfg80211_get_txpower(struct wiphy *wiphy,
     return ret;
 }
 
-
 static int __wlan_hdd_cfg80211_get_station(struct wiphy *wiphy, struct net_device *dev,
-                                   u8* mac, struct station_info *sinfo)
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
+                                          const u8* mac,
+#else
+                                          u8* mac,
+#endif
+                                          struct station_info *sinfo)
 {
     hdd_adapter_t *pAdapter = WLAN_HDD_GET_PRIV_PTR( dev );
     hdd_station_ctx_t *pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
@@ -13677,9 +13708,13 @@ static int __wlan_hdd_cfg80211_get_station(struct wiphy *wiphy, struct net_devic
        EXIT();
        return 0;
 }
-
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,16,0))
+static int wlan_hdd_cfg80211_get_station(struct wiphy *wiphy, struct net_device *dev,
+                                   const u8* mac, struct station_info *sinfo)
+#else
 static int wlan_hdd_cfg80211_get_station(struct wiphy *wiphy, struct net_device *dev,
                                    u8* mac, struct station_info *sinfo)
+#endif
 {
     int ret;
 
@@ -13946,8 +13981,13 @@ static int wlan_hdd_cfg80211_del_station(struct wiphy *wiphy,
                                          struct net_device *dev,
                                          struct station_del_parameters *param)
 #else
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,16,0))
+static int wlan_hdd_cfg80211_del_station(struct wiphy *wiphy,
+                                         struct net_device *dev, const u8 *mac)
+#else
 static int wlan_hdd_cfg80211_del_station(struct wiphy *wiphy,
                                          struct net_device *dev, u8 *mac)
+#endif
 #endif
 {
     int ret;
@@ -13977,7 +14017,13 @@ static int wlan_hdd_cfg80211_del_station(struct wiphy *wiphy,
 }
 
 static int __wlan_hdd_cfg80211_add_station(struct wiphy *wiphy,
-          struct net_device *dev, u8 *mac, struct station_parameters *params)
+                                           struct net_device *dev,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
+                                           const u8 *mac,
+#else
+                                           u8 *mac,
+#endif
+                                           struct station_parameters *params)
 {
     hdd_adapter_t *pAdapter;
     hdd_context_t *pHddCtx;
@@ -14022,8 +14068,14 @@ static int __wlan_hdd_cfg80211_add_station(struct wiphy *wiphy,
     return status;
 }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,16,0))
+static int wlan_hdd_cfg80211_add_station(struct wiphy *wiphy,
+          struct net_device *dev, const u8 *mac,
+          struct station_parameters *params)
+#else
 static int wlan_hdd_cfg80211_add_station(struct wiphy *wiphy,
           struct net_device *dev, u8 *mac, struct station_parameters *params)
+#endif
 {
     int ret;
 

@@ -56,7 +56,13 @@ int wpa_tdls_is_allowed_force_peer(tdlsCtx_t *pHddTdlsCtx, u8 *mac);
 static void wlan_hdd_tdls_implicit_send_discovery_request(tdlsCtx_t *pHddTdlsCtx);
 #endif
 
-static u8 wlan_hdd_tdls_hash_key (u8 *mac)
+static u8 wlan_hdd_tdls_hash_key (
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
+                                  const u8 *mac
+#else
+                                  u8 *mac
+#endif
+                                 )
 {
     int i;
     u8 key = 0;
@@ -1172,7 +1178,13 @@ static void wlan_hdd_tdls_timers_destroy(tdlsCtx_t *pHddTdlsCtx)
    if mac address doesn't exist, create a list and add, return pointer
    return NULL if fails to get new mac address
 */
-hddTdlsPeer_t *wlan_hdd_tdls_get_peer(hdd_adapter_t *pAdapter, u8 *mac)
+hddTdlsPeer_t *wlan_hdd_tdls_get_peer(hdd_adapter_t *pAdapter,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
+                                      const u8 *mac
+#else
+                                      u8 *mac
+#endif
+          )
 {
     struct list_head *head;
     hddTdlsPeer_t *peer;
@@ -1303,7 +1315,11 @@ void wlan_hdd_tdls_set_peer_link_status(hddTdlsPeer_t *curr_peer,
 }
 
 void wlan_hdd_tdls_set_link_status(hdd_adapter_t *pAdapter,
-                                   u8* mac,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
+                                   const u8 *mac,
+#else
+                                   u8 *mac,
+#endif
                                    tTDLSLinkStatus linkStatus,
                                    tTDLSLinkReason reason)
 {
@@ -1438,7 +1454,11 @@ int wlan_hdd_tdls_recv_discovery_resp(hdd_adapter_t *pAdapter, u8 *mac)
 }
 
 int wlan_hdd_tdls_set_peer_caps(hdd_adapter_t *pAdapter,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
+                                const u8 *mac,
+#else
                                 u8 *mac,
+#endif
                                 tCsrStaParams *StaParams,
                                 tANI_BOOLEAN isBufSta,
                                 tANI_BOOLEAN isOffChannelSupported)
@@ -1821,7 +1841,12 @@ error:
 /* if peerMac is found, then it returns pointer to hddTdlsPeer_t
    otherwise, it returns NULL
 */
-hddTdlsPeer_t *wlan_hdd_tdls_find_peer(hdd_adapter_t *pAdapter, u8 *mac,
+hddTdlsPeer_t *wlan_hdd_tdls_find_peer(hdd_adapter_t *pAdapter,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
+                                       const u8 *mac,
+#else
+                                       u8 *mac,
+#endif
                                        tANI_BOOLEAN mutexLock)
 {
     u8 key;
@@ -2343,7 +2368,13 @@ u8 wlan_hdd_tdls_is_peer_progress(hdd_adapter_t *pAdapter, u8 *mac)
  * skip_self - if TRUE, skip this mac. otherwise, check all the peer list. if
    mac is NULL, this argument is ignored, and check for all the peer list.
  */
-static hddTdlsPeer_t *wlan_hdd_tdls_find_progress_peer(hdd_adapter_t *pAdapter, u8 *mac, u8 skip_self)
+static hddTdlsPeer_t *wlan_hdd_tdls_find_progress_peer(hdd_adapter_t *pAdapter,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
+                                                       const u8 *mac,
+#else
+                                                       u8 *mac,
+#endif
+                                                       u8 skip_self)
 {
     int i;
     struct list_head *head;
@@ -2380,7 +2411,12 @@ static hddTdlsPeer_t *wlan_hdd_tdls_find_progress_peer(hdd_adapter_t *pAdapter, 
     return NULL;
 }
 
-hddTdlsPeer_t *wlan_hdd_tdls_is_progress(hdd_context_t *pHddCtx, u8 *mac,
+hddTdlsPeer_t *wlan_hdd_tdls_is_progress(hdd_context_t *pHddCtx,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
+                                         const u8 *mac,
+#else
+                                         u8 *mac,
+#endif
                                          u8 skip_self, tANI_BOOLEAN mutexLock)
 {
     hdd_adapter_list_node_t *pAdapterNode = NULL, *pNext = NULL;
