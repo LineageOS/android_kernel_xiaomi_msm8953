@@ -2161,11 +2161,6 @@ WLANTL_STAPktPending
 
       vos_atomic_set_U8( &pClientSTA->ucPktPending, 1);
 
-      MTRACE(vos_trace(VOS_MODULE_ID_TL, TRACE_CODE_TL_STA_PKT_PENDING, ucSTAId,
-                       (pTLCb->ucTxSuspended << 31) |
-                       ((pTLCb->uResCount >=  WDA_TLI_MIN_RES_DATA) << 30) |
-                       pClientSTA->tlState));
-
       /*------------------------------------------------------------------------
         Check if there are enough resources for transmission and tx is not
         suspended.

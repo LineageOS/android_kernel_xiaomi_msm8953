@@ -643,7 +643,6 @@ static void __schBeaconProcessForSession( tpAniSirGlobal      pMac,
     /* Obtain the Max Tx power for the current regulatory  */
     regMax = cfgGetRegulatoryMaxTransmitPower( pMac, psessionEntry->currentOperChannel );
 #endif
-    MTRACE(macTrace(pMac, TRACE_CODE_RX_MGMT_PROCESS, 0, 2 );)
 #if defined WLAN_FEATURE_VOWIFI
     {
         tPowerdBm  localRRMConstraint = 0;
@@ -748,7 +747,6 @@ void schBeaconProcess(tpAniSirGlobal pMac, tANI_U8* pRxPacketInfo, tpPESession p
 
         return;
     }
-    MTRACE(macTrace(pMac, TRACE_CODE_RX_MGMT_PROCESS, 0, 1 );)
     if (beaconStruct.ssidPresent)
     {
         beaconStruct.ssId.ssId[beaconStruct.ssId.length] = 0;
