@@ -2352,7 +2352,7 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_ENABLE_FW_LOGGING                            "gEnableFWLogging"
 #define CFG_ENABLE_FW_LOGGING_MIN                        (0)
 #define CFG_ENABLE_FW_LOGGING_MAX                        (1)
-#define CFG_ENABLE_FW_LOGGING_DEFAULT                    (0)
+#define CFG_ENABLE_FW_LOGGING_DEFAULT                    (1)
 
 // firmware will wakeup the host to send logs always
 #define CFG_ENABLE_FW_CONTINIOUS_LOGGING                 "gEnableContFWLogging"
