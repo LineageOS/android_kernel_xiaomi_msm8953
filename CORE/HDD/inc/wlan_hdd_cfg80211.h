@@ -163,7 +163,8 @@ enum qca_nl80211_vendor_subcmds {
     /* Set nodfs_flag */
     QCA_NL80211_VENDOR_SUBCMD_NO_DFS_FLAG = 40,
     /* Get Concurrency Matrix */
-    QCA_NL80211_VENDOR_SUBCMD_GET_CONCURRENCY_MATRIX = 42
+    QCA_NL80211_VENDOR_SUBCMD_GET_CONCURRENCY_MATRIX = 42,
+    QCA_NL80211_VENDOR_SUBCMD_SETBAND = 105,
 };
 
 enum qca_nl80211_vendor_subcmds_index {
@@ -210,6 +211,8 @@ enum qca_wlan_vendor_attr
      * by enum qca_roaming_policy. */
     QCA_WLAN_VENDOR_ATTR_ROAMING_POLICY = 5,
     QCA_WLAN_VENDOR_ATTR_MAC_ADDR = 6,
+    /* Unsigned 32-bit value from enum qca_set_band. */
+    QCA_WLAN_VENDOR_ATTR_SETBAND_VALUE = 12,
     /* keep last */
     QCA_WLAN_VENDOR_ATTR_AFTER_LAST,
     QCA_WLAN_VENDOR_ATTR_MAX = QCA_WLAN_VENDOR_ATTR_AFTER_LAST - 1,
