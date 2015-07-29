@@ -2427,6 +2427,7 @@ static eHalStatus hdd_RoamSetKeyCompleteHandler( hdd_adapter_t *pAdapter, tCsrRo
    v_BOOL_t fConnected   = FALSE;
    VOS_STATUS vosStatus    = VOS_STATUS_E_FAILURE;
    hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+   hdd_wext_state_t *pWextState = WLAN_HDD_GET_WEXT_STATE_PTR(pAdapter);
    hdd_station_ctx_t *pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
    WLANTL_STAStateType prevTLState = WLANTL_STA_INIT;
    ENTER();
@@ -2479,6 +2480,9 @@ static eHalStatus hdd_RoamSetKeyCompleteHandler( hdd_adapter_t *pAdapter, tCsrRo
       }
       else
       {
+            WLANTL_GetSTAState(pHddCtx->pvosContext,
+                               pHddStaCtx->conn_info.staId[0],
+                               &prevTLState);
          // TODO: Considering getting a state machine in HDD later.
          // This routine is invoked twice. 1)set PTK 2)set GTK.
          // The folloing if statement will be TRUE when setting GTK.
@@ -2487,9 +2491,6 @@ static eHalStatus hdd_RoamSetKeyCompleteHandler( hdd_adapter_t *pAdapter, tCsrRo
          if ( ( eCSR_ROAM_RESULT_AUTHENTICATED == roamResult ) &&
              (pRoamInfo != NULL) && !pRoamInfo->fAuthRequired )
          {
-            WLANTL_GetSTAState(pHddCtx->pvosContext,
-                               pHddStaCtx->conn_info.staId[0],
-                               &prevTLState);
 
             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_MED, "Key set "
                       "for StaId=%d. Changing TL state to AUTHENTICATED from"
@@ -2528,6 +2529,28 @@ static eHalStatus hdd_RoamSetKeyCompleteHandler( hdd_adapter_t *pAdapter, tCsrRo
          {
             vosStatus = WLANTL_STAPtkInstalled( pHddCtx->pvosContext,
                                                 pHddStaCtx->conn_info.staId[ 0 ]);
+
+            /* In case of  OSEN move TL to 'Authenticated' after PTK is set */
+            if (pWextState->roamProfile.bOSENAssociation == VOS_TRUE)
+            {
+                VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_MED, "PTK set"
+                      " for StaId=%d. Due to OSEN, Changing TL state to"
+                      "AUTHENTICATED from state:%d",
+                      pHddStaCtx->conn_info.staId[0], prevTLState);
+
+                vosStatus = WLANTL_ChangeSTAState( pHddCtx->pvosContext,
+                                               pHddStaCtx->conn_info.staId[ 0 ],
+                                               WLANTL_STA_AUTHENTICATED );
+
+                pHddStaCtx->conn_info.uIsAuthenticated = VOS_TRUE;
+
+                if (WLANTL_STA_AUTHENTICATED != prevTLState)
+                    hdd_postTLPacketPendingInd(pAdapter,
+                                               pHddStaCtx->conn_info.staId[0]);
+            }
+
+
+
             if (pHddCtx->cfg_ini->gEnableRoamDelayStats)
             {
                 vos_record_roam_event(e_HDD_SET_PTK_RSP, (void *)pRoamInfo->peerMac, 6);
