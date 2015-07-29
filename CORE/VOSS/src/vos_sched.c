@@ -1891,8 +1891,6 @@ VOS_STATUS vos_watchdog_wlan_shutdown(void)
          * So disable SSR from WLAN driver */
         hdd_set_ssr_required( HDD_SSR_DISABLED );
 
-        hdd_set_pre_close(pHddCtx);
-
         /* Release the lock here before returning */
         spin_unlock(&gpVosWatchdogContext->wdLock);
         return VOS_STATUS_E_FAILURE;
