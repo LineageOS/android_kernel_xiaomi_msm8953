@@ -5829,8 +5829,11 @@ int wlan_hdd_cfg80211_init(struct device *dev,
 
     /* This will disable updating of NL channels from passive to
      * active if a beacon is received on passive channel. */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
+    wiphy->regulatory_flags |= REGULATORY_DISABLE_BEACON_HINTS;
+#else
     wiphy->flags |=   WIPHY_FLAG_DISABLE_BEACON_HINTS;
-
+#endif
 
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0))
@@ -5838,7 +5841,11 @@ int wlan_hdd_cfg80211_init(struct device *dev,
                  |  WIPHY_FLAG_AP_PROBE_RESP_OFFLOAD
                  |  WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL
                     | WIPHY_FLAG_OFFCHAN_TX;
-    wiphy->country_ie_pref = NL80211_COUNTRY_IE_IGNORE_CORE;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
+    wiphy->regulatory_flags = REGULATORY_COUNTRY_IE_IGNORE;
+#else
+     wiphy->country_ie_pref = NL80211_COUNTRY_IE_IGNORE_CORE;
+#endif
 #endif
 
 #if  defined (WLAN_FEATURE_VOWIFI_11R) || defined (FEATURE_WLAN_ESE) || defined(FEATURE_WLAN_LFR)
@@ -16292,7 +16299,11 @@ static int __wlan_hdd_cfg80211_testmode(struct wiphy *wiphy, void *data, int len
     return err;
 }
 
-static int wlan_hdd_cfg80211_testmode(struct wiphy *wiphy, void *data, int len)
+static int wlan_hdd_cfg80211_testmode(struct wiphy *wiphy,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,12,0))
+                                      struct wireless_dev *wdev,
+#endif
+                                      void *data, int len)
 {
    int ret;
 

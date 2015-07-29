@@ -3592,7 +3592,11 @@ int vos_update_nv_table_from_wiphy_band(void *hdd_ctx,
                  * will not change channel to active.
                  */
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
+                if  (!(wiphy->regulatory_flags & REGULATORY_STRICT_REG))
+#else
                 if  (!(wiphy->flags & WIPHY_FLAG_STRICT_REGULATORY ))
+#endif
                 {
                     if (!(reg_rule->flags & NL80211_RRF_PASSIVE_SCAN))
                     {
@@ -4144,7 +4148,11 @@ VOS_STATUS vos_init_wiphy_from_nv_bin(void)
         /* default country is world roaming */
 
         reg_domain = REGDOMAIN_WORLD;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
+        wiphy->regulatory_flags |= REGULATORY_CUSTOM_REG;
+#else
         wiphy->flags |= WIPHY_FLAG_CUSTOM_REGULATORY;
+#endif
     }
     else if (REGDOMAIN_WORLD ==
 	     pnvEFSTable->halnv.tables.defaultCountryTable.regDomain) {
@@ -4154,7 +4162,11 @@ VOS_STATUS vos_init_wiphy_from_nv_bin(void)
     else {
 
         reg_domain = pnvEFSTable->halnv.tables.defaultCountryTable.regDomain;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
+        wiphy->regulatory_flags |= REGULATORY_STRICT_REG;
+#else
         wiphy->flags |= WIPHY_FLAG_STRICT_REGULATORY;
+#endif
     }
 
     temp_reg_domain = cur_reg_domain = reg_domain;

@@ -207,7 +207,14 @@ void wlan_hdd_restart_timer_cb(v_PVOID_t usrDataForCallback);
 void hdd_set_wlan_suspend_mode(bool suspend);
 
 v_U16_t hdd_select_queue(struct net_device *dev,
-    struct sk_buff *skb);
+    struct sk_buff *skb
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,13,0))
+    , void *accel_priv
+#endif
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
+    , select_queue_fallback_t fallback
+#endif
+);
 
 #ifdef WLAN_FEATURE_PACKET_FILTERING
 static void hdd_set_multicast_list(struct net_device *dev);
@@ -2231,6 +2238,9 @@ static int hdd_driver_command(hdd_adapter_t *pAdapter,
    hdd_scaninfo_t *pScanInfo = NULL;
    int ret = 0;
    int status;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
+   struct cfg80211_mgmt_tx_params params;
+#endif
 
    ENTER();
    /*
@@ -3063,6 +3073,16 @@ static int hdd_driver_command(hdd_adapter_t *pAdapter,
            vos_mem_free(buf);
            buf = NULL;
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
+           params.chan = &chan;
+           params.offchan = 0;
+           params.wait = dwellTime;
+           params.buf = finalBuf;
+           params.len = finalLen;
+           params.no_cck = 1;
+           params.dont_wait_for_ack = 1;
+           ret = wlan_hdd_mgmt_tx(NULL, &pAdapter->wdev, &params, &cookie);
+#else
            wlan_hdd_mgmt_tx( NULL,
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0))
                        &(pAdapter->wdev),
@@ -3075,6 +3095,7 @@ static int hdd_driver_command(hdd_adapter_t *pAdapter,
 #endif
                        dwellTime, finalBuf, finalLen,  1,
                        1, &cookie );
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0)*/
            vos_mem_free(finalBuf);
        }
        else if (strncmp(command, "GETROAMSCANCHANNELMINTIME", 25) == 0)
@@ -8151,7 +8172,14 @@ static void hdd_set_multicast_list(struct net_device *dev)
   
   --------------------------------------------------------------------------*/
 v_U16_t hdd_select_queue(struct net_device *dev,
-    struct sk_buff *skb)
+    struct sk_buff *skb
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,13,0))
+    , void *accel_priv
+#endif
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
+    , select_queue_fallback_t fallback
+#endif
+)
 {
    return hdd_wmm_select_queue(dev, skb);
 }
@@ -11218,8 +11246,11 @@ static VOS_STATUS wlan_hdd_framework_restart(hdd_context_t *pHddCtx)
           * the driver.
           *
           */
-         
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0))
+         cfg80211_rx_unprot_mlme_mgmt(pAdapterNode->pAdapter->dev, (u_int8_t*)mgmt, len);
+#else
          cfg80211_send_unprot_deauth(pAdapterNode->pAdapter->dev, (u_int8_t*)mgmt, len );  
+#endif
       }
       status = hdd_get_next_adapter ( pHddCtx, pAdapterNode, &pNext );
       pAdapterNode = pNext;
