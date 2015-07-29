@@ -41,9 +41,16 @@
 #include "macTrace.h"
 
 #define NO_SESSION 0xFF
-#define TRACE_CODE_SME_COMMAND 0xFF
 enum {
-    TRACE_CODE_SME_RX_HDD_MSG_SCAN_REQ,
+     TRACE_CODE_SME_COMMAND,
+     TRACE_CODE_SME_TX_WDA_MSG,
+     TRACE_CODE_SME_RX_WDA_MSG,
+};
+enum {
+    /* Starts enums from 3 onwards, because unknown code captures for first
+     * three enums in smeTraceDump()
+     */
+    TRACE_CODE_SME_RX_HDD_MSG_SCAN_REQ = 3,
     TRACE_CODE_SME_RX_HDD_MSG_SCAN_GET_RESULTS,
     TRACE_CODE_SME_RX_HDD_MSG_CONNECT,
     TRACE_CODE_SME_RX_HDD_MSG_SET_11DINFO,

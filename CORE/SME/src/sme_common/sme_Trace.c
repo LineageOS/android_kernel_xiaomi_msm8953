@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -193,17 +193,29 @@ static tANI_U8* smeTraceGetCommandString( tANI_U32 command )
 static void smeTraceDump(tpAniSirGlobal pMac, tpvosTraceRecord pRecord,
                                                             tANI_U16 recIndex)
 {
-    if (TRACE_CODE_SME_COMMAND == pRecord->code)
-    {
-        smsLog(pMac, LOGE, "%04d %012u S%d %-14s %-30s(0x%x)", recIndex,
-                   pRecord->time, pRecord->session, "SME COMMAND:",
-                   smeTraceGetCommandString(pRecord->data), pRecord->data );
-    }
-    else
-    {
-        smsLog(pMac, LOGE, "%04d %012u S%d %-14s %-30s(0x%x)", recIndex,
-                   pRecord->time, pRecord->session, "RX HDD MSG:",
-                   smeTraceGetRxMsgString(pRecord->code), pRecord->data );
+    switch (pRecord->code) {
+        case TRACE_CODE_SME_COMMAND:
+            smsLog(pMac, LOGE, "%04d %012u S%d %-14s %-30s(0x%x)",
+                recIndex, pRecord->time, pRecord->session, "SME COMMAND:",
+                 smeTraceGetCommandString(pRecord->data), pRecord->data);
+            break;
+        case TRACE_CODE_SME_TX_WDA_MSG:
+           smsLog(pMac, LOGE, "%04d %012u S%d %-14s %-30s(0x%x)",
+                recIndex, pRecord->time, pRecord->session, "TX WDA Msg:",
+                macTraceGetWdaMsgString((tANI_U16)pRecord->data),
+                                              pRecord->data);
+            break;
+        case TRACE_CODE_SME_RX_WDA_MSG:
+            smsLog(pMac, LOGE, "%04d %012u S%d %-14s %-30s(0x%x)",
+                recIndex, pRecord->time, pRecord->session, "RX WDA Msg:",
+                macTraceGetSmeMsgString((tANI_U16)pRecord->data),
+                                              pRecord->data);
+            break;
+        default:
+            smsLog(pMac, LOGE, "%04d %012u S%d %-14s %-30s(0x%x)",
+                recIndex, pRecord->time, pRecord->session, "RX HDD MSG:",
+                smeTraceGetRxMsgString(pRecord->code), pRecord->data);
+        break;
     }
 }
 
