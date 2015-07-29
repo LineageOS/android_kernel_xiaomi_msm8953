@@ -1984,6 +1984,7 @@ static int __wlan_hdd_cfg80211_ll_stats_get(struct wiphy *wiphy,
     tSirLLStatsGetReq linkLayerStatsGetReq;
     struct net_device *dev = wdev->netdev;
     hdd_adapter_t *pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
+    hdd_station_ctx_t *pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
     int status;
 
     ENTER();
@@ -2000,6 +2001,14 @@ static int __wlan_hdd_cfg80211_ll_stats_get(struct wiphy *wiphy,
                "%s: HDD adapter is Null", __func__);
         return -ENODEV;
     }
+
+    if (pHddStaCtx == NULL)
+    {
+        hddLog(VOS_TRACE_LEVEL_FATAL,
+               "%s: HddStaCtx is Null", __func__);
+        return -ENODEV;
+    }
+
     /* check the LLStats Capability */
     if ( (TRUE != pHddCtx->cfg_ini->fEnableLLStats) ||
          (TRUE != sme_IsFeatureSupportedByFW(LINK_LAYER_STATS_MEAS)))
@@ -2016,6 +2025,13 @@ static int __wlan_hdd_cfg80211_ll_stats_get(struct wiphy *wiphy,
                "%s: isLinkLayerStatsSet : %d",
                __func__, pAdapter->isLinkLayerStatsSet);
         return -EINVAL;
+    }
+
+    if (VOS_TRUE == pHddStaCtx->hdd_ReassocScenario)
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                  "%s: Roaming in progress, so unable to proceed this request", __func__);
+        return -EBUSY;
     }
 
     if (nla_parse(tb_vendor, QCA_WLAN_VENDOR_ATTR_LL_STATS_GET_MAX,
