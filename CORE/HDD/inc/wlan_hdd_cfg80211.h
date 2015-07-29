@@ -982,4 +982,18 @@ void wlan_hdd_cfg80211_extscan_callback(void *ctx, const tANI_U16 evType,
 
 void wlan_hdd_cfg80211_nan_init(hdd_context_t *pHddCtx);
 
+#if !(defined (SUPPORT_WDEV_CFG80211_VENDOR_EVENT_ALLOC))
+static inline struct sk_buff *
+backported_cfg80211_vendor_event_alloc(struct wiphy *wiphy,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
+    struct wireless_dev *wdev,
+#endif
+    int approxlen,
+    int event_idx, gfp_t gfp)
+{
+    return cfg80211_vendor_event_alloc(wiphy, approxlen, event_idx, gfp);
+}
+#define cfg80211_vendor_event_alloc backported_cfg80211_vendor_event_alloc
+#endif
+
 #endif
