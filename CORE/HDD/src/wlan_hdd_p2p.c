@@ -402,12 +402,14 @@ void wlan_hdd_remain_on_chan_timeout(void *data)
     hdd_adapter_t *pAdapter = (hdd_adapter_t *)data;
     hdd_remain_on_chan_ctx_t *pRemainChanCtx;
     hdd_cfg80211_state_t *cfgState;
+    hdd_context_t *pHddCtx;
 
     if ((NULL == pAdapter) || (WLAN_HDD_ADAPTER_MAGIC != pAdapter->magic))
     {
         hddLog( LOGE, FL("pAdapter is invalid %p !!!"), pAdapter);
         return;
     }
+    pHddCtx = WLAN_HDD_GET_CTX( pAdapter );
     cfgState = WLAN_HDD_GET_CFG_STATE_PTR( pAdapter );
     pRemainChanCtx = cfgState->remain_on_chan_ctx;
     if (NULL == pRemainChanCtx)
@@ -415,13 +417,16 @@ void wlan_hdd_remain_on_chan_timeout(void *data)
         hddLog( LOGE, FL("No Remain on channel is pending"));
         return;
     }
+    mutex_lock(&pHddCtx->roc_lock);
     if ( TRUE == pRemainChanCtx->hdd_remain_on_chan_cancel_in_progress )
     {
+        mutex_unlock(&pHddCtx->roc_lock);
         hddLog( LOGE, FL("Cancellation already in progress"));
         return;
     }
 
     pRemainChanCtx->hdd_remain_on_chan_cancel_in_progress = TRUE;
+    mutex_unlock(&pHddCtx->roc_lock);
     INIT_COMPLETION(pAdapter->cancel_rem_on_chan_var);
     hddLog( LOG1,"%s: Cancel Remain on Channel on timeout", __func__);
     if ( ( WLAN_HDD_INFRA_STATION == pAdapter->device_mode ) ||
