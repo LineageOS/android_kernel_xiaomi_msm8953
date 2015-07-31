@@ -94,8 +94,7 @@
 #define AGN1223AR_02      8
 #define AGN_EEP_PRODUCT_ID_MAX   8
 
-
-
+#define SIR_SME_MODULE_ID 0x16
 
 /// Start of Sirius/Host message types
 #define WNI_HOST_MSG_START             0x1500

@@ -147,7 +147,14 @@ static tANI_U8* smeTraceGetRxMsgString( tANI_U32 code )
 #ifdef FEATURE_WLAN_LPHB
         CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_LPHB_CONFIG_REQ);
 #endif /* FEATURE_WLAN_LPHB */
-
+        CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_EXTSCAN_GET_CAPABILITIES);
+        CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_EXTSCAN_START);
+        CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_EXTSCAN_STOP);
+        CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_EXTSCAN_SET_BSS_HOTLIST);
+        CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_EXTSCAN_RESET_BSS_HOTLIST);
+        CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_EXTSCAN_SET_SIGNF_CHANGE);
+        CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_EXTSCAN_RESET_SIGNF_CHANGE);
+        CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_EXTSCAN_GET_CACHED_RESULTS);
         default:
             return( "UNKNOWN" );
             break;
@@ -167,6 +174,17 @@ static tANI_U8* smeTraceGetCommandString( tANI_U32 command )
         CASE_RETURN_STRING(eSmeCommandRemoveKey);
         CASE_RETURN_STRING(eSmeCommandAddStaSession);
         CASE_RETURN_STRING(eSmeCommandDelStaSession);
+        CASE_RETURN_STRING(eSmeCommandPnoReq);
+        CASE_RETURN_STRING(eSmeCommandMacSpoofRequest);
+        CASE_RETURN_STRING(eSmeCommandGetFrameLogRequest);
+#ifdef FEATURE_WLAN_TDLS
+        CASE_RETURN_STRING(eSmeCommandTdlsSendMgmt);
+        CASE_RETURN_STRING(eSmeCommandTdlsAddPeer);
+        CASE_RETURN_STRING(eSmeCommandTdlsDelPeer);
+        CASE_RETURN_STRING(eSmeCommandTdlsLinkEstablish);
+        CASE_RETURN_STRING(eSmeCommandTdlsChannelSwitch);
+#endif
+        CASE_RETURN_STRING(eSmeCommandNanReq);
         CASE_RETURN_STRING(eSmePmcCommandMask);
         CASE_RETURN_STRING(eSmeCommandEnterImps);
         CASE_RETURN_STRING(eSmeCommandExitImps);
