@@ -366,18 +366,6 @@ static const hdd_freq_chan_map_t freq_chan_map[] = { {2412, 1}, {2417, 2},
 #define WLAN_ADAPTER 0
 #define P2P_ADAPTER  1
 
-/*
- * When supplicant sends SETBAND ioctl it queries for channels from
- * cfg80211 layer by sending itself EVENT_CHANNEL_LIST_CHANGED command.
- * This is not required if the return type from ioctl is
- * DO_NOT_SEND_CHANNEL_CHANGE_EVENT as wiphy will send channel change
- * event as part of regulatory_hint.
- */
-enum {
-    SEND_CHANNEL_CHANGE_EVENT = 0,
-    DO_NOT_SEND_CHANNEL_CHANGE_EVENT,
-};
-
 /*MCC Configuration parameters */
 enum {
     MCC_SCHEDULE_TIME_SLICE_CFG_PARAM = 1,
@@ -9340,7 +9328,6 @@ int hdd_setBand(struct net_device *dev, u8 ui_band)
     int wait_result;
     eCsrBand currBand = eCSR_BAND_MAX;
     eCsrBand connectedBand;
-    v_U8_t ret = SEND_CHANNEL_CHANGE_EVENT;
     tpAniSirGlobal pMac;
     int retval = 0;
 
@@ -9523,7 +9510,6 @@ int hdd_setBand(struct net_device *dev, u8 ui_band)
                            " in kernel db");
              }
 
-             ret = DO_NOT_SEND_CHANNEL_CHANGE_EVENT;
         }
         else
         {
@@ -9584,7 +9570,7 @@ int hdd_setBand(struct net_device *dev, u8 ui_band)
         }
     }
     EXIT();
-    return ret;
+    return 0;
 }
 
 int hdd_setBand_helper(struct net_device *dev, const char *command)
