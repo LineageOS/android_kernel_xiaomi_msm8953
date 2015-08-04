@@ -25392,6 +25392,12 @@ WDI_ExtractRequestCBFromEvent
     *ppfnReqCB   =  ((WDI_DelSTAReqParamsType*)pEvent->pEventData)->wdiReqStatusCB;
     *ppUserData  =  ((WDI_DelSTAReqParamsType*)pEvent->pEventData)->pUserData;
     break;
+
+  case WDI_ADD_STA_SELF_REQ:
+    *ppfnReqCB   =  ((WDI_AddSTASelfReqParamsType*)pEvent->pEventData)->wdiReqStatusCB;
+    *ppUserData  =  ((WDI_AddSTASelfReqParamsType*)pEvent->pEventData)->pUserData;
+    break;
+
   case WDI_DEL_STA_SELF_REQ:
     *ppfnReqCB   =  ((WDI_DelSTASelfReqParamsType*)pEvent->pEventData)->wdiReqStatusCB;
     *ppUserData  =  ((WDI_DelSTASelfReqParamsType*)pEvent->pEventData)->pUserData;
