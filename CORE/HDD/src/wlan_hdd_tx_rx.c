@@ -2647,7 +2647,15 @@ VOS_STATUS hdd_rx_packet_cbk( v_VOID_t *vosContext,
                           HDD_WAKE_LOCK_DURATION,
                           WIFI_POWER_EVENT_WAKELOCK_HOLD_RX);
 #endif
-      rxstat = netif_rx_ni(skb);
+      if (pNextVosPacket)
+      {
+          rxstat = netif_rx(skb);
+      }
+      else
+      {
+          rxstat = netif_rx_ni(skb);
+      }
+
       if (NET_RX_SUCCESS == rxstat)
       {
          ++pAdapter->hdd_stats.hddTxRxStats.rxDelivered;
