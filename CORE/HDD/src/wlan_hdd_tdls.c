@@ -90,13 +90,13 @@ void wlan_hdd_tdls_disable_offchan_and_teardown_links(hdd_context_t *hddctx)
 
     if (adapter == NULL) {
         hddLog(LOGE, FL("Station Adapter Not Found"));
-        return;
+        goto done;
     }
 
     connected_tdls_peers = wlan_hdd_tdlsConnectedPeers(adapter);
     if (!connected_tdls_peers) {
-         hddLog(LOG1, FL("No TDLS connected peers to delete TDLS peers"));
-         return;
+        hddLog(LOG1, FL("No TDLS connected peers to delete TDLS peers"));
+        goto done;
     }
 
     /* TDLS is not supported in case of concurrency
@@ -158,6 +158,7 @@ void wlan_hdd_tdls_disable_offchan_and_teardown_links(hdd_context_t *hddctx)
                 eSIR_MAC_TDLS_TEARDOWN_UNSPEC_REASON);
     }
 
+done:
     wlan_hdd_tdls_set_mode(hddctx, eTDLS_SUPPORT_DISABLED, FALSE);
     hddLog(LOG1, FL("TDLS Support Disabled"));
 }

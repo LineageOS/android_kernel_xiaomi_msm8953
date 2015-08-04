@@ -925,7 +925,10 @@ VOS_STATUS hdd_hostapd_SAPEventCB( tpSap_Event pSapEvent, v_PVOID_t usrDataForCa
             pHddApCtx->operatingChannel = 0; //Invalidate the channel info.
 
             if ((TRUE == pHddCtx->cfg_ini->fEnableTDLSSupport) &&
-                    (TRUE == sme_IsFeatureSupportedByFW(TDLS)))
+                    (TRUE == sme_IsFeatureSupportedByFW(TDLS)) &&
+                    (eTDLS_SUPPORT_ENABLED == pHddCtx->tdls_mode_last ||
+                     eTDLS_SUPPORT_EXPLICIT_TRIGGER_ONLY ==
+                                                pHddCtx->tdls_mode_last))
             {
                 if (pHostapdAdapter->device_mode == WLAN_HDD_P2P_GO)
                 {
@@ -933,7 +936,8 @@ VOS_STATUS hdd_hostapd_SAPEventCB( tpSap_Event pSapEvent, v_PVOID_t usrDataForCa
                      * upond detection of concurrency TDLS would be disabled
                      */
                     hddLog(LOG1, FL("Enable TDLS support"));
-                    wlan_hdd_tdls_set_mode(pHddCtx, eTDLS_SUPPORT_ENABLED, FALSE);
+                    wlan_hdd_tdls_set_mode(pHddCtx, pHddCtx->tdls_mode_last,
+                                           FALSE);
                 }
             }
 

@@ -1088,13 +1088,16 @@ static eHalStatus hdd_DisConnectHandler( hdd_adapter_t *pAdapter, tCsrRoamInfo *
                }
             }
             if ((TRUE == pHddCtx->cfg_ini->fEnableTDLSSupport) &&
-                          (TRUE == sme_IsFeatureSupportedByFW(TDLS))) {
+                          (TRUE == sme_IsFeatureSupportedByFW(TDLS)) &&
+                          (eTDLS_SUPPORT_ENABLED == pHddCtx->tdls_mode_last ||
+                           eTDLS_SUPPORT_EXPLICIT_TRIGGER_ONLY ==
+                                           pHddCtx->tdls_mode_last)) {
                 if (pAdapter->device_mode != WLAN_HDD_INFRA_STATION)
                     /* Enable TDLS support Once P2P session ends since
                      * upond detection of concurrency TDLS would be disabled
                      */
-                    wlan_hdd_tdls_set_mode(pHddCtx, eTDLS_SUPPORT_ENABLED,
-                                                                     FALSE);
+                    wlan_hdd_tdls_set_mode(pHddCtx, pHddCtx->tdls_mode_last,
+                                           FALSE);
             }
             //If the Device Mode is Station
             // and the P2P Client is Connected
