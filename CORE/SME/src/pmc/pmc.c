@@ -2169,10 +2169,10 @@ tANI_BOOLEAN pmcProcessCommand( tpAniSirGlobal pMac, tSmeCmd *pCommand )
             break;
 
         case eSmeCommandExitBmps:
-            if( BMPS == pMac->pmc.pmcState )
+            if ((BMPS == pMac->pmc.pmcState) || (UAPSD == pMac->pmc.pmcState))
             {
+                tPmcState origState = pMac->pmc.pmcState;
                 pMac->pmc.requestFullPowerPending = FALSE;
-
                 /* Change PMC state */
                 pMac->pmc.pmcState = REQUEST_FULL_POWER;
                 status = pmcSendMessage( pMac, eWNI_PMC_EXIT_BMPS_REQ,
@@ -2185,7 +2185,7 @@ tANI_BOOLEAN pmcProcessCommand( tpAniSirGlobal pMac, tSmeCmd *pCommand )
                 }
                 else
                 {
-                    pMac->pmc.pmcState = BMPS;
+                    pMac->pmc.pmcState = origState;
                     pmcLog(pMac, LOGE, FL("eWNI_PMC_EXIT_BMPS_REQ fail to be sent to PE status %d"), status);
                     pmcEnterFullPowerState(pMac);
                 }
