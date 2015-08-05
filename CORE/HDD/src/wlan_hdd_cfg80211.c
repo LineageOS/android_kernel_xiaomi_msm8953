@@ -5334,8 +5334,13 @@ __wlan_hdd_cfg80211_setband(struct wiphy *wiphy,
         return -EINVAL;
     }
 
-    return hdd_setBand(dev,
+    hdd_ctx->isSetBandByNL = TRUE;
+    ret = hdd_setBand(dev,
                        nla_get_u32(tb[QCA_WLAN_VENDOR_ATTR_SETBAND_VALUE]));
+    hdd_ctx->isSetBandByNL = FALSE;
+
+    EXIT();
+    return ret;
 }
 
 /**

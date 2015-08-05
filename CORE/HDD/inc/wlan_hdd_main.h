@@ -1426,6 +1426,7 @@ struct hdd_context_s
     //Lock to avoid race condition during wmm operations
     struct mutex   wmmLock;
     v_BOOL_t mgmt_frame_logging;
+    v_BOOL_t isSetBandByNL;
 };
 
 
