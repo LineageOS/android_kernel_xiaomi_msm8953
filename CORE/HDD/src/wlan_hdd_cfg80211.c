@@ -8572,6 +8572,7 @@ static int wlan_hdd_tdls_add_station(struct wiphy *wiphy,
     long ret;
     tANI_U16 numCurrTdlsPeers;
     hdd_adapter_t *pAdapter;
+    VOS_STATUS status;
 
     ENTER();
 
@@ -8735,10 +8736,23 @@ static int wlan_hdd_tdls_add_station(struct wiphy *wiphy,
 
     if (!update)
     {
+        /*Before adding sta make sure that device exited from BMPS*/
+        if (TRUE == sme_IsPmcBmps(WLAN_HDD_GET_HAL_CTX(pAdapter)))
+        {
+            VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                       "%s: Adding tdls peer sta. Disable BMPS", __func__);
+            status = hdd_disable_bmps_imps(pHddCtx, WLAN_HDD_INFRA_STATION);
+            if (status != VOS_STATUS_SUCCESS) {
+                hddLog(VOS_TRACE_LEVEL_ERROR, FL("Failed to set BMPS/IMPS"));
+            }
+        }
+
         ret = sme_AddTdlsPeerSta(WLAN_HDD_GET_HAL_CTX(pAdapter),
                 pAdapter->sessionId, mac);
         if (ret != eHAL_STATUS_SUCCESS) {
-            hddLog(VOS_TRACE_LEVEL_ERROR, FL("Failed to add TDLS peer STA"));
+            hddLog(VOS_TRACE_LEVEL_ERROR,
+                    FL("Failed to add TDLS peer STA. Enable Bmps"));
+            wlan_hdd_tdls_check_bmps(pAdapter);
             return -EPERM;
         }
     }
