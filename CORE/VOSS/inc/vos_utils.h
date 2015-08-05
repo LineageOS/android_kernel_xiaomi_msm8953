@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -59,6 +59,13 @@
 #define VOS_BAND_5GHZ          2
 
 #define VOS_24_GHZ_CHANNEL_14  14
+
+
+/* Type of packet log events.
+ */
+#define PKTLOG_TYPE_PKT_STAT         9
+
+
 /*-------------------------------------------------------------------------- 
   Type declarations
   ------------------------------------------------------------------------*/
@@ -164,6 +171,25 @@ VOS_STATUS vos_decrypt_AES(v_U32_t cryptHandle, /* Handle */
 v_U8_t vos_chan_to_band(v_U32_t chan);
 void vos_get_wlan_unsafe_channel(v_U16_t *unsafeChannelList,
                     v_U16_t buffer_size, v_U16_t *unsafeChannelCount);
+
+typedef struct {
+    v_BOOL_t  is_rx;
+    v_U8_t  tid;     // transmit or received tid
+    v_U8_t  num_retries;                   // number of attempted retries
+    v_U8_t  rssi;    // TX: RSSI of ACK for that packet
+                    // RX: RSSI of packet
+    v_U32_t rate_idx;           // last transmit rate in .5 mbps
+    v_U16_t seq_num; // receive sequence for that MPDU packet
+    v_U64_t dxe_timestamp;     // DXE timestamp
+    v_U32_t data_len;
+    v_U8_t data[52]; // 802.11 Header for management packets and 802.11 plus IP header for Data packets
+} tPerPacketStats;
+
+typedef struct {
+    v_U32_t lastTxRate;           // 802.11 data rate at which the last data frame is transmitted.
+    v_U8_t  txAvgRetry;           // Average number of retries per 10 packets.
+    v_S7_t  avgRssi;              // Average of the Beacon RSSI.
+} tPerTxPacketFrmFw;
 
 #define ROAM_DELAY_TABLE_SIZE   10
 
@@ -293,4 +319,8 @@ v_BOOL_t vos_roam_delay_stats_deinit(void);
 void    vos_reset_roam_timer_log(void);
 void    vos_dump_roam_time_log_service(void);
 void    vos_record_roam_event(enum e_roaming_event, void *pBuff, v_ULONG_t buff_len);
+v_U32_t vos_copy_80211_header(void *pBuff, v_U8_t *dst, v_U8_t frametype,
+                              v_U8_t Qos);
+extern  v_U8_t vos_get_ring_log_level(v_U32_t ring_id);
+bool vos_isPktStatsEnabled(void);
 #endif // #if !defined __VOSS_UTILS_H

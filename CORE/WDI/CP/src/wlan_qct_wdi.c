@@ -204,7 +204,9 @@ static placeHolderInCapBitmap supportEnabledFeatures[] =
    ,MGMT_FRAME_LOGGING             //53
    ,ENHANCED_TXBD_COMPLETION       //54
    ,LOGGING_ENHANCEMENT            //55
+   ,FEATURE_NOT_SUPPORTED          //56
    ,MEMORY_DUMP_SUPPORTED          //57
+   ,PER_PKT_STATS_SUPPORTED        //58
 };
 
 /*-------------------------------------------------------------------------- 
@@ -1493,6 +1495,11 @@ void WDI_TraceHostFWCapabilities(tANI_U32 *capabilityBitmap)
                      case MEMORY_DUMP_SUPPORTED:snprintf(pCapStr, sizeof("FW_MEM_DUMP_LOGGING"), "%s", "FW_MEM_DUMP_LOGGING");
                           pCapStr += strlen("FW_MEM_DUMP_LOGGING");
                           break;
+                     case PER_PKT_STATS_SUPPORTED: snprintf(pCapStr, sizeof("PER_PKT_STATS_SUPPORTED"), "%s", "PER_PKT_STATS_SUPPORTED");
+                          pCapStr += strlen("PER_PKT_STATS_SUPPORTED");
+                          break;
+
+
                  }
                  *pCapStr++ = ',';
                  *pCapStr++ = ' ';

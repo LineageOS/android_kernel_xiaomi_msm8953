@@ -5822,13 +5822,15 @@ static int __wlan_hdd_cfg80211_wifi_logger_start(struct wiphy *wiphy,
     hddLog(LOG1, FL("flag=%d"), start_log.flag);
 
     if ((RING_ID_PER_PACKET_STATS == start_log.ringId) &&
-                 !hdd_ctx->cfg_ini->wlanPerPktStatsLogEnable)
+                 (!hdd_ctx->cfg_ini->wlanPerPktStatsLogEnable ||
+        !vos_isPktStatsEnabled()))
+
     {
        hddLog(LOGE, FL("per pkt stats not enabled"));
        return -EINVAL;
     }
-    vos_set_ring_log_level(start_log.ringId, start_log.verboseLevel);
 
+    vos_set_ring_log_level(start_log.ringId, start_log.verboseLevel);
     return 0;
 }
 

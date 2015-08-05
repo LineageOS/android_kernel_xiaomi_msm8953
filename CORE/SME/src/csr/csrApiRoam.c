@@ -15399,6 +15399,7 @@ void csrRoamStatsRspProcessor(tpAniSirGlobal pMac, tSirSmeRsp *pSirMsg)
    v_PVOID_t  pvosGCtx;
    v_S7_t     rssi = 0, snr = 0;
    tANI_U32   *pRssi = NULL, *pSnr = NULL;
+   tAniPerTxPktStatsInfo * txPacketInfo;
    tANI_U32   linkCapacity;
    pSmeStatsRsp = (tAniGetPEStatsRsp *)pSirMsg;
    if(pSmeStatsRsp->rc)
@@ -15468,6 +15469,18 @@ void csrRoamStatsRspProcessor(tpAniSirGlobal pMac, tSirSmeRsp *pSirMsg)
             pStats += sizeof(tCsrPerStaStatsInfo);
             length -= sizeof(tCsrPerStaStatsInfo);
             break;
+         case eCsrPerPktStats:
+            smsLog( pMac, LOG2, FL("csrRoamStatsRspProcessor:PerPkt stats"));
+            vos_mem_zero(&pMac->roam.perPktStatsInfo, sizeof(tPerTxPacketFrmFw));
+            if (IS_FEATURE_SUPPORTED_BY_FW(PER_PKT_STATS_SUPPORTED))
+            {
+                txPacketInfo = (tAniPerTxPktStatsInfo *)pStats;
+                pMac->roam.perPktStatsInfo.lastTxRate = txPacketInfo->lastTxRate;
+                pMac->roam.perPktStatsInfo.txAvgRetry = txPacketInfo->txAvgRetry;
+                pStats += sizeof(tAniPerTxPktStatsInfo);
+                length -= sizeof(tAniPerTxPktStatsInfo);
+            }
+            break;
          default:
             smsLog( pMac, LOGW, FL("csrRoamStatsRspProcessor:unknown stats type"));
             break;
@@ -15489,7 +15502,8 @@ void csrRoamStatsRspProcessor(tpAniSirGlobal pMac, tSirSmeRsp *pSirMsg)
        /* If riva is not sending rssi, continue to use the hack */
        rssi = RSSI_HACK_BMPS;
    }
-
+   pMac->roam.perPktStatsInfo.avgRssi = rssi;
+   vos_updatePktStatsInfo(&pMac->roam.perPktStatsInfo);
    WDA_UpdateRssiBmps(pvosGCtx, pSmeStatsRsp->staId, rssi);
 
    if (length != 0)
@@ -17197,6 +17211,12 @@ void csrRoamReportStatistics(tpAniSirGlobal pMac, tANI_U32 statsMask,
             vos_mem_copy( pStats, (tANI_U8 *)&pMac->roam.perStaStatsInfo[staId],
                          sizeof(tCsrPerStaStatsInfo));
             pStats += sizeof(tCsrPerStaStatsInfo);
+            break;
+         case eCsrPerPktStats:
+            smsLog( pMac, LOG2, FL("PerPkt stats"));
+            vos_mem_copy( pStats, (tANI_U8 *)&pMac->roam.perPktStatsInfo,
+                         sizeof(tPerTxPacketFrmFw));
+            pStats += sizeof(tPerTxPacketFrmFw);
             break;
          default:
             smsLog( pMac, LOGE, FL("Unknown stats type and counter %d"), counter);

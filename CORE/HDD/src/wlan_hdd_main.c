@@ -10293,7 +10293,9 @@ int hdd_wlan_startup(struct device *dev )
    {
        if(wlan_logging_sock_activate_svc(
                    pHddCtx->cfg_ini->wlanLoggingFEToConsole,
-                   pHddCtx->cfg_ini->wlanLoggingNumBuf))
+                   pHddCtx->cfg_ini->wlanLoggingNumBuf,
+                   pHddCtx->cfg_ini->wlanPerPktStatsLogEnable,
+                   pHddCtx->cfg_ini->wlanPerPktStatsNumBuf))
        {
            hddLog(VOS_TRACE_LEVEL_ERROR, "%s: wlan_logging_sock_activate_svc"
                    " failed", __func__);

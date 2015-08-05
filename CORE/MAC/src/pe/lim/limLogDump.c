@@ -1516,6 +1516,8 @@ dump_lim_get_pe_statistics(tpAniSirGlobal pMac, tANI_U32 arg1, tANI_U32 arg2, tA
         case 5:
             statsMask = PE_PER_STA_STATS_INFO;
             break;
+        case 6:
+            statsMask = PE_PER_TX_PKT_STATS_INFO;
         default:
             return p;
     }

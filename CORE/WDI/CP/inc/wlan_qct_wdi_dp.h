@@ -139,6 +139,9 @@ when        who    what, where, why
 
 #define WDI_DPU_FEEDBACK_OFFSET       1
 
+#define WDI_MAC_LLC_HEADER_SIZE       8
+
+
 // Frame Type definitions
 
 #define WDI_MAC_MGMT_FRAME    0x0
@@ -335,6 +338,9 @@ when        who    what, where, why
 #define WDI_TX_BD_SET_MPDU_HEADER_OFFSET( _bd, _off )    (((WDI_TxBdType*)_bd)->mpduHeaderOffset = _off)
 
 #define WDI_TX_BD_SET_MPDU_HEADER_LEN( _bd, _len )       (((WDI_TxBdType*)_bd)->mpduHeaderLength = _len)
+
+#define WDI_TX_BD_GET_MPDU_HEADER_LEN( _bd )               (((WDI_TxBdType*)_bd)->mpduHeaderLength)
+
 
 #define WDI_TX_BD_SET_MPDU_LEN( _bd, _len )              (((WDI_TxBdType*)_bd)->mpduLength = _len)
 

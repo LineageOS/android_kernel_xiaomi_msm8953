@@ -760,6 +760,10 @@ v_BOOL_t gRoamDelayCurrentIndex = 0;
 #define VOS_QOS_DATA_VALUE                              ( 0x88 )
 #define VOS_NON_QOS_DATA_VALUE                          ( 0x80 )
 
+//802.11 header wil have 24 byte excluding qos
+#define VOS_802_11_HEADER_SIZE ( 24 )
+#define VOS_QOS_SIZE ( 2 )
+#define VOS_LLC_HEADER_SIZE   (8)
 
 // Frame Type definitions
 #define VOS_MAC_MGMT_FRAME    0x0
@@ -1467,4 +1471,46 @@ void vos_dump_roam_time_log_service(void)
     VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
          "||== END ====================="
          "===============================||\n");
+}
+
+v_U32_t vos_copy_80211_header(void *pBuff, v_U8_t *dst, v_U8_t frametype, v_U8_t qos)
+{
+    vos_pkt_t *vos_pkt = NULL;
+    struct sk_buff *skb = NULL;
+    v_U8_t length_to_copy;
+
+    vos_pkt = (vos_pkt_t *)pBuff;
+
+    if(!vos_pkt || !dst)
+    {
+       VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                 "vos_pkt/dst is null");
+       return 0;
+    }
+    skb = vos_pkt->pSkb;
+    if(!skb)
+    {
+       VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                   " skb is null");
+       return 0;
+    }
+    length_to_copy = VOS_802_11_HEADER_SIZE;
+
+    if(VOS_MAC_DATA_FRAME == frametype)
+    {
+       if(qos)
+          length_to_copy += VOS_QOS_SIZE;
+       length_to_copy += VOS_LLC_HEADER_SIZE;
+    }
+
+    if (unlikely(length_to_copy > skb->len))
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  "%s Packet overflow, length_to_copy %d len %d",
+                  __func__,  length_to_copy, skb->len);
+        return 0;
+    }
+
+    vos_mem_copy(dst,skb->data,length_to_copy);
+    return length_to_copy;
 }

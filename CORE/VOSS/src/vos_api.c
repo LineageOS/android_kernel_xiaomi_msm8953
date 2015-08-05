@@ -69,6 +69,7 @@
 #include "wlan_hdd_main.h"
 #include <linux/vmalloc.h>
 #include "wlan_hdd_cfg80211.h"
+#include "vos_diag_core_log.h"
 
 #include <linux/wcnss_wlan.h>
 
@@ -1854,6 +1855,29 @@ VOS_STATUS vos_logger_pkt_serialize( vos_pkt_t *pPacket, uint32 pkt_type)
 #endif
 }
 
+void vos_per_pkt_stats_to_user(void *perPktStat)
+{
+#ifdef WLAN_LOGGING_SOCK_SVC_ENABLE
+     wlan_pkt_stats_to_user(perPktStat);
+#else
+     return;
+#endif
+
+
+
+}
+
+void vos_updatePktStatsInfo(void * pktStat)
+{
+#ifdef WLAN_LOGGING_SOCK_SVC_ENABLE
+     wlan_fillTxStruct(pktStat);
+#else
+     return;
+#endif
+
+}
+
+
 /**---------------------------------------------------------------------------
   
   \brief vos_mq_post_message() - post a message to a message queue
@@ -2981,6 +3005,9 @@ void vos_probe_threads(void)
         return;
     } else if (ring_id == RING_ID_PER_PACKET_STATS) {
         vos_context->packet_stats_log_level = log_val;
+        if (WLAN_LOG_LEVEL_ACTIVE != log_val)
+            wlan_disable_and_flush_pkt_stats();
+
         return;
     }
 }
@@ -3011,4 +3038,171 @@ v_U8_t vos_get_ring_log_level(v_U32_t ring_id)
         return vos_context->packet_stats_log_level;
 
     return WLAN_LOG_LEVEL_OFF;
+}
+
+/* elements are rate, preamable, bw, short_gi */
+rateidx_to_rate_bw_preamble_sgi   rateidx_to_rate_bw_preamble_sgi_table[] =
+{
+/*11B CCK Long preamble (0-3)*/
+{ 10, PREAMBLE_CCK, S_BW20, 0},{ 20, PREAMBLE_CCK, S_BW20, 0},
+{ 55, PREAMBLE_CCK, S_BW20, 0},{ 110, PREAMBLE_CCK, S_BW20, 0},
+/*11B CCK Short preamble (4-7)*/
+{ 10, PREAMBLE_CCK, S_BW20, 0},{ 20, PREAMBLE_CCK, S_BW20, 0},
+{ 55, PREAMBLE_CCK, S_BW20, 0},{ 110, PREAMBLE_CCK, S_BW20, 0},
+/*11G/A (8-15)*/
+{ 60, PREAMBLE_OFDM, S_BW20, 0},{ 90, PREAMBLE_OFDM, S_BW20, 0},
+{ 120, PREAMBLE_OFDM, S_BW20, 0},{ 180, PREAMBLE_OFDM, S_BW20, 0},
+{ 240, PREAMBLE_OFDM, S_BW20, 0},{ 360, PREAMBLE_OFDM, S_BW20, 0},
+{ 480, PREAMBLE_OFDM, S_BW20, 0},{ 540, PREAMBLE_OFDM, S_BW20, 0},
+/*HT20 LGI MCS 0-7 (16-23)*/
+{ 65, PREAMBLE_HT, S_BW20, 0},{ 130, PREAMBLE_HT, S_BW20, 0},
+{ 195, PREAMBLE_HT, S_BW20, 0},{ 260, PREAMBLE_HT, S_BW20, 0},
+{ 390, PREAMBLE_HT, S_BW20, 0},{ 520, PREAMBLE_HT, S_BW20, 0},
+{ 585, PREAMBLE_HT, S_BW20, 0},{ 650, PREAMBLE_HT, S_BW20, 0},
+/*HT20 SGI MCS 0-7 (24-31)*/
+{ 72, PREAMBLE_HT, S_BW20, 1},{ 144, PREAMBLE_HT, S_BW20, 1},
+{ 217, PREAMBLE_HT, S_BW20, 1},{ 289, PREAMBLE_HT, S_BW20, 1},
+{ 433, PREAMBLE_HT, S_BW20, 1},{ 578, PREAMBLE_HT, S_BW20, 1},
+{ 650, PREAMBLE_HT, S_BW20, 1},{ 722, PREAMBLE_HT, S_BW20, 1},
+/*HT20 Greenfield MCS 0-7 rates (32-39)*/
+{ 65, PREAMBLE_HT, S_BW20, 0},{ 130, PREAMBLE_HT, S_BW20, 0},
+{ 195, PREAMBLE_HT, S_BW20, 0},{ 260, PREAMBLE_HT, S_BW20, 0},
+{ 390, PREAMBLE_HT, S_BW20, 0},{ 520, PREAMBLE_HT, S_BW20, 0},
+{ 585, PREAMBLE_HT, S_BW20, 0},{ 650, PREAMBLE_HT, S_BW20, 0},
+/*HT40 LGI MCS 0-7 (40-47)*/
+{ 135, PREAMBLE_HT, S_BW40, 0},{ 270, PREAMBLE_HT, S_BW40, 0},
+{ 405, PREAMBLE_HT, S_BW40, 0},{ 540, PREAMBLE_HT, S_BW40, 0},
+{ 810, PREAMBLE_HT, S_BW40, 0},{ 1080, PREAMBLE_HT, S_BW40, 0},
+{ 1215, PREAMBLE_HT, S_BW40, 0},{ 1350, PREAMBLE_HT, S_BW40, 0},
+/*HT40 SGI MCS 0-7 (48-55)*/
+{ 150, PREAMBLE_HT, S_BW40, 1},{ 300, PREAMBLE_HT, S_BW40, 1},
+{ 450, PREAMBLE_HT, S_BW40, 1},{ 600, PREAMBLE_HT, S_BW40, 1},
+{ 900, PREAMBLE_HT, S_BW40, 1},{ 1200, PREAMBLE_HT, S_BW40, 1},
+{ 1350, PREAMBLE_HT, S_BW40, 1},{ 1500, PREAMBLE_HT, S_BW40, 1},
+/*HT40 Greenfield MCS 0-7 rates (56-63) 64-65 are dummy*/
+{ 135, PREAMBLE_HT, S_BW40, 0},{ 270, PREAMBLE_HT, S_BW40, 0},
+{ 405, PREAMBLE_HT, S_BW40, 0},{ 540, PREAMBLE_HT, S_BW40, 0},
+{ 810, PREAMBLE_HT, S_BW40, 0},{ 1080, PREAMBLE_HT, S_BW40, 0},
+{ 1215, PREAMBLE_HT, S_BW40, 0},{ 1350, PREAMBLE_HT, S_BW40, 0},
+/*64-65 are dummy*/
+{ 1350, PREAMBLE_HT, S_BW40, 0},{ 1350, PREAMBLE_HT, S_BW40, 0},
+/*VHT20 LGI  MCS 0-9 rates (66-75)*/
+{ 65, PREAMBLE_VHT, S_BW20, 0},{ 130, PREAMBLE_VHT, S_BW20, 0},
+{ 195, PREAMBLE_VHT, S_BW20, 0},{ 260, PREAMBLE_VHT, S_BW20, 0},
+{ 390, PREAMBLE_VHT, S_BW20, 0},{ 520, PREAMBLE_VHT, S_BW20, 0},
+{ 585, PREAMBLE_VHT, S_BW20, 0},{ 650, PREAMBLE_VHT, S_BW20, 0},
+{ 780, PREAMBLE_VHT, S_BW20, 0},{ 865, PREAMBLE_VHT, S_BW20, 0},
+/*76-77 are dummy*/
+{ 865, PREAMBLE_VHT, S_BW20, 0},{ 865, PREAMBLE_VHT, S_BW20, 0},
+/*VHT20 SGI MCS 0-9 rates (78-87)*/
+{ 72, PREAMBLE_VHT, S_BW20, 1},{ 144, PREAMBLE_VHT, S_BW20, 1},
+{ 217, PREAMBLE_VHT, S_BW20, 1},{ 289, PREAMBLE_VHT, S_BW20, 1},
+{ 433, PREAMBLE_VHT, S_BW20, 1},{ 578, PREAMBLE_VHT, S_BW20, 1},
+{ 650, PREAMBLE_VHT, S_BW20, 1},{ 722, PREAMBLE_VHT, S_BW20, 1},
+{ 867, PREAMBLE_VHT, S_BW20, 1},{ 961, PREAMBLE_VHT, S_BW20, 1},
+/*88-89 are dummy*/
+{ 961, PREAMBLE_VHT, S_BW20, 1},{ 961, PREAMBLE_VHT, S_BW20, 1},
+/*VHT40 LGI MCS 0-9 rates (90-101) 98,101 is Dummy*/
+{ 135, PREAMBLE_VHT, S_BW40, 0},{ 270, PREAMBLE_VHT, S_BW40, 0},
+{ 405, PREAMBLE_VHT, S_BW40, 0},{ 540, PREAMBLE_VHT, S_BW40, 0},
+{ 810, PREAMBLE_VHT, S_BW40, 0},{ 1080, PREAMBLE_VHT, S_BW40, 0},
+{ 1215, PREAMBLE_VHT, S_BW40, 0},{ 1350, PREAMBLE_VHT, S_BW40, 0},
+{ 1350, PREAMBLE_VHT, S_BW40, 0},{ 1620, PREAMBLE_VHT, S_BW40, 0},
+{ 1800, PREAMBLE_VHT, S_BW40, 0},{ 1800, PREAMBLE_VHT, S_BW40, 0},
+/*VHT40 SGI MCS 0-9 rates (102-112) 110, 113 is Dummy*/
+{ 150, PREAMBLE_VHT, S_BW40, 1},{ 300, PREAMBLE_VHT, S_BW40, 1},
+{ 450, PREAMBLE_VHT, S_BW40, 1},{ 600, PREAMBLE_VHT, S_BW40, 1},
+{ 900, PREAMBLE_VHT, S_BW40, 1},{ 1200, PREAMBLE_VHT, S_BW40, 1},
+{ 1350, PREAMBLE_VHT, S_BW40, 1},{ 1500, PREAMBLE_VHT, S_BW40, 1},
+{ 1500, PREAMBLE_VHT, S_BW40, 1},{ 1800, PREAMBLE_VHT, S_BW40, 1},
+{ 2000, PREAMBLE_VHT, S_BW40, 1},{ 2000, PREAMBLE_VHT, S_BW40, 1},
+/*VHT80 LGI MCS 0-9 rates (114-125) 122, 125 is Dummy*/
+{ 293, PREAMBLE_VHT, S_BW80, 0},{ 585, PREAMBLE_VHT, S_BW80, 0},
+{ 878, PREAMBLE_VHT, S_BW80, 0},{ 1170, PREAMBLE_VHT, S_BW80, 0},
+{ 1755, PREAMBLE_VHT, S_BW80, 0},{ 2340, PREAMBLE_VHT, S_BW80, 0},
+{ 2633, PREAMBLE_VHT, S_BW80, 0},{ 2925, PREAMBLE_VHT, S_BW80, 0},
+{ 2925, PREAMBLE_VHT, S_BW80, 0},{ 3510, PREAMBLE_VHT, S_BW80, 0},
+{ 3900, PREAMBLE_VHT, S_BW80, 0},{ 3900, PREAMBLE_VHT, S_BW80, 0},
+/*VHT80 SGI MCS 0-9 rates (126-136) 134 is Dummy*/
+{ 325, PREAMBLE_VHT, S_BW80, 1},{ 650, PREAMBLE_VHT, S_BW80, 1},
+{ 975, PREAMBLE_VHT, S_BW80, 1},{ 1300, PREAMBLE_VHT, S_BW80, 1},
+{ 1950, PREAMBLE_VHT, S_BW80, 1},{ 2600, PREAMBLE_VHT, S_BW80, 1},
+{ 2925, PREAMBLE_VHT, S_BW80, 1},{ 3250, PREAMBLE_VHT, S_BW80, 1},
+{ 3250, PREAMBLE_VHT, S_BW80, 1},{ 3900, PREAMBLE_VHT, S_BW80, 1},
+{ 4333, PREAMBLE_VHT, S_BW80, 1},
+};
+
+void get_rate_and_MCS(per_packet_stats *stats, uint32 rateindex)
+{
+    rateidx_to_rate_bw_preamble_sgi *ratetbl;
+
+    if (STATS_MAX_RATE_INDEX < rateindex)
+        rateindex = STATS_MAX_RATE_INDEX;
+    ratetbl= &rateidx_to_rate_bw_preamble_sgi_table[rateindex];
+    stats->last_transmit_rate = ratetbl->rate/5;
+    stats->MCS.nss = 0;
+    if (0 <= rateindex && rateindex <= 7)
+        stats->MCS.rate = 7 - rateindex;
+    else if (8 <= rateindex && rateindex <= 15)
+    {
+        switch(rateindex)
+        {
+            case 8:stats->MCS.rate = 3; break;
+            case 9:stats->MCS.rate = 7; break;
+            case 10:stats->MCS.rate = 2; break;
+            case 11:stats->MCS.rate = 6; break;
+            case 12:stats->MCS.rate = 1; break;
+            case 13:stats->MCS.rate = 5; break;
+            case 14:stats->MCS.rate = 0; break;
+            case 15:stats->MCS.rate = 4; break;
+        }
+    }
+    else if(16 <= rateindex && rateindex <= 23)
+        stats->MCS.rate = rateindex - 16;
+    else if(24 <= rateindex  && rateindex <= 31)
+        stats->MCS.rate =  rateindex - 24;
+    else if(32 <= rateindex  && rateindex <= 39)
+        stats->MCS.rate = rateindex - 32;
+    else if(40 <= rateindex && rateindex <= 47)
+        stats->MCS.rate = rateindex - 40;
+    else if(48 <= rateindex && rateindex <= 55)
+        stats->MCS.rate = rateindex - 48;
+    else if(56 <= rateindex && rateindex <= 63)
+        stats->MCS.rate = rateindex - 56;
+    else if(66 <= rateindex && rateindex <= 75)
+        stats->MCS.rate = rateindex - 66;
+    else if(78 <= rateindex && rateindex <= 87)
+        stats->MCS.rate = rateindex - 78;
+    else if(90 <= rateindex && rateindex <= 100)
+        stats->MCS.rate = rateindex - 90;
+    else if(78 <= rateindex && rateindex <= 87)
+        stats->MCS.rate = rateindex - 78;
+    else if(90 <= rateindex && rateindex <= 97)
+        stats->MCS.rate = rateindex - 90;
+    else if(99 <= rateindex && rateindex <= 100)
+        stats->MCS.rate = rateindex - 91;
+    else if(102 <= rateindex && rateindex <= 109)
+        stats->MCS.rate = rateindex - 102;
+    else if(111 <= rateindex && rateindex <= 112)
+        stats->MCS.rate = rateindex - 103;
+    else if(114 <= rateindex && rateindex <= 121)
+        stats->MCS.rate = rateindex - 114;
+    else if(123 <= rateindex && rateindex <= 124)
+        stats->MCS.rate = rateindex - 115;
+    else if(126 <= rateindex && rateindex <= 133)
+        stats->MCS.rate = rateindex - 126;
+    else if(135 <= rateindex && rateindex <= 136)
+        stats->MCS.rate = rateindex - 127;
+    else /*Invalid rate index mark it 0*/
+        stats->MCS.rate = 0;
+    stats->MCS.preamble = ratetbl->preamble;
+    stats->MCS.bw = ratetbl->bw;
+    stats->MCS.short_gi = ratetbl->short_gi;
+}
+
+bool vos_isPktStatsEnabled(void)
+{
+    bool value;
+    value = wlan_isPktStatsEnabled();
+    return (value);
 }

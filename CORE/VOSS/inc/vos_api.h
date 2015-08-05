@@ -483,8 +483,12 @@ void vos_set_multicast_logging(uint8_t value);
 v_U8_t vos_is_multicast_logging(void);
 void vos_set_ring_log_level(v_U32_t ring_id, v_U32_t log_level);
 v_U8_t vos_get_ring_log_level(v_U32_t ring_id);
+void get_rate_and_MCS(per_packet_stats *stats, uint32 rateindex);
+
 v_BOOL_t vos_isUnloadInProgress(void);
 v_BOOL_t vos_isLoadUnloadInProgress(void);
 
 void vos_probe_threads(void);
+void vos_per_pkt_stats_to_user(void *perPktStat);
+void vos_updatePktStatsInfo(void * pktStat);
 #endif // if !defined __VOS_NVITEM_H

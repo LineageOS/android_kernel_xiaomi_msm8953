@@ -172,6 +172,7 @@ static const hdd_freq_chan_map_t freq_chan_map[] = { {2412, 1}, {2417, 2},
 #endif
 #define  WE_SET_RTS_CTS_HTVHT             21
 #define  WE_SET_MONITOR_STATE             22
+#define  WE_SET_PKT_STATS_ENABLE_DISABLE  23
 
 /* Private ioctls and their sub-ioctls */
 #define WLAN_PRIV_SET_NONE_GET_INT    (SIOCIWFIRSTPRIV + 1)
@@ -3388,7 +3389,8 @@ VOS_STATUS  wlan_hdd_get_station_stats(hdd_adapter_t *pAdapter)
    hstatus = sme_GetStatistics(WLAN_HDD_GET_HAL_CTX(pAdapter),
                                eCSR_HDD,
                                SME_SUMMARY_STATS |
-                               SME_GLOBAL_CLASSA_STATS,
+                               SME_GLOBAL_CLASSA_STATS |
+                               SME_PER_PKT_STATS,
                                hdd_get_station_statisticsCB,
                                0, // not periodic
                                FALSE, //non-cached results
@@ -5913,6 +5915,38 @@ static int __iw_setint_getnone(struct net_device *dev,
                         waitRet);
            }
            break;
+        }
+        case WE_SET_PKT_STATS_ENABLE_DISABLE:
+        {
+            hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+            tAniWifiStartLog start_log;
+            if (!pHddCtx->cfg_ini->wlanPerPktStatsLogEnable ||
+                 !vos_isPktStatsEnabled())
+            {
+                hddLog(LOGE, FL("per pkt stats not enabled"));
+                return -EINVAL;
+            }
+            hddLog(LOG1, FL("Set Pkt Stats %d"), set_value);
+
+            if (1 == set_value || 0 == set_value)
+            {
+                start_log.ringId = RING_ID_PER_PACKET_STATS;
+                start_log.flag = 0;
+                if (set_value)
+                   start_log.verboseLevel = WLAN_LOG_LEVEL_ACTIVE;
+                else
+                   start_log.verboseLevel = WLAN_LOG_LEVEL_OFF;
+
+                vos_set_ring_log_level(start_log.ringId, start_log.verboseLevel);
+            }
+            else
+            {
+                hddLog(LOGE,
+                FL("Invalid value %d in WE_SET_PKT_STATS_ENABLE_DISABLE IOCTL"),
+                    set_value);
+                ret = -EINVAL;
+            }
+            break;
         }
 
         default:
@@ -10333,7 +10367,9 @@ static const struct iw_priv_args we_private_args[] = {
     {   WE_SET_RTS_CTS_HTVHT,
         IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
         0, "setRtsCtsHtVht" },
-
+    {   WE_SET_PKT_STATS_ENABLE_DISABLE,
+        IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
+        0, "setPktStats" },
     /* handlers for main ioctl */
     {   WLAN_PRIV_SET_NONE_GET_INT,
         0,

@@ -801,7 +801,8 @@ typedef enum
     HAL_GLOBAL_CLASS_B_STATS_INFO    = 0x00000004,
     HAL_GLOBAL_CLASS_C_STATS_INFO    = 0x00000008,
     HAL_GLOBAL_CLASS_D_STATS_INFO    = 0x00000010,
-    HAL_PER_STA_STATS_INFO           = 0x00000020
+    HAL_PER_STA_STATS_INFO           = 0x00000020,
+    HAL_PER_TX_PKT_STATS_INFO        = 0x00000040
 }eHalStatsMask;
 
 /* BT-AMP events type */
@@ -825,6 +826,7 @@ typedef enum
     PE_GLOBAL_CLASS_C_STATS_INFO    = 0x00000008,
     PE_GLOBAL_CLASS_D_STATS_INFO    = 0x00000010,
     PE_PER_STA_STATS_INFO           = 0x00000020,
+    PE_PER_TX_PKT_STATS_INFO        = 0x00000040,
     PE_STATS_TYPE_MAX = WLAN_HAL_MAX_ENUM_SIZE //This and beyond are invalid values
 }ePEStatsMask;
 
@@ -3211,6 +3213,15 @@ typedef PACKED_PRE struct PACKED_POST
     tANI_U32 tx_mpdu_in_ampdu_cnt;  //This counter shall increment by the number of MPDUs in the AMPDU when an A-MPDU
                                     //is transmitted
 }tAniPerStaStatsInfo, *tpAniPerStaStatsInfo;
+
+// The following stats are averaged over the time between two consecutive GET_STATS_REQ messages.
+typedef PACKED_PRE struct PACKED_POST
+{
+    tANI_U32 lastTxRate;           // 802.11 data rate at which the last data frame is transmitted.
+    tANI_U8  txAvgRetry;           // Average number of retries per 10 packets.
+    tANI_U32 reserved;
+    tANI_U32 reserved1;
+}tAniPerTxPktStatsInfo, *tpAniPerTxPktStatsInfo;
 
 typedef PACKED_PRE struct PACKED_POST
 {
@@ -6783,6 +6794,7 @@ typedef enum {
     ENHANCED_TXBD_COMPLETION = 54,
     LOGGING_ENHANCEMENT    = 55,
     MEMORY_DUMP_SUPPORTED  = 57,
+    PER_PKT_STATS_SUPPORTED  = 58,
     MAX_FEATURE_SUPPORTED  = 128,
 } placeHolderInCapBitmap;
 

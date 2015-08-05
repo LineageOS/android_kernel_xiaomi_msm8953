@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -40,6 +40,8 @@
 #define CSRINTERNAL_H__
 
 #include "vos_status.h"
+#include "vos_utils.h"
+
 #include "vos_lock.h"
 
 #include "palTimer.h"
@@ -276,6 +278,7 @@ typedef enum
    eCsrGlobalClassCStats,
    eCsrGlobalClassDStats,
    eCsrPerStaStats,
+   eCsrPerPktStats,
    eCsrMaxStats
 }eCsrRoamStatsClassTypes;
 
@@ -992,6 +995,7 @@ typedef struct tagCsrRoamStruct
     tCsrGlobalClassCStatsInfo  classCStatsInfo;
     tCsrGlobalClassDStatsInfo  classDStatsInfo;
     tCsrPerStaStatsInfo        perStaStatsInfo[CSR_MAX_STA];
+    tPerTxPacketFrmFw          perPktStatsInfo;
     tDblLinkList  statsClientReqList;
     tDblLinkList  peStatsReqList;
     tCsrTlStatsReqInfo  tlStatsReqInfo;

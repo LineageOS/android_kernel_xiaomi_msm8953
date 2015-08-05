@@ -2114,7 +2114,8 @@ typedef enum
     PE_GLOBAL_CLASS_B_STATS_INFO    = 0x00000004,
     PE_GLOBAL_CLASS_C_STATS_INFO    = 0x00000008,
     PE_GLOBAL_CLASS_D_STATS_INFO    = 0x00000010,
-    PE_PER_STA_STATS_INFO           = 0x00000020
+    PE_PER_STA_STATS_INFO           = 0x00000020,
+    PE_PER_TX_PKT_STATS_INFO        = 0x00000040,
 }ePEStatsMask;
 
 /*
@@ -2426,6 +2427,13 @@ typedef struct sAniPerStaStatsInfo
                                   //is transmitted
 
 }tAniPerStaStatsInfo, *tpAniPerStaStatsInfo;
+
+typedef struct sAniPerTxPktStatsInfo
+{
+    tANI_U32 lastTxRate;       // 802.11 data rate at which the last data frame is transmitted.
+    tANI_U8  txAvgRetry;      // Average number of retries per 10 packets.
+}tAniPerTxPktStatsInfo, *tpAniPerTxPktStatsInfo;
+
 
 /**********************PE Statistics end*************************/
 

@@ -42,13 +42,13 @@
 
 int wlan_logging_sock_init_svc(void);
 int wlan_logging_sock_deinit_svc(void);
-int wlan_logging_sock_activate_svc(int log_fe_to_console, int num_buf);
 int wlan_logging_flush_pkt_queue(void);
 int wlan_logging_sock_deactivate_svc(void);
 int wlan_log_to_user(VOS_TRACE_LEVEL log_level, char *to_be_sent, int length);
 int wlan_queue_logpkt_for_app(vos_pkt_t *pPacket, uint32 pkt_type);
 void wlan_process_done_indication(uint8 type, uint32 reason_code);
-
+int wlan_logging_sock_activate_svc(int log_fe_to_console, int num_buf,
+                             int pkt_stats_enabled, int pkt_stats_buff);
 void wlan_init_log_completion(void);
 int wlan_set_log_completion(uint32 is_fatal,
                             uint32 indicator,
@@ -80,4 +80,9 @@ void wlan_free_fwr_mem_dump_buffer(void);
 
 bool wlan_is_logger_thread(int threadId);
 void wlan_logging_reset_thread_stuck_count(int threadId);
+int wlan_pkt_stats_to_user(void *perPktStat);
+void wlan_disable_and_flush_pkt_stats(void);
+ void wlan_fillTxStruct(void *pktStat);
+ bool wlan_isPktStatsEnabled(void);
+
 #endif /* WLAN_LOGGING_SOCK_SVC_H */
