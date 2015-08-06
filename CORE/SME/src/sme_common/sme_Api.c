@@ -888,13 +888,18 @@ sme_process_cmd:
                 {
                     // we can reuse the pCommand
 
-                    /* For roam command set timeout to 30 * 2 sec.
+                    /* For ROC set timeot to 30 *3 as Supplicant can retry
+                     * P2P Invitation Request 120 times with 500ms interval.
+                     * For roam command set timeout to 30 * 2 sec.
                      * There are cases where we try to connect to different
                      * APs with same SSID one by one until sucessfully conneted
                      * and thus roam command might take more time if connection
                      * is rejected by too many APs.
                      */
-                    if ((eSmeCommandRoam == pCommand->command) &&
+                    if (eSmeCommandRemainOnChannel == pCommand->command)
+                        pMac->sme.smeCmdActiveList.cmdTimeoutDuration =
+                                         CSR_ACTIVE_LIST_CMD_TIMEOUT_VALUE * 3;
+                    else if ((eSmeCommandRoam == pCommand->command) &&
                         (eCsrHddIssued == pCommand->u.roamCmd.roamReason))
                         pMac->sme.smeCmdActiveList.cmdTimeoutDuration =
                                          CSR_ACTIVE_LIST_CMD_TIMEOUT_VALUE * 2;
