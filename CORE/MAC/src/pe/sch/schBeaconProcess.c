@@ -492,7 +492,7 @@ static void __schBeaconProcessForSession( tpAniSirGlobal      pMac,
         /* Update the channel bonding mode only if channel bonding
          * mode is enabled in INI.
          */
-        if ( (pStaDs != NULL) &&
+        if ( (pStaDs != NULL) && (HAL_STA_INVALID_IDX != pStaDs->staIndex ) &&
               (WNI_CFG_CHANNEL_BONDING_MODE_DISABLE != channelBondingMode) )
         {
            /* Following check is related to HT40 on 2.4GHz mode*/
@@ -539,7 +539,7 @@ static void __schBeaconProcessForSession( tpAniSirGlobal      pMac,
        /* Update the channel bonding mode only if channel bonding
         * mode is enabled in INI.
         */
-       if ( (NULL != pStaDs)  &&
+       if ( (NULL != pStaDs) && (HAL_STA_INVALID_IDX != pStaDs->staIndex ) &&
             (WNI_CFG_CHANNEL_BONDING_MODE_DISABLE != channelBondingMode) )
        {
           if (psessionEntry->vhtCapability && pBeacon->OperatingMode.present )
