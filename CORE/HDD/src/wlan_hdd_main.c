@@ -7652,7 +7652,8 @@ VOS_STATUS hdd_start_all_adapters( hdd_context_t *pHddCtx )
             pHddCtx->scan_info.waitScanResult = FALSE;
 
             //Trigger the initial scan
-            hdd_wlan_initial_scan(pAdapter);
+            if (!pHddCtx->isLogpInProgress)
+                hdd_wlan_initial_scan(pAdapter);
 
             //Indicate disconnect event to supplicant if associated previously
             if (eConnectionState_Associated == connState ||
