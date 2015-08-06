@@ -201,7 +201,7 @@ eHalStatus wlan_hdd_remain_on_channel_callback( tHalHandle hHal, void* pCtx,
     {
         if( cfgState->buf )
         {
-           hddLog( LOGP,
+           hddLog( LOG1,
                    "%s: We need to receive yet an ack from one of tx packet",
                    __func__);
         }
@@ -802,7 +802,6 @@ void hdd_remainChanReadyHandler( hdd_adapter_t *pAdapter )
     cfgState = WLAN_HDD_GET_CFG_STATE_PTR( pAdapter );
     pRemainChanCtx = cfgState->remain_on_chan_ctx;
     pAdapter->startRocTs = vos_timer_get_system_time();
-    hddLog( LOG1, "Ready on chan ind");
     if( pRemainChanCtx != NULL )
     {
         MTRACE(vos_trace(VOS_MODULE_ID_HDD,
