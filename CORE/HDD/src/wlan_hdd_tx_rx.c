@@ -2579,32 +2579,21 @@ VOS_STATUS hdd_rx_packet_cbk( v_VOID_t *vosContext,
         hdd_station_ctx_t *pHddStaCtx = &pAdapter->sessionCtx.station;
         u8 mac[6];
 
-        wlan_hdd_tdls_extract_sa(skb, mac);
+        memcpy(mac, skb->data+6, 6);
 
         if (vos_is_macaddr_group((v_MACADDR_t *)mac)) {
             VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_INFO_MED,
                       "rx broadcast packet, not adding to peer list");
-        } else if (memcmp(pHddStaCtx->conn_info.bssId,
-                            mac, 6) != 0) {
-            hddTdlsPeer_t *curr_peer;
-            VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_INFO_MED,
-                      "rx extract mac:" MAC_ADDRESS_STR,
-                      MAC_ADDR_ARRAY(mac) );
-            curr_peer = wlan_hdd_tdls_find_peer(pAdapter, mac, TRUE);
-            if ((NULL != curr_peer) && (eTDLS_LINK_CONNECTED == curr_peer->link_status)
-                 && (TRUE == pRxMetaInfo->isStaTdls))
-            {
-                wlan_hdd_tdls_increment_pkt_count(pAdapter, mac, 0);
-                VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_INFO,"rssi is %d", pRxMetaInfo->rssiAvg);
-                wlan_hdd_tdls_set_rssi (pAdapter, mac, pRxMetaInfo->rssiAvg);
-            }
+        } else if ((memcmp(pHddStaCtx->conn_info.bssId,
+                            mac, 6) != 0) && (pRxMetaInfo->isStaTdls)) {
+            wlan_hdd_tdls_update_rx_pkt_cnt_n_rssi(pAdapter, mac,
+                    pRxMetaInfo->rssiAvg);
         } else {
             VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_INFO_MED,
                        "rx packet sa is bssid, not adding to peer list");
         }
     }
 #endif
-
       if (pHddCtx->cfg_ini->gEnableDebugLog)
       {
          proto_type = vos_pkt_get_proto_type(skb,

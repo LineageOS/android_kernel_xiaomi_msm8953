@@ -3259,5 +3259,26 @@ int wlan_hdd_validate_tdls_context(hdd_context_t *pHddCtx,
         return -EINVAL;
     }
 }
+
+
+void wlan_hdd_tdls_update_rx_pkt_cnt_n_rssi(hdd_adapter_t *pAdapter,
+        u8 *mac, v_S7_t rssiAvg)
+{
+    hddTdlsPeer_t *curr_peer;
+    hdd_context_t *pHddCtx = NULL;
+    pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+    mutex_lock(&pHddCtx->tdls_lock);
+    curr_peer = wlan_hdd_tdls_find_peer(pAdapter, mac, FALSE);
+    if ((NULL != curr_peer) &&
+            (eTDLS_LINK_CONNECTED == curr_peer->link_status))
+    {
+        curr_peer->rx_pkt++;
+        curr_peer->rssi = rssiAvg;
+    }
+    mutex_unlock(&pHddCtx->tdls_lock);
+    VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_INFO,
+            "mac : " MAC_ADDRESS_STR "rssi is %d",
+            MAC_ADDR_ARRAY(mac), rssiAvg);
+}
 /*EXT TDLS*/
 
