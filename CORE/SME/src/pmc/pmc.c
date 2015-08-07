@@ -2436,8 +2436,8 @@ eHalStatus pmcEnterBmpsCheck( tpAniSirGlobal pMac )
    /* Check that we are associated with a single active session. */
    if (!pmcValidateConnectState( pMac ))
    {
-      pmcLog(pMac, LOGE, FL("PMC: STA not associated with an AP with single"
-                            " active session. BMPS cannot be entered"));
+      pmcLog(pMac, VOS_TRACE_LEVEL_INFO, FL("PMC: STA not associated with an AP with single"
+                          " active session. BMPS cannot be entered"));
       return eHAL_STATUS_FAILURE;
    }
 

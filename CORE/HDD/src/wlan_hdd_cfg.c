@@ -3505,7 +3505,7 @@ VOS_STATUS hdd_parse_config_ini(hdd_context_t* pHddCtx)
       goto config_exit;
    }
 
-   hddLog(LOGE, "%s: qcom_cfg.ini Size %zu", __func__, fw->size);
+   hddLog(VOS_TRACE_LEVEL_INFO , "%s: qcom_cfg.ini Size %zu", __func__, fw->size);
 
    buffer = (char*)vos_mem_vmalloc(fw->size);
 

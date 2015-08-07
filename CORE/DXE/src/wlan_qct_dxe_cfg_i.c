@@ -542,7 +542,7 @@ wpt_status dxeChannelDefaultConfig
       channelEntry->extraConfig.chan_mask |= WLANDXE_CH_CTRL_DIQ_MASK;
       if (wpalWcnssIsProntoHwVer3())
       {
-         HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
+         HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO,
                "Using WQ 6 for TX Low/High PRI Channel");
          channelEntry->channelConfig.refWQ = WLANDXE_PRONTO_TX_WQ;
       }

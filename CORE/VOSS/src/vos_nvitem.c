@@ -1201,7 +1201,7 @@ VOS_STATUS vos_nv_open(void)
                    "readEncodeBufSize %d",nvReadEncodeBufSize);
 
         if (VOS_STATUS_SUCCESS == status) {
-           VOS_TRACE(VOS_MODULE_ID_VOSS,  VOS_TRACE_LEVEL_ERROR,
+           VOS_TRACE(VOS_MODULE_ID_VOSS,  VOS_TRACE_LEVEL_INFO,
                        "Embedded NV parsed success !!productId %d couple Type %d wlan RevId %d",
                         pnvData->fields.productId,
                         pnvData->fields.couplerType,
@@ -2766,7 +2766,6 @@ static int create_crda_regulatory_entry(struct wiphy *wiphy,
           continue;
        if (wiphy->bands[i] == NULL)
        {
-          pr_info("error: wiphy->bands[i] is NULL, i = %d\n", i);
           return -1;
        }
        // internal channels[] is one continous array for both 2G and 5G bands
@@ -3542,7 +3541,7 @@ int vos_update_nv_table_from_wiphy_band(void *hdd_ctx,
         if (wiphy->bands[i] == NULL)
         {
 
-            VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+            VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_INFO,
                       "error: wiphy->bands is NULL, i = %d", i);
             continue;
         }
@@ -4177,7 +4176,6 @@ VOS_STATUS vos_init_wiphy_from_nv_bin(void)
 
         if (wiphy->bands[i] == NULL)
         {
-            pr_info("error: wiphy->bands[i] is NULL, i = %d\n", i);
             continue;
         }
 
@@ -4583,7 +4581,7 @@ int __wlan_hdd_crda_reg_notifier(struct wiphy *wiphy,
          {
              if (NULL == wiphy->bands[i])
              {
-                 VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+                 VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_INFO,
                            "error: wiphy->bands[i] is NULL, i = %d", i);
                  continue;
              }

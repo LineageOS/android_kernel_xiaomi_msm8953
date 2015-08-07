@@ -8659,10 +8659,10 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
    hdd_debugfs_exit(pHddCtx);
 
 #ifdef WLAN_NS_OFFLOAD
-   hddLog(LOGE, FL("Unregister IPv6 notifier"));
+   hddLog(LOG1, FL("Unregister IPv6 notifier"));
    unregister_inet6addr_notifier(&pHddCtx->ipv6_notifier);
 #endif
-   hddLog(LOGE, FL("Unregister IPv4 notifier"));
+   hddLog(LOG1, FL("Unregister IPv4 notifier"));
    unregister_inetaddr_notifier(&pHddCtx->ipv4_notifier);
 
    // Unregister the Net Device Notifier
@@ -9113,12 +9113,12 @@ boolean hdd_is_5g_supported(hdd_context_t * pHddCtx)
    */
    if (WCNSS_XO_48MHZ == wcnss_wlan_iris_xo_mode())
    {
-      hddLog(VOS_TRACE_LEVEL_ERROR, "%s: Hardware supports 5Ghz", __func__);
+      hddLog(VOS_TRACE_LEVEL_INFO, "%s: Hardware supports 5Ghz", __func__);
       return true;
    }
    else
    {
-      hddLog(VOS_TRACE_LEVEL_ERROR, "%s: Hardware doesn't supports 5Ghz",
+      hddLog(VOS_TRACE_LEVEL_INFO, "%s: Hardware doesn't supports 5Ghz",
                     __func__);
       return false;
    }
@@ -10232,11 +10232,11 @@ int hdd_wlan_startup(struct device *dev )
    ret = register_inet6addr_notifier(&pHddCtx->ipv6_notifier);
    if (ret)
    {
-      hddLog(LOGE, FL("Failed to register IPv6 notifier"));
+      hddLog(VOS_TRACE_LEVEL_ERROR, FL("Failed to register IPv6 notifier"));
    }
    else
    {
-      hddLog(LOGE, FL("Registered IPv6 notifier"));
+      hddLog(VOS_TRACE_LEVEL_INFO, FL("Registered IPv6 notifier"));
    }
 #endif
 
@@ -10246,11 +10246,11 @@ int hdd_wlan_startup(struct device *dev )
    ret = register_inetaddr_notifier(&pHddCtx->ipv4_notifier);
    if (ret)
    {
-      hddLog(LOGE, FL("Failed to register IPv4 notifier"));
+      hddLog(VOS_TRACE_LEVEL_ERROR, FL("Failed to register IPv4 notifier"));
    }
    else
    {
-      hddLog(LOGE, FL("Registered IPv4 notifier"));
+      hddLog(VOS_TRACE_LEVEL_INFO, FL("Registered IPv4 notifier"));
    }
 
    goto success;
