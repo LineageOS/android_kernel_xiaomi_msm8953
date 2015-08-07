@@ -222,6 +222,8 @@ void pmmInitBmpsResponseHandler(tpAniSirGlobal pMac, tpSirMsgQ limMsg )
     if (NULL == limMsg->bodyptr)
     {
         PELOGE(pmmLog(pMac, LOGE, FL("pmmBmps: Received SIR_HAL_ENTER_BMPS_RSP with NULL "));)
+        nextState = ePMM_STATE_BMPS_WAKEUP;
+        retStatus = eSIR_SME_BMPS_REQ_FAILED;
         goto failure;
     }
     pEnterBmpsParams = (tpEnterBmpsParams)(limMsg->bodyptr);
