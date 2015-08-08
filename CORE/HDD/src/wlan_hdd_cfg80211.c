@@ -8236,6 +8236,11 @@ int __wlan_hdd_cfg80211_change_iface( struct wiphy *wiphy,
                 //Check for sub-string p2p to confirm its a p2p interface
                 if (NULL != strstr(ndev->name,"p2p"))
                 {
+#ifdef FEATURE_WLAN_TDLS
+                   mutex_lock(&pHddCtx->tdls_lock);
+                   wlan_hdd_tdls_exit(pAdapter, TRUE);
+                   mutex_unlock(&pHddCtx->tdls_lock);
+#endif
                     pAdapter->device_mode = (type == NL80211_IFTYPE_STATION) ?
                                 WLAN_HDD_P2P_DEVICE : WLAN_HDD_P2P_CLIENT;
                 }
