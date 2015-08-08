@@ -574,6 +574,12 @@ tSirRetStatus limFTPrepareAddBssReq( tpAniSirGlobal pMac,
                 {
                     pAddBssParams->staContext.vhtTxBFCapable = 1;
                 }
+                if (pBeaconStruct->VHTCaps.muBeamformerCap &&
+                                    pftSessionEntry->txMuBformee )
+                {
+                    pAddBssParams->staContext.vhtTxMUBformeeCapable = 1;
+                    limLog(pMac, LOG1, FL("Enabling MUBformee for peer"));
+                }
             }
 #endif
             if( (pBeaconStruct->HTCaps.supportedChannelWidthSet) &&
@@ -755,6 +761,48 @@ tpPESession limFillFTSession(tpAniSirGlobal pMac,
        pftSessionEntry->vhtCapabilityPresentInBeacon = 1;
        pftSessionEntry->apCenterChan = pBeaconStruct->VHTOperation.chanCenterFreqSeg1;
        pftSessionEntry->apChanWidth = pBeaconStruct->VHTOperation.chanWidth;
+
+       pftSessionEntry->txBFIniFeatureEnabled =
+                                      pMac->roam.configParam.txBFEnable;
+
+       limLog(pMac, LOG1, FL("txBFIniFeatureEnabled=%d"),
+                pftSessionEntry->txBFIniFeatureEnabled);
+
+       if (pftSessionEntry->txBFIniFeatureEnabled)
+       {
+           if (cfgSetInt(pMac, WNI_CFG_VHT_SU_BEAMFORMEE_CAP,
+                             pftSessionEntry->txBFIniFeatureEnabled)
+                                                          != eSIR_SUCCESS)
+           {
+               limLog(pMac, LOGE, FL("could not set  "
+                              "WNI_CFG_VHT_SU_BEAMFORMEE_CAP at CFG"));
+           }
+           limLog(pMac, LOG1, FL("txBFCsnValue=%d"),
+                    pMac->roam.configParam.txBFCsnValue);
+
+           if (cfgSetInt(pMac, WNI_CFG_VHT_CSN_BEAMFORMEE_ANT_SUPPORTED,
+                                     pMac->roam.configParam.txBFCsnValue)
+                                                             != eSIR_SUCCESS)
+           {
+               limLog(pMac, LOGE, FL("could not set "
+                    "WNI_CFG_VHT_CSN_BEAMFORMEE_ANT_SUPPORTED at CFG"));
+           }
+
+           if (IS_MUMIMO_BFORMEE_CAPABLE)
+               pftSessionEntry->txMuBformee =
+                                            pMac->roam.configParam.txMuBformee;
+        }
+
+        limLog(pMac, LOG1, FL("txMuBformee = %d"),
+                                       pftSessionEntry->txMuBformee);
+
+        if (cfgSetInt(pMac, WNI_CFG_VHT_MU_BEAMFORMEE_CAP,
+                                          pftSessionEntry->txMuBformee)
+                                                             != eSIR_SUCCESS)
+        {
+           limLog(pMac, LOGE, FL("could not set "
+                                  "WNI_CFG_VHT_MU_BEAMFORMEE_CAP at CFG"));
+        }
     }
     else
     {
