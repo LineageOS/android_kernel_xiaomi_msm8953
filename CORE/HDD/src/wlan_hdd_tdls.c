@@ -770,7 +770,6 @@ void wlan_hdd_tdls_btCoex_cb(void *data, int indType)
     u16 connectedTdlsPeers;
     tdlsCtx_t *pHddTdlsCtx;
     hddTdlsPeer_t *currPeer;
-    hdd_scaninfo_t *pScanInfo;
 
     ENTER();
     if ((NULL == data) || (indType < 0))
@@ -818,14 +817,6 @@ void wlan_hdd_tdls_btCoex_cb(void *data, int indType)
    {
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                   FL("BtCoex notification, Disable TDLS"));
-
-        pScanInfo =  &pHddCtx->scan_info;
-        // Lets do abort scan if scan is pending
-        if ((pScanInfo != NULL) && pScanInfo->mScanPending)
-        {
-             hdd_abort_mac_scan(pHddCtx, pScanInfo->sessionId,
-                                eCSR_SCAN_ABORT_DEFAULT);
-        }
 
         /* tdls is in progress */
         currPeer = wlan_hdd_tdls_is_progress(pHddCtx, NULL, 0, TRUE);
