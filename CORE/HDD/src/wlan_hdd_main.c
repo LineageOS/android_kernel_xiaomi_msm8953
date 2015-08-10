@@ -11856,7 +11856,7 @@ int hdd_sta_id_find_from_mac_addr(hdd_adapter_t *pAdapter,
     spin_lock_bh( &pAdapter->sta_hash_lock);
     if (pAdapter->is_sta_id_hash_initialized != VOS_TRUE) {
         spin_unlock_bh( &pAdapter->sta_hash_lock);
-        hddLog(VOS_TRACE_LEVEL_ERROR,
+        hddLog(VOS_TRACE_LEVEL_INFO,
                   FL("hash is not initialized for session id %d"),
                   pAdapter->sessionId);
         return HDD_WLAN_INVALID_STA_ID;
