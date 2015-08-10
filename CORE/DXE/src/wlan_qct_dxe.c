@@ -2098,7 +2098,7 @@ static wpt_uint32 dxeRXLogRefillRing
    WLANDXE_DescType         *currentDesc    = NULL;
    wpt_uint32                xfrSize, allocatedLen = 0;
 
-   while(bufferLen > 0)
+   while(bufferLen > 0 && channelEntry->numFreeDesc > 0)
    {
       /* Current Control block is free
        * and associated frame buffer is not linked with control block anymore

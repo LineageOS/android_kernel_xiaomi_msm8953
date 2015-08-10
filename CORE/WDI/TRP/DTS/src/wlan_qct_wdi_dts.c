@@ -860,7 +860,7 @@ void WDTS_MbReceiveMsg(void *pContext)
   for(i = 0; i < MAX_NUM_OF_BUFFER; i++)
   {
      pLoggingSession->logBuffAddress[i] = pLoggingMb->logBuffAddress[i];
-     if (!noMem)
+     if (!noMem && (pLoggingMb->logBuffLength[i] <= MAX_LOG_BUFFER_LENGTH))
      {
         pLoggingSession->logBuffLength[i] = gTransportDriver.setupLogTransfer(
                                                pLoggingMb->logBuffAddress[i],
