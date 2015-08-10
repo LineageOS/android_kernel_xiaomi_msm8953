@@ -8743,14 +8743,13 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
 
    hdd_close_all_adapters( pHddCtx );
 
+free_hdd_ctx:
    /* free the power on lock from platform driver */
    if (free_riva_power_on_lock("wlan"))
    {
       hddLog(VOS_TRACE_LEVEL_ERROR, "%s: failed to free power on lock",
                                            __func__);
    }
-
-free_hdd_ctx:
 
    //Free up dynamically allocated members inside HDD Adapter
    if (pHddCtx->cfg_ini)
