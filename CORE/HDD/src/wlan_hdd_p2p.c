@@ -304,44 +304,67 @@ VOS_STATUS wlan_hdd_cancel_existing_remain_on_channel(hdd_adapter_t *pAdapter)
                 return VOS_STATUS_E_FAILURE;
             }
 
-            INIT_COMPLETION(pAdapter->cancel_rem_on_chan_var);
             mutex_lock(&pHddCtx->roc_lock);
-            pRemainChanCtx->hdd_remain_on_chan_cancel_in_progress = TRUE;
-            mutex_unlock(&pHddCtx->roc_lock);
+            /* Check again if cancel remain on channel is started.
+             * If its started wait for its completiona and return.
+             */
+            if (TRUE == pRemainChanCtx->hdd_remain_on_chan_cancel_in_progress)
+            {
+                mutex_unlock(&pHddCtx->roc_lock);
+                hddLog( LOG1,
+                      "ROC timer cancellation in progress,"
+                      " wait for completion");
+                status = wait_for_completion_interruptible_timeout(
+                                     &pAdapter->cancel_rem_on_chan_var,
+                                     msecs_to_jiffies(WAIT_CANCEL_REM_CHAN));
+                if (0 >= status)
+                {
+                    hddLog( LOGE,
+                          "%s:wait on cancel_rem_on_chan_var failed %d",
+                           __func__, status);
+                    return VOS_STATUS_E_FAILURE;
+                }
+                return VOS_STATUS_SUCCESS;
+            }
+            else
+                pRemainChanCtx->hdd_remain_on_chan_cancel_in_progress = TRUE;
 
-             /* Issue abort remain on chan request to sme.
-              * The remain on channel callback will make sure the remain_on_chan
-              * expired event is sent.
-              */
-              if ( ( WLAN_HDD_INFRA_STATION == pAdapter->device_mode ) ||
+            mutex_unlock(&pHddCtx->roc_lock);
+            INIT_COMPLETION(pAdapter->cancel_rem_on_chan_var);
+
+            /* Issue abort remain on chan request to sme.
+             * The remain on channel callback will make sure the remain_on_chan
+             * expired event is sent.
+             */
+            if ( ( WLAN_HDD_INFRA_STATION == pAdapter->device_mode ) ||
                    ( WLAN_HDD_P2P_CLIENT == pAdapter->device_mode ) ||
                    ( WLAN_HDD_P2P_DEVICE == pAdapter->device_mode ))
-              {
-                  if (eHAL_STATUS_SUCCESS !=
-                          sme_CancelRemainOnChannel( WLAN_HDD_GET_HAL_CTX( pAdapter ),
+            {
+                if (eHAL_STATUS_SUCCESS !=
+                    sme_CancelRemainOnChannel( WLAN_HDD_GET_HAL_CTX( pAdapter ),
                                                      pAdapter->sessionId ))
-                  {
-                      VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                              FL("Failed to Cancel Remain on Channel"));
-                  }
-              }
-              else if (WLAN_HDD_P2P_GO == pAdapter->device_mode)
-              {
-                  WLANSAP_CancelRemainOnChannel(
-                          (WLAN_HDD_GET_CTX(pAdapter))->pvosContext);
-              }
+                {
+                    VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                            FL("Failed to Cancel Remain on Channel"));
+                }
+            }
+            else if (WLAN_HDD_P2P_GO == pAdapter->device_mode)
+            {
+                 WLANSAP_CancelRemainOnChannel(
+                         (WLAN_HDD_GET_CTX(pAdapter))->pvosContext);
+            }
 
-              status = wait_for_completion_interruptible_timeout(
-                                       &pAdapter->cancel_rem_on_chan_var,
-                                       msecs_to_jiffies(WAIT_CANCEL_REM_CHAN));
-              if (0 >= status)
-              {
-                  hddLog( LOGE,
-                          "%s: timeout waiting for cancel remain on channel"
-                          " ready indication %d",
-                           __func__, status);
-              }
-              hdd_allow_suspend(WIFI_POWER_EVENT_WAKELOCK_ROC);
+            status = wait_for_completion_interruptible_timeout(
+                                    &pAdapter->cancel_rem_on_chan_var,
+                                    msecs_to_jiffies(WAIT_CANCEL_REM_CHAN));
+            if (0 >= status)
+            {
+                hddLog( LOGE,
+                       "%s: timeout waiting for cancel remain on channel"
+                         " ready indication %d",
+                          __func__, status);
+            }
+            hdd_allow_suspend(WIFI_POWER_EVENT_WAKELOCK_ROC);
          }
          else
          {
