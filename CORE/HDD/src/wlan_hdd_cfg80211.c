@@ -1840,7 +1840,6 @@ static int __wlan_hdd_cfg80211_ll_stats_set(struct wiphy *wiphy,
     struct net_device *dev = wdev->netdev;
     hdd_adapter_t *pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
     hdd_context_t *pHddCtx = wiphy_priv(wiphy);
-    hdd_station_ctx_t *pHddStaCtx;
 
     ENTER();
 
@@ -1918,16 +1917,6 @@ static int __wlan_hdd_cfg80211_ll_stats_set(struct wiphy *wiphy,
            "sme_SetLinkLayerStatsIndCB Failed", __func__);
         return -EINVAL;
 
-    }
-
-    pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
-    if (VOS_STATUS_SUCCESS !=
-        WLANTL_ClearInterfaceStats((WLAN_HDD_GET_CTX(pAdapter))->pvosContext,
-        pHddStaCtx->conn_info.staId[0], WIFI_STATS_IFACE))
-    {
-        hddLog(VOS_TRACE_LEVEL_ERROR, "%s:"
-                "WLANTL_ClearInterfaceStats Failed", __func__);
-        return -EINVAL;
     }
 
     if (eHAL_STATUS_SUCCESS != sme_LLStatsSetReq( pHddCtx->hHal,
