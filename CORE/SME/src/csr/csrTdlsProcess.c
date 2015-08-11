@@ -836,8 +836,20 @@ eHalStatus tdlsMsgProcessor(tpAniSirGlobal pMac,  v_U16_t msgType,
     {
         case eWNI_SME_TDLS_SEND_MGMT_RSP:
         {
+            tSirSmeRsp *pMsg = (tSirSmeRsp*) pMsgBuf;
+            tCsrRoamInfo roamInfo = {0} ;
+
             /* remove pending eSmeCommandTdlsDiscovery command */
             csrTdlsRemoveSmeCmd(pMac, eSmeCommandTdlsSendMgmt) ;
+
+            if (eSIR_SME_SUCCESS != pMsg->statusCode)
+            {
+                /* Tx failed, so there wont be any ack confirmation*/
+                /* Indicate ack failure to upper layer */
+                roamInfo.reasonCode = 0;
+                csrRoamCallCallback(pMac, pMsg->sessionId, &roamInfo,
+                        0, eCSR_ROAM_RESULT_MGMT_TX_COMPLETE_IND, 0);
+            }
         }
         break;
         case eWNI_SME_TDLS_ADD_STA_RSP:
