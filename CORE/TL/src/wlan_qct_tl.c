@@ -8066,6 +8066,7 @@ WLANTL_STATxAuth
 #endif /* FEATURE_WLAN_TDLS */
   if( tlMetaInfo.ucIsArp )
   {
+    ucTxFlag |= HAL_USE_FW_IN_TX_PATH;
     if (pStaClient->arpRate == 0)
     {
         ucTxFlag |= HAL_USE_BD_RATE_1_MASK;
