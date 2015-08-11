@@ -150,6 +150,8 @@ __limFreshScanReqd(tpAniSirGlobal pMac, tANI_U8 returnFreshResults)
 
     if(pMac->lim.gLimSmeState != eLIM_SME_IDLE_STATE)
     {
+        limLog(pMac, LOG1, FL("setting fresh scan as false. sme state is %d"),
+               pMac->lim.gLimSmeState);
         return FALSE;
     }
     for(i =0; i < pMac->lim.maxBssId; i++)
@@ -172,6 +174,11 @@ __limFreshScanReqd(tpAniSirGlobal pMac, tANI_U8 returnFreshResults)
              ))
                 {
                 validState = FALSE;
+                limLog(pMac, LOG1, FL("setting fresh scan as false."
+                      "bssType is %d system role is %d, smestate is %d"),
+                      pMac->lim.gpSession[i].bssType,
+                      pMac->lim.gpSession[i].limSystemRole,
+                      pMac->lim.gpSession[i].limSmeState);
                 break;
               }
             
