@@ -2465,6 +2465,25 @@ static wpt_status dxeNotifySmsm
 
    HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO_HIGH, "C%x S%x", clrSt, setSt);
 
+   /* Store the smsm notification sent to firmware */
+   tempDxeCtrlBlk->smsmDxeHistogram = (tempDxeCtrlBlk->smsmDxeHistogram << 1);
+   if(setSt & WPAL_SMSM_WLAN_TX_ENABLE)
+   {
+      tempDxeCtrlBlk->smsmDxeHistogram |= 1;
+   }
+   else
+   {
+      tempDxeCtrlBlk->smsmDxeHistogram &= ~((wpt_uint32)1);
+   }
+   tempDxeCtrlBlk->smsmRingsEmptyHistogram = (tempDxeCtrlBlk->smsmRingsEmptyHistogram << 1);
+   if(setSt & WPAL_SMSM_WLAN_TX_RINGS_EMPTY)
+   {
+      tempDxeCtrlBlk->smsmRingsEmptyHistogram |= 1;
+   }
+   else
+   {
+      tempDxeCtrlBlk->smsmRingsEmptyHistogram &= ~((wpt_uint32)1);
+   }
    wpalNotifySmsm(clrSt, setSt);
 
    return eWLAN_PAL_STATUS_SUCCESS;
@@ -4615,6 +4634,8 @@ void *WLANDXE_Open
    tempDxeCtrlBlk->txIntDisabledByIMPS = eWLAN_PAL_FALSE;
    tempDxeCtrlBlk->driverReloadInProcessing = eWLAN_PAL_FALSE;
    tempDxeCtrlBlk->smsmToggled              = eWLAN_PAL_FALSE;
+   tempDxeCtrlBlk->smsmRingsEmptyHistogram  = 0;
+   tempDxeCtrlBlk->smsmDxeHistogram         = 0;
 
    /* Initialize SMSM state
     * Init State is
