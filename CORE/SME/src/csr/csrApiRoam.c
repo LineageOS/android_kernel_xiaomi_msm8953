@@ -3588,9 +3588,12 @@ static eHalStatus csrGetRateSet( tpAniSirGlobal pMac,  tCsrRoamProfile *pProfile
             {
                 if ( csrRatesIsDot11RateSupported( pMac, pIes->SuppRates.rates[ i ] ) ) 
                 {
-                    csrAddRateBitmap(pIes->SuppRates.rates[ i ], &rateBitmap);
-                    *pDstRate++ = pIes->SuppRates.rates[ i ];
-                    pOpRateSet->numRates++;
+                    if ( !csrIsRateAlreadyPresent(pIes->SuppRates.rates[ i ], rateBitmap) )
+                    {
+                        csrAddRateBitmap(pIes->SuppRates.rates[ i ], &rateBitmap);
+                        *pDstRate++ = pIes->SuppRates.rates[ i ];
+                        pOpRateSet->numRates++;
+                    }
                 }
             }
         }
