@@ -1074,6 +1074,9 @@ static v_BOOL_t put_wifi_iface_stats(hdd_adapter_t *pAdapter,
 
 
     if (nla_put_u32(vendor_event,
+                    QCA_WLAN_VENDOR_ATTR_LL_STATS_TYPE,
+                    QCA_WLAN_VENDOR_ATTR_LL_STATS_TYPE_IFACE) ||
+        nla_put_u32(vendor_event,
                     QCA_WLAN_VENDOR_ATTR_LL_STATS_IFACE_BEACON_RX,
                     pWifiIfaceStat->beaconRx) ||
         nla_put_u32(vendor_event,
@@ -1316,21 +1319,19 @@ static v_VOID_t hdd_link_layer_process_peer_stats(hdd_adapter_t *pAdapter,
      * that number of rates shall not exceed beyond 50 with
      * the sizeof (tSirWifiRateStat) being 32.
      */
-    vendor_event = cfg80211_vendor_event_alloc(pHddCtx->wiphy,
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0))
-            NULL,
-#endif
-            LL_STATS_EVENT_BUF_SIZE + NLMSG_HDRLEN,
-            QCA_NL80211_VENDOR_SUBCMD_LL_PEER_INFO_STATS_INDEX,
-            GFP_KERNEL);
+    vendor_event = cfg80211_vendor_cmd_alloc_reply_skb(pHddCtx->wiphy,
+            LL_STATS_EVENT_BUF_SIZE);
     if (!vendor_event)
     {
         hddLog(VOS_TRACE_LEVEL_ERROR,
-                "%s: cfg80211_vendor_event_alloc failed",
+                "%s: cfg80211_vendor_cmd_alloc_reply_skb failed",
                 __func__);
         return;
     }
     if (nla_put_u32(vendor_event,
+                    QCA_WLAN_VENDOR_ATTR_LL_STATS_TYPE,
+                    QCA_WLAN_VENDOR_ATTR_LL_STATS_TYPE_PEER) ||
+        nla_put_u32(vendor_event,
             QCA_WLAN_VENDOR_ATTR_LL_STATS_IFACE_NUM_PEERS,
             pWifiPeerStat->numPeers))
     {
@@ -1383,8 +1384,7 @@ static v_VOID_t hdd_link_layer_process_peer_stats(hdd_adapter_t *pAdapter,
         nla_nest_end(vendor_event, peers);
     }
     nla_nest_end(vendor_event, peerInfo);
-    cfg80211_vendor_event(vendor_event, GFP_KERNEL);
-
+    cfg80211_vendor_cmd_reply(vendor_event);
     EXIT();
 }
 
@@ -1416,17 +1416,12 @@ static v_VOID_t hdd_link_layer_process_iface_stats(hdd_adapter_t *pAdapter,
      * a call on the limit based on the data requirements on
      * interface statistics.
      */
-    vendor_event = cfg80211_vendor_event_alloc(pHddCtx->wiphy,
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0))
-           NULL,
-#endif
-           LL_STATS_EVENT_BUF_SIZE + NLMSG_HDRLEN,
-           QCA_NL80211_VENDOR_SUBCMD_LL_IFACE_STATS_INDEX,
-           GFP_KERNEL);
+    vendor_event = cfg80211_vendor_cmd_alloc_reply_skb(pHddCtx->wiphy,
+           LL_STATS_EVENT_BUF_SIZE);
     if (!vendor_event)
     {
         hddLog(VOS_TRACE_LEVEL_ERROR,
-               FL("cfg80211_vendor_event_alloc failed") );
+               FL("cfg80211_vendor_cmd_alloc_reply_skb failed") );
         return;
     }
 
@@ -1541,7 +1536,7 @@ static v_VOID_t hdd_link_layer_process_iface_stats(hdd_adapter_t *pAdapter,
         }
     }
 
-    cfg80211_vendor_event(vendor_event, GFP_KERNEL);
+    cfg80211_vendor_cmd_reply(vendor_event);
 
     EXIT();
 }
@@ -1596,22 +1591,19 @@ static v_VOID_t hdd_link_layer_process_radio_stats(hdd_adapter_t *pAdapter,
      * sizeof (tSirWifiChannelStats) being 24 bytes.
      */
 
-    vendor_event = cfg80211_vendor_event_alloc(pHddCtx->wiphy,
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0))
-           NULL,
-#endif
-           LL_STATS_EVENT_BUF_SIZE + NLMSG_HDRLEN ,
-           QCA_NL80211_VENDOR_SUBCMD_LL_RADIO_STATS_INDEX,
-           GFP_KERNEL);
-
+    vendor_event = cfg80211_vendor_cmd_alloc_reply_skb(pHddCtx->wiphy,
+           LL_STATS_EVENT_BUF_SIZE);
     if (!vendor_event)
     {
         hddLog(VOS_TRACE_LEVEL_ERROR,
-               FL("cfg80211_vendor_event_alloc failed") );
+               FL("cfg80211_vendor_cmd_alloc_reply_skb failed") );
         return;
     }
 
     if (nla_put_u32(vendor_event,
+             QCA_WLAN_VENDOR_ATTR_LL_STATS_TYPE,
+             QCA_WLAN_VENDOR_ATTR_LL_STATS_TYPE_RADIO) ||
+        nla_put_u32(vendor_event,
              QCA_WLAN_VENDOR_ATTR_LL_STATS_RADIO_ID,
              pWifiRadioStat->radio)      ||
         nla_put_u32(vendor_event,
@@ -1724,7 +1716,7 @@ static v_VOID_t hdd_link_layer_process_radio_stats(hdd_adapter_t *pAdapter,
     }
     nla_nest_end(vendor_event, chList);
 
-    cfg80211_vendor_event(vendor_event, GFP_KERNEL);
+    cfg80211_vendor_cmd_reply(vendor_event);
 
     EXIT();
     return;
@@ -1741,6 +1733,7 @@ static void hdd_link_layer_stats_ind_callback ( void *pCtx,
 {
     hdd_context_t *pHddCtx = (hdd_context_t *)pCtx;
     hdd_adapter_t *pAdapter = NULL;
+    struct hdd_ll_stats_context *context;
     tpSirLLStatsResults linkLayerStatsResults = (tpSirLLStatsResults)pRsp;
     int status;
 
@@ -1786,27 +1779,58 @@ static void hdd_link_layer_stats_ind_callback ( void *pCtx,
             hddLog(VOS_TRACE_LEVEL_INFO,
                     "LL_STATS RESULTS RESPONSE result = %p",
                     linkLayerStatsResults->result);
+            spin_lock(&hdd_context_lock);
+            context = &pHddCtx->ll_stats_context;
+            /* validate response received from target */
+            if ((context->request_id != linkLayerStatsResults->respId) ||
+                !(context->request_bitmap & linkLayerStatsResults->paramId))
+            {
+                spin_unlock(&hdd_context_lock);
+                hddLog(LOGE,
+                   FL("Error : Request id %d response id %d request bitmap 0x%x"
+                      "response bitmap 0x%x"),
+                   context->request_id, linkLayerStatsResults->respId,
+                   context->request_bitmap, linkLayerStatsResults->paramId);
+                return;
+            }
+            spin_unlock(&hdd_context_lock);
+
             if ( linkLayerStatsResults->paramId & WMI_LINK_STATS_RADIO )
             {
                 hdd_link_layer_process_radio_stats(pAdapter,
                                 (v_VOID_t *)linkLayerStatsResults->result);
+                spin_lock(&hdd_context_lock);
+                context->request_bitmap &= ~(WMI_LINK_STATS_RADIO);
+                spin_unlock(&hdd_context_lock);
             }
             else if ( linkLayerStatsResults->paramId & WMI_LINK_STATS_IFACE )
             {
                 hdd_link_layer_process_iface_stats(pAdapter,
                                 (v_VOID_t *)linkLayerStatsResults->result);
+                spin_lock(&hdd_context_lock);
+                context->request_bitmap &= ~(WMI_LINK_STATS_IFACE);
+                spin_unlock(&hdd_context_lock);
             }
             else if ( linkLayerStatsResults->paramId &
                     WMI_LINK_STATS_ALL_PEER )
             {
                 hdd_link_layer_process_peer_stats(pAdapter,
                                 (v_VOID_t *)linkLayerStatsResults->result);
+                spin_lock(&hdd_context_lock);
+                context->request_bitmap &= ~(WMI_LINK_STATS_ALL_PEER);
+                spin_unlock(&hdd_context_lock);
             } /* WMI_LINK_STATS_ALL_PEER */
             else
             {
                 hddLog(VOS_TRACE_LEVEL_ERROR,
                         FL("INVALID LL_STATS_NOTIFY RESPONSE ***********"));
             }
+
+            spin_lock(&hdd_context_lock);
+            /* complete response event if all requests are completed */
+            if (0 == context->request_bitmap)
+                complete(&context->response_event);
+            spin_unlock(&hdd_context_lock);
 
             break;
         }
@@ -1968,6 +1992,8 @@ static int __wlan_hdd_cfg80211_ll_stats_get(struct wiphy *wiphy,
                                             const void *data,
                                             int data_len)
 {
+    unsigned long rc;
+    struct hdd_ll_stats_context *context;
     hdd_context_t *pHddCtx = wiphy_priv(wiphy);
     struct nlattr *tb_vendor[QCA_WLAN_VENDOR_ATTR_LL_STATS_GET_MAX + 1];
     tSirLLStatsGetReq linkLayerStatsGetReq;
@@ -2064,12 +2090,29 @@ static int __wlan_hdd_cfg80211_ll_stats_get(struct wiphy *wiphy,
            "LL_STATS_GET paramIdMask = %d",
            linkLayerStatsGetReq.paramIdMask);
 
+    spin_lock(&hdd_context_lock);
+    context = &pHddCtx->ll_stats_context;
+    context->request_id = linkLayerStatsGetReq.reqId;
+    context->request_bitmap = linkLayerStatsGetReq.paramIdMask;
+    INIT_COMPLETION(context->response_event);
+    spin_unlock(&hdd_context_lock);
+
     if (eHAL_STATUS_SUCCESS  != sme_LLStatsGetReq( pHddCtx->hHal,
                                                 &linkLayerStatsGetReq))
     {
         hddLog(VOS_TRACE_LEVEL_ERROR, "%s:"
                "sme_LLStatsGetReq Failed", __func__);
         return -EINVAL;
+    }
+
+    rc = wait_for_completion_timeout(&context->response_event,
+            msecs_to_jiffies(WLAN_WAIT_TIME_LL_STATS));
+    if (!rc)
+    {
+        hddLog(LOGE,
+            FL("Target response timed out request id %d request bitmap 0x%x"),
+            context->request_id, context->request_bitmap);
+        return -ETIMEDOUT;
     }
 
     EXIT();

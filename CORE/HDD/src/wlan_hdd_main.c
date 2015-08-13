@@ -9490,6 +9490,8 @@ int hdd_wlan_startup(struct device *dev )
    init_completion(&pHddCtx->wiphy_channel_update_event);
    init_completion(&pHddCtx->ssr_comp_var);
 
+   hdd_init_ll_stats_ctx(pHddCtx);
+
 #ifdef CONFIG_ENABLE_LINUX_REG
    init_completion(&pHddCtx->linux_reg_req);
 #else
