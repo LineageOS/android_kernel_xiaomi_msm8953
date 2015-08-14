@@ -1409,8 +1409,11 @@ static void pmcProcessResponse( tpAniSirGlobal pMac, tSirSmeRsp *pMsg )
                 pmcLog(pMac, LOGP,
                        FL("Response message to request to exit BMPS indicates failure, status %d"),
                        pMsg->statusCode);
+                /*Status is not succes, so set back the pmc state as BMPS*/
+                pMac->pmc.pmcState = BMPS;
             }
-            pmcEnterFullPowerState(pMac);
+            else
+                pmcEnterFullPowerState(pMac);
         break;
 
         /* We got a response to our Start UAPSD request.  */
