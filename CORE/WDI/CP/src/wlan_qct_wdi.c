@@ -33175,11 +33175,14 @@ WDI_ProcessEXTScanStartReq
   pHalExtScanStartReqParams->basePeriod = pwdiEXTScanStartReqParams->basePeriod;
   pHalExtScanStartReqParams->maxApPerScan =
                                     pwdiEXTScanStartReqParams->maxAPperScan;
-  pHalExtScanStartReqParams->reportThreshold =
-                                pwdiEXTScanStartReqParams->reportThreshold;
+  pHalExtScanStartReqParams->reportThresholdPercent =
+                                pwdiEXTScanStartReqParams->reportThresholdPercent;
+  pHalExtScanStartReqParams->reportThresholdNumScans =
+                                pwdiEXTScanStartReqParams->reportThresholdNumScans;
   pHalExtScanStartReqParams->requestId = pwdiEXTScanStartReqParams->requestId;
   pHalExtScanStartReqParams->sessionId = pwdiEXTScanStartReqParams->sessionId;
   pHalExtScanStartReqParams->numBuckets = pwdiEXTScanStartReqParams->numBuckets;
+  pHalExtScanStartReqParams->homeAwayTime = pwdiEXTScanStartReqParams->homeAwayTime;
 
   for( i = 0; i < WDI_WLAN_EXTSCAN_MAX_BUCKETS ; i++ )
   {
@@ -33191,6 +33194,12 @@ WDI_ProcessEXTScanStartReq
                       pwdiEXTScanStartReqParams->buckets[i].period;
       pHalExtScanStartReqParams->bucketData[i].reportEvents =
                       pwdiEXTScanStartReqParams->buckets[i].reportEvents;
+      pHalExtScanStartReqParams->bucketData[i].max_period =
+                      pwdiEXTScanStartReqParams->buckets[i].max_period;
+      pHalExtScanStartReqParams->bucketData[i].exponent =
+                      pwdiEXTScanStartReqParams->buckets[i].exponent;
+      pHalExtScanStartReqParams->bucketData[i].step_count =
+                      pwdiEXTScanStartReqParams->buckets[i].step_count;
       pHalExtScanStartReqParams->bucketData[i].numChannels =
                       pwdiEXTScanStartReqParams->buckets[i].numChannels;
 
@@ -33208,25 +33217,32 @@ WDI_ProcessEXTScanStartReq
 
 
   VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
-          " basePeriod %u maxApPerScan %u reportThreshold %u requestId %u"
-          " sessionId %u numBuckets%u ",
+          " basePeriod %u maxApPerScan %u reportThresholdPercent %u"
+          "reportThresholdNumScans %u requestId %u"
+          " sessionId %u numBuckets%u homeAwayTime %u",
           pHalExtScanStartReqParams->basePeriod,
           pHalExtScanStartReqParams->maxApPerScan,
-          pHalExtScanStartReqParams->reportThreshold,
+          pHalExtScanStartReqParams->reportThresholdPercent,
+          pHalExtScanStartReqParams->reportThresholdNumScans,
           pHalExtScanStartReqParams->requestId,
           pHalExtScanStartReqParams->sessionId,
-          pHalExtScanStartReqParams->numBuckets);
+          pHalExtScanStartReqParams->numBuckets,
+          pHalExtScanStartReqParams->homeAwayTime);
 
   for( i = 0; i < pHalExtScanStartReqParams->numBuckets ; i++ )
   {
       VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO ,
               " %d) bucketId %u  channelBand %u period %u "
-              " reportEvents %u numChannels %u ",i,
+              " reportEvents %u numChannels %u "
+              "max_period %u exponent %u step_count %u",i,
       pHalExtScanStartReqParams->bucketData[i].bucketId,
       pHalExtScanStartReqParams->bucketData[i].channelBand,
       pHalExtScanStartReqParams->bucketData[i].period,
       pHalExtScanStartReqParams->bucketData[i].reportEvents,
-      pHalExtScanStartReqParams->bucketData[i].numChannels);
+      pHalExtScanStartReqParams->bucketData[i].numChannels,
+      pHalExtScanStartReqParams->bucketData[i].max_period,
+      pHalExtScanStartReqParams->bucketData[i].exponent,
+      pHalExtScanStartReqParams->bucketData[i].step_count);
 
       for( j = 0; j< pHalExtScanStartReqParams->bucketData[i].numChannels; j++)
       {

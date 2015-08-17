@@ -5889,6 +5889,10 @@ typedef struct
      */
     wpt_uint8      reportEvents;
 
+    wpt_uint32        max_period;
+    wpt_uint32        exponent;
+    wpt_uint32        step_count;
+
     wpt_uint8      numChannels;
 
     /*
@@ -5905,8 +5909,10 @@ typedef struct
     wpt_uint32                maxAPperScan;
 
     /* in %, when buffer is this much full, wake up host */
-    wpt_uint32                reportThreshold;
+    wpt_uint32                reportThresholdPercent;
+    wpt_uint32                reportThresholdNumScans;
 
+    wpt_uint32               homeAwayTime;  //in units of milliseconds
     wpt_uint8                numBuckets;
     WDI_WifiScanBucketSpec  buckets[WDI_WLAN_EXTSCAN_MAX_BUCKETS];
 } WDI_EXTScanStartReqParams;

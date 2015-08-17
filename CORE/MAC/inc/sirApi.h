@@ -5255,6 +5255,10 @@ typedef struct
      */
     tANI_U8      reportEvents;
 
+    tANI_U32        max_period;
+    tANI_U32        exponent;
+    tANI_U32        step_count;
+
     tANI_U8      numChannels;
 
     /*
@@ -5271,9 +5275,12 @@ typedef struct
     tANI_U32                maxAPperScan;
 
     /* in %, when buffer is this much full, wake up host */
-    tANI_U32                reportThreshold;
+    tANI_U32                reportThresholdPercent;
+    tANI_U32                reportThresholdNumScans;
 
-    tANI_U8               numBuckets;
+    tANI_U32                homeAwayTime;       //in units of milliseconds
+
+    tANI_U8                 numBuckets;
     tSirWifiScanBucketSpec  buckets[WLAN_EXTSCAN_MAX_BUCKETS];
 } tSirEXTScanStartReqParams, *tpSirEXTScanStartReqParams;
 
