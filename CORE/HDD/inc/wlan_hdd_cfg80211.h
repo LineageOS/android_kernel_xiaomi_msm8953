@@ -549,6 +549,18 @@ enum qca_wlan_vendor_attr_ll_stats_results
      */
     QCA_WLAN_VENDOR_ATTR_LL_STATS_RESULTS_MORE_DATA,
 
+    /* Unsigned 64bit value */
+    QCA_WLAN_VENDOR_ATTR_LL_STATS_IFACE_AVERAGE_TSF_OFFSET,
+
+    /* Unsigned 32bit value */
+    QCA_WLAN_VENDOR_ATTR_LL_STATS_IFACE_LEAKY_AP_DETECTED,
+
+    /* Unsigned 32bit value */
+    QCA_WLAN_VENDOR_ATTR_LL_STATS_IFACE_LEAKY_AP_AVG_NUM_FRAMES_LEAKED,
+
+    /* Unsigned 32bit value */
+    QCA_WLAN_VENDOR_ATTR_LL_STATS_IFACE_LEAKY_AP_GUARD_TIME,
+
     /* keep last */
     QCA_WLAN_VENDOR_ATTR_LL_STATS_AFTER_LAST,
     QCA_WLAN_VENDOR_ATTR_LL_STATS_MAX   =
