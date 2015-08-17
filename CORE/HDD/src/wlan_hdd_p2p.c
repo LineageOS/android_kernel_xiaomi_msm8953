@@ -2032,12 +2032,17 @@ int __wlan_hdd_add_virtual_intf( struct wiphy *wiphy, char *name,
 #endif
     }
 
-    /* Below function Notifies Mode change and
-     * If p2p session is detected then invokes functionality to
-     * Teardown TDLS links and disable offchannel if any. Since
-     * TDLS is not supported in case of concurrency.
-     */
-    hdd_tdls_notify_mode_change(pAdapter, pHddCtx);
+    if ((type == NL80211_IFTYPE_P2P_CLIENT) ||
+          (type == NL80211_IFTYPE_P2P_GO))
+    {
+        /* Below function Notifies Mode change and
+         * If p2p session is detected then invokes functionality to
+         * Teardown TDLS links and disable offchannel if any. Since
+         * TDLS is not supported in case of concurrency.
+         */
+        hddLog(LOG1, FL("Interface type = %d"), type);
+        hdd_tdls_notify_mode_change(pAdapter, pHddCtx);
+    }
 
     EXIT();
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0))

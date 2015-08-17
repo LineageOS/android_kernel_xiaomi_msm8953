@@ -469,6 +469,7 @@ hddTdlsPeer_t *wlan_hdd_tdls_get_connected_peer(hdd_adapter_t *pAdapter);
 
 int wlan_hdd_validate_tdls_context(hdd_context_t *pHddCtx, tdlsCtx_t *pTdlsCtx);
 
+void wlan_hdd_tdls_reenable(hdd_context_t *pHddCtx);
 #else
 static inline void hdd_tdls_notify_mode_change(hdd_adapter_t *pAdapter,
                                                hdd_context_t *pHddCtx)
@@ -476,6 +477,10 @@ static inline void hdd_tdls_notify_mode_change(hdd_adapter_t *pAdapter,
 }
 static inline void
 wlan_hdd_tdls_disable_offchan_and_teardown_links(hdd_context_t *pHddCtx)
+{
+}
+static inline void
+wlan_hdd_tdls_reenable(hdd_context_t *pHddCtx)
 {
 }
 #endif

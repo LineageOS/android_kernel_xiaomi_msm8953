@@ -61,9 +61,7 @@
 #include "csrInsideApi.h"
 #include "wlan_hdd_p2p.h"
 #include <vos_sched.h>
-#ifdef FEATURE_WLAN_TDLS
 #include "wlan_hdd_tdls.h"
-#endif
 #include "sme_Api.h"
 #include "wlan_hdd_hostapd.h"
 #include "vos_utils.h"
@@ -1087,18 +1085,14 @@ static eHalStatus hdd_DisConnectHandler( hdd_adapter_t *pAdapter, tCsrRoamInfo *
                    cfg80211_disconnected(dev, WLAN_REASON_UNSPECIFIED, NULL, 0, GFP_KERNEL);
                }
             }
-            if ((TRUE == pHddCtx->cfg_ini->fEnableTDLSSupport) &&
-                          (TRUE == sme_IsFeatureSupportedByFW(TDLS)) &&
-                          (eTDLS_SUPPORT_ENABLED == pHddCtx->tdls_mode_last ||
-                           eTDLS_SUPPORT_EXPLICIT_TRIGGER_ONLY ==
-                                           pHddCtx->tdls_mode_last)) {
-                if (pAdapter->device_mode != WLAN_HDD_INFRA_STATION)
-                    /* Enable TDLS support Once P2P session ends since
-                     * upond detection of concurrency TDLS would be disabled
-                     */
-                    wlan_hdd_tdls_set_mode(pHddCtx, pHddCtx->tdls_mode_last,
-                                           FALSE);
+
+            if (pAdapter->device_mode == WLAN_HDD_P2P_CLIENT)
+            {
+                hddLog(LOG1,
+                       FL("P2P client is getting removed and we are tryig to re-enable TDLS"));
+                wlan_hdd_tdls_reenable(pHddCtx);
             }
+
             //If the Device Mode is Station
             // and the P2P Client is Connected
             //Enable BMPS
@@ -1960,6 +1954,14 @@ static eHalStatus hdd_AssociationCompletionHandler( hdd_adapter_t *pAdapter, tCs
          * completed operation - with a ASSOCIATION_FAILURE status.*/
         if ( eCSR_ROAM_ASSOCIATION_FAILURE == roamStatus &&  !hddDisconInProgress )
         {
+
+            if (pAdapter->device_mode == WLAN_HDD_P2P_CLIENT)
+            {
+                hddLog(LOG1,
+                       FL("Assoication Failure for P2P client and we are trying to re-enable TDLS"));
+                wlan_hdd_tdls_reenable(pHddCtx);
+            }
+
             if (pRoamInfo)
                 hddLog(VOS_TRACE_LEVEL_ERROR,
                      "%s: send connect failure to nl80211:"

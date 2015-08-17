@@ -178,7 +178,6 @@ done:
  */
 void hdd_tdls_notify_mode_change(hdd_adapter_t *adapter, hdd_context_t *hddctx)
 {
-    if (adapter->device_mode != WLAN_HDD_INFRA_STATION)
         wlan_hdd_tdls_disable_offchan_and_teardown_links(hddctx);
 }
 
@@ -3271,5 +3270,43 @@ void wlan_hdd_tdls_update_rx_pkt_cnt_n_rssi(hdd_adapter_t *pAdapter,
             "mac : " MAC_ADDRESS_STR "rssi is %d",
             MAC_ADDR_ARRAY(mac), rssiAvg);
 }
-/*EXT TDLS*/
 
+/**
+ * wlan_hdd_tdls_reenable() - Re-Enable TDLS
+ * @hddctx: pointer to hdd context
+ *
+ * Function re-enable's TDLS which might be disabled during concurrency
+ *
+ * Return: None
+ */
+void wlan_hdd_tdls_reenable(hdd_context_t *pHddCtx)
+{
+
+    if ((TRUE != pHddCtx->cfg_ini->fEnableTDLSSupport) ||
+        (TRUE != sme_IsFeatureSupportedByFW(TDLS))) {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  FL("tdls support not enabled"));
+        return;
+    }
+
+    /* if tdls is not enabled or BtCoex is on then don't revert tdls mode */
+    if ((eTDLS_SUPPORT_NOT_ENABLED == pHddCtx->tdls_mode) ||
+        (pHddCtx->is_tdls_btc_enabled == FALSE)) {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  FL("btc disable tdls so no need to enable: Mode=%d, BTC enabled=%d"),
+                  pHddCtx->tdls_mode, pHddCtx->is_tdls_btc_enabled);
+            return;
+    }
+
+    if (eTDLS_SUPPORT_ENABLED == pHddCtx->tdls_mode_last ||
+         eTDLS_SUPPORT_EXPLICIT_TRIGGER_ONLY ==
+                               pHddCtx->tdls_mode_last) {
+            /* Enable TDLS support Once P2P session ends since
+             * upond detection of concurrency TDLS might be disabled
+             */
+             hddLog(LOG1, FL("TDLS mode set to %d"), pHddCtx->tdls_mode_last);
+             wlan_hdd_tdls_set_mode(pHddCtx, pHddCtx->tdls_mode_last,
+                                    FALSE);
+    }
+}
+/*EXT TDLS*/
