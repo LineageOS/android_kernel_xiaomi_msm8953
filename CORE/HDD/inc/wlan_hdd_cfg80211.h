@@ -899,6 +899,7 @@ enum qca_wlan_vendor_attr_get_concurrency_matrix {
 #define WIFI_FEATURE_EPR                0x4000   /* Enhanced power reporting */
 #define WIFI_FEATURE_AP_STA             0x8000   /* Support for AP STA
                                                     Concurrency */
+#define WIFI_FEATURE_LINK_LAYER_STATS   0x10000  /* Link layer stats */
 
 /* Add more features here */
 enum qca_wlan_vendor_attr_set_no_dfs_flag
