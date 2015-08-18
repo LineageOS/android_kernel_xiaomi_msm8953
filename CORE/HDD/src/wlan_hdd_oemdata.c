@@ -237,6 +237,13 @@ int __iw_set_oem_data_req(
         return -EINVAL;
     }
 
+    if (pHddCtx->isPnoEnable)
+    {
+        VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                   FL("pno scan in progress"));
+        return -EBUSY;
+    }
+
     do
     {
         if (NULL != wrqu->data.pointer)

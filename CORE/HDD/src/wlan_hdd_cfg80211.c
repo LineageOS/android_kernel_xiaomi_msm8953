@@ -10841,6 +10841,14 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
         return -EBUSY;
     }
 
+    // Don't allow scan if PNO scan is going on.
+    if (pHddCtx->isPnoEnable)
+    {
+        VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                   FL("pno scan in progress"));
+        return -EBUSY;
+    }
+
     //Don't Allow Scan and return busy if Remain On
     //Channel and action frame is pending
     //Otherwise Cancel Remain On Channel and allow Scan
