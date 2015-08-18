@@ -805,10 +805,6 @@ limSendSmeScanRsp(tpAniSirGlobal pMac, tANI_U16 length,
                           (tANI_U8 *) &ptemp->bssDescription.bssId,
                            ptemp->bssDescription.length);
 
-            limLog(pMac, LOG1, FL("ScanRsp : msgLen %d, bssDescr Len=%d BssID "),
-                          msgLen, ptemp->bssDescription.length);
-            limPrintMacAddr(pMac, ptemp->bssDescription.bssId, LOG1);
-
             pSirSmeScanRsp->sessionId   = smesessionId;
             pSirSmeScanRsp->transcationId = smetranscationId;
 
