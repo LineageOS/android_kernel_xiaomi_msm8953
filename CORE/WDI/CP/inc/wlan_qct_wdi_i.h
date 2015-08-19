@@ -459,8 +459,6 @@ typedef enum
   WDI_EXTSCAN_GET_CAPABILITIES_REQ               = 96,
   WDI_EXTSCAN_SET_BSSID_HOTLIST_REQ              = 97,
   WDI_EXTSCAN_RESET_BSSID_HOTLIST_REQ            = 98,
-  WDI_EXTSCAN_SET_SIGNF_RSSI_CHANGE_REQ          = 99,
-  WDI_EXTSCAN_RESET_SIGNF_RSSI_CHANGE_REQ        = 100,
 #endif
 
   WDI_SPOOF_MAC_ADDR_REQ                         = 101,
@@ -804,8 +802,6 @@ typedef enum
   WDI_EXTSCAN_GET_CAPABILITIES_RSP               = 96,
   WDI_EXTSCAN_SET_HOTLIST_BSSID_RSP              = 97,
   WDI_EXTSCAN_RESET_HOTLIST_BSSID_RSP            = 98,
-  WDI_EXTSCAN_SET_SIGNF_RSSI_CHANGE_RSP          = 99,
-  WDI_EXTSCAN_RESET_SIGNF_RSSI_CHANGE_RSP        = 100,
 #endif
   WDI_SPOOF_MAC_ADDR_RSP                         = 101,
   WDI_GET_FW_STATS_RSP                           = 102,
@@ -896,7 +892,6 @@ typedef enum
   WDI_HAL_EXTSCAN_SCAN_AVAILABLE_IND = WDI_HAL_IND_MIN + 22,
   WDI_HAL_EXTSCAN_RESULT_IND         = WDI_HAL_IND_MIN + 23,
   WDI_HAL_EXTSCAN_BSSID_HOTLIST_RESULT_IND    = WDI_HAL_IND_MIN + 24,
-  WDI_HAL_EXTSCAN_SIG_RSSI_RESULT_IND         = WDI_HAL_IND_MIN + 25,
 #endif
   WDI_TDLS_CHAN_SWITCH_REQ_RESP      = WDI_HAL_IND_MIN + 26,
   WDI_HAL_DEL_BA_IND                 = WDI_HAL_IND_MIN + 27,
@@ -5999,34 +5994,6 @@ WDI_ProcessEXTScanResetHotlistBSSIDRsp
 );
 
 WDI_Status
-WDI_ProcessEXTScanSetSignifRSSIChangeReq
-(
-  WDI_ControlBlockType*  pWDICtx,
-  WDI_EventInfoType*     pEventData
-);
-
-WDI_Status
-WDI_ProcessEXTScanSetSignfRSSIChangeRsp
-(
-  WDI_ControlBlockType*  pWDICtx,
-  WDI_EventInfoType*     pEventData
-);
-
-WDI_Status
-WDI_ProcessEXTScanResetSignfRSSIChangeReq
-(
-  WDI_ControlBlockType*  pWDICtx,
-  WDI_EventInfoType*     pEventData
-);
-
-WDI_Status
-WDI_ProcessEXTScanResetSignfRSSIChangeRsp
-(
-  WDI_ControlBlockType*  pWDICtx,
-  WDI_EventInfoType*     pEventData
-);
-
-WDI_Status
 WDI_ProcessEXTScanScanAvailableInd
 (
    WDI_ControlBlockType*  pWDICtx,
@@ -6042,13 +6009,6 @@ WDI_ProcessEXTScanResultInd
 
 WDI_Status
 WDI_ProcessEXTScanBssidHotListResultInd
-(
-   WDI_ControlBlockType*  pWDICtx,
-   WDI_EventInfoType*     pEventData
-);
-
-WDI_Status
-WDI_ProcessEXTScanSignfRssiResultInd
 (
    WDI_ControlBlockType*  pWDICtx,
    WDI_EventInfoType*     pEventData

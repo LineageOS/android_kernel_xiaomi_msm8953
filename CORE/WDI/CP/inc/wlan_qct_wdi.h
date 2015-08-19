@@ -413,7 +413,6 @@ typedef enum
   WDI_EXTSCAN_SCAN_RESULT_IND,
   WDI_EXTSCAN_GET_CAPABILITIES_IND,
   WDI_EXTSCAN_BSSID_HOTLIST_RESULT_IND,
-  WDI_EXTSCAN_SIGN_RSSI_RESULT_IND,
 #endif
   /*Delete BA Ind*/
   WDI_DEL_BA_IND,
@@ -5842,7 +5841,6 @@ typedef struct
 #define WDI_WLAN_EXTSCAN_MAX_CHANNELS                 16
 #define WDI_WLAN_EXTSCAN_MAX_BUCKETS                  16
 #define WDI_WLAN_EXTSCAN_MAX_HOTLIST_APS              128
-#define WDI_WLAN_EXTSCAN_MAX_SIGNIFICANT_CHANGE_APS   64
 
 typedef enum
 {
@@ -5963,32 +5961,6 @@ typedef struct
     wpt_uint8     sessionId;
 } WDI_EXTScanResetBSSIDHotlistReqParams;
 
-
-typedef struct
-{
-    wpt_int32   requestId;
-    wpt_int8    sessionId;    // session Id mapped to vdev_id
-
-    /* number of samples for averaging RSSI */
-    wpt_int32              rssiSampleSize;
-
-    /* number of missed samples to confirm AP loss */
-    wpt_int32              lostApSampleSize;
-
-    /* number of APs breaching threshold required for firmware
-     * to generate event
-     */
-    wpt_int32              minBreaching;
-
-    wpt_int32   numAp;        // number of hotlist APs
-    WDI_APThresholdParam   ap[WDI_WLAN_EXTSCAN_MAX_HOTLIST_APS];    // hotlist APs
-} WDI_EXTScanSetSignfRSSIChangeReqParams;
-
-typedef struct
-{
-    wpt_uint32    requestId;
-    wpt_uint8     sessionId;
-} WDI_EXTScanResetSignfRSSIChangeReqParams;
 #endif /* WLAN_FEATURE_EXTSCAN */
 
 #ifdef WLAN_FEATURE_LINK_LAYER_STATS
@@ -8036,10 +8008,6 @@ typedef void  (*WDI_EXTScanGetCapabilitiesRspCb)(void *pEventData,
 typedef void  (*WDI_EXTScanSetBSSIDHotlistRspCb)(void *pEventData,
                                        void *pUserData);
 typedef void  (*WDI_EXTScanResetBSSIDHotlistRspCb)(void *pEventData,
-                                       void *pUserData);
-typedef void  (*WDI_EXTScanSetSignfRSSIChangeRspCb)(void *pEventData,
-                                       void *pUserData);
-typedef void  (*WDI_EXTScanResetSignfRSSIChangeRspCb)(void *pEventData,
                                        void *pUserData);
 #endif /* WLAN_FEATURE_EXTSCAN */
 
@@ -11351,42 +11319,6 @@ WDI_Status WDI_EXTScanResetBSSIDHotlistReq
 (
    WDI_EXTScanResetBSSIDHotlistReqParams* pwdiEXTScanResetBSSIDHotlistReqParams,
    WDI_EXTScanResetBSSIDHotlistRspCb     wdiEXTScanResetBSSIDHotlistRspCb,
-   void*                   pUserData
-);
-
-/**
- @brief WDI_EXTScanSetSignfRSSIChangeReq
-    This API is called to send Set Significant RSSI Request FW
-
- @param pwdiEXTScanSetSignfRSSIChangeReqParams : pointer to the request params.
-        wdiEXTScanSetSignfRSSIChangeRspCb   : callback on getting the response.
-        usrData : Client context
- @see
- @return SUCCESS or FAIL
-*/
-WDI_Status WDI_EXTScanSetSignfRSSIChangeReq
-(
-   WDI_EXTScanSetSignfRSSIChangeReqParams*
-                                    pwdiEXTScanSetSignfRSSIChangeReqParams,
-   WDI_EXTScanSetSignfRSSIChangeRspCb   wdiEXTScanSetSignfRSSIChangeRspCb,
-   void*                   pUserData
-);
-
-/**
- @brief WDI_EXTScanResetSignfRSSIChangeReq
-    This API is called to send Reset BSSID Hotlist Request FW
-
- @param pwdiEXTScanResetSignfRSSIChangeReqParams : pointer to the request params.
-        wdiEXTScanResetSignfRSSIChangeRs  : callback on getting the response.
-        usrData : Client context
- @see
- @return SUCCESS or FAIL
-*/
-WDI_Status WDI_EXTScanResetSignfRSSIChangeReq
-(
-   WDI_EXTScanResetSignfRSSIChangeReqParams*
-                                       pwdiEXTScanResetSignfRSSIChangeReqParams,
-   WDI_EXTScanResetSignfRSSIChangeRspCb     wdiEXTScanResetSignfRSSIChangeRspCb,
    void*                   pUserData
 );
 #endif /* WLAN_FEATURE_EXTSCAN */

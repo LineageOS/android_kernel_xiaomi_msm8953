@@ -142,7 +142,6 @@ typedef tANI_U8 tSirVersionString[SIR_VERSION_STRING_LEN];
 #define WLAN_EXTSCAN_MAX_CHANNELS                 16
 #define WLAN_EXTSCAN_MAX_BUCKETS                  16
 #define WLAN_EXTSCAN_MAX_HOTLIST_APS              128
-#define WLAN_EXTSCAN_MAX_SIGNIFICANT_CHANGE_APS   64
 #define WLAN_EXTSCAN_MAX_RSSI_SAMPLE_SIZE     8
 #endif /* WLAN_FEATURE_EXTSCAN */
 
@@ -5342,68 +5341,6 @@ typedef PACKED_PRE struct PACKED_POST
     tANI_U32      requestId;
     tANI_U32      status;
 } tSirEXTScanResetBssidHotlistRspParams, *tpSirEXTScanResetBssidHotlistRspParams;
-
-typedef struct
-{
-    tANI_U32              requestId;
-    tANI_U8               sessionId;
-
-    /* number of samples for averaging RSSI */
-    tANI_U32              rssiSampleSize;
-
-    /* number of missed samples to confirm AP loss */
-    tANI_U32              lostApSampleSize;
-
-    /* number of APs breaching threshold required for firmware
-     * to generate event
-     */
-    tANI_U32              minBreaching;
-
-    tANI_U32              numAp;
-    tSirAPThresholdParam  ap[WLAN_EXTSCAN_MAX_SIGNIFICANT_CHANGE_APS];
-} tSirEXTScanSetSignificantChangeReqParams,
- *tpSirEXTScanSetSignificantChangeReqParams;
-
-typedef PACKED_PRE struct PACKED_POST
-{
-    tANI_U32        requestId;
-    tANI_U32        status;
-} tSirEXTScanSetSignificantChangeRspParams,
-  *tpSirEXTScanSetSignificantChangeRspParams;
-
-/*---------------------------------------------------------------------------
- * WLAN_HAL_SIG_RSSI_RESULT_IND
- *-------------------------------------------------------------------------*/
-
-typedef PACKED_PRE struct PACKED_POST
-{
-   tSirMacAddr bssid;                  // BSSID
-   tANI_U32  channel;                   // channel frequency in MHz
-   tANI_U8   numRssi;                    // number of rssi samples
-   tANI_S32   rssi[WLAN_EXTSCAN_MAX_RSSI_SAMPLE_SIZE]; // RSSI history in db
-} tSirSigRssiResultParams, *tpSirSigRssiResultParams;
-
-typedef PACKED_PRE struct PACKED_POST
-{
-    tANI_U32     requestId;
-    tANI_U32     numSigRssiBss;
-    tANI_BOOLEAN moreData;
-    tSirSigRssiResultParams sigRssiResult[1];
-} tSirWifiSignificantChangeEvent, *tpSirWifiSignificantChangeEvent;
-
-typedef struct
-{
-    tANI_U32      requestId;
-    tANI_U8       sessionId;
-} tSirEXTScanResetSignificantChangeReqParams,
-  *tpSirEXTScanResetSignificantChangeReqParams;
-
-typedef PACKED_PRE struct PACKED_POST
-{
-    tANI_U32      requestId;
-    tANI_U32      status;
-} tSirEXTScanResetSignificantChangeRspParams,
-  *tpSirEXTScanResetSignificantChangeRspParams;
 
 /*---------------------------------------------------------------------------
  *  * WLAN_HAL_EXTSCAN_RESULT_AVAILABLE_IND

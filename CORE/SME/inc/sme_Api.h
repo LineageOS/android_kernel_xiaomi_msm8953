@@ -241,27 +241,6 @@ eHalStatus sme_ResetBssHotlist (tHalHandle hHal,
                               tSirEXTScanResetBssidHotlistReqParams *pResetReq);
 
 /* ---------------------------------------------------------------------------
-    \fn sme_SetSignificantChange
-    \brief  SME API to set significant change
-    \param  hHal
-    \param  pSetSignificantChangeReq: Extented Scan set significant
-            change structure
-    \- return eHalStatus
-    -------------------------------------------------------------------------*/
-eHalStatus sme_SetSignificantChange (tHalHandle hHal,
-            tSirEXTScanSetSignificantChangeReqParams* pSetSignificantChangeReq);
-
-/* ---------------------------------------------------------------------------
-    \fn sme_ResetSignificantChange
-    \brief  SME API to reset significant change
-    \param  hHal
-    \param  pResetReq: Extented Scan reset significant change structure
-    \- return eHalStatus
-    -------------------------------------------------------------------------*/
-eHalStatus sme_ResetSignificantChange (tHalHandle hHal,
-              tSirEXTScanResetSignificantChangeReqParams *pResetReq);
-
-/* ---------------------------------------------------------------------------
     \fn sme_getCachedResults
     \brief  SME API to get cached results
     \param  hHal

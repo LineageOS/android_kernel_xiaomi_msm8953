@@ -454,11 +454,7 @@ WDI_ReqProcFuncType  pfnReqProcTbl[WDI_MAX_UMAC_IND] =
   WDI_ProcessEXTScanGetCapabilitiesReq,      /* WDI_EXTSCAN_GET_CAPABILITIES_REQ */
   WDI_ProcessEXTScanSetBSSIDHotlistReq,      /* WDI_EXTSCAN_SET_BSSID_HOTLIST_REQ */
   WDI_ProcessEXTScanResetBSSIDHotlistReq,    /* WDI_EXTSCAN_RESET_BSSID_HOTLIST_REQ */
-  WDI_ProcessEXTScanSetSignifRSSIChangeReq,  /* WDI_EXTSCAN_SET_SIGNF_RSSI_CHANGE_REQ */
-  WDI_ProcessEXTScanResetSignfRSSIChangeReq, /* WDI_EXTSCAN_RESET_SIGNF_RSSI_CHANGE_REQ */
 #else
-  NULL,
-  NULL,
   NULL,
   NULL,
   NULL,
@@ -728,11 +724,7 @@ WDI_RspProcFuncType  pfnRspProcTbl[WDI_MAX_RESP] =
     WDI_ProcessEXTScanGetCapabilitiesRsp,      /* WDI_EXTSCAN_GET_CAPABILITIES_RSP */
     WDI_ProcessEXTScanSetHotlistBSSIDRsp,      /* WDI_EXTSCAN_SET_HOTLIST_BSSID_RSP */
     WDI_ProcessEXTScanResetHotlistBSSIDRsp,    /* WDI_EXTSCAN_RESET_HOTLIST_BSSID_RSP */
-    WDI_ProcessEXTScanSetSignfRSSIChangeRsp,   /* WDI_EXTSCAN_SET_SIGNF_RSSI_CHANGE_RSP */
-    WDI_ProcessEXTScanResetSignfRSSIChangeRsp, /* WDI_EXTSCAN_RESET_SIGNF_RSSI_CHANGE_RSP */
 #else
-    NULL,
-    NULL,
     NULL,
     NULL,
     NULL,
@@ -823,9 +815,7 @@ WDI_RspProcFuncType  pfnRspProcTbl[WDI_MAX_RESP] =
   WDI_ProcessEXTScanScanAvailableInd,       /* WDI_HAL_EXTSCAN_SCAN_AVAILABLE_IND */
   WDI_ProcessEXTScanResultInd,              /* WDI_HAL_EXTSCAN_RESULT_IND */
   WDI_ProcessEXTScanBssidHotListResultInd,  /* WDI_HAL_EXTSCAN_BSSID_HOTLIST_RESULT_IND */
-  WDI_ProcessEXTScanSignfRssiResultInd,     /* WDI_HAL_EXTSCAN_SIG_RSSI_RESULT_IND */
 #else
-  NULL,
   NULL,
   NULL,
   NULL,
@@ -1169,8 +1159,6 @@ static char *WDI_getReqMsgString(wpt_uint16 wdiReqMsgId)
     CASE_RETURN_STRING( WDI_EXTSCAN_GET_CAPABILITIES_REQ);
     CASE_RETURN_STRING( WDI_EXTSCAN_SET_BSSID_HOTLIST_REQ);
     CASE_RETURN_STRING( WDI_EXTSCAN_RESET_BSSID_HOTLIST_REQ);
-    CASE_RETURN_STRING( WDI_EXTSCAN_SET_SIGNF_RSSI_CHANGE_REQ);
-    CASE_RETURN_STRING( WDI_EXTSCAN_RESET_SIGNF_RSSI_CHANGE_REQ);
 #endif /* WLAN_FEATURE_EXTSCAN */
     CASE_RETURN_STRING( WDI_SPOOF_MAC_ADDR_REQ);
     CASE_RETURN_STRING( WDI_GET_FW_STATS_REQ);
@@ -1305,13 +1293,10 @@ static char *WDI_getRespMsgString(wpt_uint16 wdiRespMsgId)
     CASE_RETURN_STRING( WDI_EXTSCAN_GET_CAPABILITIES_RSP);
     CASE_RETURN_STRING( WDI_EXTSCAN_SET_HOTLIST_BSSID_RSP);
     CASE_RETURN_STRING( WDI_EXTSCAN_RESET_HOTLIST_BSSID_RSP);
-    CASE_RETURN_STRING( WDI_EXTSCAN_SET_SIGNF_RSSI_CHANGE_RSP);
-    CASE_RETURN_STRING( WDI_EXTSCAN_RESET_SIGNF_RSSI_CHANGE_RSP);
     CASE_RETURN_STRING( WDI_HAL_EXTSCAN_PROGRESS_IND);
     CASE_RETURN_STRING( WDI_HAL_EXTSCAN_SCAN_AVAILABLE_IND);
     CASE_RETURN_STRING( WDI_HAL_EXTSCAN_RESULT_IND);
     CASE_RETURN_STRING( WDI_HAL_EXTSCAN_BSSID_HOTLIST_RESULT_IND);
-    CASE_RETURN_STRING( WDI_HAL_EXTSCAN_SIG_RSSI_RESULT_IND);
 
 #endif /* WLAN_FEATURE_EXTSCAN */
     CASE_RETURN_STRING( WDI_GET_FW_STATS_RSP);
@@ -24247,10 +24232,6 @@ WDI_2_HAL_REQ_TYPE
        return WLAN_HAL_BSSID_HOTLIST_SET_REQ;
   case WDI_EXTSCAN_RESET_BSSID_HOTLIST_REQ:
        return WLAN_HAL_BSSID_HOTLIST_RESET_REQ;
-  case WDI_EXTSCAN_SET_SIGNF_RSSI_CHANGE_REQ:
-       return WLAN_HAL_SIG_RSSI_SET_REQ;
-  case WDI_EXTSCAN_RESET_SIGNF_RSSI_CHANGE_REQ:
-       return WLAN_HAL_SIG_RSSI_RESET_REQ;
 #endif /* WLAN_FEATURE_EXTSCAN */
   case WDI_SPOOF_MAC_ADDR_REQ:
        return WLAN_HAL_MAC_SPOOFED_SCAN_REQ;
@@ -24572,10 +24553,6 @@ case WLAN_HAL_DEL_STA_SELF_RSP:
        return WDI_EXTSCAN_SET_HOTLIST_BSSID_RSP;
   case WLAN_HAL_BSSID_HOTLIST_RESET_RSP:
        return WDI_EXTSCAN_RESET_HOTLIST_BSSID_RSP;
-  case WLAN_HAL_SIG_RSSI_SET_RSP:
-       return WDI_EXTSCAN_SET_SIGNF_RSSI_CHANGE_RSP;
-  case WLAN_HAL_SIG_RSSI_RESET_RSP:
-       return WDI_EXTSCAN_RESET_SIGNF_RSSI_CHANGE_RSP;
   case WLAN_HAL_EXT_SCAN_PROGRESS_IND:
        return WDI_HAL_EXTSCAN_PROGRESS_IND;
   case WLAN_HAL_EXT_SCAN_RESULT_AVAILABLE_IND:
@@ -24584,8 +24561,6 @@ case WLAN_HAL_DEL_STA_SELF_RSP:
        return WDI_HAL_EXTSCAN_RESULT_IND;
   case WLAN_HAL_BSSID_HOTLIST_RESULT_IND:
        return WDI_HAL_EXTSCAN_BSSID_HOTLIST_RESULT_IND;
-  case WLAN_HAL_SIG_RSSI_RESULT_IND:
-       return WDI_HAL_EXTSCAN_SIG_RSSI_RESULT_IND;
 #endif /* WLAN_FEATURE_EXTSCAN */
   case WLAN_HAL_MAC_SPOOFED_SCAN_RSP:
        return WDI_SPOOF_MAC_ADDR_RSP;
@@ -32635,59 +32610,6 @@ WDI_ProcessEXTScanBssidHotListResultInd
 } /* End of WDI_ProcessEXTScanBssidHotListResultInd  */
 
 /**
- @brief Process EXTScan Significant RSSI Result Indication indication from FW
-
- @param  pWDICtx:         pointer to the WLAN DAL context
-         pEventData:      pointer to the event information structure
-
- @see
- @return Result of the function call
-*/
-WDI_Status
-WDI_ProcessEXTScanSignfRssiResultInd
-(
-  WDI_ControlBlockType*  pWDICtx,
-  WDI_EventInfoType*     pEventData
-)
-{
-    WDI_LowLevelIndType wdiInd;
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-    VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
-                "%s: ", __func__);
-
-    /* sanity check */
-    if (( NULL == pWDICtx ) || ( NULL == pEventData ) ||
-      ( NULL == pEventData->pEventData))
-    {
-        WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
-                 "%s: Invalid parameters", __func__);
-        WDI_ASSERT(0);
-        return WDI_STATUS_E_FAILURE;
-    }
-
-    /* Fill in the indication parameters */
-    wdiInd.wdiIndicationType = WDI_EXTSCAN_SIGN_RSSI_RESULT_IND;
-
-    /* extract response and send it to UMAC */
-    wdiInd.wdiIndicationData.pEXTScanIndData = (void *)pEventData->pEventData;
-
-    /* Notify UMAC */
-    if (pWDICtx->wdiLowLevelIndCB)
-    {
-        pWDICtx->wdiLowLevelIndCB( &wdiInd, pWDICtx->pIndUserData );
-    }
-    else
-    {
-        VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
-                 "%s: WDILowLevelIndCb is null", __func__);
-        WDI_ASSERT(0);
-        return WDI_STATUS_E_FAILURE;
-    }
-    return WDI_STATUS_SUCCESS;
-} /* End of WDI_ProcessEXTScanSignfRssiResultInd  */
-
-/**
  @brief WDI_EXTScanGetCapabilitiesReq
 
  @param WDI_EXTScanGetCapabilitiesReqParams: Req parameter for the FW
@@ -33541,297 +33463,6 @@ WDI_ProcessEXTScanResetBSSIDHotlistReq
 }
 
 /**
- @brief WDI_EXTScanSetSignfRSSIChangeReq
-
- @param WDI_EXTScanSetSignfRSSIChangeReqParams: Req parameter for the FW
-        WDI_EXTScanSetSignfRSSIChangeRspCb: callback for passing back the response
-        of the Req operation received from the device
-        pUserData: user data will be passed back with the callback
-
- @return SUCCESS or FAIL
-*/
-WDI_Status
-WDI_EXTScanSetSignfRSSIChangeReq(
- WDI_EXTScanSetSignfRSSIChangeReqParams* pwdiEXTScanSetSignfRSSIChangeReqParams,
- WDI_EXTScanSetSignfRSSIChangeRspCb  wdiEXTScanSetSignfRSSIChangeRspCb,
-        void*                   pUserData)
-{
-  WDI_EventInfoType      wdiEventData;
-
-  VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
-                  "%s: %d ",__func__, __LINE__);
-  /*------------------------------------------------------------------------
-    Sanity Check
-  ------------------------------------------------------------------------*/
-  if ( eWLAN_PAL_FALSE == gWDIInitialized )
-  {
-     VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_ERROR,
-                "WDI API call before module is initialized - Fail request");
-
-     return WDI_STATUS_E_NOT_ALLOWED;
-  }
-
-  wdiEventData.wdiRequest      = WDI_EXTSCAN_SET_SIGNF_RSSI_CHANGE_REQ;
-  wdiEventData.pEventData      = pwdiEXTScanSetSignfRSSIChangeReqParams;
-  wdiEventData.uEventDataSize  =
-                        sizeof(*pwdiEXTScanSetSignfRSSIChangeReqParams);
-  wdiEventData.pCBfnc          = wdiEXTScanSetSignfRSSIChangeRspCb;
-  wdiEventData.pUserData       = pUserData;
-
-  return WDI_PostMainEvent(&gWDICb, WDI_REQUEST_EVENT, &wdiEventData);
-}
-
-/**
- @brief WDI_ProcessEXTScanSetSignifRSSIChangeReq -
-    Extended Scan set Significant RSSI change Request to FW
-
- @param  pWDICtx : wdi context
-         pEventData : indication data
-
- @see
- @return none
-*/
-WDI_Status
-WDI_ProcessEXTScanSetSignifRSSIChangeReq
-(
-  WDI_ControlBlockType*  pWDICtx,
-  WDI_EventInfoType*     pEventData
-)
-{
-  WDI_EXTScanSetSignfRSSIChangeReqParams*
-                                pwdiEXTScanSetSignfRSSIChangeReqParams;
-  WDI_EXTScanSetSignfRSSIChangeRspCb  wdiEXTScanSetSignfRSSIChangeRspCb;
-  wpt_uint8*               pSendBuffer         = NULL;
-  wpt_uint16               usSendSize          = 0;
-  wpt_uint16               usDataOffset        = 0;
-  tpHalSigRssiSetReq       pHalSigRssiSetReqParams;
-  int i;
-
-  VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
-                  "%s: %d Enter",__func__, __LINE__);
-
-  if (( NULL == pEventData ) || ( NULL == pEventData->pEventData ) ||
-      ( NULL == pEventData->pCBfnc ))
-  {
-     WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
-                 "%s: Invalid parameters", __func__);
-     WDI_ASSERT(0);
-     return WDI_STATUS_E_FAILURE;
-  }
-
-  pwdiEXTScanSetSignfRSSIChangeReqParams =
-      (WDI_EXTScanSetSignfRSSIChangeReqParams *)pEventData->pEventData;
-  wdiEXTScanSetSignfRSSIChangeRspCb   =
-      (WDI_EXTScanSetSignfRSSIChangeRspCb)pEventData->pCBfnc;
-
-  /*-----------------------------------------------------------------------
-    Get message buffer
-    ! TO DO : proper conversion into the HAL Message Request Format
-  -----------------------------------------------------------------------*/
-  if (( WDI_STATUS_SUCCESS != WDI_GetMessageBuffer(
-                                        pWDICtx,
-                                        WDI_EXTSCAN_SET_SIGNF_RSSI_CHANGE_REQ,
-                                        sizeof(tHalSigRssiSetReq),
-                                        &pSendBuffer, &usDataOffset,
-                                        &usSendSize))||
-      ( usSendSize < (usDataOffset + sizeof(tHalSigRssiSetReq) )))
-  {
-     WPAL_TRACE( eWLAN_MODULE_DAL_CTRL,  eWLAN_PAL_TRACE_LEVEL_WARN,
-              "Unable to get send buffer in %s %p %p %p", __func__,
-                pEventData, pwdiEXTScanSetSignfRSSIChangeReqParams,
-                wdiEXTScanSetSignfRSSIChangeRspCb);
-     WDI_ASSERT(0);
-     return WDI_STATUS_E_FAILURE;
-  }
-
-  pHalSigRssiSetReqParams =
-      (tpHalSigRssiSetReq) (pSendBuffer + usDataOffset);
-
-  pHalSigRssiSetReqParams->requestId =
-                    pwdiEXTScanSetSignfRSSIChangeReqParams->requestId;
-  pHalSigRssiSetReqParams->sessionId =
-                    pwdiEXTScanSetSignfRSSIChangeReqParams->sessionId;
-  pHalSigRssiSetReqParams->rssiSampleSize =
-                    pwdiEXTScanSetSignfRSSIChangeReqParams->rssiSampleSize;
-  pHalSigRssiSetReqParams->lostApSampleSize =
-                    pwdiEXTScanSetSignfRSSIChangeReqParams->lostApSampleSize;
-  pHalSigRssiSetReqParams->minBreaching =
-                    pwdiEXTScanSetSignfRSSIChangeReqParams->minBreaching;
-  pHalSigRssiSetReqParams->numAp =
-                    pwdiEXTScanSetSignfRSSIChangeReqParams->numAp;
-
-
-  for( i = 0; i < WLAN_HAL_EXT_SCAN_MAX_SIG_CHANGE_APS; i++){
-
-    wpalMemoryCopy(pHalSigRssiSetReqParams->ap[i].bssid,
-              pwdiEXTScanSetSignfRSSIChangeReqParams->ap[i].bssid,
-                            WDI_MAC_ADDR_LEN);
-
-    pHalSigRssiSetReqParams->ap[i].lowRssiThreshold =
-        pwdiEXTScanSetSignfRSSIChangeReqParams->ap[i].low;
-
-    pHalSigRssiSetReqParams->ap[i].highRssiThreshold =
-        pwdiEXTScanSetSignfRSSIChangeReqParams->ap[i].high;
-
-    pHalSigRssiSetReqParams->ap[i].channel =
-        pwdiEXTScanSetSignfRSSIChangeReqParams->ap[i].channel;
-
-  }
-
-
-  VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
-          "ReqID %u sessionId %u rssiSampleSize %u lostApSampleSize %u "
-          " minBreaching %u numAp %u ",
-          pHalSigRssiSetReqParams->requestId,
-          pHalSigRssiSetReqParams->sessionId,
-          pHalSigRssiSetReqParams->rssiSampleSize,
-          pHalSigRssiSetReqParams->lostApSampleSize,
-          pHalSigRssiSetReqParams->minBreaching,
-          pHalSigRssiSetReqParams->numAp);
-
-  for( i = 0; i < pHalSigRssiSetReqParams->numAp; i++){
-
-    VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
-         "%d) BSSID: %pM lowRssiThreshold %d highRssiThreshold %d Channel %u ",
-            i,
-            pHalSigRssiSetReqParams->ap[i].bssid,
-            pHalSigRssiSetReqParams->ap[i].lowRssiThreshold,
-            pHalSigRssiSetReqParams->ap[i].highRssiThreshold,
-            pHalSigRssiSetReqParams->ap[i].channel);
-
-  }
-
-  pWDICtx->pReqStatusUserData = pEventData->pUserData;
-
-
-  /*-------------------------------------------------------------------------
-    Send EXTScan Stop Request to HAL
-  -------------------------------------------------------------------------*/
-  return  WDI_SendMsg( pWDICtx, pSendBuffer, usSendSize,
-                       wdiEXTScanSetSignfRSSIChangeRspCb, pEventData->pUserData,
-                       WDI_EXTSCAN_SET_SIGNF_RSSI_CHANGE_RSP);
-}
-
-/**
- @brief WDI_EXTScanResetSignfRSSIChangeReq
-
- @param WDI_EXTScanResetSignfRSSIChangeReqParams: Req parameter for the FW
-        WDI_EXTScanResetSignfRSSIChangeRspCb: callback for passing back the response
-        of the Req operation received from the device
-        pUserData: user data will be passed back with the callback
-
- @return SUCCESS or FAIL
-*/
-WDI_Status
-WDI_EXTScanResetSignfRSSIChangeReq(
-        WDI_EXTScanResetSignfRSSIChangeReqParams*
-                                    pwdiEXTScanResetSignfRSSIChangeReqParams,
-        WDI_EXTScanResetSignfRSSIChangeRspCb
-                                         wdiEXTScanResetSignfRSSIChangeRspCb,
-        void*                   pUserData)
-{
-   WDI_EventInfoType      wdiEventData;
-
-  VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
-                  "%s: %d ",__func__, __LINE__);
-  /*------------------------------------------------------------------------
-    Sanity Check
-  ------------------------------------------------------------------------*/
-  if ( eWLAN_PAL_FALSE == gWDIInitialized )
-  {
-     VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_ERROR,
-                "WDI API call before module is initialized - Fail request");
-
-     return WDI_STATUS_E_NOT_ALLOWED;
-  }
-
-  wdiEventData.wdiRequest      = WDI_EXTSCAN_RESET_SIGNF_RSSI_CHANGE_REQ;
-  wdiEventData.pEventData      = pwdiEXTScanResetSignfRSSIChangeReqParams;
-  wdiEventData.uEventDataSize  =
-                        sizeof(*pwdiEXTScanResetSignfRSSIChangeReqParams);
-  wdiEventData.pCBfnc          = wdiEXTScanResetSignfRSSIChangeRspCb;
-  wdiEventData.pUserData       = pUserData;
-
-  return WDI_PostMainEvent(&gWDICb, WDI_REQUEST_EVENT, &wdiEventData);
-}
-
-/**
- @brief WDI_ProcessEXTScanResetSignfRSSIChangeReq -
-    Extended Scana reset Significant RSSI change Request to FW
-
- @param  pWDICtx : wdi context
-         pEventData : indication data
-
- @see
- @return none
-*/
-WDI_Status
-WDI_ProcessEXTScanResetSignfRSSIChangeReq
-(
-  WDI_ControlBlockType*  pWDICtx,
-  WDI_EventInfoType*     pEventData
-)
-{
-  WDI_EXTScanResetSignfRSSIChangeReqParams*
-                            pwdiEXTScanResetSignfRSSIChangeReqParams;
-  WDI_EXTScanResetSignfRSSIChangeRspCb  wdiEXTScanResetSignfRSSIChangeRspCb;
-  wpt_uint8*               pSendBuffer         = NULL;
-  wpt_uint16               usSendSize          = 0;
-  wpt_uint16               usDataOffset        = 0;
-  tpHalSigRssiResetReq     pHalSigRssiResetReqParams;
-
-  VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
-                  "%s: %d ",__func__, __LINE__);
-
-  if (( NULL == pEventData ) || ( NULL == pEventData->pEventData ) ||
-      ( NULL == pEventData->pCBfnc ))
-  {
-     WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
-                 "%s: Invalid parameters", __func__);
-     WDI_ASSERT(0);
-     return WDI_STATUS_E_FAILURE;
-  }
-
-  pwdiEXTScanResetSignfRSSIChangeReqParams =
-      (WDI_EXTScanResetSignfRSSIChangeReqParams *)pEventData->pEventData;
-  wdiEXTScanResetSignfRSSIChangeRspCb   =
-      (WDI_EXTScanResetSignfRSSIChangeRspCb)pEventData->pCBfnc;
-
-  /*-----------------------------------------------------------------------
-    Get message buffer
-    ! TO DO : proper conversion into the HAL Message Request Format
-  -----------------------------------------------------------------------*/
-  if (( WDI_STATUS_SUCCESS != WDI_GetMessageBuffer(
-                                       pWDICtx,
-                                       WDI_EXTSCAN_RESET_SIGNF_RSSI_CHANGE_REQ,
-                                       sizeof(tHalSigRssiResetReq),
-                                       &pSendBuffer, &usDataOffset,
-                                       &usSendSize))||
-      ( usSendSize < (usDataOffset + sizeof(tHalSigRssiResetReq) )))
-  {
-     WPAL_TRACE( eWLAN_MODULE_DAL_CTRL,  eWLAN_PAL_TRACE_LEVEL_WARN,
-              "Unable to get send buffer in %s %p %p %p", __func__,
-                pEventData, pwdiEXTScanResetSignfRSSIChangeReqParams,
-                wdiEXTScanResetSignfRSSIChangeRspCb);
-     WDI_ASSERT(0);
-     return WDI_STATUS_E_FAILURE;
-  }
-  pHalSigRssiResetReqParams =
-      (tpHalSigRssiResetReq) (pSendBuffer+usDataOffset);
-
-  pHalSigRssiResetReqParams->requestId =
-                    pwdiEXTScanResetSignfRSSIChangeReqParams->requestId;
-
-  pWDICtx->pReqStatusUserData = pEventData->pUserData;
-
-
-  return  WDI_SendMsg( pWDICtx, pSendBuffer, usSendSize,
-                       wdiEXTScanResetSignfRSSIChangeRspCb,
-                       pEventData->pUserData,
-                       WDI_EXTSCAN_RESET_SIGNF_RSSI_CHANGE_RSP);
-}
-
-/**
  @brief Process Extended Scan Start Rsp function (called when a response
         is being received over the bus from HAL)
 
@@ -34126,108 +33757,6 @@ WDI_ProcessEXTScanResetHotlistBSSIDRsp
   }
 
   wdiEXTScanResetBSSIDHotlistRspCb(
-          (void *) pEventData->pEventData, pWDICtx->pRspCBUserData);
-
-  return WDI_STATUS_SUCCESS;
-}
-
-/**
- @brief Process Extended Scan Set Significant RSSI Change Rsp function (called
-        when a response is being received over the bus from HAL)
-
- @param  pWDICtx:         pointer to the WLAN DAL context
-         pEventData:      pointer to the event information structure
-
- @see
- @return Result of the function call
-*/
-WDI_Status
-WDI_ProcessEXTScanSetSignfRSSIChangeRsp
-(
-  WDI_ControlBlockType*  pWDICtx,
-  WDI_EventInfoType*     pEventData
-)
-{
-  WDI_EXTScanSetSignfRSSIChangeRspCb   wdiEXTScanSetSignfRSSIChangeRspCb;
-
-  VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
-                  "%s: %d",__func__, __LINE__);
-
-
-  /*-------------------------------------------------------------------------
-    Sanity check
-  -------------------------------------------------------------------------*/
-  if (( NULL == pWDICtx ) || ( NULL == pEventData ) ||
-      ( NULL == pEventData->pEventData))
-  {
-     WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
-                 "%s: Invalid parameters", __func__);
-     WDI_ASSERT(0);
-     return WDI_STATUS_E_FAILURE;
-  }
-
-  wdiEXTScanSetSignfRSSIChangeRspCb =
-      (WDI_EXTScanSetSignfRSSIChangeRspCb)pWDICtx->pfncRspCB;
-  if ( NULL == wdiEXTScanSetSignfRSSIChangeRspCb)
-  {
-     WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
-                 "%s: Callback function Invalid", __func__);
-     WDI_ASSERT(0);
-     return WDI_STATUS_E_FAILURE;
-  }
-
-  wdiEXTScanSetSignfRSSIChangeRspCb(
-          (void *) pEventData->pEventData, pWDICtx->pRspCBUserData);
-
-  return WDI_STATUS_SUCCESS;
-}
-
-/**
- @brief Process Extended Scan Reset Significant RSSI Change Rsp function
-        (called when a response is being received over the bus from HAL)
-
- @param  pWDICtx:         pointer to the WLAN DAL context
-         pEventData:      pointer to the event information structure
-
- @see
- @return Result of the function call
-*/
-WDI_Status
-WDI_ProcessEXTScanResetSignfRSSIChangeRsp
-(
-  WDI_ControlBlockType*  pWDICtx,
-  WDI_EventInfoType*     pEventData
-)
-{
-  WDI_EXTScanResetSignfRSSIChangeRspCb   wdiEXTScanResetSignfRSSIChangeRspCb;
-
-  VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
-                  "%s: %d Enter",__func__, __LINE__);
-
-
-  /*-------------------------------------------------------------------------
-    Sanity check
-  -------------------------------------------------------------------------*/
-  if (( NULL == pWDICtx ) || ( NULL == pEventData ) ||
-      ( NULL == pEventData->pEventData))
-  {
-     WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
-                 "%s: Invalid parameters", __func__);
-     WDI_ASSERT(0);
-     return WDI_STATUS_E_FAILURE;
-  }
-
-  wdiEXTScanResetSignfRSSIChangeRspCb =
-      (WDI_EXTScanResetSignfRSSIChangeRspCb)pWDICtx->pfncRspCB;
-  if ( NULL == wdiEXTScanResetSignfRSSIChangeRspCb)
-  {
-     WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
-                 "%s: Callback function Invalid", __func__);
-     WDI_ASSERT(0);
-     return WDI_STATUS_E_FAILURE;
-  }
-
-  wdiEXTScanResetSignfRSSIChangeRspCb(
           (void *) pEventData->pEventData, pWDICtx->pRspCBUserData);
 
   return WDI_STATUS_SUCCESS;

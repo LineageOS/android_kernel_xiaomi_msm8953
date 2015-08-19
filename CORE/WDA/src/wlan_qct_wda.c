@@ -233,10 +233,6 @@ VOS_STATUS WDA_ProcessEXTScanSetBSSIDHotlistReq(tWDA_CbContext *pWDA,
                             tSirEXTScanSetBssidHotListReqParams *wdaRequest);
 VOS_STATUS WDA_ProcessEXTScanResetBSSIDHotlistReq(tWDA_CbContext *pWDA,
                             tSirEXTScanResetBssidHotlistReqParams *wdaRequest);
-VOS_STATUS WDA_ProcessEXTScanSetSignfRSSIChangeReq(tWDA_CbContext *pWDA,
-                          tSirEXTScanSetSignificantChangeReqParams *wdaRequest);
-VOS_STATUS WDA_ProcessEXTScanResetSignfRSSIChangeReq(tWDA_CbContext *pWDA,
-                        tSirEXTScanResetSignificantChangeReqParams *wdaRequest);
 #endif /* WLAN_FEATURE_EXTSCAN */
 
 #ifdef WLAN_FEATURE_LINK_LAYER_STATS
@@ -14223,18 +14219,6 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
                         (tSirEXTScanResetBssidHotlistReqParams *)pMsg->bodyptr);
          break;
       }
-      case WDA_EXTSCAN_SET_SIGNF_RSSI_CHANGE_REQ:
-      {
-         WDA_ProcessEXTScanSetSignfRSSIChangeReq(pWDA,
-                     (tSirEXTScanSetSignificantChangeReqParams *)pMsg->bodyptr);
-         break;
-      }
-      case WDA_EXTSCAN_RESET_SIGNF_RSSI_CHANGE_REQ:
-      {
-         WDA_ProcessEXTScanResetSignfRSSIChangeReq(pWDA,
-                   (tSirEXTScanResetSignificantChangeReqParams *)pMsg->bodyptr);
-         break;
-      }
 #endif /* WLAN_FEATURE_EXTSCAN */
 #ifdef WDA_UT
       case WDA_WDI_EVENT_MSG:
@@ -15306,7 +15290,6 @@ void WDA_lowLevelIndCallback(WDI_LowLevelIndType *wdiLowLevelInd,
      case  WDI_EXTSCAN_SCAN_AVAILABLE_IND:
      case  WDI_EXTSCAN_SCAN_RESULT_IND:
      case  WDI_EXTSCAN_BSSID_HOTLIST_RESULT_IND:
-     case  WDI_EXTSCAN_SIGN_RSSI_RESULT_IND:
      {
          void *pEXTScanData;
          void *pCallbackContext;
@@ -15352,14 +15335,6 @@ void WDA_lowLevelIndCallback(WDI_LowLevelIndType *wdiLowLevelInd,
 
              VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
               "WDI_EXTSCAN Indication is WDI_EXTSCAN_BSSID_HOTLIST_RESULT_IND");
-         }
-         if (wdiLowLevelInd->wdiIndicationType ==
-                 WDI_EXTSCAN_SIGN_RSSI_RESULT_IND)
-         {
-             indType = WDA_EXTSCAN_SIGNF_RSSI_RESULT_IND;
-
-             VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
-                 "WDI_EXTSCAN Indication is WDA_EXTSCAN_SIGNF_RSSI_RESULT_IND");
          }
 
          pEXTScanData =
@@ -18544,161 +18519,6 @@ error:
 }
 
 /*==========================================================================
-  FUNCTION   WDA_EXTScanSetSignfRSSIChangeRspCallback
-
-  DESCRIPTION
-    API to send EXTScan Set Significant RSSI Change RSP to HDD
-
-  PARAMETERS
-    pEventData: Response from FW
-   pUserData:
-===========================================================================*/
-void WDA_EXTScanSetSignfRSSIChangeRspCallback(void *pEventData, void* pUserData)
-{
-    tWDA_ReqParams *pWdaParams = (tWDA_ReqParams *)pUserData;
-    tWDA_CbContext *pWDA = NULL;
-    void *pCallbackContext;
-    tpAniSirGlobal pMac;
-
-    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
-            "%s:", __func__);
-    if (NULL == pWdaParams)
-    {
-        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                "%s: pWdaParams received NULL", __func__);
-        VOS_ASSERT(0) ;
-        return;
-    }
-
-    pWDA = (tWDA_CbContext *) pWdaParams->pWdaContext;
-
-    if (NULL == pWDA)
-    {
-        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                "%s: pWDA received NULL", __func__);
-        VOS_ASSERT(0);
-        goto error;
-    }
-
-    pMac = (tpAniSirGlobal )VOS_GET_MAC_CTXT(pWDA->pVosContext);
-    if (NULL == pMac)
-    {
-        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                "%s:pMac is NULL", __func__);
-        VOS_ASSERT(0);
-        goto error;
-    }
-
-    pCallbackContext = pMac->sme.pEXTScanCallbackContext;
-
-    if (pMac->sme.pEXTScanIndCb)
-    {
-        pMac->sme.pEXTScanIndCb(pCallbackContext,
-                WDA_EXTSCAN_SET_SIGNF_RSSI_CHANGE_RSP,
-                pEventData);
-    }
-    else
-    {
-        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                "%s:HDD callback is null", __func__);
-        VOS_ASSERT(0);
-    }
-
-
-error:
-
-    if (pWdaParams->wdaWdiApiMsgParam != NULL)
-    {
-        vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
-    }
-    if (pWdaParams->wdaMsgParam != NULL)
-    {
-        vos_mem_free(pWdaParams->wdaMsgParam);
-    }
-    vos_mem_free(pWdaParams) ;
-
-    return;
-}
-
-/*==========================================================================
-  FUNCTION   WDA_EXTScanResetSignfRSSIChangeRspCallback
-
-  DESCRIPTION
-    API to send EXTScan Set Significant RSSI Change RSP to HDD
-
-  PARAMETERS
-    pEventData: Response from FW
-   pUserData:
-===========================================================================*/
-void WDA_EXTScanResetSignfRSSIChangeRspCallback(void *pEventData,
-        void* pUserData)
-{
-    tWDA_ReqParams *pWdaParams = (tWDA_ReqParams *)pUserData;
-    tWDA_CbContext *pWDA = NULL;
-    void *pCallbackContext;
-    tpAniSirGlobal pMac;
-
-    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
-            "%s:", __func__);
-    if (NULL == pWdaParams)
-    {
-        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                "%s: pWdaParams received NULL", __func__);
-        VOS_ASSERT(0) ;
-        return;
-    }
-
-    pWDA = (tWDA_CbContext *) pWdaParams->pWdaContext;
-
-    if (NULL == pWDA)
-    {
-        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                "%s: pWDA received NULL", __func__);
-        VOS_ASSERT(0);
-        goto error;
-    }
-
-    pMac = (tpAniSirGlobal )VOS_GET_MAC_CTXT(pWDA->pVosContext);
-    if (NULL == pMac)
-    {
-        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                "%s:pMac is NULL", __func__);
-        VOS_ASSERT(0);
-        goto error;
-    }
-
-    pCallbackContext = pMac->sme.pEXTScanCallbackContext;
-
-    if (pMac->sme.pEXTScanIndCb)
-    {
-        pMac->sme.pEXTScanIndCb(pCallbackContext,
-                WDA_EXTSCAN_RESET_SIGNF_RSSI_CHANGE_RSP,
-                pEventData);
-    }
-    else
-    {
-        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                "%s:HDD callback is null", __func__);
-        VOS_ASSERT(0);
-    }
-
-
-error:
-
-    if (pWdaParams->wdaWdiApiMsgParam != NULL)
-    {
-        vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
-    }
-    if (pWdaParams->wdaMsgParam != NULL)
-    {
-        vos_mem_free(pWdaParams->wdaMsgParam);
-    }
-    vos_mem_free(pWdaParams) ;
-
-    return;
-}
-
-/*==========================================================================
   FUNCTION   WDA_ProcessEXTScanStartReq
 
   DESCRIPTION
@@ -18945,93 +18765,6 @@ VOS_STATUS WDA_ProcessEXTScanResetBSSIDHotlistReq(tWDA_CbContext *pWDA,
 
     status = WDI_EXTScanResetBSSIDHotlistReq((void *)wdaRequest,
      (WDI_EXTScanResetBSSIDHotlistRspCb)WDA_EXTScanResetBSSIDHotlistRspCallback,
-            (void *)pWdaParams);
-    if (IS_WDI_STATUS_FAILURE(status))
-    {
-        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                "Failure to request.  Free all the memory " );
-        vos_mem_free(pWdaParams->wdaMsgParam);
-        vos_mem_free(pWdaParams);
-    }
-    return CONVERT_WDI2VOS_STATUS(status);
-}
-
-/*==========================================================================
-  FUNCTION   WDA_ProcessEXTScanSetSignfRSSIChangeReq
-
-  DESCRIPTION
-    API to send Set Significant RSSI Change Request to WDI
-
-  PARAMETERS
-    pWDA: Pointer to WDA context
-    wdaRequest: Pointer to EXTScan req parameters
-===========================================================================*/
-VOS_STATUS WDA_ProcessEXTScanSetSignfRSSIChangeReq(tWDA_CbContext *pWDA,
-        tSirEXTScanSetSignificantChangeReqParams *wdaRequest)
-{
-    WDI_Status status = WDI_STATUS_SUCCESS;
-    tWDA_ReqParams *pWdaParams;
-
-    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
-            "%s: ", __func__);
-    pWdaParams = (tWDA_ReqParams *)vos_mem_malloc(sizeof(tWDA_ReqParams));
-    if (NULL == pWdaParams)
-    {
-        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                "%s: VOS MEM Alloc Failure", __func__);
-        VOS_ASSERT(0);
-        return VOS_STATUS_E_NOMEM;
-    }
-    pWdaParams->pWdaContext = pWDA;
-    pWdaParams->wdaMsgParam = wdaRequest;
-    pWdaParams->wdaWdiApiMsgParam = NULL;
-
-    status = WDI_EXTScanSetSignfRSSIChangeReq((void *)wdaRequest,
-    (WDI_EXTScanSetSignfRSSIChangeRspCb)WDA_EXTScanSetSignfRSSIChangeRspCallback,
-            (void *)pWdaParams);
-    if (IS_WDI_STATUS_FAILURE(status))
-    {
-        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                "Failure to request.  Free all the memory " );
-        vos_mem_free(pWdaParams->wdaMsgParam);
-        vos_mem_free(pWdaParams);
-    }
-    return CONVERT_WDI2VOS_STATUS(status);
-}
-
-/*==========================================================================
-  FUNCTION   WDA_ProcessEXTScanResetSignfRSSIChangeReq
-
-  DESCRIPTION
-    API to send Reset Significant RSSI Change Request to WDI
-
-  PARAMETERS
-    pWDA: Pointer to WDA context
-    wdaRequest: Pointer to EXTScan req parameters
-===========================================================================*/
-VOS_STATUS WDA_ProcessEXTScanResetSignfRSSIChangeReq(tWDA_CbContext *pWDA,
-        tSirEXTScanResetSignificantChangeReqParams *wdaRequest)
-{
-    WDI_Status status = WDI_STATUS_SUCCESS;
-    tWDA_ReqParams *pWdaParams;
-
-    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
-            "%s:", __func__);
-    pWdaParams = (tWDA_ReqParams *)vos_mem_malloc(sizeof(tWDA_ReqParams));
-    if (NULL == pWdaParams)
-    {
-        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                "%s: VOS MEM Alloc Failure", __func__);
-        VOS_ASSERT(0);
-        return VOS_STATUS_E_NOMEM;
-    }
-    pWdaParams->pWdaContext = pWDA;
-    pWdaParams->wdaMsgParam = wdaRequest;
-    pWdaParams->wdaWdiApiMsgParam = NULL;
-
-    status = WDI_EXTScanResetSignfRSSIChangeReq((void *)wdaRequest,
-            (WDI_EXTScanResetSignfRSSIChangeRspCb)
-            WDA_EXTScanResetSignfRSSIChangeRspCallback,
             (void *)pWdaParams);
     if (IS_WDI_STATUS_FAILURE(status))
     {
