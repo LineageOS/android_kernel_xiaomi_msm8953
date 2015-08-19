@@ -5126,7 +5126,6 @@ typedef struct
    tSirMacAddr  bssid;   // AP BSSID
    tANI_S32     low;     // low threshold
    tANI_S32     high;    // high threshold
-   tANI_U32     channel; // channel hint
 } tSirAPThresholdParam, *tpSirAPThresholdParam;
 
 typedef struct
@@ -5186,6 +5185,21 @@ typedef PACKED_PRE struct PACKED_POST
 } tSirWifiScanResult, *tpSirWifiScanResult;
 
 /* WLAN_HAL_BSSID_HOTLIST_RESULT_IND */
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tANI_U32             requestId;
+    tANI_BOOLEAN         bss_found;
+    tANI_U32             numHotlistBss;     // numbers of APs
+
+    /*
+     * 0 for last fragment
+     * 1 still more fragment(s) coming
+     */
+    tANI_BOOLEAN         moreData;
+    tSirWifiScanResult   bssHotlist[1];
+} tSirEXTScanHotlistMatch, *tpSirEXTScanHotlistMatch;
+
 
 typedef PACKED_PRE struct PACKED_POST
 {
@@ -5306,8 +5320,8 @@ typedef struct
 {
     tANI_U32               requestId;
     tANI_U8                sessionId;    // session Id mapped to vdev_id
-
-    tANI_U32               numAp;        // number of hotlist APs
+    tANI_U32               lostBssidSampleSize;
+    tANI_U32               numBssid;        // number of hotlist APs
     tSirAPThresholdParam   ap[WLAN_EXTSCAN_MAX_HOTLIST_APS];    // hotlist APs
 } tSirEXTScanSetBssidHotListReqParams, *tpSirEXTScanSetBssidHotListReqParams;
 

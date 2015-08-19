@@ -8296,8 +8296,6 @@ typedef PACKED_PRE struct PACKED_POST
    tANI_S32 lowRssiThreshold;
    /* high threshold - used in L for significant rssi - used in L for hotlist */
    tANI_S32 highRssiThreshold;
-   /* channel hint */
-   tANI_U32 channel;
 } tApThresholdParams, *tpApThresholdParams;
 
 typedef PACKED_PRE struct PACKED_POST
@@ -8403,8 +8401,9 @@ typedef PACKED_PRE struct PACKED_POST
 {
    tANI_U32 requestId;
    tANI_U8 sessionId;
+   tANI_U32 lostBssidSampleSize;
    // number of hotlist APs
-   tANI_U32 numAp;
+   tANI_U32 numBssid;
    // hotlist APs
    tApThresholdParams ap[WLAN_HAL_EXT_SCAN_MAX_HOTLIST_APS];
 } tHalBssidHotlistSetReq, *tpHalBssidHotlistSetReq;

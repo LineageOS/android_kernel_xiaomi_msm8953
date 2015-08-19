@@ -33375,8 +33375,11 @@ WDI_ProcessEXTScanSetBSSIDHotlistReq
   pHalBssidHotlistSetReqParams->sessionId =
                     pwdiEXTScanSetBSSIDHotlistReqParams->sessionId;
 
-  pHalBssidHotlistSetReqParams->numAp =
-                    pwdiEXTScanSetBSSIDHotlistReqParams->numAp;
+  pHalBssidHotlistSetReqParams->lostBssidSampleSize =
+                    pwdiEXTScanSetBSSIDHotlistReqParams->lostBssidSampleSize;
+
+  pHalBssidHotlistSetReqParams->numBssid =
+                    pwdiEXTScanSetBSSIDHotlistReqParams->numBssid;
 
   for( i = 0; i < WLAN_HAL_EXT_SCAN_MAX_HOTLIST_APS; i++){
 
@@ -33390,26 +33393,23 @@ WDI_ProcessEXTScanSetBSSIDHotlistReq
     pHalBssidHotlistSetReqParams->ap[i].highRssiThreshold =
         pwdiEXTScanSetBSSIDHotlistReqParams->ap[i].high;
 
-    pHalBssidHotlistSetReqParams->ap[i].channel =
-        pwdiEXTScanSetBSSIDHotlistReqParams->ap[i].channel;
-
   }
 
   VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
-          "ReqID %u sessionId %u numAp %u ",
+          "ReqID %u sessionId %u numBssid %u lostBssidSampleSize: %u",
       pHalBssidHotlistSetReqParams->requestId,
       pHalBssidHotlistSetReqParams->sessionId,
-      pHalBssidHotlistSetReqParams->numAp);
+      pHalBssidHotlistSetReqParams->numBssid,
+      pHalBssidHotlistSetReqParams->lostBssidSampleSize);
 
-  for( i = 0; i < pHalBssidHotlistSetReqParams->numAp; i++){
+  for( i = 0; i < pHalBssidHotlistSetReqParams->numBssid; i++){
 
     VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
-         "%s %d %d) BSSID: %pM lowRssiThreshold %d highRssiThreshold %d Channel %u ",
+         "%s %d %d) BSSID: %pM lowRssiThreshold %d highRssiThreshold %d",
             __func__, __LINE__, i,
             pHalBssidHotlistSetReqParams->ap[i].bssid,
             pHalBssidHotlistSetReqParams->ap[i].lowRssiThreshold,
-            pHalBssidHotlistSetReqParams->ap[i].highRssiThreshold,
-            pHalBssidHotlistSetReqParams->ap[i].channel);
+            pHalBssidHotlistSetReqParams->ap[i].highRssiThreshold);
 
   }
 

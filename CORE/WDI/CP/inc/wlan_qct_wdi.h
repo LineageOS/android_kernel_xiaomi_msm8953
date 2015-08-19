@@ -5946,15 +5946,14 @@ typedef struct
    wpt_uint8   bssid[6];     /* BSSID */
    wpt_int32    low;     // low threshold
    wpt_int32    high;    // high threshold
-   wpt_uint32   channel; // channel hint
 } WDI_APThresholdParam;
 
 typedef struct
 {
     wpt_int32   requestId;
     wpt_int8    sessionId;    // session Id mapped to vdev_id
-
-    wpt_int32   numAp;        // number of hotlist APs
+    wpt_uint32  lostBssidSampleSize;
+    wpt_int32   numBssid;        // number of hotlist APs
     WDI_APThresholdParam   ap[WDI_WLAN_EXTSCAN_MAX_HOTLIST_APS];    // hotlist APs
 } WDI_EXTScanSetBSSIDHotlistReqParams;
 
