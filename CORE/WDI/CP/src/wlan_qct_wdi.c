@@ -14117,6 +14117,7 @@ WDI_ProcessEnterImpsReq
       WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
                 "WDI Init failed to wait on an event");
 
+      WDTS_SetPowerState(pWDICtx, WDTS_POWER_STATE_FULL, NULL);
       WDI_ASSERT(0);
       goto fail;
    }
@@ -14295,6 +14296,7 @@ WDI_ProcessEnterBmpsReq
       WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
                 "WDI Init failed to wait on an event");
 
+      WDTS_SetPowerState(pWDICtx, WDTS_POWER_STATE_FULL, NULL);
       WDI_ASSERT(0);
       goto fail;
    }
