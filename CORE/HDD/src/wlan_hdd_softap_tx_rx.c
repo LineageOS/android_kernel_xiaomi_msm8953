@@ -409,6 +409,8 @@ int hdd_softap_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
     {
        VOS_TRACE( VOS_MODULE_ID_HDD_SAP_DATA, VOS_TRACE_LEVEL_WARN,
             "%s: station %d ac %d queue over limit %d", __func__, STAId, ac, pktListSize);
+       ++pAdapter->hdd_stats.hddTxRxStats.txXmitBackPressured;
+       ++pAdapter->hdd_stats.hddTxRxStats.txXmitBackPressuredAC[ac];
        pSapCtx->aStaInfo[STAId].txSuspended[ac] = VOS_TRUE;
        netif_stop_subqueue(dev, skb_get_queue_mapping(skb));
        txSuspended = VOS_TRUE;
