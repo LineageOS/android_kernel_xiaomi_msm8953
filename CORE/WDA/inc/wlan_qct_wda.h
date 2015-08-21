@@ -1282,6 +1282,7 @@ eHalStatus WDA_SetRegDomain(void * clientCtxt, v_REGDOMAIN_t regId,
 
 #define WDA_MGMT_LOGGING_INIT_REQ               SIR_HAL_MGMT_LOGGING_INIT_REQ
 #define WDA_GET_FRAME_LOG_REQ                   SIR_HAL_GET_FRAME_LOG_REQ
+#define WDA_SEND_LOG_DONE_IND                   SIR_HAL_SEND_LOG_DONE_IND
 
 #define WDA_FATAL_EVENT_LOGS_REQ                   SIR_HAL_FATAL_EVENT_LOGS_REQ
 

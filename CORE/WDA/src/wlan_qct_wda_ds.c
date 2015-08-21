@@ -141,7 +141,14 @@ void WDA_TLI_FastHwFwdDataFrame
 
 void WDA_DS_RxLogCallback(void)
 {
-  WDA_FWLoggingDXEdoneInd();
+  vos_msg_t vosMessage;
+
+  vosMessage.bodyptr = NULL;
+  vosMessage.reserved = 0;
+  vosMessage.type = WDA_SEND_LOG_DONE_IND;
+  if (VOS_STATUS_SUCCESS != vos_mq_post_message( VOS_MQ_ID_WDA, &vosMessage ))
+     VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               "WLAN WDA:Posting DXE logging done indication failed" );
   return;
 }
 
