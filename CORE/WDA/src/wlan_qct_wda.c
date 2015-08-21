@@ -259,10 +259,6 @@ VOS_STATUS WDA_ProcessEXTScanSetBSSIDHotlistReq(tWDA_CbContext *pWDA,
                             tSirEXTScanSetBssidHotListReqParams *wdaRequest);
 VOS_STATUS WDA_ProcessEXTScanResetBSSIDHotlistReq(tWDA_CbContext *pWDA,
                             tSirEXTScanResetBssidHotlistReqParams *wdaRequest);
-VOS_STATUS WDA_ProcessEXTScanSetSSIDHotlistReq(tWDA_CbContext *pWDA,
-                            tSirEXTScanSetSsidHotListReqParams *wdaRequest);
-VOS_STATUS WDA_ProcessEXTScanResetSSIDHotlistReq(tWDA_CbContext *pWDA,
-                            tSirEXTScanResetSsidHotlistReqParams *wdaRequest);
 VOS_STATUS WDA_ProcessHighPriorityDataInfoInd(tWDA_CbContext *pWDA,
                             tSirHighPriorityDataInfoInd *wdaRequest);
 #endif /* WLAN_FEATURE_EXTSCAN */
@@ -16144,18 +16140,6 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
                         (tSirEXTScanResetBssidHotlistReqParams *)pMsg->bodyptr);
          break;
       }
-     case WDA_EXTSCAN_SET_SSID_HOTLIST_REQ:
-      {
-         WDA_ProcessEXTScanSetSSIDHotlistReq(pWDA,
-                         (tSirEXTScanSetSsidHotListReqParams *)pMsg->bodyptr);
-         break;
-      }
-      case WDA_EXTSCAN_RESET_SSID_HOTLIST_REQ:
-      {
-         WDA_ProcessEXTScanResetSSIDHotlistReq(pWDA,
-                        (tSirEXTScanResetSsidHotlistReqParams *)pMsg->bodyptr);
-         break;
-      }
       case WDA_HIGH_PRIORITY_DATA_INFO_IND:
       {
          WDA_ProcessHighPriorityDataInfoInd(pWDA,
@@ -17384,7 +17368,6 @@ void WDA_lowLevelIndCallback(WDI_LowLevelIndType *wdiLowLevelInd,
      case  WDI_EXTSCAN_SCAN_AVAILABLE_IND:
      case  WDI_EXTSCAN_SCAN_RESULT_IND:
      case  WDI_EXTSCAN_BSSID_HOTLIST_RESULT_IND:
-     case  WDI_EXTSCAN_SSID_HOTLIST_RESULT_IND:
      {
          void *pEXTScanData;
          void *pCallbackContext;
@@ -17430,14 +17413,6 @@ void WDA_lowLevelIndCallback(WDI_LowLevelIndType *wdiLowLevelInd,
 
              VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
               "WDI_EXTSCAN Indication is WDI_EXTSCAN_BSSID_HOTLIST_RESULT_IND");
-         }
-         if (wdiLowLevelInd->wdiIndicationType ==
-                 WDI_EXTSCAN_SSID_HOTLIST_RESULT_IND)
-         {
-             indType = WDA_EXTSCAN_SSID_HOTLIST_RESULT_IND;
-
-             VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
-              "WDI_EXTSCAN Indication is WDI_EXTSCAN_SSID_HOTLIST_RESULT_IND");
          }
 
          pEXTScanData =
@@ -21017,160 +20992,6 @@ error:
 }
 
 /*==========================================================================
-  FUNCTION   WDA_EXTScanSetSSIDHotlistRspCallback
-
-  DESCRIPTION
-    API to send EXTScan Set SSID Hotlist Response to HDD
-
-  PARAMETERS
-    pEventData: Response from FW
-   pUserData:
-===========================================================================*/
-void WDA_EXTScanSetSSIDHotlistRspCallback(void *pEventData, void* pUserData)
-{
-    tWDA_ReqParams *pWdaParams = (tWDA_ReqParams *)pUserData;
-    tWDA_CbContext *pWDA = NULL;
-    void *pCallbackContext;
-    tpAniSirGlobal pMac;
-
-    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
-            "%s: ", __func__);
-    if (NULL == pWdaParams)
-    {
-        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                "%s: pWdaParams received NULL", __func__);
-        VOS_ASSERT(0) ;
-        return;
-    }
-
-    pWDA = (tWDA_CbContext *) pWdaParams->pWdaContext;
-
-    if (NULL == pWDA)
-    {
-        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                "%s: pWDA received NULL", __func__);
-        VOS_ASSERT(0);
-        goto error;
-    }
-
-    pMac = (tpAniSirGlobal )VOS_GET_MAC_CTXT(pWDA->pVosContext);
-    if (NULL == pMac)
-    {
-        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                "%s:pMac is NULL", __func__);
-        VOS_ASSERT(0);
-        goto error;
-    }
-
-    pCallbackContext = pMac->sme.pEXTScanCallbackContext;
-
-    if (pMac->sme.pEXTScanIndCb)
-    {
-        pMac->sme.pEXTScanIndCb(pCallbackContext,
-                WDA_EXTSCAN_SET_SSID_HOTLIST_RSP,
-                pEventData);
-    }
-    else
-    {
-        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                "%s:HDD callback is null", __func__);
-        VOS_ASSERT(0);
-    }
-
-
-error:
-
-    if (pWdaParams->wdaWdiApiMsgParam != NULL)
-    {
-        vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
-    }
-    if (pWdaParams->wdaMsgParam != NULL)
-    {
-        vos_mem_free(pWdaParams->wdaMsgParam);
-    }
-    vos_mem_free(pWdaParams) ;
-
-    return;
-}
-
-/*==========================================================================
-  FUNCTION   WDA_EXTScanResetSSIDHotlistRspCallback
-
-  DESCRIPTION
-    API to send EXTScan ReSet SSID Hotlist Response to HDD
-
-  PARAMETERS
-    pEventData: Response from FW
-   pUserData:
-===========================================================================*/
-void WDA_EXTScanResetSSIDHotlistRspCallback(void *pEventData, void* pUserData)
-{
-    tWDA_ReqParams *pWdaParams = (tWDA_ReqParams *)pUserData;
-    tWDA_CbContext *pWDA = NULL;
-    void *pCallbackContext;
-    tpAniSirGlobal pMac;
-
-    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
-            "%s:", __func__);
-    if (NULL == pWdaParams)
-    {
-        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                "%s: pWdaParams received NULL", __func__);
-        VOS_ASSERT(0) ;
-        return;
-    }
-
-    pWDA = (tWDA_CbContext *) pWdaParams->pWdaContext;
-
-    if (NULL == pWDA)
-    {
-        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                "%s: pWDA received NULL", __func__);
-        VOS_ASSERT(0);
-        goto error;
-    }
-
-    pMac = (tpAniSirGlobal )VOS_GET_MAC_CTXT(pWDA->pVosContext);
-    if (NULL == pMac)
-    {
-        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                "%s:pMac is NULL", __func__);
-        VOS_ASSERT(0);
-        goto error;
-    }
-
-    pCallbackContext = pMac->sme.pEXTScanCallbackContext;
-
-    if (pMac->sme.pEXTScanIndCb)
-    {
-        pMac->sme.pEXTScanIndCb(pCallbackContext,
-                WDA_EXTSCAN_RESET_SSID_HOTLIST_RSP,
-                pEventData);
-    }
-    else
-    {
-        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                "%s:HDD callback is null", __func__);
-        VOS_ASSERT(0);
-    }
-
-
-error:
-
-    if (pWdaParams->wdaWdiApiMsgParam != NULL)
-    {
-        vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
-    }
-    if (pWdaParams->wdaMsgParam != NULL)
-    {
-        vos_mem_free(pWdaParams->wdaMsgParam);
-    }
-    vos_mem_free(pWdaParams) ;
-
-    return;
-}
-
-/*==========================================================================
   FUNCTION   WDA_ProcessEXTScanStartReq
 
   DESCRIPTION
@@ -21417,92 +21238,6 @@ VOS_STATUS WDA_ProcessEXTScanResetBSSIDHotlistReq(tWDA_CbContext *pWDA,
 
     status = WDI_EXTScanResetBSSIDHotlistReq((void *)wdaRequest,
      (WDI_EXTScanResetBSSIDHotlistRspCb)WDA_EXTScanResetBSSIDHotlistRspCallback,
-            (void *)pWdaParams);
-    if (IS_WDI_STATUS_FAILURE(status))
-    {
-        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                "Failure to request.  Free all the memory " );
-        vos_mem_free(pWdaParams->wdaMsgParam);
-        vos_mem_free(pWdaParams);
-    }
-    return CONVERT_WDI2VOS_STATUS(status);
-}
-
-/*==========================================================================
-  FUNCTION   WDA_ProcessEXTScanSetSSIDHotlistReq
-
-  DESCRIPTION
-    API to send Set SSID Hotlist Request to WDI
-
-  PARAMETERS
-    pWDA: Pointer to WDA context
-    wdaRequest: Pointer to EXTScan req parameters
-===========================================================================*/
-VOS_STATUS WDA_ProcessEXTScanSetSSIDHotlistReq(tWDA_CbContext *pWDA,
-        tSirEXTScanSetSsidHotListReqParams *wdaRequest)
-{
-    WDI_Status status = WDI_STATUS_SUCCESS;
-    tWDA_ReqParams *pWdaParams;
-
-    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
-            "%s: ", __func__);
-    pWdaParams = (tWDA_ReqParams *)vos_mem_malloc(sizeof(tWDA_ReqParams));
-    if (NULL == pWdaParams)
-    {
-        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                "%s: VOS MEM Alloc Failure", __func__);
-        VOS_ASSERT(0);
-        return VOS_STATUS_E_NOMEM;
-    }
-    pWdaParams->pWdaContext = pWDA;
-    pWdaParams->wdaMsgParam = wdaRequest;
-    pWdaParams->wdaWdiApiMsgParam = NULL;
-
-    status = WDI_EXTScanSetSSIDHotlistReq((void *)wdaRequest,
-         (WDI_EXTScanSetSSIDHotlistRspCb)WDA_EXTScanSetSSIDHotlistRspCallback,
-            (void *)pWdaParams);
-    if (IS_WDI_STATUS_FAILURE(status))
-    {
-        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                "Failure to request.  Free all the memory " );
-        vos_mem_free(pWdaParams->wdaMsgParam);
-        vos_mem_free(pWdaParams);
-    }
-    return CONVERT_WDI2VOS_STATUS(status);
-}
-
-/*==========================================================================
-  FUNCTION   WDA_ProcessEXTScanReSetSSIDHotlistReq
-
-  DESCRIPTION
-    API to send Reset SSID Hotlist Request to WDI
-
-  PARAMETERS
-    pWDA: Pointer to WDA context
-    wdaRequest: Pointer to EXTScan req parameters
-===========================================================================*/
-VOS_STATUS WDA_ProcessEXTScanResetSSIDHotlistReq(tWDA_CbContext *pWDA,
-        tSirEXTScanResetSsidHotlistReqParams *wdaRequest)
-{
-    WDI_Status status = WDI_STATUS_SUCCESS;
-    tWDA_ReqParams *pWdaParams;
-
-    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
-            "%s:", __func__);
-    pWdaParams = (tWDA_ReqParams *)vos_mem_malloc(sizeof(tWDA_ReqParams));
-    if (NULL == pWdaParams)
-    {
-        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                "%s: VOS MEM Alloc Failure", __func__);
-        VOS_ASSERT(0);
-        return VOS_STATUS_E_NOMEM;
-    }
-    pWdaParams->pWdaContext = pWDA;
-    pWdaParams->wdaMsgParam = wdaRequest;
-    pWdaParams->wdaWdiApiMsgParam = NULL;
-
-    status = WDI_EXTScanResetSSIDHotlistReq((void *)wdaRequest,
-     (WDI_EXTScanResetSSIDHotlistRspCb)WDA_EXTScanResetSSIDHotlistRspCallback,
             (void *)pWdaParams);
     if (IS_WDI_STATUS_FAILURE(status))
     {
