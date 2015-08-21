@@ -127,6 +127,7 @@ typedef tANI_U8 tHalIpv4Addr[4];
 #define WLAN_HAL_EXT_SCAN_MAX_CHANNELS               16
 #define WLAN_HAL_EXT_SCAN_MAX_BUCKETS                16
 #define WLAN_HAL_EXT_SCAN_MAX_HOTLIST_APS            128
+
 #define WLAN_HAL_EXT_SCAN_MAX_RSSI_SAMPLE_SIZE       8
 
 /* For Logging enhancement feature currently max 2 address will be passed */
@@ -8038,13 +8039,19 @@ typedef PACKED_PRE struct PACKED_POST
    tExtScanChannelBandMask channelBand;
    /* period (milliseconds) for each bucket defines the periodicity of bucket */
    tANI_U32 period;
-   /* 0 => normal reporting (reporting rssi history only,
-           when rssi history buffer is % full)
-    * 1 => same as 0 + report a scan completion event after scanning this bucket
-    * 2 => same as 1 + forward scan results (beacons/probe responses + IEs) in
-           real time to HAL (Required for L = P0)
-    * 3 => same as 2 + forward scan results (beacons/probe responses + IEs) in
-           real time to host (Not required for L =  P3) */
+   /*  This is a bit field; which defines following bits -
+       *  REPORT_EVENTS_BUFFER_FULL  => report only when scan history
+           is % full
+       *  REPORT_EVENTS_EACH_SCAN	  => report a scan completion event
+           after scan
+       *  REPORT_EVENTS_FULL_RESULTS => forward scan results
+           (beacons/probe responses + IEs) in real time to HAL, in addition
+           to completion events
+           Note: To keep backward compatibility, fire completion events
+           regardless of REPORT_EVENTS_EACH_SCAN.
+       *  REPORT_EVENTS_NO_BATCH	  => controls batching,
+           0 => batching, 1 => no batching
+       */
    tANI_U8 reportEvents;
    /* number of channels */
    tANI_U8 numChannels;
@@ -8373,7 +8380,6 @@ typedef PACKED_PRE struct PACKED_POST
    tANI_BOOLEAN moreData;
    tANI_U8 bssHotlist[1];
 }tHalHotlistResultIndMsg, *tpHalHotlistResultIndMsg;
-
 
 /*---------------------------------------------------------------------------
   *WLAN_HAL_MAC_SPOOFED_SCAN_REQ
