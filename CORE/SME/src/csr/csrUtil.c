@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -2346,7 +2346,7 @@ eHalStatus csrGetPhyModeFromBss(tpAniSirGlobal pMac, tSirBssDescription *pBSSDes
         {
             phyMode = eCSR_DOT11_MODE_11n;
 #ifdef WLAN_FEATURE_11AC
-            if ( pIes->VHTCaps.present)
+            if (IS_BSS_VHT_CAPABLE(pIes->VHTCaps))
             {
                 phyMode = eCSR_DOT11_MODE_11ac;
             }

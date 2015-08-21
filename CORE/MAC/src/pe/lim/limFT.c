@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -565,7 +565,8 @@ tSirRetStatus limFTPrepareAddBssReq( tpAniSirGlobal pMac,
                 pAddBssParams->staContext.txChannelWidthSet = WNI_CFG_CHANNEL_BONDING_MODE_DISABLE;
             }                                                           
 #ifdef WLAN_FEATURE_11AC
-            if (pftSessionEntry->vhtCapability && pBeaconStruct->VHTCaps.present)
+            if (pftSessionEntry->vhtCapability &&
+                        IS_BSS_VHT_CAPABLE(pBeaconStruct->VHTCaps))
             {
                 pAddBssParams->staContext.vhtCapable = 1;
                 if ((pBeaconStruct->VHTCaps.suBeamFormerCap ||
@@ -751,12 +752,14 @@ tpPESession limFillFTSession(tpAniSirGlobal pMac,
     wlan_cfgGetInt(pMac, WNI_CFG_DOT11_MODE, &selfDot11Mode);
     limLog(pMac, LOG1, FL("selfDot11Mode %d"),selfDot11Mode );
     pftSessionEntry->dot11mode = selfDot11Mode;
-    pftSessionEntry->vhtCapability = (IS_DOT11_MODE_VHT(pftSessionEntry->dot11mode)
-                                     && pBeaconStruct->VHTCaps.present);
+    pftSessionEntry->vhtCapability =
+               (IS_DOT11_MODE_VHT(pftSessionEntry->dot11mode)
+                && IS_BSS_VHT_CAPABLE(pBeaconStruct->VHTCaps));
     pftSessionEntry->htCapability = (IS_DOT11_MODE_HT(pftSessionEntry->dot11mode)
                                      && pBeaconStruct->HTCaps.present);
 #ifdef WLAN_FEATURE_11AC
-    if ( pBeaconStruct->VHTCaps.present && pBeaconStruct->VHTOperation.present)
+    if (IS_BSS_VHT_CAPABLE(pBeaconStruct->VHTCaps)
+                    && pBeaconStruct->VHTOperation.present)
     {
        pftSessionEntry->vhtCapabilityPresentInBeacon = 1;
        pftSessionEntry->apCenterChan = pBeaconStruct->VHTOperation.chanCenterFreqSeg1;
