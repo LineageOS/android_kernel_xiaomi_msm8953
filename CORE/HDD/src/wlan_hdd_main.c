@@ -11766,19 +11766,9 @@ VOS_STATUS hdd_sta_id_hash_add_entry(hdd_adapter_t *pAdapter,
     uint16 index;
     hdd_staid_hash_node_t *sta_info_node = NULL;
 
-    spin_lock_bh( &pAdapter->sta_hash_lock);
-    if (pAdapter->is_sta_id_hash_initialized != VOS_TRUE) {
-        spin_unlock_bh( &pAdapter->sta_hash_lock);
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-                  "%s: hash is not initialized for session id %d",
-                  __func__, pAdapter->sessionId);
-        return VOS_STATUS_E_FAILURE;
-    }
-
     index = hdd_sta_id_hash_calculate_index(pAdapter, mac_addr);
     sta_info_node = vos_mem_malloc(sizeof(hdd_staid_hash_node_t));
     if (!sta_info_node) {
-        spin_unlock_bh( &pAdapter->sta_hash_lock);
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                   "%s: malloc failed", __func__);
         return VOS_STATUS_E_NOMEM;
@@ -11786,6 +11776,16 @@ VOS_STATUS hdd_sta_id_hash_add_entry(hdd_adapter_t *pAdapter,
 
     sta_info_node->sta_id = sta_id;
     vos_mem_copy(&sta_info_node->mac_addr, mac_addr, sizeof(v_MACADDR_t));
+
+    spin_lock_bh( &pAdapter->sta_hash_lock);
+    if (pAdapter->is_sta_id_hash_initialized != VOS_TRUE) {
+        spin_unlock_bh( &pAdapter->sta_hash_lock);
+        vos_mem_free(sta_info_node);
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                  "%s: hash is not initialized for session id %d",
+                  __func__, pAdapter->sessionId);
+        return VOS_STATUS_E_FAILURE;
+    }
 
     hdd_list_insert_back ( &pAdapter->sta_id_hash.bins[index],
                            (hdd_list_node_t*) sta_info_node );
