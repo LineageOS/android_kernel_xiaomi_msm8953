@@ -198,7 +198,7 @@ v_VOID_t * vos_mem_malloc_debug( v_SIZE_t size, char* fileName, v_U32_t lineNum)
        return NULL;
    }
 
-   if (in_interrupt())
+   if (in_interrupt() || irqs_disabled() || in_atomic())
    {
       flags = GFP_ATOMIC;
    }
