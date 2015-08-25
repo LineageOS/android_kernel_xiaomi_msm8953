@@ -6618,6 +6618,7 @@ static int __iw_get_char_setnone(struct net_device *dev,
         case WE_GET_RSSI:
         {
             v_S7_t s7Rssi = 0;
+            wlan_hdd_get_station_stats(pAdapter);
             wlan_hdd_get_rssi(pAdapter, &s7Rssi);
             snprintf(extra, WE_MAX_STR_LEN, "rssi=%d",s7Rssi);
             wrqu->data.length = strlen(extra)+1;
