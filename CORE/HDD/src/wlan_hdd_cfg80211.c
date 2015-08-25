@@ -2762,162 +2762,269 @@ static void wlan_hdd_cfg80211_extscan_cached_results_ind(void *ctx,
 {
     hdd_context_t *pHddCtx = (hdd_context_t *)ctx;
     struct sk_buff *skb    = NULL;
-    tANI_U32 i = 0, j, resultsPerEvent;
+    tANI_U32 i = 0, j, resultsPerEvent, scan_id_index;
     tANI_S32 totalResults;
     tpSirWifiScanResultEvent pData = (tpSirWifiScanResultEvent) pMsg;
-    tpSirWifiScanResult pSirWifiScanResult;
+    tpSirWifiScanResult pSirWifiScanResult, head_ptr;
+    struct hdd_ext_scan_context *context;
+    bool ignore_cached_results = false;
+    tExtscanCachedScanResult *result;
+    struct nlattr *nla_results;
+    tANI_U16 ieLength= 0;
+    tANI_U8  *ie = NULL;
 
     ENTER();
 
-    if (wlan_hdd_validate_context(pHddCtx)) {
+    if (wlan_hdd_validate_context(pHddCtx))
         return;
-    }
+
     if (!pMsg)
     {
         hddLog(VOS_TRACE_LEVEL_ERROR, FL("pMsg is null"));
         return;
     }
 
-    totalResults = pData->numOfAps;
-    hddLog(VOS_TRACE_LEVEL_INFO, "Req Id (%u)", pData->requestId);
-    hddLog(VOS_TRACE_LEVEL_INFO, "Num results (%u)", pData->numOfAps);
-    hddLog(VOS_TRACE_LEVEL_INFO, "More Data (%u)", pData->moreData);
+    spin_lock(&hdd_context_lock);
+    context = &pHddCtx->ext_scan_context;
+    ignore_cached_results = context->ignore_cached_results;
+    spin_unlock(&hdd_context_lock);
 
-    do{
-        resultsPerEvent = ((totalResults >= EXTSCAN_MAX_CACHED_RESULTS_PER_IND) ?
-                EXTSCAN_MAX_CACHED_RESULTS_PER_IND : totalResults);
-        totalResults -= EXTSCAN_MAX_CACHED_RESULTS_PER_IND;
+    if (ignore_cached_results) {
+        hddLog(LOGE,
+               FL("Ignore the cached results received after timeout"));
+        return;
+    }
 
-        skb = cfg80211_vendor_event_alloc(pHddCtx->wiphy,
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0))
-                NULL,
-#endif
-                EXTSCAN_EVENT_BUF_SIZE + NLMSG_HDRLEN,
-                QCA_NL80211_VENDOR_SUBCMD_EXTSCAN_GET_CACHED_RESULTS_INDEX,
-                GFP_KERNEL);
+    hddLog(VOS_TRACE_LEVEL_INFO, "Req Id %u More Data %u No of scan ids %u",
+           pData->requestId, pData->moreData, pData->scanResultSize);
 
-        if (!skb) {
-            hddLog(VOS_TRACE_LEVEL_ERROR,
-                    FL("cfg80211_vendor_event_alloc failed"));
-            return;
-        }
+    result = (tExtscanCachedScanResult *)&(pData->result);
 
-        hddLog(VOS_TRACE_LEVEL_INFO, "resultsPerEvent (%u)", resultsPerEvent);
+    for (scan_id_index = 0; scan_id_index < pData->scanResultSize;
+                                                   scan_id_index++) {
+         result+= scan_id_index;
 
-        if (nla_put_u32(skb, QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_REQUEST_ID,
-                    pData->requestId) ||
-                nla_put_u32(skb,
-                    QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_NUM_RESULTS_AVAILABLE,
-                    resultsPerEvent)) {
-            hddLog(VOS_TRACE_LEVEL_ERROR, FL("put fail"));
-            goto fail;
-        }
-        if (nla_put_u8(skb,
-                    QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_SCAN_RESULT_MORE_DATA,
-                    pData->moreData ? 1 : (totalResults > 0 ? 1 : 0 )))
-        {
-            hddLog(VOS_TRACE_LEVEL_ERROR, FL("put fail"));
-            goto fail;
-        }
+         totalResults = result->num_results;
+         hddLog(VOS_TRACE_LEVEL_INFO, "scan_id %u flags %u Num results %u",
+                result->scan_id, result->flags, totalResults);
+         i = 0;
 
-        if (resultsPerEvent) {
-            struct nlattr *aps;
+        do{
+            resultsPerEvent = ((totalResults >= EXTSCAN_MAX_CACHED_RESULTS_PER_IND) ?
+                    EXTSCAN_MAX_CACHED_RESULTS_PER_IND : totalResults);
+            totalResults -= EXTSCAN_MAX_CACHED_RESULTS_PER_IND;
 
-            aps = nla_nest_start(skb,
-                            QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_LIST);
-            if (!aps)
+            skb = cfg80211_vendor_cmd_alloc_reply_skb(pHddCtx->wiphy,
+                                     EXTSCAN_EVENT_BUF_SIZE + NLMSG_HDRLEN);
+
+            if (!skb) {
+                hddLog(VOS_TRACE_LEVEL_ERROR,
+                        FL("cfg80211_vendor_event_alloc failed"));
+                return;
+            }
+
+            hddLog(VOS_TRACE_LEVEL_INFO, "resultsPerEvent (%u)", resultsPerEvent);
+
+            if (nla_put_u32(skb, QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_REQUEST_ID,
+                        pData->requestId) ||
+                    nla_put_u32(skb,
+                        QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_NUM_RESULTS_AVAILABLE,
+                        resultsPerEvent)) {
+                hddLog(VOS_TRACE_LEVEL_ERROR, FL("put fail"));
+                goto fail;
+            }
+            if (nla_put_u8(skb,
+                        QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_SCAN_RESULT_MORE_DATA,
+                        pData->moreData ? 1 : (totalResults > 0 ? 1 : 0 )))
             {
                 hddLog(VOS_TRACE_LEVEL_ERROR, FL("put fail"));
                 goto fail;
             }
 
-            for (j = 0; j < resultsPerEvent; j++, i++) {
-                struct nlattr *ap;
-                pSirWifiScanResult =  (tpSirWifiScanResult) ((tANI_U8 *)
-                        pData->ap + ( i* sizeof(tSirWifiScanResult)));
-
-                hddLog(VOS_TRACE_LEVEL_INFO, "[index=%u] Timestamp(%llu) "
-                        "Ssid (%s)"
-                        "Bssid: %pM "
-                        "Channel (%u)"
-                        "Rssi (%d)"
-                        "RTT (%u)"
-                        "RTT_SD (%u)",
-                        i,
-                        pSirWifiScanResult->ts,
-                        pSirWifiScanResult->ssid,
-                        pSirWifiScanResult->bssid,
-                        pSirWifiScanResult->channel,
-                        pSirWifiScanResult->rssi,
-                        pSirWifiScanResult->rtt,
-                        pSirWifiScanResult->rtt_sd);
-
-                ap = nla_nest_start(skb, j + 1);
-                if (!ap)
-                {
-                    hddLog(VOS_TRACE_LEVEL_ERROR, FL("put fail"));
-                    goto fail;
-                }
-
-                if (nla_put_u64(skb,
-                    QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_SCAN_RESULT_TIME_STAMP,
-                    pSirWifiScanResult->ts) )
-                {
-                    hddLog(VOS_TRACE_LEVEL_ERROR, FL("put fail"));
-                    goto fail;
-                }
-                if (nla_put(skb,
-                         QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_SCAN_RESULT_SSID,
-                         sizeof(pSirWifiScanResult->ssid),
-                        pSirWifiScanResult->ssid) )
-                {
-                    hddLog(VOS_TRACE_LEVEL_ERROR, FL("put fail"));
-                    goto fail;
-                }
-                if (nla_put(skb,
-                        QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_SCAN_RESULT_BSSID,
-                        sizeof(pSirWifiScanResult->bssid),
-                        pSirWifiScanResult->bssid) )
-                {
-                    hddLog(VOS_TRACE_LEVEL_ERROR, FL("put fail"));
-                    goto fail;
-                }
-                if (nla_put_u32(skb,
-                       QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_SCAN_RESULT_CHANNEL,
-                        pSirWifiScanResult->channel) )
-                {
-                    hddLog(VOS_TRACE_LEVEL_ERROR, FL("put fail"));
-                    goto fail;
-                }
-                if (nla_put_s32(skb,
-                        QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_SCAN_RESULT_RSSI,
-                        pSirWifiScanResult->rssi) )
-                {
-                    hddLog(VOS_TRACE_LEVEL_ERROR, FL("put fail"));
-                    goto fail;
-                }
-                if (nla_put_u32(skb,
-                          QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_SCAN_RESULT_RTT,
-                          pSirWifiScanResult->rtt) )
-                {
-                    hddLog(VOS_TRACE_LEVEL_ERROR, FL("put fail"));
-                    goto fail;
-                }
-                if (nla_put_u32(skb,
-                        QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_SCAN_RESULT_RTT_SD,
-                        pSirWifiScanResult->rtt_sd))
-                {
-                    hddLog(VOS_TRACE_LEVEL_ERROR, FL("put fail"));
-                    goto fail;
-                }
-
-                nla_nest_end(skb, ap);
+            if (nla_put_u32(skb,
+                QCA_WLAN_VENDOR_ATTR_EXTSCAN_CACHED_RESULTS_SCAN_ID,
+                result->scan_id)) {
+                hddLog(LOGE, FL("put fail"));
+                goto fail;
             }
-            nla_nest_end(skb, aps);
 
-        }
-        cfg80211_vendor_event(skb, GFP_KERNEL);
-    } while (totalResults > 0);
+            nla_results = nla_nest_start(skb,
+                          QCA_WLAN_VENDOR_ATTR_EXTSCAN_CACHED_RESULTS_LIST);
+            if (!nla_results)
+                goto fail;
+
+            if (resultsPerEvent) {
+                struct nlattr *aps;
+                struct nlattr *nla_result;
+
+                nla_result = nla_nest_start(skb, scan_id_index);
+                if(!nla_result)
+                   goto fail;
+
+                if (nla_put_u32(skb,
+                    QCA_WLAN_VENDOR_ATTR_EXTSCAN_CACHED_RESULTS_SCAN_ID,
+                    result->scan_id) ||
+                    nla_put_u32(skb,
+                    QCA_WLAN_VENDOR_ATTR_EXTSCAN_CACHED_RESULTS_FLAGS,
+                    result->flags) ||
+                    nla_put_u32(skb,
+                    QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_NUM_RESULTS_AVAILABLE,
+                    totalResults)) {
+                    hddLog(LOGE, FL("put fail"));
+                    goto fail;
+                }
+
+                aps = nla_nest_start(skb,
+                                QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_LIST);
+                if (!aps)
+                {
+                    hddLog(VOS_TRACE_LEVEL_ERROR, FL("put fail"));
+                    goto fail;
+                }
+
+                head_ptr = (tpSirWifiScanResult) &(result->ap);
+
+                for (j = 0; j < resultsPerEvent; j++, i++) {
+                    struct nlattr *ap;
+                    pSirWifiScanResult = head_ptr + i;
+
+                    /*
+                     * Firmware returns timestamp from WiFi turn ON till
+                     * BSSID was cached (in seconds). Add this with
+                     * time gap between system boot up to WiFi turn ON
+                     * to derive the time since boot when the
+                     * BSSID was cached.
+                     */
+                    pSirWifiScanResult->ts += pHddCtx->wifi_turn_on_time_since_boot;
+                    hddLog(VOS_TRACE_LEVEL_INFO, "[index=%u] Timestamp(%llu) "
+                            "Ssid (%s)"
+                            "Bssid: %pM "
+                            "Channel (%u)"
+                            "Rssi (%d)"
+                            "RTT (%u)"
+                            "RTT_SD (%u)"
+                            "Beacon Period %u"
+                            "Capability 0x%x "
+                            "Ie length %d",
+                            i,
+                            pSirWifiScanResult->ts,
+                            pSirWifiScanResult->ssid,
+                            pSirWifiScanResult->bssid,
+                            pSirWifiScanResult->channel,
+                            pSirWifiScanResult->rssi,
+                            pSirWifiScanResult->rtt,
+                            pSirWifiScanResult->rtt_sd,
+                            pSirWifiScanResult->beaconPeriod,
+                            pSirWifiScanResult->capability,
+                            ieLength);
+
+                    ap = nla_nest_start(skb, j + 1);
+                    if (!ap)
+                    {
+                        hddLog(VOS_TRACE_LEVEL_ERROR, FL("put fail"));
+                        goto fail;
+                    }
+
+                    if (nla_put_u64(skb,
+                        QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_SCAN_RESULT_TIME_STAMP,
+                        pSirWifiScanResult->ts) )
+                    {
+                        hddLog(VOS_TRACE_LEVEL_ERROR, FL("put fail"));
+                        goto fail;
+                    }
+                    if (nla_put(skb,
+                             QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_SCAN_RESULT_SSID,
+                             sizeof(pSirWifiScanResult->ssid),
+                            pSirWifiScanResult->ssid) )
+                    {
+                        hddLog(VOS_TRACE_LEVEL_ERROR, FL("put fail"));
+                        goto fail;
+                    }
+                    if (nla_put(skb,
+                            QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_SCAN_RESULT_BSSID,
+                            sizeof(pSirWifiScanResult->bssid),
+                            pSirWifiScanResult->bssid) )
+                    {
+                        hddLog(VOS_TRACE_LEVEL_ERROR, FL("put fail"));
+                        goto fail;
+                    }
+                    if (nla_put_u32(skb,
+                           QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_SCAN_RESULT_CHANNEL,
+                            pSirWifiScanResult->channel) )
+                    {
+                        hddLog(VOS_TRACE_LEVEL_ERROR, FL("put fail"));
+                        goto fail;
+                    }
+                    if (nla_put_s32(skb,
+                            QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_SCAN_RESULT_RSSI,
+                            pSirWifiScanResult->rssi) )
+                    {
+                        hddLog(VOS_TRACE_LEVEL_ERROR, FL("put fail"));
+                        goto fail;
+                    }
+                    if (nla_put_u32(skb,
+                              QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_SCAN_RESULT_RTT,
+                              pSirWifiScanResult->rtt) )
+                    {
+                        hddLog(VOS_TRACE_LEVEL_ERROR, FL("put fail"));
+                        goto fail;
+                    }
+                    if (nla_put_u32(skb,
+                            QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_SCAN_RESULT_RTT_SD,
+                            pSirWifiScanResult->rtt_sd))
+                    {
+                        hddLog(VOS_TRACE_LEVEL_ERROR, FL("put fail"));
+                        goto fail;
+                    }
+                    if (nla_put_u32(skb,
+                            QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_SCAN_RESULT_BEACON_PERIOD,
+                            pSirWifiScanResult->beaconPeriod))
+                    {
+                        hddLog(VOS_TRACE_LEVEL_ERROR, FL("put fail"));
+                        goto fail;
+                    }
+                    if (nla_put_u32(skb,
+                            QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_SCAN_RESULT_CAPABILITY,
+                            pSirWifiScanResult->capability))
+                    {
+                        hddLog(VOS_TRACE_LEVEL_ERROR, FL("put fail"));
+                        goto fail;
+                    }
+                    if (nla_put_u32(skb,
+                            QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_SCAN_RESULT_IE_LENGTH,
+                            ieLength))
+                    {
+                        hddLog(VOS_TRACE_LEVEL_ERROR, FL("put fail"));
+                        goto fail;
+                    }
+
+                    if (ieLength)
+                        if (nla_put(skb,
+                            QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_SCAN_RESULT_IE_DATA,
+                            ieLength, ie)) {
+                            hddLog(VOS_TRACE_LEVEL_ERROR, FL("put fail"));
+                            goto fail;
+                        }
+
+                    nla_nest_end(skb, ap);
+                }
+                nla_nest_end(skb, aps);
+                nla_nest_end(skb, nla_result);
+            }
+
+         nla_nest_end(skb, nla_results);
+
+         cfg80211_vendor_cmd_reply(skb);
+
+        } while (totalResults > 0);
+    }
+
+    if (!pData->moreData) {
+        spin_lock(&hdd_context_lock);
+        context->response_status = 0;
+        complete(&context->response_event);
+        spin_unlock(&hdd_context_lock);
+    }
 
     EXIT();
     return;
@@ -3217,11 +3324,22 @@ static void wlan_hdd_cfg80211_extscan_full_scan_result_event(void *ctx,
     ENTER();
 
     if (wlan_hdd_validate_context(pHddCtx)) {
+        hddLog(LOGE,
+               FL("HDD context is not valid or response"));
         return;
     }
     if (!pMsg)
     {
         hddLog(VOS_TRACE_LEVEL_ERROR, FL("pMsg is null"));
+        return;
+    }
+
+    /*
+         * If the full scan result including IE data exceeds NL 4K size
+         * limitation, drop that beacon/probe rsp frame.
+         */
+    if ((sizeof(*pData) + pData->ieLength) >= EXTSCAN_EVENT_BUF_SIZE) {
+        hddLog(LOGE, FL("Frame exceeded NL size limilation, drop it!"));
         return;
     }
 
@@ -3239,7 +3357,6 @@ static void wlan_hdd_cfg80211_extscan_full_scan_result_event(void *ctx,
         return;
     }
 
-    hddLog(VOS_TRACE_LEVEL_INFO, FL("Entering "));
     hddLog(VOS_TRACE_LEVEL_INFO, FL("Req Id (%u)"), pData->requestId);
     hddLog(VOS_TRACE_LEVEL_INFO, FL("More Data (%u)"), pData->moreData);
     hddLog(VOS_TRACE_LEVEL_INFO, FL("AP Info: Timestamp(0x%llX) "
@@ -3248,14 +3365,19 @@ static void wlan_hdd_cfg80211_extscan_full_scan_result_event(void *ctx,
                 "Channel (%u)"
                 "Rssi (%d)"
                 "RTT (%u)"
-                "RTT_SD (%u)"),
+                "RTT_SD (%u)"
+                "Bcn Period %d"
+                "Capability 0x%X "),
             pData->ap.ts,
             pData->ap.ssid,
             MAC_ADDR_ARRAY(pData->ap.bssid),
             pData->ap.channel,
             pData->ap.rssi,
             pData->ap.rtt,
-            pData->ap.rtt_sd);
+            pData->ap.rtt_sd,
+            pData->ap.beaconPeriod,
+            pData->ap.capability);
+
     hddLog(VOS_TRACE_LEVEL_INFO, "IE Length (%u)", pData->ieLength);
     if (nla_put_u32(skb, QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_REQUEST_ID,
                 pData->requestId) ||
@@ -3286,17 +3408,23 @@ static void wlan_hdd_cfg80211_extscan_full_scan_result_event(void *ctx,
             pData->ap.capability) ||
         nla_put_u32(skb,
                 QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_SCAN_RESULT_IE_LENGTH,
-            pData->ieLength))
+            pData->ieLength) ||
+        nla_put_u8(skb,
+                QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_SCAN_RESULT_MORE_DATA,
+            pData->moreData))
     {
         hddLog(VOS_TRACE_LEVEL_ERROR, FL("nla put fail"));
         goto nla_put_failure;
     }
-    if (nla_put(skb, QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_SCAN_RESULT_IE_DATA,
-                pData->ieLength,
-                pData->ie))
-    {
-        hddLog(VOS_TRACE_LEVEL_ERROR, FL("nla put fail"));
-        goto nla_put_failure;
+
+    if (pData->ieLength) {
+        if (nla_put(skb, QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_SCAN_RESULT_IE_DATA,
+                    pData->ieLength,
+                    pData->ie))
+        {
+            hddLog(VOS_TRACE_LEVEL_ERROR, FL("nla put fail"));
+            goto nla_put_failure;
+        }
     }
 
     cfg80211_vendor_event(skb, GFP_KERNEL);
@@ -3319,6 +3447,8 @@ static void wlan_hdd_cfg80211_extscan_scan_res_available_event(void *ctx,
     ENTER();
 
     if (wlan_hdd_validate_context(pHddCtx)){
+        hddLog(LOGE,
+               FL("HDD context is not valid or response"));
         return;
     }
     if (!pMsg)
@@ -3341,7 +3471,6 @@ static void wlan_hdd_cfg80211_extscan_scan_res_available_event(void *ctx,
         return;
     }
 
-    hddLog(VOS_TRACE_LEVEL_INFO, FL("Entering "));
     hddLog(VOS_TRACE_LEVEL_INFO, "Req Id (%u)", pData->requestId);
     hddLog(VOS_TRACE_LEVEL_INFO, "Num results (%u)",
                                   pData->numResultsAvailable);
@@ -3373,6 +3502,8 @@ static void wlan_hdd_cfg80211_extscan_scan_progress_event(void *ctx, void *pMsg)
     ENTER();
 
     if (wlan_hdd_validate_context(pHddCtx)){
+        hddLog(LOGE,
+               FL("HDD context is not valid or response"));
         return;
     }
     if (!pMsg)
@@ -3394,7 +3525,7 @@ static void wlan_hdd_cfg80211_extscan_scan_progress_event(void *ctx, void *pMsg)
                   FL("cfg80211_vendor_event_alloc failed"));
         return;
     }
-    hddLog(VOS_TRACE_LEVEL_INFO, FL("Entering "));
+    hddLog(VOS_TRACE_LEVEL_INFO, FL("Request Id (%u) "), pData->requestId);
     hddLog(VOS_TRACE_LEVEL_INFO, "Scan event type (%u)",
             pData->extScanEventType);
     hddLog(VOS_TRACE_LEVEL_INFO, "Scan event status (%u)",
@@ -3598,8 +3729,16 @@ static int __wlan_hdd_cfg80211_extscan_get_cached_results(struct wiphy *wiphy,
     struct nlattr
             *tb[QCA_WLAN_VENDOR_ATTR_EXTSCAN_SUBCMD_CONFIG_PARAM_MAX + 1];
     eHalStatus status;
+    struct hdd_ext_scan_context *context;
+    unsigned long rc;
+    int retval;
 
     ENTER();
+
+    if (VOS_FTM_MODE == hdd_get_conparam()) {
+        hddLog(LOGE, FL("Command not allowed in FTM mode"));
+        return -EINVAL;
+    }
 
     status = wlan_hdd_validate_context(pHddCtx);
     if (0 != status)
@@ -3647,14 +3786,36 @@ static int __wlan_hdd_cfg80211_extscan_get_cached_results(struct wiphy *wiphy,
 
     hddLog(VOS_TRACE_LEVEL_INFO, FL("Flush (%d)"), reqMsg.flush);
 
+    spin_lock(&hdd_context_lock);
+    context = &pHddCtx->ext_scan_context;
+    context->request_id = reqMsg.requestId;
+    context->ignore_cached_results = false;
+    INIT_COMPLETION(context->response_event);
+    spin_unlock(&hdd_context_lock);
+
     status = sme_getCachedResults(pHddCtx->hHal, &reqMsg);
     if (!HAL_STATUS_SUCCESS(status)) {
         hddLog(VOS_TRACE_LEVEL_ERROR,
                FL("sme_getCachedResults failed(err=%d)"), status);
         return -EINVAL;
     }
+
+    rc = wait_for_completion_timeout(&context->response_event,
+            msecs_to_jiffies(WLAN_WAIT_TIME_EXTSCAN));
+    if (!rc) {
+        hddLog(LOGE, FL("Target response timed out"));
+        retval = -ETIMEDOUT;
+        spin_lock(&hdd_context_lock);
+        context->ignore_cached_results = true;
+        spin_unlock(&hdd_context_lock);
+    } else {
+        spin_lock(&hdd_context_lock);
+        retval = context->response_status;
+        spin_unlock(&hdd_context_lock);
+    }
+
     EXIT();
-    return 0;
+    return retval;
 
 failed:
     return -EINVAL;

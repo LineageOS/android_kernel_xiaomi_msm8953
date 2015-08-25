@@ -8225,7 +8225,19 @@ typedef PACKED_PRE struct PACKED_POST
    tANI_U32 rttSd;               // standard deviation in rtt - not expected
    tANI_U16 beaconPeriod;        // period advertised in the beacon
    tANI_U16 capability;          // capabilities advertised in the beacon
+   tANI_U16 ieLength;            // size of the ie_data blob
+   tANI_U8  ieData[1];           // blob of all the information elements found in the beacon
 } tHalExtScanResultParams, *tpHalExtScanResultParams;
+
+/* Get the GSCAN cached scan results */
+typedef struct {
+   tANI_U16 scan_id;      // a unique identifier for the scan unit
+   tANI_U8  flags;        // a bitmask with additional
+                          // information about scan
+   tANI_U8  num_results;  // number of bssids retrieved by the scan
+   tHalExtScanResultParams results[WLAN_HAL_EXT_SCAN_MAX_AP_CACHE_PER_SCAN];
+                          // scan results - one for each bssid
+} tHalExtScanCachedResultParams, *tpHalExtScanCachedResultParams;
 
 typedef PACKED_PRE struct PACKED_POST
 {

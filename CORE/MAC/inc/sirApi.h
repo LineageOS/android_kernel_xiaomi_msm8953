@@ -5184,6 +5184,23 @@ typedef PACKED_PRE struct PACKED_POST
     tANI_U16      capability;          // capabilities advertised in the beacon
 } tSirWifiScanResult, *tpSirWifiScanResult;
 
+/**
+ * struct tExtscanCachedScanResult - extscan cached scan result
+ * @scan_id: a unique identifier for the scan unit
+ * @flags: a bitmask with additional information about scan
+ * @num_results: number of bssids retrieved by the scan
+ * @ap: wifi scan bssid results info
+ */
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tANI_U16            scan_id;
+    tANI_U8             flags;
+    tANI_U8             num_results;
+
+    tSirWifiScanResult   ap[32];
+} tExtscanCachedScanResult, *tpExtscanCachedScanResult;
+
 /* WLAN_HAL_BSSID_HOTLIST_RESULT_IND */
 
 typedef PACKED_PRE struct PACKED_POST
@@ -5204,14 +5221,17 @@ typedef PACKED_PRE struct PACKED_POST
 typedef PACKED_PRE struct PACKED_POST
 {
     tANI_U32             requestId;
-    tANI_U32             numOfAps;     // numbers of APs
+    /*
+     * It gives number of scan ids
+     */
+    tANI_U32             scanResultSize;
 
     /*
      * 0 for last fragment
      * 1 still more fragment(s) coming
      */
     tANI_BOOLEAN         moreData;
-    tSirWifiScanResult    ap[1];
+    tANI_U8 result[1];
 } tSirWifiScanResultEvent, *tpSirWifiScanResultEvent;
 
 /* WLAN_HAL_SSID_HOTLIST_RESULT_IND */
@@ -5229,7 +5249,6 @@ typedef PACKED_PRE struct PACKED_POST
     tANI_BOOLEAN         moreData;
     tSirWifiScanResult   ssidHotlist[1];
 } tSirEXTScanSsidHotlistMatch, *tpSirEXTScanSsidHotlistMatch;
-
 
 typedef PACKED_PRE struct PACKED_POST
 {

@@ -1478,6 +1478,9 @@ struct hdd_context_s
 #ifdef WLAN_FEATURE_EXTSCAN
     struct hdd_ext_scan_context ext_scan_context;
 #endif /* WLAN_FEATURE_EXTSCAN */
+
+/* Time since boot up to WiFi turn ON (in micro seconds) */
+v_U64_t wifi_turn_on_time_since_boot;
 };
 
 
