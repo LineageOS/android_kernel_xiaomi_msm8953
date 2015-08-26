@@ -525,6 +525,10 @@ typedef enum
   WDI_FW_LOGGING_DXE_DONE_IND,
   WDI_SEND_FREQ_RANGE_CONTROL_IND,
 
+#ifdef WLAN_FEATURE_EXTSCAN
+  WDI_HIGH_PRIORITY_DATA_INFO_IND,
+#endif
+
   /*Keep adding the indications to the max request
     such that we keep them separate */
   WDI_MAX_UMAC_IND
@@ -6028,6 +6032,13 @@ WDI_ProcessEXTScanResetSSIDHotlistReq
 
 WDI_Status
 WDI_ProcessEXTScanResetHotlistSSIDRsp
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessHighPriorityDataInfoInd
 (
   WDI_ControlBlockType*  pWDICtx,
   WDI_EventInfoType*     pEventData

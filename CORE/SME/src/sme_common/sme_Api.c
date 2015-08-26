@@ -12868,8 +12868,45 @@ eHalStatus sme_EXTScanRegisterCallback (tHalHandle hHal,
 void sme_SetMiracastMode (tHalHandle hHal,tANI_U8 mode)
 {
     tpAniSirGlobal pMac  = PMAC_STRUCT(hHal);
+    eHalStatus status    = eHAL_STATUS_SUCCESS;
+    vos_msg_t vosMessage = {0};
+    tSirHighPriorityDataInfoInd *phighPriorityDataInfo;
 
     pMac->miracast_mode = mode;
+
+    VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_INFO,
+              "%s: miracast_mode: %d", __func__, mode);
+
+    phighPriorityDataInfo =
+            vos_mem_malloc(sizeof(*phighPriorityDataInfo));
+    if ( !phighPriorityDataInfo)
+    {
+        VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR, "%s:"
+        "Failed to allocate memory for WDA_HIGH_PRIORITY_DATA_INFO_IND",
+                  __func__);
+        return;
+    }
+
+    if (mode)
+        phighPriorityDataInfo->pause = TRUE;
+    else
+        phighPriorityDataInfo->pause = FALSE;
+
+    if (eHAL_STATUS_SUCCESS == (status = sme_AcquireGlobalLock(&pMac->sme))) {
+        /* Serialize the req through MC thread */
+        vosMessage.bodyptr = phighPriorityDataInfo;
+        vosMessage.type    = WDA_HIGH_PRIORITY_DATA_INFO_IND;
+        MTRACE(vos_trace(VOS_MODULE_ID_SME,
+                 TRACE_CODE_SME_TX_WDA_MSG, NO_SESSION, vosMessage.type));
+
+        if(VOS_STATUS_SUCCESS !=
+                          vos_mq_post_message(VOS_MQ_ID_WDA, &vosMessage)) {
+           VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR, "%s:"
+                 "Failed to post WDA_HIGH_PRIORITY_DATA_INFO_IND msg to WDA",
+                __func__);
+        }
+        sme_ReleaseGlobalLock(&pMac->sme);
+    }
 }
 #endif /* WLAN_FEATURE_EXTSCAN */
 

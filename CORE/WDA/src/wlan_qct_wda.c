@@ -237,7 +237,8 @@ VOS_STATUS WDA_ProcessEXTScanSetSSIDHotlistReq(tWDA_CbContext *pWDA,
                             tSirEXTScanSetSsidHotListReqParams *wdaRequest);
 VOS_STATUS WDA_ProcessEXTScanResetSSIDHotlistReq(tWDA_CbContext *pWDA,
                             tSirEXTScanResetSsidHotlistReqParams *wdaRequest);
-
+VOS_STATUS WDA_ProcessHighPriorityDataInfoInd(tWDA_CbContext *pWDA,
+                            tSirHighPriorityDataInfoInd *wdaRequest);
 #endif /* WLAN_FEATURE_EXTSCAN */
 
 #ifdef WLAN_FEATURE_LINK_LAYER_STATS
@@ -14929,6 +14930,12 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
                         (tSirEXTScanResetSsidHotlistReqParams *)pMsg->bodyptr);
          break;
       }
+      case WDA_HIGH_PRIORITY_DATA_INFO_IND:
+      {
+         WDA_ProcessHighPriorityDataInfoInd(pWDA,
+                        (tSirHighPriorityDataInfoInd *)pMsg->bodyptr);
+         break;
+      }
 #endif /* WLAN_FEATURE_EXTSCAN */
 #ifdef WDA_UT
       case WDA_WDI_EVENT_MSG:
@@ -19459,8 +19466,6 @@ error:
     return;
 }
 
-
-
 /*==========================================================================
   FUNCTION   WDA_ProcessEXTScanStartReq
 
@@ -19805,6 +19810,37 @@ VOS_STATUS WDA_ProcessEXTScanResetSSIDHotlistReq(tWDA_CbContext *pWDA,
     return CONVERT_WDI2VOS_STATUS(status);
 }
 
+/*==========================================================================
+  FUNCTION   WDA_ProcessHighPriorityDataInfoInd
+
+  DESCRIPTION
+    API to send Reset SSID Hotlist Request to WDI
+
+  PARAMETERS
+    pWDA: Pointer to WDA context
+    wdaRequest: Pointer to EXTScan req parameters
+===========================================================================*/
+VOS_STATUS WDA_ProcessHighPriorityDataInfoInd(tWDA_CbContext *pWDA,
+        tSirHighPriorityDataInfoInd *wdaRequest)
+{
+    WDI_Status status = WDI_STATUS_SUCCESS;
+
+    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+            "%s:", __func__);
+
+    status = WDI_HighPriorityDataInfoInd((void *)wdaRequest);
+    if (WDI_STATUS_PENDING == status)
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                 FL("pending status received "));
+    }
+    else if (WDI_STATUS_SUCCESS_SYNC != status)
+    {
+       VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               FL("Failure status %d"), status);
+    }
+    return CONVERT_WDI2VOS_STATUS(status);
+}
 
 #endif /* WLAN_FEATURE_EXTSCAN */
 

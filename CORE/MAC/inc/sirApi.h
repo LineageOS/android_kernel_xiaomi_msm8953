@@ -5515,7 +5515,11 @@ typedef PACKED_PRE struct PACKED_POST
 }tSirEXTScanProgressIndParams,
  *tpSirEXTScanProgressIndParams;
 
-
+typedef PACKED_PRE struct PACKED_POST
+{
+    tANI_BOOLEAN  pause; // 1 -> pause, 0 -> unpause
+    tANI_U32      reserved; //reserved for future use
+}tSirHighPriorityDataInfoInd, *tpSirHighPriorityDataInfoInd;
 
 #endif /* WLAN_FEATURE_EXTSCAN */
 

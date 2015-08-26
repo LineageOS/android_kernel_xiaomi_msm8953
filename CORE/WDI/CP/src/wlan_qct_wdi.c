@@ -522,6 +522,13 @@ WDI_ReqProcFuncType  pfnReqProcTbl[WDI_MAX_UMAC_IND] =
   WDI_ProcessSetRtsCtsHtvhtInd,       /* WDI_SET_RTS_CTS_HTVHT_IND */
   WDI_ProcessFWLoggingDXEdoneInd,       /* WDI_FW_LOGGING_DXE_DONE_IND */
   WDI_ProcessEnableDisableCAEventInd,   /* WDI_SEND_FREQ_RANGE_CONTROL_IND */
+
+#ifdef WLAN_FEATURE_EXTSCAN
+  WDI_ProcessHighPriorityDataInfoInd,        /* WDI_HIGH_PRIORITY_DATA_INFO_IND */
+#else
+  NULL,
+#endif /* WLAN_FEATURE_EXTSCAN */
+
 };
 
 
@@ -1182,6 +1189,7 @@ static char *WDI_getReqMsgString(wpt_uint16 wdiReqMsgId)
     CASE_RETURN_STRING( WDI_EXTSCAN_RESET_BSSID_HOTLIST_REQ);
     CASE_RETURN_STRING( WDI_EXTSCAN_SET_SSID_HOTLIST_REQ);
     CASE_RETURN_STRING( WDI_EXTSCAN_RESET_SSID_HOTLIST_REQ);
+    CASE_RETURN_STRING( WDI_HIGH_PRIORITY_DATA_INFO_IND);
 #endif /* WLAN_FEATURE_EXTSCAN */
     CASE_RETURN_STRING( WDI_SPOOF_MAC_ADDR_REQ);
     CASE_RETURN_STRING( WDI_GET_FW_STATS_REQ);
@@ -1326,7 +1334,6 @@ static char *WDI_getRespMsgString(wpt_uint16 wdiRespMsgId)
     CASE_RETURN_STRING( WDI_HAL_EXTSCAN_RESULT_IND);
     CASE_RETURN_STRING( WDI_HAL_EXTSCAN_BSSID_HOTLIST_RESULT_IND);
     CASE_RETURN_STRING( WDI_HAL_EXTSCAN_SSID_HOTLIST_RESULT_IND);
-
 #endif /* WLAN_FEATURE_EXTSCAN */
     CASE_RETURN_STRING( WDI_GET_FW_STATS_RSP);
     CASE_RETURN_STRING( WDI_ENCRYPT_MSG_RSP);
@@ -24476,7 +24483,8 @@ WDI_2_HAL_REQ_TYPE
        return WLAN_HAL_SSID_HOTLIST_SET_REQ;
   case WDI_EXTSCAN_RESET_SSID_HOTLIST_REQ:
        return WLAN_HAL_SSID_HOTLIST_RESET_REQ;
-
+  case WDI_HIGH_PRIORITY_DATA_INFO_IND:
+       return WLAN_HAL_HIGH_PRIORITY_DATA_INFO_REQ;
 #endif /* WLAN_FEATURE_EXTSCAN */
   case WDI_SPOOF_MAC_ADDR_REQ:
        return WLAN_HAL_MAC_SPOOFED_SCAN_REQ;
@@ -24818,7 +24826,6 @@ case WLAN_HAL_DEL_STA_SELF_RSP:
        return WDI_HAL_EXTSCAN_BSSID_HOTLIST_RESULT_IND;
   case WLAN_HAL_SSID_HOTLIST_RESULT_IND:
        return WDI_HAL_EXTSCAN_SSID_HOTLIST_RESULT_IND;
-
 #endif /* WLAN_FEATURE_EXTSCAN */
   case WLAN_HAL_MAC_SPOOFED_SCAN_RSP:
        return WDI_SPOOF_MAC_ADDR_RSP;
@@ -34063,6 +34070,115 @@ WDI_ProcessEXTScanResetSSIDHotlistReq
 
 
 /**
+ @brief WDI_HighPriorityDataInfoInd
+
+ @param pHighPriorityDataInfoIndParams: Req parameter for the FW
+
+ @return SUCCESS or FAIL
+*/
+WDI_Status
+WDI_HighPriorityDataInfoInd
+(
+   WDI_HighPriorityDataInfoIndParams* pHighPriorityDataInfoIndParams
+)
+{
+   WDI_EventInfoType      wdiEventData;
+
+  VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
+                  "%s: %d",__func__, __LINE__);
+  /*------------------------------------------------------------------------
+    Sanity Check
+  ------------------------------------------------------------------------*/
+  if ( eWLAN_PAL_FALSE == gWDIInitialized )
+  {
+     VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_ERROR,
+                "WDI API call before module is initialized - Fail request");
+
+     return WDI_STATUS_E_NOT_ALLOWED;
+  }
+
+  wdiEventData.wdiRequest      = WDI_HIGH_PRIORITY_DATA_INFO_IND;
+  wdiEventData.pEventData      = pHighPriorityDataInfoIndParams;
+  wdiEventData.uEventDataSize  = sizeof(*pHighPriorityDataInfoIndParams);
+  wdiEventData.pCBfnc          = NULL;
+  wdiEventData.pUserData       = NULL;
+
+  return WDI_PostMainEvent(&gWDICb, WDI_REQUEST_EVENT, &wdiEventData);
+}
+
+/**
+ @brief WDI_ProcessHighPriorityDataInfoInd -
+    Send WFD indication to FW
+
+ @param  pWDICtx : wdi context
+         pEventData : indication data
+
+ @see
+ @return none
+*/
+WDI_Status
+WDI_ProcessHighPriorityDataInfoInd
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+)
+{
+  WDI_HighPriorityDataInfoIndParams* pHighPriorityDataInfoIndParams;
+  wpt_uint8*               pSendBuffer         = NULL;
+  wpt_uint16               usSendSize          = 0;
+  wpt_uint16               usDataOffset        = 0;
+  tpHalHighPriorityDataInfoInd     pHalHighPriorityDataInfoIndParams;
+  WDI_Status wdiStatus = WDI_STATUS_SUCCESS;
+
+  VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
+                  "%s: %d",__func__, __LINE__);
+
+  if (( NULL == pWDICtx ) || ( NULL == pEventData ) ||
+           ( NULL == pEventData->pEventData))
+  {
+     WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
+                 "%s: Invalid parameters", __func__);
+     WDI_ASSERT(0);
+     return WDI_STATUS_E_FAILURE;
+  }
+
+  pHighPriorityDataInfoIndParams =
+      (WDI_HighPriorityDataInfoIndParams *)pEventData->pEventData;
+
+  /*-----------------------------------------------------------------------
+    Get message buffer
+  -----------------------------------------------------------------------*/
+  if (( WDI_STATUS_SUCCESS != WDI_GetMessageBuffer(
+                                        pWDICtx,
+                                        WDI_HIGH_PRIORITY_DATA_INFO_IND,
+                                        sizeof(tHalHighPriorityDataInfoInd),
+                                        &pSendBuffer, &usDataOffset,
+                                        &usSendSize))||
+     ( usSendSize < (usDataOffset + sizeof(tHalHighPriorityDataInfoInd) )))
+  {
+     WPAL_TRACE( eWLAN_MODULE_DAL_CTRL,  eWLAN_PAL_TRACE_LEVEL_WARN,
+              "Unable to get send buffer in %s %p %p", __func__,
+                pEventData, pHighPriorityDataInfoIndParams);
+     WDI_ASSERT(0);
+     return WDI_STATUS_E_FAILURE;
+  }
+  pHalHighPriorityDataInfoIndParams =
+      (tpHalHighPriorityDataInfoInd) (pSendBuffer+usDataOffset);
+
+  pHalHighPriorityDataInfoIndParams->pause =
+                    pHighPriorityDataInfoIndParams->pause;
+
+  pWDICtx->pReqStatusUserData = NULL;
+  pWDICtx->pfncRspCB = NULL;
+
+  /*-------------------------------------------------------------------------
+    Send HIGH_PRIORITY_DATA_INFO Request to HAL
+  -------------------------------------------------------------------------*/
+  wdiStatus =  WDI_SendIndication( pWDICtx, pSendBuffer, usSendSize);
+  return (wdiStatus != WDI_STATUS_SUCCESS) ? wdiStatus:WDI_STATUS_SUCCESS_SYNC;
+}
+
+/**
  @brief Process Extended Scan Start Rsp function (called when a response
         is being received over the bus from HAL)
 
@@ -34464,7 +34580,6 @@ WDI_ProcessEXTScanResetHotlistSSIDRsp
 
   return WDI_STATUS_SUCCESS;
 }
-
 #endif /* WLAN_FEATURE_EXTSCAN */
 
 /**

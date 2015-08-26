@@ -6002,8 +6002,14 @@ typedef struct
 
 typedef struct
 {
-    wpt_uint32   requestId;
-    wpt_uint8    sessionId;    // session Id mapped to vdev_id
+    wpt_boolean pause;
+    wpt_uint32 reserved;
+} WDI_HighPriorityDataInfoIndParams;
+
+typedef struct
+{
+    wpt_int32   requestId;
+    wpt_int8    sessionId;    // session Id mapped to vdev_id
     wpt_uint32  lostSsidSampleSize;
     wpt_uint32   numSsid;        // number of hotlist APs
     WDI_SSIDThresholdParam   ssid[WDI_WLAN_EXTSCAN_MAX_HOTLIST_SSID]; // hotlist SSIDs
@@ -8112,8 +8118,6 @@ typedef void  (*WDI_EXTScanSetSSIDHotlistRspCb)(void *pEventData,
                                        void *pUserData);
 typedef void  (*WDI_EXTScanResetSSIDHotlistRspCb)(void *pEventData,
                                        void *pUserData);
-
-
 #endif /* WLAN_FEATURE_EXTSCAN */
 
 #ifdef WLAN_FEATURE_LINK_LAYER_STATS
@@ -11527,6 +11531,19 @@ WDI_Status WDI_EXTScanResetSSIDHotlistReq
    WDI_EXTScanResetSSIDHotlistReqParams* pwdiEXTScanResetSSIDHotlistReqParams,
    WDI_EXTScanResetSSIDHotlistRspCb     wdiEXTScanResetSSIDHotlistRspCb,
    void*                   pUserData
+);
+
+/**
+ @brief WDI_HighPriorityDataInfoInd
+
+ @param pHighPriorityDataInfoIndParams: Req parameter for the FW
+
+ @return SUCCESS or FAIL
+*/
+WDI_Status
+WDI_HighPriorityDataInfoInd
+(
+   WDI_HighPriorityDataInfoIndParams* pHighPriorityDataInfoIndParams
 );
 
 #endif /* WLAN_FEATURE_EXTSCAN */
