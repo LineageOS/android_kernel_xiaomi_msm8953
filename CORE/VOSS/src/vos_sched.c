@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1782,6 +1782,24 @@ int vos_sched_is_rx_thread(int threadID)
    }
    return ((gpVosSchedContext->RxThread) && (threadID == gpVosSchedContext->RxThread->pid));
 }
+
+/*-------------------------------------------------------------------------
+ This helper function helps determine if thread id is of MC thread
+ ------------------------------------------------------------------------*/
+int vos_sched_is_mc_thread(int threadID)
+{
+   // Make sure that Vos Scheduler context has been initialized
+   VOS_ASSERT( NULL != gpVosSchedContext);
+   if (gpVosSchedContext == NULL)
+   {
+      VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+          "%s: gpVosSchedContext == NULL",__func__);
+      return 0;
+   }
+   return ((gpVosSchedContext->McThread) &&
+           (threadID == gpVosSchedContext->McThread->pid));
+}
+
 /*-------------------------------------------------------------------------
  Helper function to get the scheduler context
  ------------------------------------------------------------------------*/

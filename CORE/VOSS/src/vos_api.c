@@ -2903,3 +2903,37 @@ v_BOOL_t vos_isUnloadInProgress(void)
     return (WLAN_HDD_UNLOAD_IN_PROGRESS == pHddCtx->isLoadUnloadInProgress);
 }
 
+/**
+ * vos_probe_threads() - VOS API to post messages
+ * to all the threads to detect if they are active or not
+ *
+ * Return none.
+ *
+ */
+void vos_probe_threads(void)
+{
+    vos_msg_t msg;
+
+    msg.callback = wlan_logging_reset_thread_stuck_count;
+    /* Post Message to MC Thread */
+    sysBuildMessageHeader(SYS_MSG_ID_MC_THR_PROBE, &msg);
+    if (VOS_STATUS_SUCCESS != vos_mq_post_message(VOS_MQ_ID_SYS, &msg)) {
+        pr_err("%s: Unable to post SYS_MSG_ID_MC_THR_PROBE message to MC thread\n",
+               __func__);
+    }
+
+    /* Post Message to Tx Thread */
+    sysBuildMessageHeader(SYS_MSG_ID_TX_THR_PROBE, &msg);
+    if (VOS_STATUS_SUCCESS != vos_tx_mq_serialize(VOS_MQ_ID_SYS, &msg)) {
+        pr_err("%s: Unable to post SYS_MSG_ID_TX_THR_PROBE message to TX thread\n",
+               __func__);
+    }
+
+    /* Post Message to Rx Thread */
+    sysBuildMessageHeader(SYS_MSG_ID_RX_THR_PROBE, &msg);
+    if (VOS_STATUS_SUCCESS != vos_rx_mq_serialize(VOS_MQ_ID_SYS, &msg)) {
+        pr_err("%s: Unable to post SYS_MSG_ID_RX_THR_PROBE message to RX thread\n",
+               __func__);
+    }
+}
+
