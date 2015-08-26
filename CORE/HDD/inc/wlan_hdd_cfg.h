@@ -2526,6 +2526,19 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_TOGGLE_ARP_BDRATES_DEFAULT     0
 
 /*
+ * gExtScanConcMode is used to manage EXT Scan during concurrency
+ * This can be useful during WFD session. To avoid glitches during WFD
+ * either ext scan has to be disabled or use split scan
+ * 0: Disable EXT Scan
+ * 1: Use Split scan
+ * 2: Enable EXT Scan
+ */
+#define CFG_EXT_SCAN_CONC_MODE                             "gExtScanConcMode"
+#define CFG_EXT_SCAN_CONC_MODE_MIN                          (0)
+#define CFG_EXT_SCAN_CONC_MODE_MAX                          (2)
+#define CFG_EXT_SCAN_CONC_MODE_DEFAULT                      (1)
+
+/*
  * If within gLinkFailTimeout period(values is mentioned in msec) if FW
  * doesn't receive acks for gLinkFailTxCnt number of packets, then link will
  * be disconnected.
@@ -3074,6 +3087,7 @@ typedef struct
    v_U8_t                      gOptimizeCAevent;
    v_BOOL_t                    enableFwrMemDump;
    v_U8_t                      gActivePassiveChCon;
+   v_U32_t                     cfgExtScanConcMode;
 } hdd_config_t;
 
 /*--------------------------------------------------------------------------- 

@@ -3432,6 +3432,13 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                  CFG_ACTIVE_PASSIVE_CHAN_CONV_DEF,
                  CFG_ACTIVE_PASSIVE_CHAN_CONV_MIN,
                  CFG_ACTIVE_PASSIVE_CHAN_CONV_MAX ),
+
+   REG_VARIABLE( CFG_EXT_SCAN_CONC_MODE , WLAN_PARAM_Integer,
+                 hdd_config_t, cfgExtScanConcMode,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_EXT_SCAN_CONC_MODE_DEFAULT,
+                 CFG_EXT_SCAN_CONC_MODE_MIN,
+                 CFG_EXT_SCAN_CONC_MODE_MAX ),
 };
 
 /*
@@ -3858,6 +3865,7 @@ static void print_hdd_cfg(hdd_context_t *pHddCtx)
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [gDxeReplenishRXTimerVal] Value = [%u] ", pHddCtx->cfg_ini->dxeReplenishRXTimerVal);
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [gDxeSSREnable] Value = [%u] ", pHddCtx->cfg_ini->dxeSSREnable);
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [toggleArpBDRates] Value = [%u] ", pHddCtx->cfg_ini->toggleArpBDRates);
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [ExtScanConcMode] Value = [%u] ", pHddCtx->cfg_ini->cfgExtScanConcMode);
 }
 
 
@@ -5417,6 +5425,12 @@ v_BOOL_t hdd_update_config_dat( hdd_context_t *pHddCtx )
    {
       fStatus = FALSE;
       hddLog(LOGE, "Could not pass on WNI_CFG_OPTIMIZE_CA_EVENT ");
+   }
+   if (ccmCfgSetInt(pHddCtx->hHal, WNI_CFG_EXT_SCAN_CONC_MODE, pConfig->cfgExtScanConcMode,
+      NULL, eANI_BOOLEAN_FALSE) == eHAL_STATUS_FAILURE)
+   {
+      fStatus = FALSE;
+      hddLog(LOGE, "Could not pass on WNI_CFG_EXT_SCAN_CONC_MODE to CCM");
    }
 
    if (ccmCfgSetInt(pHddCtx->hHal, WNI_CFG_ACTIVE_PASSIVE_CON,
