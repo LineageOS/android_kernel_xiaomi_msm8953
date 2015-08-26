@@ -3056,7 +3056,8 @@ void wlan_hdd_tdls_indicate_teardown(hdd_adapter_t *pAdapter,
 
     pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
 
-    if (eTDLS_LINK_CONNECTED != curr_peer->link_status)
+    if ((eTDLS_LINK_CONNECTED != curr_peer->link_status) &&
+        (eTDLS_LINK_CONNECTING != curr_peer->link_status))
         return;
 
     /* Throughput Monitor shall disable the split scan when
