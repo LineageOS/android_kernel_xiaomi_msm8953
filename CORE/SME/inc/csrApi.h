@@ -1192,6 +1192,7 @@ typedef struct tagCsrConfigParam
 #endif
     tANI_U32 nOBSSScanWidthTriggerInterval;
     tANI_U8 roamDelayStatsEnabled;
+    tANI_BOOLEAN ignorePeerHTopMode;
 }tCsrConfigParam;
 
 //Tush

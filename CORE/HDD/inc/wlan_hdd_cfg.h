@@ -2279,6 +2279,11 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_IGNORE_PEER_ERP_INFO_MAX       ( 1 )
 #define CFG_IGNORE_PEER_ERP_INFO_DEFAULT   ( 0 )
 
+#define CFG_IGNORE_PEER_HT_MODE_NAME       "gIgnorePeerHTopMode"
+#define CFG_IGNORE_PEER_HT_MODE_MIN        ( 0 )
+#define CFG_IGNORE_PEER_HT_MODE_MAX        ( 1 )
+#define CFG_IGNORE_PEER_HT_MODE_DEFAULT    ( 0 )
+
 #define CFG_INITIAL_DWELL_TIME_NAME            "gInitialDwellTime"
 #define CFG_INITIAL_DWELL_TIME_DEFAULT         (0)
 #define CFG_INITIAL_DWELL_TIME_MIN             (0)
@@ -3021,6 +3026,7 @@ typedef struct
    v_U32_t                     btcStaticOppWlanIdleBtLen;
    v_U32_t                     linkFailTimeout;
    v_U32_t                     linkFailTxCnt;
+   v_BOOL_t                    ignorePeerHTopMode;
 } hdd_config_t;
 /*--------------------------------------------------------------------------- 
   Function declarations and documenation

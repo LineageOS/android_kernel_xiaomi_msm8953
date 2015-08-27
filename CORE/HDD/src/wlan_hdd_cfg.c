@@ -3062,6 +3062,14 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                   CFG_IGNORE_PEER_ERP_INFO_MIN,
                   CFG_IGNORE_PEER_ERP_INFO_MAX ),
 
+   REG_VARIABLE( CFG_IGNORE_PEER_HT_MODE_NAME, WLAN_PARAM_Integer,
+                  hdd_config_t, ignorePeerHTopMode,
+                  VAR_FLAGS_OPTIONAL |
+                  VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                  CFG_IGNORE_PEER_HT_MODE_DEFAULT,
+                  CFG_IGNORE_PEER_HT_MODE_MIN,
+                  CFG_IGNORE_PEER_HT_MODE_MAX ),
+
    REG_VARIABLE(CFG_INITIAL_DWELL_TIME_NAME, WLAN_PARAM_Integer,
                hdd_config_t, nInitialDwellTime,
                VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
@@ -5579,6 +5587,7 @@ VOS_STATUS hdd_set_sme_config( hdd_context_t *pHddCtx )
        smeConfig->csrConfig.nSelect5GHzMargin = pConfig->nSelect5GHzMargin;
    }
    smeConfig->csrConfig.ignorePeerErpInfo = pConfig->ignorePeerErpInfo;
+   smeConfig->csrConfig.ignorePeerHTopMode = pConfig->ignorePeerHTopMode;
    smeConfig->csrConfig.initialScanSkipDFSCh = pConfig->initialScanSkipDFSCh;
 
    smeConfig->csrConfig.isCoalesingInIBSSAllowed =
