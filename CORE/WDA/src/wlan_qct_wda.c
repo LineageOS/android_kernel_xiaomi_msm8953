@@ -15457,7 +15457,43 @@ void WDA_lowLevelIndCallback(WDI_LowLevelIndType *wdiLowLevelInd,
          }
          break;
       }
+      case WDI_LOST_LINK_PARAMS_IND:
+      {
+          tpSirSmeLostLinkParamsInd pLostLinkParamInd =
+            (tpSirSmeLostLinkParamsInd)vos_mem_malloc(sizeof(tSirSmeLostLinkParamsInd));
 
+          if (NULL == pLostLinkParamInd)
+          {
+              VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                                  "%s: VOS MEM Alloc Failure", __func__);
+              break;
+          }
+          VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                     "Received WDI_LOST_LINK_PARAMS_IND from WDI ");
+
+          pLostLinkParamInd->messageType = eWNI_SME_LOST_LINK_PARAMS_IND;
+          pLostLinkParamInd->length = sizeof(tSirSmeMicFailureInd);
+          pLostLinkParamInd->info.bssIdx =
+            wdiLowLevelInd->wdiIndicationData.wdiLostLinkParamsInd.bssIdx;
+          pLostLinkParamInd->info.rssi =
+           wdiLowLevelInd->wdiIndicationData.wdiLostLinkParamsInd.rssi;
+          vos_mem_copy(pLostLinkParamInd->info.selfMacAddr,
+                    wdiLowLevelInd->wdiIndicationData.wdiLostLinkParamsInd.selfMacAddr,
+                    sizeof(tSirMacAddr));
+          pLostLinkParamInd->info.linkFlCnt =
+           wdiLowLevelInd->wdiIndicationData.wdiLostLinkParamsInd.linkFlCnt;
+          pLostLinkParamInd->info.linkFlTx =
+            wdiLowLevelInd->wdiIndicationData.wdiLostLinkParamsInd.linkFlTx;
+          pLostLinkParamInd->info.lastDataRate =
+            wdiLowLevelInd->wdiIndicationData.wdiLostLinkParamsInd.lastDataRate;
+          pLostLinkParamInd->info.rsvd1 =
+            wdiLowLevelInd->wdiIndicationData.wdiLostLinkParamsInd.rsvd1;
+          pLostLinkParamInd->info.rsvd2 =
+            wdiLowLevelInd->wdiIndicationData.wdiLostLinkParamsInd.rsvd2;
+          WDA_SendMsg(pWDA, SIR_HAL_LOST_LINK_PARAMS_IND,
+                                       (void *)pLostLinkParamInd , 0) ;
+          break;
+      }
       default:
       {
          /* TODO error */

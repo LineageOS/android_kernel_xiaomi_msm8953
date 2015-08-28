@@ -576,6 +576,8 @@ char *limMsgStr(tANI_U32 msgType)
             return "eWNI_SME_DEAUTH_CNF";
         case eWNI_SME_MIC_FAILURE_IND:
             return "eWNI_SME_MIC_FAILURE_IND";
+        case eWNI_SME_LOST_LINK_PARAMS_IND:
+            return "eWNI_SME_LOST_LINK_PARAMS_IND";
         case eWNI_SME_ADDTS_REQ:
             return "eWNI_SME_ADDTS_REQ";
         case eWNI_SME_ADDTS_RSP:

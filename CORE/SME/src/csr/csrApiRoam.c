@@ -8618,6 +8618,18 @@ void csrRoamingStateMsgProcessor( tpAniSirGlobal pMac, void *pMsgBuf )
                                 eCSR_ROAM_CONNECT_STATUS_UPDATE, 
                                 eCSR_ROAM_RESULT_IBSS_PEER_DEPARTED);
             break;
+        case eWNI_SME_LOST_LINK_PARAMS_IND:
+            {
+                tpSirSmeLostLinkParamsInd pLostLinkParamsInd = (tpSirSmeLostLinkParamsInd)pSmeRsp;
+                tCsrRoamInfo roamInfo, *pRoamInfo = NULL;
+                eCsrRoamResult result = eCSR_ROAM_RESULT_NONE;
+                vos_mem_set(&roamInfo, sizeof(tCsrRoamInfo), 0);
+                roamInfo.u.pLostLinkParams = &pLostLinkParamsInd->info;
+                pRoamInfo = &roamInfo;
+                csrRoamCallCallback(pMac, pLostLinkParamsInd->sessionId,
+                               pRoamInfo, 0, eCSR_ROAM_LOST_LINK_PARAMS_IND, result);
+                break;
+            }
         default:
             smsLog(pMac, LOG1,
                    FL("Unexpected message type = %d[0x%X] received in substate %s"),
@@ -9911,6 +9923,18 @@ void csrRoamCheckForLinkStatusChange( tpAniSirGlobal pMac, tSirSmeRsp *pSirMsg )
                 }
             }
             break;
+        case eWNI_SME_LOST_LINK_PARAMS_IND:
+            {
+                tpSirSmeLostLinkParamsInd pLostLinkParamsInd = (tpSirSmeLostLinkParamsInd)pSirMsg;
+                tCsrRoamInfo roamInfo, *pRoamInfo = NULL;
+                eCsrRoamResult result = eCSR_ROAM_RESULT_NONE;
+                vos_mem_set(&roamInfo, sizeof(tCsrRoamInfo), 0);
+                roamInfo.u.pLostLinkParams = &pLostLinkParamsInd->info;
+                pRoamInfo = &roamInfo;
+                csrRoamCallCallback(pMac, pLostLinkParamsInd->sessionId,
+                                   pRoamInfo, 0, eCSR_ROAM_LOST_LINK_PARAMS_IND, result);
+                break;
+            }
         case eWNI_SME_MIC_FAILURE_IND:
             {
                 tpSirSmeMicFailureInd pMicInd = (tpSirSmeMicFailureInd)pSirMsg;

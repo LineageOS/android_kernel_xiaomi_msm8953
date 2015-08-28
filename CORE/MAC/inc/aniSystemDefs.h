@@ -222,6 +222,18 @@ typedef struct sSirMicFailureInfo
 
 } tSirMicFailureInfo, *tpSirMicFailureInfo;
 
+typedef struct sSirLostLinkParamsInfo
+{
+    tANI_U8 bssIdx;
+    tANI_U8  rssi;
+    tSirMacAddr  selfMacAddr;
+    tANI_U32 linkFlCnt;
+    tANI_U32 linkFlTx;
+    tANI_U32 lastDataRate;
+    tANI_U32 rsvd1;
+    tANI_U32 rsvd2;
+}tSirLostLinkParamsInfo, *tpSirLostLinkParamsInfo;
+
 // Boa command. Used mainly for radar info persistance
 typedef struct sBoaCommand
 {

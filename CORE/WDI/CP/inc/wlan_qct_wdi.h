@@ -418,7 +418,7 @@ typedef enum
   /*Delete BA Ind*/
   WDI_DEL_BA_IND,
   WDI_NAN_EVENT_IND,
-
+  WDI_LOST_LINK_PARAMS_IND,
   WDI_MAX_IND
 }WDI_LowLevelIndEnumType;
 
@@ -736,6 +736,19 @@ typedef struct
 #endif
 
 
+typedef struct
+{
+  wpt_uint8  bssIdx;
+  wpt_uint8  rssi;
+  wpt_uint8  selfMacAddr[WDI_MAC_ADDR_LEN];
+  wpt_uint32 linkFlCnt;
+  wpt_uint32 linkFlTx;
+  wpt_uint32 lastDataRate;
+  wpt_uint32 rsvd1;
+  wpt_uint32 rsvd2;
+
+}WDI_LostLinkParamsIndType;
+
 /*---------------------------------------------------------------------------
  WDI_IbssPeerInactivityIndType
 -----------------------------------------------------------------------------*/
@@ -966,6 +979,7 @@ typedef struct
     WDI_NanEventType wdiNanEvent;
 
     WDI_TxBDStatus              wdiTxBdInd;
+    WDI_LostLinkParamsIndType   wdiLostLinkParamsInd;
   }  wdiIndicationData;
 }WDI_LowLevelIndType;
 

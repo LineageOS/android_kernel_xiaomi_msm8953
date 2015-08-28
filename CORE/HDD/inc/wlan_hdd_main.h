@@ -1060,6 +1060,7 @@ struct hdd_adapter_s
 #endif
    
    v_S7_t rssi;
+   v_S7_t rssi_on_disconnect;
 
    tANI_U8 snr;
 

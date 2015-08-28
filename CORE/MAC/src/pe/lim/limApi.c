@@ -2170,6 +2170,105 @@ void limHandleMissedBeaconInd(tpAniSirGlobal pMac, tpSirMsgQ pMsg)
     return;
 }
 
+
+void limUpdateLostLinkParams(tpAniSirGlobal pMac,
+                     tpPESession psessionEntry, tANI_U8 *pRxPacketInfo)
+{
+    tpSirSmeLostLinkParamsInd pSmeLostLinkParams;
+    tSirMsgQ    mmhMsg;
+    if (NULL == pRxPacketInfo)
+    {
+        return;
+    }
+    pSmeLostLinkParams =
+    (tpSirSmeLostLinkParamsInd)vos_mem_malloc(sizeof(tSirSmeLostLinkParamsInd));
+    vos_mem_set(pSmeLostLinkParams, sizeof(tSirSmeLostLinkParamsInd), 0);
+    pSmeLostLinkParams->messageType = eWNI_SME_LOST_LINK_PARAMS_IND;
+    pSmeLostLinkParams->length = sizeof(tSirSmeLostLinkParamsInd);
+    pSmeLostLinkParams->sessionId = psessionEntry->smeSessionId;
+    pSmeLostLinkParams->info.bssIdx = psessionEntry->bssIdx;
+
+    /*
+     * Since FW adds 100 to RSSI, here also we are adding 100 so that
+     * HDD has common logic to subtract 100 from RSSI received
+     */
+    pSmeLostLinkParams->info.rssi = WDA_GET_RX_RSSI_DB(pRxPacketInfo) + 100;
+    vos_mem_copy(pSmeLostLinkParams->info.selfMacAddr,
+                 psessionEntry->selfMacAddr,
+                 sizeof(tSirMacAddr));
+    pSmeLostLinkParams->info.lastDataRate = 0;
+    pSmeLostLinkParams->info.linkFlCnt = 0;
+    pSmeLostLinkParams->info.linkFlTx = 0;
+    pSmeLostLinkParams->info.rsvd1 = 0;
+    pSmeLostLinkParams->info.rsvd2 = 0;
+
+    mmhMsg.type = eWNI_SME_LOST_LINK_PARAMS_IND;
+    mmhMsg.bodyptr = pSmeLostLinkParams;
+    mmhMsg.bodyval = 0;
+    limSysProcessMmhMsgApi(pMac, &mmhMsg, ePROT);
+}
+
+/** -----------------------------------------------------------------
+  \brief limProcessLostLinkParamsInd() - handles lost link params indication
+
+  This function process the SIR_HAL_LOST_LINK_PARAMS_IND message from HAL,
+
+  \param pMac - global mac structure
+  \return - none
+  \sa
+  ----------------------------------------------------------------- */
+
+void limProcessLostLinkParamsInd(tpAniSirGlobal pMac, tpSirMsgQ pMsg)
+{
+    tpSirSmeLostLinkParamsInd pSmeLostLinkParamsInd;
+    tpSirSmeLostLinkParamsInd pLostLInkParamsInd = (tpSirSmeLostLinkParamsInd)pMsg->bodyptr;
+    tpPESession psessionEntry ;
+    tSirMsgQ    mmhMsg;
+
+    if (NULL == pLostLInkParamsInd)
+    {
+         limLog(pMac, LOGE,
+               FL("pLostLInkParamsInd is NULL"));
+         return;
+    }
+
+    psessionEntry = peFindSessionByBssIdx(pMac,pLostLInkParamsInd->info.bssIdx);
+    if (psessionEntry == NULL)
+    {
+         limLog(pMac, LOGE,
+               FL("session does not exist for bdssIdx : %d"),
+               pLostLInkParamsInd->info.bssIdx);
+
+         return;
+    }
+    pSmeLostLinkParamsInd = vos_mem_malloc(sizeof(tSirSmeLostLinkParamsInd));
+    if (pSmeLostLinkParamsInd == NULL)
+    {
+        limLog(pMac, LOGP,
+               FL("memory allocate failed for eWNI_SME_LOST_LINK_PARAMD_IND"));
+        return;
+    }
+    pSmeLostLinkParamsInd->messageType = eWNI_SME_LOST_LINK_PARAMS_IND;
+    pSmeLostLinkParamsInd->length = sizeof(tSirSmeLostLinkParamsInd);
+    pSmeLostLinkParamsInd->sessionId = psessionEntry->smeSessionId;
+    pSmeLostLinkParamsInd->info.bssIdx = pLostLInkParamsInd->info.bssIdx;
+    pSmeLostLinkParamsInd->info.rssi = pLostLInkParamsInd->info.rssi;
+    vos_mem_copy(pSmeLostLinkParamsInd->info.selfMacAddr,
+                pLostLInkParamsInd->info.selfMacAddr,
+                sizeof(tSirMacAddr));
+    pSmeLostLinkParamsInd->info.linkFlCnt = pLostLInkParamsInd->info.linkFlCnt;
+    pSmeLostLinkParamsInd->info.linkFlTx = pLostLInkParamsInd->info.linkFlTx;
+    pSmeLostLinkParamsInd->info.lastDataRate = pLostLInkParamsInd->info.lastDataRate;
+    pSmeLostLinkParamsInd->info.rsvd1 = pLostLInkParamsInd->info.rsvd1;
+    pSmeLostLinkParamsInd->info.rsvd2 = pLostLInkParamsInd->info.rsvd2;
+
+    mmhMsg.type = eWNI_SME_LOST_LINK_PARAMS_IND;
+    mmhMsg.bodyptr = pSmeLostLinkParamsInd;
+    mmhMsg.bodyval = 0;
+    limSysProcessMmhMsgApi(pMac, &mmhMsg, ePROT);
+    return;
+}
+
 /** -----------------------------------------------------------------
   \brief limMicFailureInd() - handles mic failure  indication
  
