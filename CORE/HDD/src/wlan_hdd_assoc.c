@@ -3182,17 +3182,13 @@ eHalStatus hdd_smeRoamCallback( void *pContext, tCsrRoamInfo *pRoamInfo, tANI_U3
        return eHAL_STATUS_FAILURE;
     }
 
-
     MTRACE(vos_trace(VOS_MODULE_ID_HDD, TRACE_CODE_HDD_RX_SME_MSG,
                                pAdapter->sessionId, roamStatus));
     switch( roamStatus )
     {
         case eCSR_ROAM_SESSION_OPENED:
-            if(pAdapter != NULL)
-            {
-                set_bit(SME_SESSION_OPENED, &pAdapter->event_flags);
-                complete(&pAdapter->session_open_comp_var);
-            }
+            set_bit(SME_SESSION_OPENED, &pAdapter->event_flags);
+            complete(&pAdapter->session_open_comp_var);
             break;
 
 #if  defined (WLAN_FEATURE_VOWIFI_11R) || defined (FEATURE_WLAN_ESE) || defined(FEATURE_WLAN_LFR)
