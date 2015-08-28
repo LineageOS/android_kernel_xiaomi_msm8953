@@ -866,15 +866,23 @@ void hdd_remainChanReadyHandler( hdd_adapter_t *pAdapter )
 {
     hdd_cfg80211_state_t *cfgState = NULL;
     hdd_remain_on_chan_ctx_t* pRemainChanCtx = NULL;
+    hdd_context_t *pHddCtx;
     VOS_STATUS status;
     if (NULL == pAdapter)
     {
        hddLog(LOGE, FL("pAdapter is NULL"));
        return;
     }
+    pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+    if (NULL == pHddCtx)
+    {
+        hddLog(LOGE, FL("pHddCtx is NULL"));
+        return;
+    }
     cfgState = WLAN_HDD_GET_CFG_STATE_PTR( pAdapter );
-    pRemainChanCtx = cfgState->remain_on_chan_ctx;
     pAdapter->startRocTs = vos_timer_get_system_time();
+    mutex_lock(&pHddCtx->roc_lock);
+    pRemainChanCtx = cfgState->remain_on_chan_ctx;
     if( pRemainChanCtx != NULL )
     {
         MTRACE(vos_trace(VOS_MODULE_ID_HDD,
@@ -953,6 +961,7 @@ void hdd_remainChanReadyHandler( hdd_adapter_t *pAdapter )
         complete(&pAdapter->rem_on_chan_ready_event);
         if (TRUE == pRemainChanCtx->is_pending_roc_cancelled)
         {
+            mutex_unlock(&pHddCtx->roc_lock);
             /* since pRemainChanCtx->is_pending_roc_cancelled is
              * set, it means Cancel Reamain on channel command is
              * pending because remain on channel event was not
@@ -961,9 +970,14 @@ void hdd_remainChanReadyHandler( hdd_adapter_t *pAdapter )
              */
             wlan_hdd_cancel_existing_remain_on_channel(pAdapter);
         }
+        else
+        {
+            mutex_unlock(&pHddCtx->roc_lock);
+        }
     }
     else
     {
+        mutex_unlock(&pHddCtx->roc_lock);
         hddLog( LOGW, "%s: No Pending Remain on channel Request", __func__);
     }
     return;
