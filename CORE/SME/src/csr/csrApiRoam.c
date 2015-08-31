@@ -16514,6 +16514,11 @@ eHalStatus csrRoamOffloadScan(tpAniSirGlobal pMac, tANI_U8 command, tANI_U8 reas
       return eHAL_STATUS_FAILED_ALLOC;
    }
 
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
+   limDiagEventReport(pMac, WLAN_PE_DIAG_ROAM_REQUESTED, NULL,
+                      eSIR_SUCCESS, eSIR_SUCCESS);
+#endif
+
    vos_mem_zero(pRequestBuf, sizeof(tSirRoamOffloadScanReq));
    /* If command is STOP, then pass down ScanOffloadEnabled as Zero.This will handle the case of
     * host driver reloads, but Riva still up and running*/

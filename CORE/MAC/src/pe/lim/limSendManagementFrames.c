@@ -3633,6 +3633,11 @@ eHalStatus limAuthTxCompleteCnf(tpAniSirGlobal pMac, void *pData)
     }
     else
        pMac->authAckStatus = LIM_AUTH_ACK_RCD_FAILURE;
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
+    limDiagEventReport(pMac, WLAN_PE_DIAG_FW_AUTH_STARTED_EVENT, NULL,
+                       pMac->authAckStatus, eSIR_SUCCESS);
+#endif
+
     return eHAL_STATUS_SUCCESS;
 }
 

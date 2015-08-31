@@ -2200,6 +2200,12 @@ limProcessMlmPostJoinSuspendLink(tpAniSirGlobal pMac, eHalStatus status, tANI_U3
 #if  defined (WLAN_FEATURE_VOWIFI_11R) || defined (FEATURE_WLAN_ESE) || defined(FEATURE_WLAN_LFR)
     psessionEntry->pLimMlmReassocRetryReq = NULL;
 #endif
+
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
+    limDiagEventReport(pMac, WLAN_PE_DIAG_CHANNEL_SWITCH_ANOUNCEMENT,
+                       psessionEntry, eSIR_SUCCESS, LIM_SWITCH_CHANNEL_JOIN);
+#endif
+
     limLog(pMac, LOG1, FL("[limProcessMlmJoinReq]: suspend link success(%d) "
              "on sessionid: %d setting channel to: %d with secChanOffset:%d "
              "and maxtxPower: %d"), status, psessionEntry->peSessionId,
@@ -2625,6 +2631,11 @@ limProcessMlmAssocReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
  
         /// Prepare and send Association request frame
         limSendAssocReqMgmtFrame(pMac, pMlmAssocReq,psessionEntry);
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
+        limDiagEventReport(pMac, WLAN_PE_DIAG_ASSOC_REQ_EVENT, psessionEntry,
+                           eSIR_SUCCESS, eSIR_SUCCESS);
+#endif
+
 
   //Set the link state to postAssoc, so HW can start receiving frames from AP.
     if ((psessionEntry->bssType == eSIR_BTAMP_STA_MODE)||
@@ -2802,6 +2813,12 @@ limProcessMlmReassocReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
         psessionEntry->channelChangeReasonCode = LIM_SWITCH_CHANNEL_REASSOC;
 
         /** Switch channel to the new Operating channel for Reassoc*/
+
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
+        limDiagEventReport(pMac, WLAN_PE_DIAG_CHANNEL_SWITCH_ANOUNCEMENT,
+                   psessionEntry, eSIR_SUCCESS, LIM_SWITCH_CHANNEL_REASSOC);
+#endif
+
         limSetChannel(pMac, chanNum, secChannelOffset, psessionEntry->maxTxPower, psessionEntry->peSessionId);
 
         return;

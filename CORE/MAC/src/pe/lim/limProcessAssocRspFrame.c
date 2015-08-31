@@ -849,9 +849,12 @@ limProcessAssocRspFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tANI_U8 sub
         else
             psessionEntry->beaconParams.fShortPreamble = true;
     }
-#ifdef FEATURE_WLAN_DIAG_SUPPORT_LIM //FEATURE_WLAN_DIAG_SUPPORT
-    limDiagEventReport(pMac, WLAN_PE_DIAG_CONNECTED, psessionEntry, 0, 0);
+
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
+    limDiagEventReport(pMac, WLAN_PE_DIAG_ASSOC_COMP_EVENT, psessionEntry,
+                       eSIR_SUCCESS, eSIR_SUCCESS);
 #endif
+
     if(pAssocRsp->OBSSScanParameters.present)
     {
         limUpdateOBSSScanParams(psessionEntry , &pAssocRsp->OBSSScanParameters);

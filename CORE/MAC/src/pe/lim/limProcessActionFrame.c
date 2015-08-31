@@ -175,6 +175,11 @@ tSirRetStatus limStartChannelSwitch(tpAniSirGlobal pMac, tpPESession psessionEnt
        limLog(pMac, LOGW, FL("Ignoring channel switch on session %d"), psessionEntry->peSessionId);
        return eSIR_SUCCESS;
     }
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
+    limDiagEventReport(pMac, WLAN_PE_DIAG_CHANNEL_SWITCH_ANOUNCEMENT,
+                       psessionEntry, eSIR_SUCCESS, LIM_SWITCH_CHANNEL_CSA);
+#endif
+
     psessionEntry->channelChangeCSA =  LIM_SWITCH_CHANNEL_CSA;
     /* Deactivate and change reconfigure the timeout value */
     //limDeactivateAndChangeTimer(pMac, eLIM_CHANNEL_SWITCH_TIMER);

@@ -3416,6 +3416,11 @@ void limSwitchPrimarySecondaryChannel(tpAniSirGlobal pMac, tpPESession psessionE
                 limSendSwitchChnlParams(pMac, newChannel, subband, (tPowerdBm)localPwrConstraint, psessionEntry->peSessionId);
 #endif
 
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
+       limDiagEventReport(pMac, WLAN_PE_DIAG_CHANNEL_SWITCH_ANOUNCEMENT,
+                 psessionEntry, eSIR_SUCCESS, LIM_SWITCH_CHANNEL_OPERATION);
+#endif
+
     // Store the new primary and secondary channel in session entries if different
     if (psessionEntry->currentOperChannel != newChannel)
     {

@@ -1177,7 +1177,8 @@ void limHandleFTPreAuthRsp(tpAniSirGlobal pMac, tSirRetStatus status,
     tANI_U8 sessionId;
     tpSirBssDescription  pbssDescription;
 #ifdef FEATURE_WLAN_DIAG_SUPPORT_LIM //FEATURE_WLAN_DIAG_SUPPORT
-    limDiagEventReport(pMac, WLAN_PE_DIAG_PRE_AUTH_RSP_EVENT, psessionEntry, (tANI_U16)status, 0);
+    limDiagEventReport(pMac, WLAN_PE_DIAG_ROAM_AUTH_COMP_EVENT,
+                       psessionEntry, status, eSIR_SUCCESS);
 #endif
 
     // Save the status of pre-auth

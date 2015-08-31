@@ -547,6 +547,12 @@ limProcessMlmAuthCnf(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
                psessionEntry->peSessionId,psessionEntry->limSmeState);)
         return;
     }
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
+    limDiagEventReport(pMac, WLAN_PE_DIAG_AUTH_COMP_EVENT, psessionEntry,
+                       ((tLimMlmAuthCnf *) pMsgBuf)->resultCode,
+                       ((tLimMlmAuthCnf *) pMsgBuf)->protStatusCode);
+#endif
+
     /// Process AUTH confirm from MLM
     if (((tLimMlmAuthCnf *) pMsgBuf)->resultCode != eSIR_SME_SUCCESS)
     {
@@ -4293,6 +4299,10 @@ void limProcessFinishScanRsp(tpAniSirGlobal pMac,  void *body)
     switch(pMac->lim.gLimHalScanState)
     {
         case eLIM_HAL_FINISH_SCAN_WAIT_STATE:
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
+            limDiagEventReport(pMac, WLAN_PE_DIAG_DRIVER_SCAN_COMPLETE, NULL,
+                               status, eSIR_SUCCESS);
+#endif
             pMac->lim.gLimHalScanState = eLIM_HAL_IDLE_SCAN_STATE;
             if (pMac->lim.abortScan)
                 pMac->lim.abortScan = 0;
@@ -4380,9 +4390,6 @@ void limProcessMlmHalAddBARsp( tpAniSirGlobal pMac,
         limMsgQ->bodyptr = NULL;
         return;
     }
-#ifdef FEATURE_WLAN_DIAG_SUPPORT_LIM //FEATURE_WLAN_DIAG_SUPPORT 
-    limDiagEventReport(pMac, WLAN_PE_DIAG_HAL_ADDBA_RSP_EVENT, psessionEntry, 0, 0);
-#endif //FEATURE_WLAN_DIAG_SUPPORT
 
     // Allocate for LIM_MLM_ADDBA_CNF
     pMlmAddBACnf = vos_mem_malloc(sizeof(tLimMlmAddBACnf));
@@ -4408,6 +4415,12 @@ void limProcessMlmHalAddBARsp( tpAniSirGlobal pMac,
         pMlmAddBACnf->addBAResultCode = eSIR_MAC_SUCCESS_STATUS;
      else
         pMlmAddBACnf->addBAResultCode = eSIR_MAC_UNSPEC_FAILURE_STATUS;
+
+#ifdef FEATURE_WLAN_DIAG_SUPPORT_LIM //FEATURE_WLAN_DIAG_SUPPORT
+    limDiagEventReport(pMac, WLAN_PE_DIAG_HAL_ADDBA_RSP_EVENT, psessionEntry,
+                       pAddBAParams->status, pMlmAddBACnf->addBAResultCode);
+#endif //FEATURE_WLAN_DIAG_SUPPORT
+
      vos_mem_free(limMsgQ->bodyptr);
      limMsgQ->bodyptr = NULL;
      // Send ADDBA CNF to LIM

@@ -2881,6 +2881,11 @@ limSendSmeCandidateFoundInd(tpAniSirGlobal pMac, tANI_U8  sessionId)
         return;
     }
 
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
+    limDiagEventReport(pMac, WLAN_PE_DIAG_ROAM_CANDIDATE_FOUND,
+                       NULL, eSIR_SUCCESS, eSIR_SUCCESS);
+#endif
+
     pSirSmeCandidateFoundInd->messageType = eWNI_SME_CANDIDATE_FOUND_IND;
     pSirSmeCandidateFoundInd->length = sizeof(tSirSmeCandidateFoundInd);
     pSirSmeCandidateFoundInd->sessionId = sessionId;
