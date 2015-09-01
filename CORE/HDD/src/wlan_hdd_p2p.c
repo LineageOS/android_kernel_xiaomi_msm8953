@@ -1480,13 +1480,12 @@ bypass_lock:
 
         vos_mem_copy( cfgState->buf, buf, len);
 
+        mutex_lock(&pHddCtx->roc_lock);
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,38))
         if( cfgState->remain_on_chan_ctx )
         {
-            mutex_lock(&pHddCtx->roc_lock);
             cfgState->action_cookie = cfgState->remain_on_chan_ctx->cookie;
             *cookie = cfgState->action_cookie;
-            mutex_unlock(&pHddCtx->roc_lock);
         }
         else
         {
@@ -1496,6 +1495,7 @@ bypass_lock:
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,38))
         }
 #endif
+        mutex_unlock(&pHddCtx->roc_lock);
     }
 
     if ( (WLAN_HDD_INFRA_STATION == pAdapter->device_mode) ||

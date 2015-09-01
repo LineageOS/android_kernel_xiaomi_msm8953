@@ -1174,10 +1174,11 @@ void __hdd_tx_timeout(struct net_device *dev)
                 "%s: Request firmware for recovery",__func__);
       WLANTL_TLDebugMessage(WLANTL_DEBUG_FW_CLEANUP);
    }
-
+   mutex_lock(&pHddCtx->roc_lock);
    pRemainChanCtx = hdd_get_remain_on_channel_ctx(pHddCtx);
    if (!pRemainChanCtx)
    {
+       mutex_unlock(&pHddCtx->roc_lock);
       if (pAdapter->hdd_stats.hddTxRxStats.continuousTxTimeoutCount >
           HDD_TX_STALL_SSR_THRESHOLD)
       {
@@ -1191,6 +1192,7 @@ void __hdd_tx_timeout(struct net_device *dev)
    }
    else
    {
+       mutex_unlock(&pHddCtx->roc_lock);
       VOS_TRACE(VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
                 "Remain on channel in progress");
       /* The supplicant can retry "P2P Invitation Request" for 120 times
