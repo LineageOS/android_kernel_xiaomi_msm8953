@@ -413,7 +413,7 @@ static v_VOID_t wlan_hdd_tdls_update_peer_cb( v_PVOID_t userData )
 
                     if (pHddCtx->cfg_ini->fTDLSExternalControl &&
                         (FALSE == curr_peer->isForcedPeer)) {
-                        continue;
+                        goto next_peer;
                     }
 
                     if (curr_peer->tx_pkt >=
@@ -498,7 +498,7 @@ static v_VOID_t wlan_hdd_tdls_update_peer_cb( v_PVOID_t userData )
 
                 if (pHddCtx->cfg_ini->fTDLSExternalControl &&
                     (FALSE == curr_peer->isForcedPeer)) {
-                    continue;
+                    goto next_peer;
                 }
                 if (!TDLS_IS_CONNECTED(curr_peer)) {
                     if (curr_peer->tx_pkt >=
