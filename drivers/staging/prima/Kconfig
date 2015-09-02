@@ -53,4 +53,8 @@ config WLAN_OFFLOAD_PACKETS
 	bool "Enable offload packets feature"
 	default n
 
+config QCOM_TDLS
+	bool "Enable TDLS feature"
+	default n
+
 endif # PRIMA_WLAN || PRONTO_WLAN
