@@ -71,13 +71,16 @@
 tANI_U32
 limDeactivateMinChannelTimerDuringScan(tpAniSirGlobal pMac)
 {
-    if ((pMac->lim.gLimMlmState == eLIM_MLM_WT_PROBE_RESP_STATE) && (pMac->lim.gLimHalScanState == eLIM_HAL_SCANNING_STATE))
+    if ((VOS_TRUE ==
+         tx_timer_running(&pMac->lim.limTimers.gLimMinChannelTimer)) &&
+         (pMac->lim.gLimMlmState == eLIM_MLM_WT_PROBE_RESP_STATE) &&
+             (pMac->lim.gLimHalScanState == eLIM_HAL_SCANNING_STATE))
     {
         /**
-            * Beacon/Probe Response is received during active scanning.
-            * Deactivate MIN channel timer if running.
-            */
-        
+         * Beacon/Probe Response is received during active scanning.
+         * Deactivate MIN channel timer if running.
+         */
+
         limDeactivateAndChangeTimer(pMac,eLIM_MIN_CHANNEL_TIMER);
         if (tx_timer_activate(&pMac->lim.limTimers.gLimMaxChannelTimer)
                                           == TX_TIMER_ERROR)
