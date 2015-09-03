@@ -14570,7 +14570,7 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
       }
       case WDA_MON_STOP_REQ:
       {
-         WDA_ProcessMonStopReq(pWDA,NULL);
+         WDA_ProcessMonStopReq(pWDA, (v_PVOID_t)pMsg->bodyptr);
          break;
       }
       case WDA_SEND_FREQ_RANGE_CONTROL_IND:
@@ -19526,9 +19526,11 @@ WDA_ProcessSetRtsCtsHTVhtInd(tWDA_CbContext *pWDA,
     }
     return CONVERT_WDI2VOS_STATUS(status) ;
 }
-void WDA_MonStartRspCallback(void *pEventData, void* pUserData)
+
+void WDA_MonModeRspCallback(void *pEventData, void* pUserData)
 {
    tWDA_ReqParams *pWdaParams = (tWDA_ReqParams *)pUserData;
+   tSirMonModeReq *pData;
 
    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
                                           "<------ %s " ,__func__);
@@ -19539,18 +19541,22 @@ void WDA_MonStartRspCallback(void *pEventData, void* pUserData)
       VOS_ASSERT(0) ;
       return ;
    }
-
+   pData = (tSirMonModeReq *)pWdaParams->wdaMsgParam;
+   if (pData != NULL) {
+        pData->callback(pData->magic, pData->cmpVar);
+        vos_mem_free(pWdaParams->wdaMsgParam);
+   }
    vos_mem_free(pWdaParams) ;
 
    return;
 }
 
-
-VOS_STATUS WDA_ProcessMonStartReq( tWDA_CbContext *pWDA, void* wdaRequest)
+VOS_STATUS WDA_ProcessMonStartReq( tWDA_CbContext *pWDA, void *wdaRequest)
 {
 
     WDI_Status status = WDI_STATUS_SUCCESS;
     tWDA_ReqParams *pWdaParams;
+    tSirMonModeReq *pMonModeData = (tSirMonModeReq *)wdaRequest;
 
     VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
             FL("%s: "), __func__);
@@ -19566,8 +19572,8 @@ VOS_STATUS WDA_ProcessMonStartReq( tWDA_CbContext *pWDA, void* wdaRequest)
     pWdaParams->wdaMsgParam = wdaRequest;
     pWdaParams->wdaWdiApiMsgParam = NULL;
 
-    status = WDI_MonStartReq((void *)wdaRequest,
-                               (WDI_MonStartRspCb)WDA_MonStartRspCallback,
+    status = WDI_MonStartReq(pMonModeData->data,
+                               (WDI_MonModeRspCb)WDA_MonModeRspCallback,
                                (void *)pWdaParams);
     if (IS_WDI_STATUS_FAILURE(status))
     {
@@ -19577,25 +19583,6 @@ VOS_STATUS WDA_ProcessMonStartReq( tWDA_CbContext *pWDA, void* wdaRequest)
         vos_mem_free(pWdaParams);
     }
     return CONVERT_WDI2VOS_STATUS(status);
-}
-
-void WDA_MonStopRspCallback(void* pUserData)
-{
-   tWDA_ReqParams *pWdaParams = (tWDA_ReqParams *)pUserData;
-
-   VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                                          "%s: Mon stop request cb " ,__func__);
-   if (NULL == pWdaParams)
-   {
-      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-              "%s: pWdaParams received NULL", __func__);
-      VOS_ASSERT(0) ;
-      return ;
-   }
-
-   vos_mem_free(pWdaParams) ;
-
-   return;
 }
 
 VOS_STATUS WDA_ProcessMonStopReq( tWDA_CbContext *pWDA, void* wdaRequest)
@@ -19620,7 +19607,7 @@ VOS_STATUS WDA_ProcessMonStopReq( tWDA_CbContext *pWDA, void* wdaRequest)
 
     VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
             "%s: Processing Mon stop request", __func__);
-    status = WDI_MonStopReq((WDI_MonStopRspCb)WDA_MonStopRspCallback,
+    status = WDI_MonStopReq((WDI_MonModeRspCb)WDA_MonModeRspCallback,
                              (void *)pWdaParams);
 
     if (IS_WDI_STATUS_FAILURE(status))
