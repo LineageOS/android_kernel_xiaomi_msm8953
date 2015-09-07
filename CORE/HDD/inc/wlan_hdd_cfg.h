@@ -2516,6 +2516,11 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_LINK_FAIL_TX_CNT_MAX     ( 1000 )
 #define CFG_LINK_FAIL_TX_CNT_DEF     ( 200 )
 
+#define CFG_OPTIMIZE_CA_EVENT_NAME       "gOptimizeCAevent"
+#define CFG_OPTIMIZE_CA_EVENT_DISABLE    ( 0 )
+#define CFG_OPTIMIZE_CA_EVENT_ENABLE     ( 1 )
+#define CFG_OPTIMIZE_CA_EVENT_DEFAULT    ( 0 )
+
 /*--------------------------------------------------------------------------- 
   Type declarations
   -------------------------------------------------------------------------*/ 
@@ -3027,7 +3032,9 @@ typedef struct
    v_U32_t                     linkFailTimeout;
    v_U32_t                     linkFailTxCnt;
    v_BOOL_t                    ignorePeerHTopMode;
+   v_U8_t                      gOptimizeCAevent;
 } hdd_config_t;
+
 /*--------------------------------------------------------------------------- 
   Function declarations and documenation
   -------------------------------------------------------------------------*/ 

@@ -520,9 +520,10 @@ typedef enum
   WDI_TDLS_CHAN_SWITCH_REQ,
   WDI_SET_RTS_CTS_HTVHT_IND,
   WDI_FW_LOGGING_DXE_DONE_IND,
+  WDI_SEND_FREQ_RANGE_CONTROL_IND,
 
   /*Keep adding the indications to the max request
-    such that we keep them sepparate */
+    such that we keep them separate */
   WDI_MAX_UMAC_IND
 }WDI_RequestEnumType;
 
@@ -6305,6 +6306,13 @@ WDI_ProcessMonStopRsp
 (
    WDI_ControlBlockType*  pWDICtx,
    WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessEnableDisableCAEventInd
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
 );
 
 #endif /*WLAN_QCT_WDI_I_H*/

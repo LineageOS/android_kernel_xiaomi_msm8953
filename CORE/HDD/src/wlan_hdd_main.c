@@ -2227,7 +2227,53 @@ static int hdd_cmd_setFccChannel(hdd_context_t *pHddCtx, tANI_U8 *cmd,
     return ret;
 }
 
+/**---------------------------------------------------------------------------
 
+  \brief hdd_enable_disable_ca_event() - When Host sends IOCTL (enabled),
+         FW will send *ONE* CA ind to Host(even though it is duplicate).
+         When Host send IOCTL (disable), FW doesn't perform any action.
+         Whenever any change in CA *and* WLAN is in SAP/P2P-GO mode, FW
+         sends CA ind to host. (regard less of IOCTL status)
+  \param  - pHddCtx - HDD context
+  \param  - command - command received from framework
+  \param  - cmd_len - len of the command
+
+  \return - 0 on success, appropriate error values on failure.
+
+  --------------------------------------------------------------------------*/
+int hdd_enable_disable_ca_event(hdd_context_t *pHddCtx, tANI_U8* command, tANI_U8 cmd_len)
+{
+   tANI_U8 set_value;
+   int ret = 0;
+   eHalStatus status;
+
+   ret = wlan_hdd_validate_context(pHddCtx);
+   if (0 != ret)
+   {
+       ret = -EINVAL;
+       goto exit;
+   }
+
+   if (pHddCtx->cfg_ini->gOptimizeCAevent == 0)
+   {
+       hddLog(VOS_TRACE_LEVEL_ERROR, "Enable gOptimizeCAevent"
+             " ini param to control channel avooidance indication");
+       ret = 0;
+       goto exit;
+   }
+
+   set_value = command[cmd_len + 1] - '0';
+   status = sme_enableDisableChanAvoidIndEvent(pHddCtx->hHal, set_value);
+   if (status != eHAL_STATUS_SUCCESS)
+   {
+       hddLog(VOS_TRACE_LEVEL_ERROR, "%s: Failed to send"
+             " enableDisableChanAoidance command to SME\n", __func__);
+       ret = -EINVAL;
+   }
+
+exit:
+   return ret;
+}
 
 static int hdd_driver_command(hdd_adapter_t *pAdapter,
                               hdd_priv_data_t *ppriv_data)
@@ -4474,6 +4520,10 @@ static int hdd_driver_command(hdd_adapter_t *pAdapter,
            * country code is set
            */
            ret = hdd_cmd_setFccChannel(pHddCtx, command, 15);
+       }
+       else if (strncasecmp(command, "DISABLE_CA_EVENT", 16) == 0)
+       {
+           ret = hdd_enable_disable_ca_event(pHddCtx, command, 16);
        }
        else {
            MTRACE(vos_trace(VOS_MODULE_ID_HDD,

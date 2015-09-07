@@ -11588,6 +11588,21 @@ WDI_FWLoggingDXEdoneInd
   WDI_FWLoggingDXEdoneIndInfoType*    pwdiFWLoggingDXEdoneInd
 );
 
+/**
+ @brief WDI_EnableDisableCAEventInd
+        Enable/Disable Chan Avoidance indication
+
+ @param val: Enable/Disable Chan Avoidance indication
+
+ @return Result of the function call
+*/
+
+WDI_Status
+WDI_EnableDisableCAEventInd
+(
+wpt_uint32 val
+);
+
 #ifdef __cplusplus
  }
 #endif 

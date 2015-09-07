@@ -446,6 +446,10 @@ static int hdd_hostapd_driver_command(hdd_adapter_t *pAdapter,
        hdd_tx_rx_pkt_cnt_stat_timer_handler(pHddCtx);
        sme_SetMiracastMode(pHddCtx->hHal, pHddCtx->drvr_miracast);
    }
+   else if (strncasecmp(command, "DISABLE_CA_EVENT", 16) == 0)
+   {
+       ret = hdd_enable_disable_ca_event(pHddCtx, command, 16);
+   }
 
 exit:
    if (command)
