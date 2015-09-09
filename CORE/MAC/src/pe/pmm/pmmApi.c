@@ -222,7 +222,7 @@ void pmmInitBmpsResponseHandler(tpAniSirGlobal pMac, tpSirMsgQ limMsg )
     if (NULL == limMsg->bodyptr)
     {
         PELOGE(pmmLog(pMac, LOGE, FL("pmmBmps: Received SIR_HAL_ENTER_BMPS_RSP with NULL "));)
-        nextState = ePMM_STATE_BMPS_WAKEUP;
+        nextState = ePMM_STATE_READY;
         retStatus = eSIR_SME_BMPS_REQ_FAILED;
         goto failure;
     }
@@ -261,7 +261,7 @@ void pmmInitBmpsResponseHandler(tpAniSirGlobal pMac, tpSirMsgQ limMsg )
             FL("pmmBmps: BMPS_INIT_PWR_SAVE_REQ failed, informing SME"));)
 
         pmmBmpsUpdateInitFailureCnt(pMac);
-        nextState = ePMM_STATE_BMPS_WAKEUP;
+        nextState = ePMM_STATE_READY;
         retStatus = eSIR_SME_BMPS_REQ_FAILED;
         goto failure;
     }
@@ -889,6 +889,7 @@ void pmmExitBmpsResponseHandler(tpAniSirGlobal pMac,  tpSirMsgQ limMsg)
     {
         case eHAL_STATUS_SUCCESS:
             retStatus = eSIR_SME_SUCCESS;
+            pMac->pmm.gPmmState = ePMM_STATE_BMPS_WAKEUP;
             /* Update wakeup statistics */
             pmmUpdateWakeupStats(pMac);
             break;
@@ -900,13 +901,12 @@ void pmmExitBmpsResponseHandler(tpAniSirGlobal pMac,  tpSirMsgQ limMsg)
                  * But, PMC will be informed about the error.
                  */
                 retStatus = eSIR_SME_BMPS_REQ_FAILED;
+                pMac->pmm.gPmmState = ePMM_STATE_BMPS_SLEEP;
                 pmmBmpsUpdateWakeupReqFailureCnt(pMac);
             }
             break;
 
     }
-
-    pMac->pmm.gPmmState = ePMM_STATE_BMPS_WAKEUP;
 
     // turn on background scan
     pMac->sys.gSysEnableScanMode = true;
@@ -1580,7 +1580,7 @@ void pmmEnterImpsResponseHandler (tpAniSirGlobal pMac, eHalStatus rspStatus)
     else
     {
         // go back to previous state if request failed
-        nextState = ePMM_STATE_IMPS_WAKEUP;
+        nextState = ePMM_STATE_READY;
         resultCode = eSIR_SME_CANNOT_ENTER_IMPS;
         goto failure;
     }
