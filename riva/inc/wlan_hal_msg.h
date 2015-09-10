@@ -578,6 +578,9 @@ typedef enum
 
    WLAN_HAL_SSID_HOTLIST_RESULT_IND         = 318,
 
+   /* WFD Session Information to start/stop Scan */
+   WLAN_HAL_HIGH_PRIORITY_DATA_INFO_REQ     = 319,
+
    WLAN_HAL_START_RSSI_MONITORING_REQ       = 321,
    WLAN_HAL_START_RSSI_MONITORING_RSP       = 322,
    WLAN_HAL_RSSI_MONITORING_IND             = 323,
@@ -8526,6 +8529,22 @@ typedef PACKED_PRE struct PACKED_POST
    tANI_BOOLEAN moreData;
    tANI_U8 ssidHotlist[1];  // pointer to list of type tHalExtScanResultParams
 }tHalSsidHotlistResultIndMsg, *tpHalSsidHotlistResultIndMsg;
+
+/*---------------------------------------------------------------------------
+ * WLAN_HAL_HIGH_PRIORITY_DATA_INFO_REQ
+ *-------------------------------------------------------------------------*/
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_BOOLEAN  pause; // 1 -> pause, 0 -> unpause
+   tANI_U32      reserved; //reserved for future use
+}tHalHighPriorityDataInfoInd, *tpHalHighPriorityDataInfoInd;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   tHalHighPriorityDataInfoInd highPriorityDataInfoInd;
+}tHalHighPriorityDataInfoIndMsg, *tpHalHighPriorityDataInfoIndMsg;
 
 /*---------------------------------------------------------------------------
   *WLAN_HAL_MAC_SPOOFED_SCAN_REQ
