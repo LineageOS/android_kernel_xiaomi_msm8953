@@ -68,7 +68,7 @@
   ------------------------------------------------------------------------*/
 
 #define SME_TOTAL_COMMAND  30
-
+#define SME_START_CHAN_STEP 4
 
 typedef struct sGenericPmcCmd
 {
@@ -230,7 +230,8 @@ tANI_BOOLEAN pmcProcessCommand( tpAniSirGlobal pMac, tSmeCmd *pCommand );
 //the command, if applicable.
 void pmcAbortCommand( tpAniSirGlobal pMac, tSmeCmd *pCommand, tANI_BOOLEAN fStopping );
 tANI_BOOLEAN qosProcessCommand( tpAniSirGlobal pMac, tSmeCmd *pCommand );
-
+eHalStatus csrIsValidChannel(tpAniSirGlobal pMac, tANI_U8 chnNum);
+tANI_BOOLEAN csrRoamIsValid40MhzChannel(tpAniSirGlobal pMac, tANI_U8 channel);
 eHalStatus csrProcessScanCommand( tpAniSirGlobal pMac, tSmeCmd *pCommand );
 eHalStatus csrRoamProcessCommand( tpAniSirGlobal pMac, tSmeCmd *pCommand );
 void csrRoamProcessWmStatusChangeCommand( tpAniSirGlobal pMac, tSmeCmd *pCommand );
