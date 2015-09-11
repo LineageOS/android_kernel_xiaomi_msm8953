@@ -682,19 +682,57 @@ static v_VOID_t wlan_hdd_tdls_discovery_timeout_peer_cb(v_PVOID_t userData)
     return;
 }
 
-static v_VOID_t wlan_hdd_tdls_initiator_wait_cb( v_PVOID_t userData )
+v_VOID_t wlan_hdd_tdls_initiator_wait_cb( v_PVOID_t userData )
 {
-    hddTdlsPeer_t *curr_peer = (hddTdlsPeer_t *)userData;
+    tdlsConnInfo_t *tdlsInfo = (tdlsConnInfo_t *) userData;
     tdlsCtx_t   *pHddTdlsCtx;
+    hdd_context_t *pHddCtx = NULL;
+    hdd_adapter_t *pAdapter = NULL;
+    v_CONTEXT_t pVosContext = vos_get_global_context(VOS_MODULE_ID_HDD, NULL);
+    hddTdlsPeer_t *curr_peer = NULL;
 
     ENTER();
-    if ( NULL == curr_peer )
+
+    if (!tdlsInfo->staId)
     {
        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 FL("curr_peer is NULL"));
+                 FL("peer (staidx %u) doesn't exists"), tdlsInfo->staId);
+        return;
+    }
+    if (!pVosContext)
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                FL("pVosContext is NULL"));
         return;
     }
 
+    pHddCtx = vos_get_context( VOS_MODULE_ID_HDD, pVosContext);
+    if (!pHddCtx)
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                FL("pHddCtx is NULL"));
+        return;
+    }
+
+    pAdapter = hdd_get_adapter_by_sme_session_id(pHddCtx, tdlsInfo->sessionId);
+
+    if (!pAdapter)
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                FL("pAdapter is NULL"));
+        return;
+    }
+
+    mutex_lock(&pHddCtx->tdls_lock);
+    curr_peer = wlan_hdd_tdls_find_peer(pAdapter,
+            (u8 *) &tdlsInfo->peerMac.bytes[0], FALSE);
+    if (curr_peer == NULL)
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                FL("peer doesn't exists"));
+        mutex_unlock(&pHddCtx->tdls_lock);
+        return;
+    }
     pHddTdlsCtx = curr_peer->pHddTdlsCtx;
 
     if ( NULL == pHddTdlsCtx )
@@ -710,6 +748,7 @@ static v_VOID_t wlan_hdd_tdls_initiator_wait_cb( v_PVOID_t userData )
     }
     WLANTL_ResumeDataTx( (WLAN_HDD_GET_CTX(pHddTdlsCtx->pAdapter))->pvosContext,
                            (v_U8_t *)&curr_peer->staId);
+    mutex_unlock(&pHddCtx->tdls_lock);
     EXIT();
 }
 
@@ -1107,7 +1146,8 @@ static void wlan_hdd_tdls_peer_timers_stop(tdlsCtx_t *pHddTdlsCtx)
                        __func__,
                        MAC_ADDR_ARRAY(curr_peer->peerMac));
             vos_timer_stop ( &curr_peer->peerIdleTimer );
-            vos_timer_stop( &curr_peer->initiatorWaitTimeoutTimer );
+            if (vos_timer_is_initialized(&curr_peer->initiatorWaitTimeoutTimer))
+                vos_timer_stop( &curr_peer->initiatorWaitTimeoutTimer );
         }
     }
 }
@@ -1150,8 +1190,11 @@ static void wlan_hdd_tdls_peer_timers_destroy(tdlsCtx_t *pHddTdlsCtx)
                        MAC_ADDR_ARRAY(curr_peer->peerMac));
             vos_timer_stop ( &curr_peer->peerIdleTimer );
             vos_timer_destroy ( &curr_peer->peerIdleTimer );
-            vos_timer_stop(&curr_peer->initiatorWaitTimeoutTimer);
-            vos_timer_destroy(&curr_peer->initiatorWaitTimeoutTimer);
+            if (vos_timer_is_initialized(&curr_peer->initiatorWaitTimeoutTimer))
+            {
+                vos_timer_stop(&curr_peer->initiatorWaitTimeoutTimer);
+                vos_timer_destroy(&curr_peer->initiatorWaitTimeoutTimer);
+            }
         }
     }
 
@@ -1229,12 +1272,6 @@ hddTdlsPeer_t *wlan_hdd_tdls_get_peer(hdd_adapter_t *pAdapter,
                     VOS_TIMER_TYPE_SW,
                     wlan_hdd_tdls_idle_cb,
                     peer);
-
-    vos_timer_init(&peer->initiatorWaitTimeoutTimer,
-                    VOS_TIMER_TYPE_SW,
-                    wlan_hdd_tdls_initiator_wait_cb,
-                    peer);
-
     list_add_tail(&peer->node, head);
 
     return peer;
@@ -3309,5 +3346,23 @@ void wlan_hdd_tdls_reenable(hdd_context_t *pHddCtx)
              wlan_hdd_tdls_set_mode(pHddCtx, pHddCtx->tdls_mode_last,
                                     FALSE);
     }
+}
+
+tdlsConnInfo_t *wlan_hdd_get_conn_info(hdd_context_t *pHddCtx,
+                                       tANI_U8 idx)
+{
+    tANI_U8 staIdx;
+
+    /* check if there is available index for this new TDLS STA */
+    for ( staIdx = 0; staIdx < HDD_MAX_NUM_TDLS_STA; staIdx++ )
+    {
+        if (idx == pHddCtx->tdlsConnInfo[staIdx].staId )
+        {
+            hddLog(LOG1, FL("tdls peer with staIdx %u exists"), idx );
+            return (&pHddCtx->tdlsConnInfo[staIdx]);
+        }
+    }
+    hddLog(LOGE, FL("tdls peer with staIdx %u not exists"), idx );
+    return NULL;
 }
 /*EXT TDLS*/

@@ -16420,6 +16420,16 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                         if (pTdlsPeer->is_responder == 0)
                         {
                             v_U8_t staId = (v_U8_t)pTdlsPeer->staId;
+                            tdlsConnInfo_t *tdlsInfo;
+
+                            tdlsInfo = wlan_hdd_get_conn_info(pHddCtx, staId);
+
+                            /* Initialize initiator wait callback */
+                            vos_timer_init(
+                                    &pTdlsPeer->initiatorWaitTimeoutTimer,
+                                    VOS_TIMER_TYPE_SW,
+                                    wlan_hdd_tdls_initiator_wait_cb,
+                                    tdlsInfo);
 
                             wlan_hdd_tdls_timer_restart(pAdapter,
                                                         &pTdlsPeer->initiatorWaitTimeoutTimer,
