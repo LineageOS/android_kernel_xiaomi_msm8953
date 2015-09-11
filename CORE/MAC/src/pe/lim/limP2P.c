@@ -1126,7 +1126,7 @@ void limSendP2PActionFrame(tpAniSirGlobal pMac, tpSirMsgQ pMsg)
             if (pMac->lim.gpLimRemainOnChanReq == NULL)
             {
                 limLog( pMac, LOGE,
-                        FL("Failed to Send Action frame \n"));
+                        FL("Failed to Send Action frame"));
                 limSendSmeRsp(pMac, eWNI_SME_ACTION_FRAME_SEND_CNF,
                               eHAL_STATUS_FAILURE, pMbMsg->sessionId, 0);
                 return;
@@ -1195,7 +1195,7 @@ void limSendP2PActionFrame(tpAniSirGlobal pMac, tpSirMsgQ pMsg)
         else
         {
             limLog(pMac, LOGE,
-                FL("Dropping SA Query frame - Unable to find PE Session \n"));
+                FL("Dropping SA Query frame - Unable to find PE Session "));
             limSendSmeRsp(pMac, eWNI_SME_ACTION_FRAME_SEND_CNF,
                     eHAL_STATUS_FAILURE, pMbMsg->sessionId, 0);
             palPktFree( pMac->hHdd, HAL_TXRX_FRM_802_11_MGMT,

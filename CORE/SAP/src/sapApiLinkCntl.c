@@ -814,7 +814,7 @@ eHalStatus sapCheck40Mhz24G(tHalHandle halHandle, ptSapContext psapCtx,
     if ( NULL == pBeaconStruct )
     {
         VOS_TRACE(VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
-                   FL("Unable to allocate memory \n"));
+                   FL("Unable to allocate memory "));
         return halStatus;
     }
 

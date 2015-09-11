@@ -578,7 +578,7 @@ limProcessEXTScanRealTimeData(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo)
         if ( DOT11F_FAILED( status ) )
         {
             limLog(pMac, LOGE, FL("Failed to parse a Beacons"
-                        "(%d):\n"), status);
+                        "(%d)"), status);
             vos_mem_free(pBeacon);
             return;
         }
@@ -616,7 +616,7 @@ limProcessEXTScanRealTimeData(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo)
         if ( DOT11F_FAILED( status ) )
         {
             limLog(pMac, LOGE, FL("Failed to parse a Probe"
-                        "Response (%d:\n"), status);
+                        "Response (%d"), status);
             vos_mem_free(pProbeResponse);
             return;
         }
@@ -2171,7 +2171,7 @@ limProcessMessages(tpAniSirGlobal pMac, tpSirMsgQ  limMsg)
                                                      pTdlsLinkEstablishParams->staIdx,
                                                      &sessionId))== NULL)
             {
-                limLog(pMac, LOGE, FL("session %u  does not exist.\n"), sessionId);
+                limLog(pMac, LOGE, FL("session %u  does not exist"), sessionId);
                 /* Still send the eWNI_SME_TDLS_LINK_ESTABLISH_RSP message to SME
                    with session id as zero and status as FAILURE so, that message
                    queued in SME queue can be freed to prevent the SME cmd buffer leak */
@@ -2205,7 +2205,7 @@ limProcessMessages(tpAniSirGlobal pMac, tpSirMsgQ  limMsg)
                                                      pTdlsChanSwitchParams->staIdx,
                                                      &sessionId))== NULL)
             {
-                limLog(pMac, LOGE, FL("session %u  does not exist.\n"), sessionId);
+                limLog(pMac, LOGE, FL("session %u  does not exist"), sessionId);
                 /* Still send the eWNI_SME_TDLS_LINK_ESTABLISH_RSP message to SME
                    with session id as zero and status as FAILURE so, that message
                    queued in SME queue can be freed to prevent the SME cmd buffer leak */

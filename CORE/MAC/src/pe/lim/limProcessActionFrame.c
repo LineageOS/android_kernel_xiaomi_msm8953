@@ -2032,7 +2032,7 @@ __limProcess2040bssCoexistenceActionFrame(tpAniSirGlobal pMac,
     mmhMsg.type = eWNI_SME_2040_COEX_IND;
     mmhMsg.bodyptr = pSirSmeHT2040CoexInfoInd;
     mmhMsg.bodyval = 0;
-    limLog(pMac, LOGW, FL("Posting eWNI_SME_2040_COEX_IND Message to SME \n"));
+    limLog(pMac, LOGW, FL("Posting eWNI_SME_2040_COEX_IND Message to SME "));
     limSysProcessMmhMsgApi(pMac, &mmhMsg, ePROT);
 
     vos_mem_free(pFrm);

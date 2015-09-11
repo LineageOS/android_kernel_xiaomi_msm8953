@@ -1147,7 +1147,7 @@ tSirRetStatus limSendTdlsLinkSetupReqFrame(tpAniSirGlobal pMac,
                      ((pMac->lim.gLimTDLSUapsdMask & 0x08) >> 3);
 
         if(wlan_cfgGetInt(pMac, WNI_CFG_MAX_SP_LENGTH, &val) != eSIR_SUCCESS)
-           limLog(pMac, LOGE, FL("could not retrieve Max SP Length \n"));
+           limLog(pMac, LOGE, FL("could not retrieve Max SP Length"));
 
         tdlsSetupReq.WMMInfoStation.max_sp_length = (tANI_U8)val;
         tdlsSetupReq.WMMInfoStation.present = 1;
@@ -1625,7 +1625,7 @@ static tSirRetStatus limSendTdlsSetupRspFrame(tpAniSirGlobal pMac,
                      ((pMac->lim.gLimTDLSUapsdMask & 0x08) >> 3);
 
         if(wlan_cfgGetInt(pMac, WNI_CFG_MAX_SP_LENGTH, &val) != eSIR_SUCCESS)
-           limLog(pMac, LOGE, FL("could not retrieve Max SP Length \n"));
+           limLog(pMac, LOGE, FL("could not retrieve Max SP Length"));
 
         tdlsSetupRsp.WMMInfoStation.max_sp_length = (tANI_U8)val;
         tdlsSetupRsp.WMMInfoStation.present = 1;

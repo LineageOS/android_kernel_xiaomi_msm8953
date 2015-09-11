@@ -197,7 +197,7 @@ tpPESession peCreateSession(tpAniSirGlobal pMac, tANI_U8 *bssid , tANI_U8* sessi
             return(&pMac->lim.gpSession[i]);
         }
     }
-    limLog(pMac, LOGE, FL("Session can not be created.. Reached Max permitted sessions \n "));
+    limLog(pMac, LOGE, FL("Session can not be created.. Reached Max permitted sessions "));
     return NULL;
 }
 
@@ -230,7 +230,7 @@ tpPESession peFindSessionByBssid(tpAniSirGlobal pMac,  tANI_U8*  bssid,    tANI_
         }
     }
 
-    limLog(pMac, LOG4, FL("Session lookup fails for BSSID: \n "));
+    limLog(pMac, LOG4, FL("Session lookup fails for BSSID: "));
     limPrintMacAddr(pMac, bssid, LOG4);
     return(NULL);
 
@@ -279,7 +279,7 @@ tpPESession peFindSessionByBssIdx(tpAniSirGlobal pMac,  tANI_U8 bssIdx)
 {
     if(sessionId >=  pMac->lim.maxBssId)
     {
-        limLog(pMac, LOGE, FL("Invalid sessionId: %d \n "), sessionId);
+        limLog(pMac, LOGE, FL("Invalid sessionId: %d "), sessionId);
         return(NULL);
     }
     if((pMac->lim.gpSession[sessionId].valid == TRUE))
@@ -529,7 +529,7 @@ tpPESession peFindSessionByPeerSta(tpAniSirGlobal pMac,  tANI_U8*  sa,    tANI_U
       }
    }   
 
-   limLog(pMac, LOG1, FL("Session lookup fails for Peer StaId: \n "));
+   limLog(pMac, LOG1, FL("Session lookup fails for Peer StaId: "));
    limPrintMacAddr(pMac, sa, LOG1);
    return NULL;
 }

@@ -1793,7 +1793,7 @@ int hdd_setP2pNoa( struct net_device *dev, tANI_U8 *command )
     {
         VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                "%s: P2P_SET GO NoA: fail to read param "
-               "count=%d duration=%d interval=%d \n",
+               "count=%d duration=%d interval=%d ",
                 __func__, count, start_time, duration);
         return -EINVAL;
     }
@@ -1879,7 +1879,7 @@ int hdd_setP2pOpps( struct net_device *dev, tANI_U8 *command )
     {
         VOS_TRACE (VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                  "%s: P2P_SET GO PS: fail to read param "
-                 " legacy_ps=%d opp_ps=%d ctwindow=%d \n",
+                 " legacy_ps=%d opp_ps=%d ctwindow=%d ",
                  __func__, legacy_ps, opp_ps, ctwindow);
         return -EINVAL;
     }
