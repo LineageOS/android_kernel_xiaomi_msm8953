@@ -8049,6 +8049,10 @@ typedef PACKED_PRE struct PACKED_POST
    tANI_U8 reportEvents;
    /* number of channels */
    tANI_U8 numChannels;
+   // new Exponential Scan params
+   tANI_U32 max_period;
+   tANI_U32 exponent;
+   tANI_U32 step_count;
    /* if channels to scan. In the TLV channelList[] */
    tExtScanChannelSpec channelList[WLAN_HAL_EXT_SCAN_MAX_CHANNELS];
 }tExtScanBucketData, *tpExtScanBucketData;
@@ -8064,7 +8068,9 @@ typedef PACKED_PRE struct PACKED_POST
       (keep the most significant, i.e. stronger RSSI) */
    tANI_U32 maxApPerScan;
    /* in %, when buffer is this much full, wake up host */
-   tANI_U32 reportThreshold;
+   tANI_U32 reportThresholdPercent;
+   /* in number of scans, wake up AP after these many scans */
+   tANI_U32 reportThresholdNumScans;
    /* This will be off channel minimum time */
    tANI_U16 neighborScanChannelMinTime;
    /* This will be out off channel max time */
@@ -8131,7 +8137,7 @@ typedef PACKED_PRE struct PACKED_POST
    tANI_U32      maxScanReportingThreshold;
 
    tANI_U32      maxHotlistAPs;
-   tANI_U32      maxSignificantWifiChangeAPs;
+   tANI_U32      maxHotlistSSIDs;
 
    tANI_U32      maxBssidHistoryEntries;
 }tHalExtScanGetCapRsp, *tpHalExtScanGetCapRsp;
