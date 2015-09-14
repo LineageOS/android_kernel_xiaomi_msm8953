@@ -2416,6 +2416,8 @@ boolean limIsDeauthDiassocForDrop(tpAniSirGlobal pMac,
     tpPESession     psessionEntry;
     tpSirMacMgmtHdr pMacHdr;
     tpDphHashNode     pStaDs;
+    eHalStatus lock_status = eHAL_STATUS_SUCCESS;
+    boolean ret = FALSE;
 
     pMacHdr = WDA_GET_RX_MAC_HEADER(pRxPacketInfo);
     psessionEntry = peFindSessionByBssid(pMac,pMacHdr->bssId,&sessionId);
@@ -2426,12 +2428,21 @@ boolean limIsDeauthDiassocForDrop(tpAniSirGlobal pMac,
                   pMacHdr->sa););
         return TRUE;
     }
+
+    lock_status =  pe_AcquireGlobalLock(&pMac->lim);
+    if (lock_status != eHAL_STATUS_SUCCESS)
+    {
+        limLog(pMac, LOGE, FL("pe_AcquireGlobalLock error"));
+        return TRUE;
+    }
+
     pStaDs = dphLookupHashEntry(pMac, pMacHdr->sa, &aid,
                                &psessionEntry->dph.dphHashTable);
     if (!pStaDs)
     {
         PELOG1(sysLog(pMac, LOG1,FL("pStaDs is NULL")););
-        return TRUE;
+        ret = TRUE;
+        goto end;
     }
 #ifdef WLAN_FEATURE_11W
     if (psessionEntry->limRmfEnabled)
@@ -2446,7 +2457,10 @@ boolean limIsDeauthDiassocForDrop(tpAniSirGlobal pMac,
              * a time difference of 1 sec.
              */
             if (vos_timer_get_system_time() - pStaDs->last_unprot_deauth_disassoc < 1000)
-                return TRUE;
+            {
+                ret = TRUE;
+                goto end;
+            }
             pStaDs->last_unprot_deauth_disassoc =
                               vos_timer_get_system_time();
         }
@@ -2454,7 +2468,10 @@ boolean limIsDeauthDiassocForDrop(tpAniSirGlobal pMac,
         else
         {
             if (pStaDs->proct_deauh_disassoc_cnt)
-                return TRUE;
+            {
+                ret = TRUE;
+                goto end;
+            }
             else
                 pStaDs->proct_deauh_disassoc_cnt++;
         }
@@ -2464,11 +2481,17 @@ boolean limIsDeauthDiassocForDrop(tpAniSirGlobal pMac,
 /* PMF disabled */
     {
         if (pStaDs->isDisassocDeauthInProgress)
-            return TRUE;
+        {
+            ret = TRUE;
+            goto end;
+        }
          else
             pStaDs->isDisassocDeauthInProgress++;
     }
-    return FALSE;
+
+end:
+    pe_ReleaseGlobalLock(&pMac->lim);
+    return ret;
 }
 /** -----------------------------------------------------------------
   \brief limIsPktCandidateForDrop() - decides whether to drop the frame or not
