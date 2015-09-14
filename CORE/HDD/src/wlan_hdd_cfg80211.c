@@ -1227,7 +1227,6 @@ static v_VOID_t hdd_link_layer_process_peer_stats(hdd_adapter_t *pAdapter,
                                                    v_VOID_t *pData)
 {
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
-    tpSirWifiRateStat   pWifiRateStat;
     tpSirWifiPeerStat   pWifiPeerStat;
     tpSirWifiPeerInfo   pWifiPeerInfo;
     struct nlattr *peerInfo;
@@ -1247,70 +1246,6 @@ static v_VOID_t hdd_link_layer_process_peer_stats(hdd_adapter_t *pAdapter,
     hddLog(VOS_TRACE_LEVEL_INFO,
             "LL_STATS_PEER_ALL : numPeers %u",
             pWifiPeerStat->numPeers);
-    {
-        for (i = 0; i < pWifiPeerStat->numPeers; i++)
-        {
-            pWifiPeerInfo = (tpSirWifiPeerInfo)
-                ((uint8 *)pWifiPeerStat->peerInfo +
-                ( i * sizeof(tSirWifiPeerInfo)));
-
-            if (WLAN_HDD_INFRA_STATION == pAdapter->device_mode) {
-                    pWifiPeerInfo->type = WIFI_PEER_AP;
-            }
-            if (WLAN_HDD_P2P_CLIENT == pAdapter->device_mode) {
-                    pWifiPeerInfo->type = WIFI_PEER_P2P_GO;
-            }
-
-            hddLog(VOS_TRACE_LEVEL_INFO,
-                    " %d) LL_STATS Channel Stats "
-                    " Peer Type %u "
-                    " peerMacAddress  %pM "
-                    " capabilities 0x%x "
-                    " numRate %u ",
-                    i,
-                    pWifiPeerInfo->type,
-                    pWifiPeerInfo->peerMacAddress,
-                    pWifiPeerInfo->capabilities,
-                    pWifiPeerInfo->numRate);
-            {
-                int j;
-                for (j = 0; j < pWifiPeerInfo->numRate; j++)
-                {
-                    pWifiRateStat = (tpSirWifiRateStat)
-                        ((tANI_U8 *) pWifiPeerInfo->rateStats +
-                         ( j * sizeof(tSirWifiRateStat)));
-
-                    hddLog(VOS_TRACE_LEVEL_INFO,
-                            "   peer Rate Stats "
-                            "   preamble  %u "
-                            "   nss %u "
-                            "   bw %u "
-                            "   rateMcsIdx  %u "
-                            "   reserved %u "
-                            "   bitrate %u "
-                            "   txMpdu %u "
-                            "   rxMpdu %u "
-                            "   mpduLost %u "
-                            "   retries %u "
-                            "   retriesShort %u "
-                            "   retriesLong %u",
-                            pWifiRateStat->rate.preamble,
-                            pWifiRateStat->rate.nss,
-                            pWifiRateStat->rate.bw,
-                            pWifiRateStat->rate.rateMcsIdx,
-                            pWifiRateStat->rate.reserved,
-                            pWifiRateStat->rate.bitrate,
-                            pWifiRateStat->txMpdu,
-                            pWifiRateStat->rxMpdu,
-                            pWifiRateStat->mpduLost,
-                            pWifiRateStat->retries,
-                            pWifiRateStat->retriesShort,
-                            pWifiRateStat->retriesLong);
-                }
-            }
-        }
-    }
-
     /*
      * Allocate a size of 4096 for the peer stats comprising
      * each of size = sizeof (tSirWifiPeerInfo) + numRate *
@@ -1449,93 +1384,6 @@ static v_VOID_t hdd_link_layer_process_iface_stats(hdd_adapter_t *pAdapter,
     hddLog(VOS_TRACE_LEVEL_INFO,
            "WMI_LINK_STATS_IFACE Data");
 
-    hddLog(VOS_TRACE_LEVEL_INFO,
-           "LL_STATS_IFACE: "
-           " Mode %u "
-           " MAC %pM "
-           " State %u "
-           " Roaming %u "
-           " capabilities 0x%x "
-           " SSID %s "
-           " BSSID %pM",
-           pWifiIfaceStat->info.mode,
-           pWifiIfaceStat->info.macAddr,
-           pWifiIfaceStat->info.state,
-           pWifiIfaceStat->info.roaming,
-           pWifiIfaceStat->info.capabilities,
-           pWifiIfaceStat->info.ssid,
-           pWifiIfaceStat->info.bssid);
-
-    hddLog(VOS_TRACE_LEVEL_INFO,
-           " AP country str: %c%c%c",
-           pWifiIfaceStat->info.apCountryStr[0],
-           pWifiIfaceStat->info.apCountryStr[1],
-           pWifiIfaceStat->info.apCountryStr[2]);
-
-
-    hddLog(VOS_TRACE_LEVEL_INFO,
-           " Country Str Association: %c%c%c",
-           pWifiIfaceStat->info.countryStr[0],
-           pWifiIfaceStat->info.countryStr[1],
-           pWifiIfaceStat->info.countryStr[2]);
-
-    hddLog(VOS_TRACE_LEVEL_INFO,
-           " beaconRx %u "
-           " mgmtRx %u "
-           " mgmtActionRx  %u "
-           " mgmtActionTx %u "
-           " rssiMgmt %d "
-           " rssiData %d "
-           " rssiAck  %d",
-           pWifiIfaceStat->beaconRx,
-           pWifiIfaceStat->mgmtRx,
-           pWifiIfaceStat->mgmtActionRx,
-           pWifiIfaceStat->mgmtActionTx,
-           pWifiIfaceStat->rssiMgmt,
-           pWifiIfaceStat->rssiData,
-           pWifiIfaceStat->rssiAck );
-
-
-    {
-        int i;
-        for (i = 0 ; i < WIFI_AC_MAX; i ++)
-        {
-            hddLog(VOS_TRACE_LEVEL_INFO,
-
-                   " %d) LL_STATS IFACE: "
-                   " ac:  %u  txMpdu: %u "
-                   " rxMpdu: %u txMcast: %u "
-                   " rxMcast: %u  rxAmpdu: %u "
-                   " txAmpdu:  %u  mpduLost: %u "
-                   " retries: %u  retriesShort: %u "
-                   " retriesLong: %u  contentionTimeMin: %u "
-                   " contentionTimeMax: %u  contentionTimeAvg: %u "
-                   " contentionNumSamples: %u",
-                   i,
-                   pWifiIfaceStat->AccessclassStats[i].ac,
-                   pWifiIfaceStat->AccessclassStats[i].txMpdu,
-                   pWifiIfaceStat->AccessclassStats[i].rxMpdu,
-                   pWifiIfaceStat->AccessclassStats[i].txMcast,
-                   pWifiIfaceStat->AccessclassStats[i].rxMcast,
-                   pWifiIfaceStat->AccessclassStats[i].rxAmpdu,
-                   pWifiIfaceStat->AccessclassStats[i].txAmpdu,
-                   pWifiIfaceStat->AccessclassStats[i].mpduLost,
-                   pWifiIfaceStat->AccessclassStats[i].retries,
-                   pWifiIfaceStat->
-                       AccessclassStats[i].retriesShort,
-                   pWifiIfaceStat->AccessclassStats[i].retriesLong,
-                   pWifiIfaceStat->
-                       AccessclassStats[i].contentionTimeMin,
-                   pWifiIfaceStat->
-                       AccessclassStats[i].contentionTimeMax,
-                   pWifiIfaceStat->
-                       AccessclassStats[i].contentionTimeAvg,
-                   pWifiIfaceStat->
-                       AccessclassStats[i].contentionNumSamples);
-
-        }
-    }
-
     cfg80211_vendor_cmd_reply(vendor_event);
 
     EXIT();
@@ -1661,23 +1509,6 @@ static v_VOID_t hdd_link_layer_process_radio_stats(hdd_adapter_t *pAdapter,
                 pWifiRadioStat->channels +
                 (i * sizeof(tSirWifiChannelStats)));
 
-        hddLog(VOS_TRACE_LEVEL_INFO,
-               " %d) Channel Info"
-               "  width is %u "
-               "  CenterFreq %u "
-               "  CenterFreq0 %u "
-               "  CenterFreq1 %u "
-               "  onTime %u "
-               "  ccaBusyTime %u",
-               i,
-               pWifiChannelStats->channel.width,
-               pWifiChannelStats->channel.centerFreq,
-               pWifiChannelStats->channel.centerFreq0,
-               pWifiChannelStats->channel.centerFreq1,
-               pWifiChannelStats->onTime,
-               pWifiChannelStats->ccaBusyTime);
-
-
         chInfo = nla_nest_start(vendor_event, i);
         if(!chInfo)
         {
@@ -1763,22 +1594,12 @@ static void hdd_link_layer_stats_ind_callback ( void *pCtx,
     case SIR_HAL_LL_STATS_RESULTS_RSP:
         {
             hddLog(VOS_TRACE_LEVEL_INFO,
-                    FL("RESPONSE SIR_HAL_LL_STATS_RESULTS_RSP") );
-            hddLog(VOS_TRACE_LEVEL_INFO,
-                    "LL_STATS RESULTS RESPONSE paramID = 0x%x",
-                    linkLayerStatsResults->paramId);
-            hddLog(VOS_TRACE_LEVEL_INFO,
-               "LL_STATS RESULTS RESPONSE ifaceId = %u MAC: %pM",
-               linkLayerStatsResults->ifaceId, macAddr);
-            hddLog(VOS_TRACE_LEVEL_INFO,
-                    "LL_STATS RESULTS RESPONSE respId = %u",
-                    linkLayerStatsResults->respId);
-            hddLog(VOS_TRACE_LEVEL_INFO,
-                    "LL_STATS RESULTS RESPONSE moreResultToFollow = %u",
-                    linkLayerStatsResults->moreResultToFollow);
-            hddLog(VOS_TRACE_LEVEL_INFO,
-                    "LL_STATS RESULTS RESPONSE result = %p",
-                    linkLayerStatsResults->result);
+                    "LL_STATS RESP paramID = 0x%x, ifaceId = %u MAC: %pM "
+                    "respId = %u, moreResultToFollow = %u",
+                 linkLayerStatsResults->paramId, linkLayerStatsResults->ifaceId,
+                 macAddr, linkLayerStatsResults->respId,
+                 linkLayerStatsResults->moreResultToFollow);
+
             spin_lock(&hdd_context_lock);
             context = &pHddCtx->ll_stats_context;
             /* validate response received from target */
@@ -1923,15 +1744,11 @@ static int __wlan_hdd_cfg80211_ll_stats_set(struct wiphy *wiphy,
 
 
     hddLog(VOS_TRACE_LEVEL_INFO,
-           "LL_STATS_SET reqId = %d", linkLayerStatsSetReq.reqId);
-    hddLog(VOS_TRACE_LEVEL_INFO,
-            "LL_STATS_SET MAC = %pM", linkLayerStatsSetReq.macAddr);
-    hddLog(VOS_TRACE_LEVEL_INFO,
-            "LL_STATS_SET mpduSizeThreshold = %d",
-            linkLayerStatsSetReq.mpduSizeThreshold);
-    hddLog(VOS_TRACE_LEVEL_INFO,
-            "LL_STATS_SET aggressive Statistics Gathering  = %d",
-            linkLayerStatsSetReq.aggressiveStatisticsGathering);
+           "LL_STATS_SET reqId = %d, MAC = %pM, mpduSizeThreshold = %d "
+           "Statistics Gathering  = %d ",
+           linkLayerStatsSetReq.reqId, linkLayerStatsSetReq.macAddr,
+           linkLayerStatsSetReq.mpduSizeThreshold,
+           linkLayerStatsSetReq.aggressiveStatisticsGathering);
 
     if (eHAL_STATUS_SUCCESS != sme_SetLinkLayerStatsIndCB(
                                pHddCtx->hHal,
@@ -2083,11 +1900,8 @@ static int __wlan_hdd_cfg80211_ll_stats_get(struct wiphy *wiphy,
                pAdapter->macAddressCurrent.bytes, sizeof(v_MACADDR_t));
 
     hddLog(VOS_TRACE_LEVEL_INFO,
-           "LL_STATS_GET reqId = %d", linkLayerStatsGetReq.reqId);
-    hddLog(VOS_TRACE_LEVEL_INFO,
-           "LL_STATS_GET MAC = %pM", linkLayerStatsGetReq.macAddr);
-    hddLog(VOS_TRACE_LEVEL_INFO,
-           "LL_STATS_GET paramIdMask = %d",
+           "LL_STATS_GET reqId = %d, MAC = %pM, paramIdMask = %d",
+           linkLayerStatsGetReq.reqId, linkLayerStatsGetReq.macAddr,
            linkLayerStatsGetReq.paramIdMask);
 
     spin_lock(&hdd_context_lock);
@@ -2221,14 +2035,11 @@ static int __wlan_hdd_cfg80211_ll_stats_clear(struct wiphy *wiphy,
                pAdapter->macAddressCurrent.bytes, sizeof(v_MACADDR_t));
 
     hddLog(VOS_TRACE_LEVEL_INFO,
-            "LL_STATS_CLEAR reqId = %d", linkLayerStatsClearReq.reqId);
-    hddLog(VOS_TRACE_LEVEL_INFO,
-            "LL_STATS_CLEAR MAC = %pM", linkLayerStatsClearReq.macAddr);
-    hddLog(VOS_TRACE_LEVEL_INFO,
-            "LL_STATS_CLEAR statsClearReqMask = 0x%X",
-            linkLayerStatsClearReq.statsClearReqMask);
-    hddLog(VOS_TRACE_LEVEL_INFO,
-            "LL_STATS_CLEAR stopReq  = %d",
+            "LL_STATS_CLEAR reqId = %d, MAC = %pM,"
+            "statsClearReqMask = 0x%X, stopReq  = %d",
+            linkLayerStatsClearReq.reqId,
+            linkLayerStatsClearReq.macAddr,
+            linkLayerStatsClearReq.statsClearReqMask,
             linkLayerStatsClearReq.stopReq);
 
     if (eHAL_STATUS_SUCCESS == sme_LLStatsClearReq(pHddCtx->hHal,
