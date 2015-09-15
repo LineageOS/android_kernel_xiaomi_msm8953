@@ -781,6 +781,15 @@ v_BOOL_t vos_is_nv_country_non_zero
    void
 );
 
+/**------------------------------------------------------------------------
+  \brief vos_is_channel_valid_for_vht80 -
+  \param   chan
+  \return TRUE if channel is 80 mhz
+  \sa
+  -------------------------------------------------------------------------*/
+
+v_BOOL_t vos_is_channel_valid_for_vht80(v_U32_t chan);
+
 #ifdef CONFIG_ENABLE_LINUX_REG
 /**------------------------------------------------------------------------
   \brief vos_getCurrentCountryCode -

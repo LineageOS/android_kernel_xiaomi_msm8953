@@ -3204,6 +3204,56 @@ v_BOOL_t vos_is_nv_country_non_zero()
     return status ;
 }
 
+v_BOOL_t vos_is_channel_valid_for_vht80(v_U32_t chan)
+{
+    v_CONTEXT_t pVosContext = NULL;
+    hdd_context_t *pHddCtx = NULL;
+    v_U16_t freq;
+    v_U32_t i, band;
+    struct wiphy *wiphy;
+
+    pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+
+    if (NULL != pVosContext)
+    {
+        pHddCtx = vos_get_context(VOS_MODULE_ID_HDD, pVosContext);
+        if (NULL == pHddCtx)
+        {
+           VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+                       ("Invalid pHddCtx pointer") );
+           return VOS_FALSE;
+        }
+    }
+    else
+    {
+       VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+                  ("Invalid pVosContext pointer") );
+       return VOS_FALSE;
+    }
+    /* no 80Mhz in 2.4 GHz*/
+    if (chan <= RF_CHAN_14)
+        return VOS_FALSE;
+
+    band = IEEE80211_BAND_5GHZ;
+    freq = vos_chan_to_freq(chan);
+    wiphy = pHddCtx->wiphy;
+
+    for (i = 0; i < wiphy->bands[band]->n_channels; i++)
+    {
+        if (freq ==
+             wiphy->bands[band]->channels[i].center_freq)
+        {
+          if (wiphy->bands[band]->channels[i].flags &
+                                 IEEE80211_CHAN_NO_80MHZ)
+          {
+             return VOS_FALSE;
+          }
+          return VOS_TRUE;
+        }
+    }
+    return VOS_FALSE;
+}
+
 #ifdef CONFIG_ENABLE_LINUX_REG
 
 static int bw20_ch_index_to_bw40_plus_minus_ch_index(int k,
