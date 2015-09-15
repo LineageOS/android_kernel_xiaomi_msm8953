@@ -8682,7 +8682,8 @@ typedef PACKED_PRE struct PACKED_POST
  *-------------------------------------------------------------------------*/
 typedef PACKED_PRE struct PACKED_POST
 {
-    tANI_U32 status;
+    tANI_U16 status;
+    tANI_U16 doneIndicationForSource;
     tANI_U32 logBuffLength[MAX_NUM_OF_BUFFER];
     tANI_U64 logBuffAddress[MAX_NUM_OF_BUFFER];
 } tFWLoggingDxeDoneInd, * tpFWLoggingDxeDoneInd;
