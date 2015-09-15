@@ -2090,5 +2090,5 @@ void WDA_TrafficStatsTimerActivate(wpt_boolean activate);
 void WDA_SetEnableSSR(v_BOOL_t enableSSR);
 
 
-void WDA_FWLoggingDXEdoneInd(void);
+void WDA_FWLoggingDXEdoneInd(v_U32_t logType);
 #endif

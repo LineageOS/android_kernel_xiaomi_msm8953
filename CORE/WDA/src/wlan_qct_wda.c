@@ -14098,7 +14098,7 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
       }
       case WDA_SEND_LOG_DONE_IND:
       {
-         WDA_FWLoggingDXEdoneInd();
+         WDA_FWLoggingDXEdoneInd(pMsg->bodyval);
          break;
       }
       case WDA_FATAL_EVENT_LOGS_REQ:
@@ -17643,9 +17643,16 @@ VOS_STATUS WDA_ProcessTxControlInd(tWDA_CbContext *pWDA,
    return wdaStatus;
 }
 
-void WDA_FWLoggingDXEdoneInd(void)
+void WDA_FWLoggingDXEdoneInd(v_U32_t logType)
 {
-   WDI_FWLoggingDXEdoneInd(NULL);
+   WDI_Status status;
+   status = WDI_FWLoggingDXEdoneInd(logType);
+
+   if (WDI_STATUS_SUCCESS_SYNC != status)
+   {
+       VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                 FL("Failure status %d"), status);
+   }
 }
 
  /*  FUNCTION    WDA_featureCapsExchange

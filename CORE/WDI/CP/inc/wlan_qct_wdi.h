@@ -4115,8 +4115,9 @@ typedef struct
 
 typedef struct
 {
+   wpt_uint16 status;
+   wpt_uint16 doneIndicationForSource;
    wpt_uint64 logBuffAddress[MAX_NUM_OF_BUFFER];
-   wpt_uint32 status;
    wpt_uint32 logBuffLength[MAX_NUM_OF_BUFFER];
 }WDI_FWLoggingDXEdoneIndInfoType;
 
@@ -11587,7 +11588,7 @@ WDI_SetRtsCtsHTVhtInd
 WDI_Status
 WDI_FWLoggingDXEdoneInd
 (
-  WDI_FWLoggingDXEdoneIndInfoType*    pwdiFWLoggingDXEdoneInd
+  wpt_uint32 logType
 );
 
 /**

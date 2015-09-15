@@ -1840,7 +1840,6 @@ VOS_STATUS vos_process_done_indication(v_U8_t type, v_U32_t reason_code)
 
   \param pPacket - a pointer to a vos pkt to be queued
          pkt_type - type of pkt to be queued
-                    LOG_PKT_TYPE_DATA_MGMT - frame log i.e data/mgmt pkts
 
   \return VOS_STATUS_SUCCESS - the pkt has been successfully queued.
           VOS_STATUS_E_FAILURE - the pkt queue handler has reported

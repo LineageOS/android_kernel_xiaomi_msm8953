@@ -193,6 +193,7 @@ typedef struct
    wpt_uint8   logType;
    /* Indicate if Last segment of log is received*/
    wpt_boolean done;
+   wpt_uint16 reasonCode;
 } WDI_DS_LoggingSessionType;
 
 WPT_STATIC WPT_INLINE WDI_DS_RxMetaInfoType* WDI_DS_ExtractRxMetaData (wpt_packet *pFrame)
@@ -214,7 +215,7 @@ WPT_STATIC WPT_INLINE WDI_DS_TxMetaInfoType* WDI_DS_ExtractTxMetaData (wpt_packe
 typedef void (*WDI_DS_TxCompleteCallback)(void *pContext, wpt_packet *pFrame);
 typedef void (*WDI_DS_RxPacketCallback) (void *pContext, wpt_packet *pFrame);
 typedef void (*WDI_DS_TxFlowControlCallback)(void *pContext, wpt_uint8 ac_mask);
-typedef void (*WDI_DS_RxLogCallback)(void);
+typedef void (*WDI_DS_RxLogCallback)(wpt_uint8 logType);
 
 
 

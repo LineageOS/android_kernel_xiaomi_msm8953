@@ -446,6 +446,6 @@ void wpalLogPktSerialize
 ---------------------------------------------------------------------------*/
 void wpalFwLogPktSerialize
 (
-   wpt_packet *pFrame
+   wpt_packet *pFrame, wpt_uint32 pktType
 );
 #endif // __WLAN_QCT_PAL_PACKET_H

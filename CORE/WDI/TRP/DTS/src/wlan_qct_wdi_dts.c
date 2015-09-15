@@ -535,7 +535,7 @@ wpt_status WDTS_RxPacket (void *pContext, wpt_packet *pFrame, WDTS_ChannelType c
   wpt_uint16                  usMPDUDOffset, usMPDULen;
   WDI_DS_RxMetaInfoType     *pRxMetadata;
   wpt_uint8                  isFcBd = 0;
-
+  WDI_DS_LoggingSessionType *pLoggingSession;
   tpSirMacFrameCtl  pMacFrameCtl;
   // Do Sanity checks
   if(NULL == pContext || NULL == pFrame){
@@ -545,7 +545,9 @@ wpt_status WDTS_RxPacket (void *pContext, wpt_packet *pFrame, WDTS_ChannelType c
   // Normal DMA transfer does not contain RxBD
   if (WDTS_CHANNEL_RX_FW_LOG == channel)
   {
-      wpalFwLogPktSerialize(pFrame);
+      pLoggingSession = (WDI_DS_LoggingSessionType *)
+                         WDI_DS_GetLoggingSession(pContext);
+      wpalFwLogPktSerialize(pFrame, pLoggingSession->logType);
 
       return eWLAN_PAL_STATUS_SUCCESS;
   }
@@ -882,6 +884,7 @@ void WDTS_MbReceiveMsg(void *pContext)
 
   pLoggingSession->done = pLoggingMb->done;
   pLoggingSession->logType = pLoggingMb->logType;
+  pLoggingSession->reasonCode = pLoggingMb->reasonCode;
   // Done using Mailbox, zero out the memory.
   wpalMemoryZero(pLoggingMb, sizeof(tLoggingMailBox));
 
@@ -907,11 +910,14 @@ void WDTS_LogRxDone(void *pContext)
   }
   /* check for done and Log type Mgmt frame = 0, QXDM = 1, FW Mem dump = 2 */
   if (pLoggingSession->done && pLoggingSession->logType <= VALID_FW_LOG_TYPES)
-     vos_process_done_indication(pLoggingSession->logType, 0);
+     vos_process_done_indication(pLoggingSession->logType,
+                                 pLoggingSession->reasonCode);
+
+  ((WDI_DS_ClientDataType *)(pContext))->rxLogCB(pLoggingSession->logType);
 
   pLoggingSession->done = 0;
   pLoggingSession->logType = 0;
-  ((WDI_DS_ClientDataType *)(pContext))->rxLogCB();
+  pLoggingSession->reasonCode = 0;
 
   return;
 }

@@ -1267,11 +1267,11 @@ int wlan_queue_logpkt_for_app(vos_pkt_t *pPacket, uint32 pkt_type)
 	}
 
 	switch (pkt_type) {
-	case LOG_PKT_TYPE_DATA_MGMT:
+	case WLAN_MGMT_FRAME_LOGS:
 		status = wlan_queue_data_mgmt_pkt_for_app(pPacket);
 		break;
 
-	case LOG_PKT_TYPE_FW_LOG:
+	case WLAN_FW_LOGS:
 		status = wlan_queue_fw_log_pkt_for_app(pPacket);
 		break;
 
@@ -1286,7 +1286,7 @@ int wlan_queue_logpkt_for_app(vos_pkt_t *pPacket, uint32 pkt_type)
 
 void wlan_process_done_indication(uint8 type, uint32 reason_code)
 {
-    if ((type == WLAN_QXDM_LOGGING) && (wlan_is_log_report_in_progress() == TRUE))
+    if ((type == WLAN_FW_LOGS) && (wlan_is_log_report_in_progress() == TRUE))
     {
         pr_info("%s: Setting LOGGER_FATAL_EVENT\n", __func__);
         set_bit(LOGGER_FATAL_EVENT_POST_MASK, &gwlan_logging.event_flag);

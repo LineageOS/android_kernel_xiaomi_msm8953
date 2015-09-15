@@ -4245,7 +4245,7 @@ WDI_SetUapsdAcParamsReq
 WDI_Status
 WDI_FWLoggingDXEdoneInd
 (
-  WDI_FWLoggingDXEdoneIndInfoType*    pwdiFWLoggingDXEdoneInd
+  wpt_uint32    data
 )
 {
 
@@ -4267,8 +4267,8 @@ WDI_FWLoggingDXEdoneInd
     Fill in Event data and post to the Main FSM
   ------------------------------------------------------------------------*/
   wdiEventData.wdiRequest      = WDI_FW_LOGGING_DXE_DONE_IND;
-  wdiEventData.pEventData      = pwdiFWLoggingDXEdoneInd;
-  wdiEventData.uEventDataSize  = sizeof(*pwdiFWLoggingDXEdoneInd);
+  wdiEventData.pEventData      = (void *)&data;
+  wdiEventData.uEventDataSize  = sizeof(wpt_uint32);
   wdiEventData.pCBfnc          = NULL;
   wdiEventData.pUserData       = NULL;
 
@@ -34586,6 +34586,7 @@ WDI_ProcessFWLoggingDXEdoneInd
   tFWLoggingDxeDoneInd  *FWLoggingDxeDoneIndParams;
   WDI_DS_LoggingSessionType *pLoggingSession;
   WDI_Status wdiStatus = WDI_STATUS_SUCCESS;
+  wpt_uint32 *pLogType;
 
 
   /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -34596,13 +34597,16 @@ WDI_ProcessFWLoggingDXEdoneInd
   /*-------------------------------------------------------------------------
     Sanity check
   -------------------------------------------------------------------------*/
-  if (NULL == pEventData)
+  if (NULL == pEventData ||
+      NULL == pEventData->pEventData)
   {
       WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_FATAL,
              "%s: Invalid parameters", __func__);
       WDI_ASSERT(0);
       return WDI_STATUS_E_FAILURE;
   }
+  pLogType = (wpt_uint32 *)pEventData->pEventData;
+
   pLoggingSession = (WDI_DS_LoggingSessionType *)
                        WDI_DS_GetLoggingSession(WDI_DS_GetDatapathContext(
                                                   (void *)pWDICtx));
@@ -34630,6 +34634,7 @@ WDI_ProcessFWLoggingDXEdoneInd
                  sizeof(FWLoggingDxeDoneIndParams->logBuffAddress[0]));
 
   FWLoggingDxeDoneIndParams->status = eHAL_STATUS_SUCCESS;
+  FWLoggingDxeDoneIndParams->doneIndicationForSource = (wpt_uint16)*pLogType;
 
   wpalMemoryCopy(&FWLoggingDxeDoneIndParams->logBuffLength,
                  &pLoggingSession->logBuffLength, MAX_NUM_OF_BUFFER *
