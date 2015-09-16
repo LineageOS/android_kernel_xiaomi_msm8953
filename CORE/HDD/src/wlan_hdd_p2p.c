@@ -724,12 +724,15 @@ static int wlan_hdd_request_remain_on_channel( struct wiphy *wiphy,
         return -EBUSY;
     }
 
+    mutex_lock(&pHddCtx->roc_lock);
+
     pRemainChanCtx = vos_mem_malloc( sizeof(hdd_remain_on_chan_ctx_t) );
     if( NULL == pRemainChanCtx )
     {
         hddLog(VOS_TRACE_LEVEL_FATAL,
              "%s: Not able to allocate memory for Channel context",
                                          __func__);
+        mutex_unlock(&pHddCtx->roc_lock);
         return -ENOMEM;
     }
 
@@ -767,6 +770,9 @@ static int wlan_hdd_request_remain_on_channel( struct wiphy *wiphy,
             {
                 if (pRemainChanCtx->duration > HDD_P2P_MAX_ROC_DURATION)
                     pRemainChanCtx->duration = HDD_P2P_MAX_ROC_DURATION;
+
+                mutex_unlock(&pHddCtx->roc_lock);
+
                 schedule_delayed_work(&pAdapter->roc_work,
                         msecs_to_jiffies(pHddCtx->cfg_ini->gP2PListenDeferInterval));
                 hddLog(VOS_TRACE_LEVEL_INFO, "Defer interval is %hu, pAdapter %p",
@@ -776,6 +782,7 @@ static int wlan_hdd_request_remain_on_channel( struct wiphy *wiphy,
         }
     }
 
+    mutex_unlock(&pHddCtx->roc_lock);
     status = wlan_hdd_p2p_start_remain_on_channel(pAdapter);
 
     EXIT();
