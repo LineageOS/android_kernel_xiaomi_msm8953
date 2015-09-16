@@ -1029,7 +1029,8 @@ PopulateDot11fExtCap(tpAniSirGlobal      pMac,
 {
 
 #ifdef WLAN_FEATURE_11AC
-    if (psessionEntry->vhtCapability)
+    if (psessionEntry->vhtCapability &&
+        psessionEntry->limSystemRole != eLIM_STA_IN_IBSS_ROLE )
     {
         pDot11f->operModeNotification = 1;
         pDot11f->present = 1;
