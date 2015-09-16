@@ -2412,7 +2412,6 @@ void hdd_indicateMgmtFrame( hdd_adapter_t *pAdapter,
     }
 
     cfgState = WLAN_HDD_GET_CFG_STATE_PTR( pAdapter );
-    pRemainChanCtx = cfgState->remain_on_chan_ctx;
 
     if ((type == SIR_MAC_MGMT_FRAME) &&
         (subType == SIR_MAC_MGMT_ACTION))
@@ -2459,6 +2458,9 @@ void hdd_indicateMgmtFrame( hdd_adapter_t *pAdapter,
                     }
                 }
 #endif
+             mutex_lock(&pHddCtx->roc_lock);
+             pRemainChanCtx = cfgState->remain_on_chan_ctx;
+
              if (pRemainChanCtx != NULL && VOS_TIMER_STATE_RUNNING
                                  == vos_timer_getCurrentState(&pRemainChanCtx->hdd_remain_on_chan_timer))
              {
@@ -2509,6 +2511,7 @@ void hdd_indicateMgmtFrame( hdd_adapter_t *pAdapter,
                                       "Frames are pending. dropping frame !!!",
                                       __func__);
                           }
+                          mutex_unlock(&pHddCtx->roc_lock);
                           return;
                       }
                  }
@@ -2519,15 +2522,17 @@ void hdd_indicateMgmtFrame( hdd_adapter_t *pAdapter,
                  hddLog( LOG1, "%s:"
                          "Rcvd action frame after timer expired ", __func__);
 
+             mutex_unlock(&pHddCtx->roc_lock);
+
              if (((actionFrmType == WLAN_HDD_PROV_DIS_RESP) &&
                    (cfgState->actionFrmState == HDD_PD_REQ_ACK_PENDING)) ||
                   ((actionFrmType == WLAN_HDD_GO_NEG_RESP) &&
                    (cfgState->actionFrmState == HDD_GO_NEG_REQ_ACK_PENDING)))
              {
-                  hddLog(LOG1, "%s: ACK_PENDING and But received RESP for Action frame ",
+                 hddLog(LOG1, "%s: ACK_PENDING and But received RESP for Action frame ",
                          __func__);
-                  hdd_sendActionCnf(pAdapter, TRUE);
-                }
+                 hdd_sendActionCnf(pAdapter, TRUE);
+             }
             }
 #ifdef FEATURE_WLAN_TDLS
             else if(pbFrames[WLAN_HDD_PUBLIC_ACTION_FRAME_OFFSET+1] == WLAN_HDD_PUBLIC_ACTION_TDLS_DISC_RESP)
