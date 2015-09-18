@@ -431,8 +431,10 @@ int hdd_softap_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
    {
       if (pSapCtx->aStaInfo[STAId].wmm_tx_queue[ac].count >= HDD_TX_QUEUE_LOW_WATER_MARK)
       {
-          VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_WARN,
+          if (!(pSapCtx->aStaInfo[STAId].wmm_tx_queue[ac].ratelimit_count % 0x40))
+              VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_WARN,
                      "%s: TX queue for Best Effort AC is 3/4th full", __func__);
+          pSapCtx->aStaInfo[STAId].wmm_tx_queue[ac].ratelimit_count++;
           pSapCtx->aStaInfo[STAId].vosLowResource = VOS_TRUE;
       }
       else
