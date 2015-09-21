@@ -380,7 +380,7 @@ int wlan_log_to_user(VOS_TRACE_LEVEL log_level, char *to_be_sent, int length)
         qtimer_ticks =  arch_counter_get_cntpct();
 
         tlen = snprintf(tbuf, sizeof(tbuf), "[%02d:%02d:%02d.%06lu] [%016llX]"
-                        " [%s] ", tm.tm_hour, tm.tm_min, tm.tm_sec, tv.tv_usec,
+                        " [%.5s] ", tm.tm_hour, tm.tm_min, tm.tm_sec, tv.tv_usec,
                         qtimer_ticks, current->comm);
 	/* 1+1 indicate '\n'+'\0' */
 	total_log_len = length + tlen + 1 + 1;
