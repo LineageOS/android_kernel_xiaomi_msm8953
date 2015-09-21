@@ -247,14 +247,21 @@ limProcessAssocReqFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,
         }
         else
         {
-            /* STA might have missed the assoc response,
-             * so it is sending assoc request frame again.
+#ifdef WLAN_FEATURE_11W
+            /* Do not send Assoc rsp for duplicate assoc req in case of PMF
+             * enabled STA, as driver needs to start SA Querry in this case
              */
-            limSendAssocRspMgmtFrame( pMac, eSIR_SUCCESS,
+            if (!pStaDs->rmfEnabled)
+#endif
+            {
+               /* STA might have missed the assoc response,
+                * so it is sending assoc request frame again.
+                */
+                limSendAssocRspMgmtFrame( pMac, eSIR_SUCCESS,
                     pStaDs->assocId, pStaDs->staAddr,
                     pStaDs->mlmStaContext.subType, pStaDs,
                     psessionEntry);
-            limLog(pMac, LOGE,
+                limLog(pMac, LOGE,
                     FL("DUT already received an assoc request frame "
                         "and STA is sending another assoc req.So, do not "
                         "Process sessionid: %d sys subType=%d for role=%d "
@@ -262,7 +269,8 @@ limProcessAssocReqFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,
                     psessionEntry->peSessionId, subType,
                     psessionEntry->limSystemRole,
                     MAC_ADDR_ARRAY(pHdr->sa));
-            return;
+                return;
+            }
         }
     }
 
