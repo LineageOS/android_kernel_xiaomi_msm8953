@@ -1368,7 +1368,6 @@ int wlan_set_log_completion(uint32 is_fatal,
 	gwlan_logging.log_complete.is_report_in_progress = true;
 	gwlan_logging.log_complete.reason_code = reason_code;
 	spin_unlock_irqrestore(&gwlan_logging.bug_report_lock, flags);
-
 	return 0;
 }
 void wlan_get_log_completion(uint32 *is_fatal,
@@ -1382,14 +1381,14 @@ void wlan_get_log_completion(uint32 *is_fatal,
 	*is_fatal = gwlan_logging.log_complete.is_fatal;
 	*reason_code = gwlan_logging.log_complete.reason_code;
 	gwlan_logging.log_complete.is_report_in_progress = false;
-
 	spin_unlock_irqrestore(&gwlan_logging.bug_report_lock, flags);
-
 }
+
 bool wlan_is_log_report_in_progress(void)
 {
 	return gwlan_logging.log_complete.is_report_in_progress;
 }
+
 
 void wlan_reset_log_report_in_progress(void)
 {
@@ -1849,6 +1848,7 @@ int wlan_queue_logpkt_for_app(vos_pkt_t *pPacket, uint32 pkt_type)
 
 void wlan_process_done_indication(uint8 type, uint32 reason_code)
 {
+<<<<<<< HEAD
     if ((type == WLAN_FW_LOGS) && (wlan_is_log_report_in_progress() == TRUE))
     {
         pr_info("%s: Setting LOGGER_FATAL_EVENT\n", __func__);
@@ -1862,6 +1862,28 @@ void wlan_process_done_indication(uint8 type, uint32 reason_code)
 	    wake_up_interruptible(&gwlan_logging.wait_queue);
     }
 
+=======
+	if ((type == WLAN_FW_LOGS) && reason_code)
+	{
+		if(wlan_is_log_report_in_progress() == TRUE)
+		{
+			pr_info("%s : Setting LOGGER_FATAL_EVENT\n", __func__);
+			set_bit(LOGGER_FATAL_EVENT_POST_MASK, &gwlan_logging.event_flag);
+			wake_up_interruptible(&gwlan_logging.wait_queue);
+		}
+		else
+		{
+			/*Firmware Initiated*/
+			pr_info("%s : FW triggered Fatal Event, reason_code : %d\n", __func__,
+			reason_code);
+			wlan_set_log_completion(WLAN_LOG_TYPE_FATAL,
+					WLAN_LOG_INDICATOR_FIRMWARE,
+					reason_code);
+			set_bit(LOGGER_FATAL_EVENT_POST_MASK, &gwlan_logging.event_flag);
+			wake_up_interruptible(&gwlan_logging.wait_queue);
+		}
+	}
+>>>>>>> 6ea54f9... wlan: Handle fatal event triggered from framework and FW
 }
 
 /**
@@ -1907,6 +1929,7 @@ void wlan_logging_reset_thread_stuck_count(int threadId)
 	spin_unlock_irqrestore(&gwlan_logging.thread_stuck_lock, flags);
 }
 
+<<<<<<< HEAD
 int wlan_fwr_mem_dump_buffer_allocation(void)
 {
 	/*Allocate the dump memory as reported by fw.
@@ -2104,5 +2127,33 @@ nla_put_failure:
 	kfree_skb(skb);
 	return;
 }
+=======
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
+/**
+ * wlan_report_log_completion() - Report bug report completion to userspace
+ * @is_fatal: Type of event, fatal or not
+ * @indicator: Source of bug report, framework/host/firmware
+ * @reason_code: Reason for triggering bug report
+ *
+ * This function is used to report the bug report completion to userspace
+ *
+ * Return: None
+ */
+void wlan_report_log_completion(uint32_t is_fatal,
+				uint32_t indicator,
+				uint32_t reason_code)
+{
+	WLAN_VOS_DIAG_EVENT_DEF(wlan_diag_event,
+				struct vos_event_wlan_log_complete);
+
+	wlan_diag_event.is_fatal = is_fatal;
+	wlan_diag_event.indicator = indicator;
+	wlan_diag_event.reason_code = reason_code;
+	wlan_diag_event.reserved = 0;
+
+	WLAN_VOS_DIAG_EVENT_REPORT(&wlan_diag_event, EVENT_WLAN_LOG_COMPLETE);
+}
+#endif
+>>>>>>> 6ea54f9... wlan: Handle fatal event triggered from framework and FW
 
 #endif /* WLAN_LOGGING_SOCK_SVC_ENABLE */

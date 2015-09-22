@@ -140,7 +140,8 @@ typedef enum
 {
     MGMT_FRAME_LOGS    = 0,
     QXDM_LOGGING       = 1,
-    FW_MEMORY_DUMP     = 2
+    FW_MEMORY_DUMP     = 2,
+    FATAL_EVENT        = 3
 }tHalFrameLoggingType;
 
 /* Log size */

@@ -5594,6 +5594,88 @@ wlan_hdd_cfg80211_get_supported_features(struct wiphy *wiphy,
     return ret;
 }
 
+
+static const struct
+nla_policy
+qca_wlan_vendor_wifi_logger_get_ring_data_policy
+[QCA_WLAN_VENDOR_ATTR_WIFI_LOGGER_GET_RING_DATA_MAX + 1] = {
+    [QCA_WLAN_VENDOR_ATTR_WIFI_LOGGER_GET_RING_DATA_ID]
+        = {.type = NLA_U32 },
+};
+
+static int
+    __wlan_hdd_cfg80211_wifi_logger_get_ring_data(struct wiphy *wiphy,
+                                                      struct wireless_dev *wdev,
+                                                      const void *data,
+                                                      int data_len)
+{
+    int ret;
+    VOS_STATUS status;
+    uint32_t ring_id;
+    hdd_context_t *hdd_ctx = wiphy_priv(wiphy);
+    struct nlattr *tb
+        [QCA_WLAN_VENDOR_ATTR_WIFI_LOGGER_GET_RING_DATA_MAX + 1];
+
+    ENTER();
+
+    ret = wlan_hdd_validate_context(hdd_ctx);
+    if (0 != ret) {
+        return ret;
+    }
+
+    if (nla_parse(tb, QCA_WLAN_VENDOR_ATTR_WIFI_LOGGER_GET_RING_DATA_MAX,
+            data, data_len,
+            qca_wlan_vendor_wifi_logger_get_ring_data_policy)) {
+        hddLog(LOGE, FL("Invalid attribute"));
+        return -EINVAL;
+    }
+
+    /* Parse and fetch ring id */
+    if (!tb[QCA_WLAN_VENDOR_ATTR_WIFI_LOGGER_GET_RING_DATA_ID]) {
+        hddLog(LOGE, FL("attr ATTR failed"));
+        return -EINVAL;
+    }
+
+    ring_id = nla_get_u32(
+            tb[QCA_WLAN_VENDOR_ATTR_WIFI_LOGGER_GET_RING_DATA_ID]);
+
+    hddLog(LOG1, FL("Bug report triggered by framework"));
+
+    status = vos_fatal_event_logs_req(WLAN_LOG_TYPE_NON_FATAL,
+                WLAN_LOG_INDICATOR_FRAMEWORK,
+                WLAN_LOG_REASON_CODE_FRAMEWORK,
+                TRUE
+                );
+    if (VOS_STATUS_SUCCESS != status) {
+        hddLog(LOGE, FL("Failed to trigger bug report"));
+
+        return -EINVAL;
+    }
+
+    return 0;
+
+
+}
+
+
+static int
+    wlan_hdd_cfg80211_wifi_logger_get_ring_data(struct wiphy *wiphy,
+                                                      struct wireless_dev *wdev,
+                                                      const void *data,
+                                                      int data_len)
+{
+    int ret = 0;
+
+    vos_ssr_protect(__func__);
+    ret = __wlan_hdd_cfg80211_wifi_logger_get_ring_data(wiphy,
+            wdev, data, data_len);
+    vos_ssr_unprotect(__func__);
+
+    return ret;
+
+}
+
+
 static int
 __wlan_hdd_cfg80211_get_concurrency_matrix(struct wiphy *wiphy,
                                          struct wireless_dev *wdev,
@@ -6396,6 +6478,14 @@ const struct wiphy_vendor_command hdd_wiphy_vendor_commands[] =
                  WIPHY_VENDOR_CMD_NEED_NETDEV|
                   WIPHY_VENDOR_CMD_NEED_RUNNING,
         .doit = wlan_hdd_cfg80211_get_wifi_info
+    },
+    {
+        .info.vendor_id = QCA_NL80211_VENDOR_ID,
+        .info.subcmd = QCA_NL80211_VENDOR_SUBCMD_GET_RING_DATA,
+        .flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+                 WIPHY_VENDOR_CMD_NEED_NETDEV |
+                 WIPHY_VENDOR_CMD_NEED_RUNNING,
+        .doit = wlan_hdd_cfg80211_wifi_logger_get_ring_data
     }
 };
 

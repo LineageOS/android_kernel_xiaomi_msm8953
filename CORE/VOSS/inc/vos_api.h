@@ -196,6 +196,8 @@ enum log_event_host_reason_code {
 	WLAN_LOG_REASON_MALLOC_FAIL,
 	WLAN_LOG_REASON_VOS_MSG_UNDER_RUN,
 	WLAN_LOG_REASON_MSG_POST_FAIL,
+	WLAN_LOG_REASON_IOCTL,
+	WLAN_LOG_REASON_CODE_FRAMEWORK,
 };
 
 /*------------------------------------------------------------------------- 

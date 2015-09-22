@@ -940,6 +940,10 @@ void WDTS_LogRxDone(void *pContext)
      vos_process_done_indication(pLoggingSession->logType,
                                  pLoggingSession->reasonCode);
 
+
+  if (pLoggingSession->logType == QXDM_LOGGING &&
+     pLoggingSession->reasonCode)
+      pLoggingSession->logType = FATAL_EVENT;
   ((WDI_DS_ClientDataType *)(pContext))->rxLogCB(pLoggingSession->logType);
 
   pLoggingSession->done = 0;

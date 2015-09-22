@@ -1722,8 +1722,10 @@ void vos_send_fatal_event_done(void)
     /*The below API will reset is_report_in_progress flag*/
     vos_get_log_completion(&is_fatal, &indicator, &reason_code);
     VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_INFO,
-         "%s: is_fatal : %d, indicator: %d, reason_code=%d",
-         __func__, is_fatal, indicator, reason_code);
+         "is_fatal : %d, indicator: %d, reason_code=%d",
+         is_fatal, indicator, reason_code);
+    wlan_report_log_completion(is_fatal, indicator, reason_code);
+
 }
 
 

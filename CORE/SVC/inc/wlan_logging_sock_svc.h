@@ -84,5 +84,19 @@ int wlan_pkt_stats_to_user(void *perPktStat);
 void wlan_disable_and_flush_pkt_stats(void);
  void wlan_fillTxStruct(void *pktStat);
  bool wlan_isPktStatsEnabled(void);
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
+void wlan_report_log_completion(uint32 is_fatal,
+      uint32 indicator,
+      uint32 reason_code);
+#else
+static inline void wlan_report_log_completion(uint32 is_fatal,
+        uint32 indicator,
+        uint32 reason_code)
+{
+    return;
+}
+
+#endif
+
 
 #endif /* WLAN_LOGGING_SOCK_SVC_H */
