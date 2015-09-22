@@ -8816,6 +8816,7 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
       VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_FATAL,
          "%s: Failed to stop VOSS",__func__);
       VOS_ASSERT( VOS_IS_STATUS_SUCCESS( vosStatus ) );
+      VOS_BUG(0);
    }
 
    //This requires pMac access, Call this before vos_close().
@@ -9972,6 +9973,7 @@ int hdd_wlan_startup(struct device *dev )
    if ( !VOS_IS_STATUS_SUCCESS( status ) )
    {
       hddLog(VOS_TRACE_LEVEL_FATAL,"%s: vos_start failed",__func__);
+      VOS_BUG(0);
       goto err_vosclose;
    }
 
