@@ -5648,6 +5648,20 @@ typedef struct
     tANI_U8     SetTdls2040BSSCoex; //enabled or disabled
 } tAniSetTdls2040BSSCoex, *tpAniSetTdls2040BSSCoex;
 
+/**
+ * struct sir_wifi_start_log - Structure to store the params sent to start/
+ * stop logging
+ * @ringId:        Attribute which indicates the type of logging like per packet
+ *                 statistics, connectivity etc.
+ * @verboseLevel: Verbose level which can be 0,1,2,3
+ * @flag:          Flag field for future use
+ */
+typedef struct sir_wifi_start_log {
+    tANI_U32 ringId;
+    tANI_U32 verboseLevel;
+    tANI_U32 flag;
+}tAniWifiStartLog, *tpAniWifiStartLog;
+
 typedef struct
 {
     tANI_U16   mesgType;

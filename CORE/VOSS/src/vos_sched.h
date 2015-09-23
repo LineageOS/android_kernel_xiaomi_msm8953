@@ -339,6 +339,9 @@ typedef struct _VosContextType
 
    /*Fw log complete Event*/
    vos_event_t fwLogsComplete;
+   v_U32_t wakelock_log_level;
+   v_U32_t connectivity_log_level;
+   v_U32_t packet_stats_log_level;
 } VosContextType, *pVosContextType;
 
 

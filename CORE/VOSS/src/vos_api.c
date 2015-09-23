@@ -2936,3 +2936,79 @@ void vos_probe_threads(void)
     }
 }
 
+/**
+ * vos_set_ring_log_level() - Convert HLOS values to driver log levels
+ * @ring_id: ring_id
+ * @log_levelvalue: Log level specificed
+ *
+ * This function sets the log level of a particular ring
+ *
+ * Return: None
+ */
+ void vos_set_ring_log_level(v_U32_t ring_id, v_U32_t log_level)
+{
+    VosContextType *vos_context;
+    v_U32_t log_val;
+
+    vos_context = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+    if (!vos_context) {
+      VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+              "%s: vos context is Invald", __func__);
+      return;
+    }
+
+    switch (log_level) {
+    case LOG_LEVEL_NO_COLLECTION:
+        log_val = WLAN_LOG_LEVEL_OFF;
+        break;
+    case LOG_LEVEL_NORMAL_COLLECT:
+        log_val = WLAN_LOG_LEVEL_NORMAL;
+        break;
+    case LOG_LEVEL_ISSUE_REPRO:
+        log_val = WLAN_LOG_LEVEL_REPRO;
+        break;
+    case LOG_LEVEL_ACTIVE:
+    default:
+        log_val = WLAN_LOG_LEVEL_ACTIVE;
+        break;
+    }
+
+    if (ring_id == RING_ID_WAKELOCK) {
+        vos_context->wakelock_log_level = log_val;
+        return;
+    } else if (ring_id == RING_ID_CONNECTIVITY) {
+        vos_context->connectivity_log_level = log_val;
+        return;
+    } else if (ring_id == RING_ID_PER_PACKET_STATS) {
+        vos_context->packet_stats_log_level = log_val;
+        return;
+    }
+}
+/**
+ * vos_get_ring_log_level() - Get the a ring id's log level
+ * @ring_id: Ring id
+ *
+ * Fetch and return the log level corresponding to a ring id
+ *
+ * Return: Log level corresponding to the ring ID
+ */
+v_U8_t vos_get_ring_log_level(v_U32_t ring_id)
+{
+    VosContextType *vos_context;
+
+     vos_context = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+     if (!vos_context) {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+            "%s: vos context is Invald", __func__);
+        return WLAN_LOG_LEVEL_OFF;
+    }
+
+    if (ring_id == RING_ID_WAKELOCK)
+        return vos_context->wakelock_log_level;
+    else if (ring_id == RING_ID_CONNECTIVITY)
+        return vos_context->connectivity_log_level;
+    else if (ring_id == RING_ID_PER_PACKET_STATS)
+        return vos_context->packet_stats_log_level;
+
+    return WLAN_LOG_LEVEL_OFF;
+}

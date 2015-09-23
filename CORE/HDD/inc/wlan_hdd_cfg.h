@@ -2274,6 +2274,12 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_WLAN_LOGGING_NUM_BUF_DEFAULT  ( 32 )
 #endif //WLAN_LOGGING_SOCK_SVC_ENABLE
 
+//Enable PerPKT stats Logging
+#define CFG_WLAN_PKT_STATS_LOGGING_NAME            "wlanPerPktStatsLogEnable"
+#define CFG_WLAN_PKT_STATS_LOGGING_ENABLE          ( 1 )
+#define CFG_WLAN_PKT_STATS_LOGGING_DISABLE         ( 0 )
+#define CFG_WLAN_PKT_STATS_LOGGING_DEFAULT         ( 1 )
+
 #define CFG_IGNORE_PEER_ERP_INFO_NAME      "gIgnorePeerErpInfo"
 #define CFG_IGNORE_PEER_ERP_INFO_MIN       ( 0 )
 #define CFG_IGNORE_PEER_ERP_INFO_MAX       ( 1 )
@@ -2997,6 +3003,7 @@ typedef struct
    v_U32_t                     wlanLoggingEnable;
    v_U32_t                     wlanLoggingFEToConsole;
    v_U32_t                     wlanLoggingNumBuf;
+   v_U32_t                     wlanPerPktStatsLogEnable;
 #endif
    v_BOOL_t                    ignorePeerErpInfo;
    v_BOOL_t                    initialScanSkipDFSCh;

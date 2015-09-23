@@ -75,6 +75,55 @@
 #include <vos_timer.h>
 #include <vos_pack_align.h>
 
+/**
+ * enum userspace_log_level - Log level at userspace
+ * @LOG_LEVEL_NO_COLLECTION: verbose_level 0 corresponds to no collection
+ * @LOG_LEVEL_NORMAL_COLLECT: verbose_level 1 correspond to normal log level,
+ * with minimal user impact. this is the default value
+ * @LOG_LEVEL_ISSUE_REPRO: verbose_level 2 are enabled when user is lazily
+ * trying to reproduce a problem, wifi performances and power can be impacted
+ * but device should not otherwise be significantly impacted
+ * @LOG_LEVEL_ACTIVE: verbose_level 3+ are used when trying to
+ * actively debug a problem
+ *
+ * Various log levels defined in the userspace for logging applications
+ */
+enum userspace_log_level {
+    LOG_LEVEL_NO_COLLECTION,
+    LOG_LEVEL_NORMAL_COLLECT,
+    LOG_LEVEL_ISSUE_REPRO,
+    LOG_LEVEL_ACTIVE,
+};
+
+/**
+ * enum wifi_driver_log_level - Log level defined in the driver for logging
+ * @WLAN_LOG_LEVEL_OFF: No logging
+ * @WLAN_LOG_LEVEL_NORMAL: Default logging
+ * @WLAN_LOG_LEVEL_REPRO: Normal debug level
+ * @WLAN_LOG_LEVEL_ACTIVE: Active debug level
+ *
+ * Log levels defined for logging by the wifi driver
+ */
+enum wifi_driver_log_level {
+    WLAN_LOG_LEVEL_OFF,
+    WLAN_LOG_LEVEL_NORMAL,
+    WLAN_LOG_LEVEL_REPRO,
+    WLAN_LOG_LEVEL_ACTIVE,
+};
+
+/**
+ * enum wifi_logging_ring_id - Ring id of logging entities
+ * @RING_ID_WAKELOCK:         Power events ring id
+ * @RING_ID_CONNECTIVITY:     Connectivity event ring id
+ * @RING_ID_PER_PACKET_STATS: Per packet statistic ring id
+ *
+ * This enum has the ring id values of logging rings
+ */
+enum wifi_logging_ring_id {
+    RING_ID_WAKELOCK,
+    RING_ID_CONNECTIVITY,
+    RING_ID_PER_PACKET_STATS,
+};
 
 /**
  * enum log_event_type - Type of event initiating bug report
@@ -432,7 +481,8 @@ v_U8_t vos_is_fw_ev_logging_enabled(void);
 v_U8_t vos_is_fw_logging_supported(void);
 void vos_set_multicast_logging(uint8_t value);
 v_U8_t vos_is_multicast_logging(void);
-bool vos_is_wakelock_enabled(void);
+void vos_set_ring_log_level(v_U32_t ring_id, v_U32_t log_level);
+v_U8_t vos_get_ring_log_level(v_U32_t ring_id);
 v_BOOL_t vos_isUnloadInProgress(void);
 v_BOOL_t vos_isLoadUnloadInProgress(void);
 
