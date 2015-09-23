@@ -17648,7 +17648,7 @@ void WDA_FWLoggingDXEdoneInd(v_U32_t logType)
    WDI_Status status;
    status = WDI_FWLoggingDXEdoneInd(logType);
 
-   if (WDI_STATUS_SUCCESS_SYNC != status)
+   if (!(WDI_STATUS_SUCCESS_SYNC == status || WDI_STATUS_PENDING == status))
    {
        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
                  FL("Failure status %d"), status);
