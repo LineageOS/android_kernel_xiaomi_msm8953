@@ -3855,6 +3855,7 @@ VOS_STATUS  wlan_hdd_enter_bmps(hdd_adapter_t *pAdapter, int mode)
    struct statsContext context;
    eHalStatus status;
    hdd_context_t *pHddCtx;
+   hdd_station_ctx_t *pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
 
    if (NULL == pAdapter)
    {
@@ -3901,6 +3902,14 @@ VOS_STATUS  wlan_hdd_enter_bmps(hdd_adapter_t *pAdapter, int mode)
    }
    else if (DRIVER_POWER_MODE_AUTO == mode)
    {
+       if (VOS_FALSE == pHddStaCtx->conn_info.uIsAuthenticated)
+       {
+           hddLog(VOS_TRACE_LEVEL_ERROR,
+                   "%s:station is in still not Authenticated ignore the "
+                   "power save mode", __func__);
+           return VOS_STATUS_E_AGAIN;
+       }
+
        if (pHddCtx->cfg_ini->fIsBmpsEnabled)
        {
            hddLog(VOS_TRACE_LEVEL_INFO_HIGH, "%s:Wlan driver Entering Bmps ",
