@@ -22951,7 +22951,8 @@ WDI_PALCtrlMsgCB
     break;
   }/*switch ( pEventData->wdiRequest )*/
 
-  if ( WDI_STATUS_SUCCESS != wdiStatus  )
+  if (!(WDI_STATUS_SUCCESS == wdiStatus || WDI_STATUS_PENDING == wdiStatus
+         || WDI_STATUS_SUCCESS_SYNC == wdiStatus))
   {
     WDI_ExtractRequestCBFromEvent(pEventData, &pfnReqStatusCB, &pUserData);
 
