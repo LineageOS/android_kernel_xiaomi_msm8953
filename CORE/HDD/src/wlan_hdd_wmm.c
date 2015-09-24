@@ -2001,7 +2001,7 @@ v_VOID_t hdd_wmm_classify_pkt ( hdd_adapter_t* pAdapter,
           //Give the highest priority to 802.1x packet
           if (pHdr->eth_II.h_proto == htons(HDD_ETHERTYPE_802_1_X))
               tos = 0xC0;
-          else if (TRUE == toggleArpBDRates &&
+          else if (toggleArpBDRates &&
                    pHdr->eth_II.h_proto == htons(HDD_ETHERTYPE_ARP))
           {
               tos = TID3;
