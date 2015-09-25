@@ -1953,6 +1953,8 @@ eHalStatus csrChangeDefaultConfigParam(tpAniSirGlobal pMac, tCsrConfigParam *pPa
         pMac->roam.configParam.nSelect5GHzMargin = pParam->nSelect5GHzMargin;
         pMac->roam.configParam.ignorePeerErpInfo = pParam->ignorePeerErpInfo;
         pMac->roam.configParam.ignorePeerHTopMode = pParam->ignorePeerHTopMode;
+        pMac->roam.configParam.disableP2PMacSpoofing =
+                                        pParam->disableP2PMacSpoofing;
         pMac->roam.configParam.isCoalesingInIBSSAllowed =
                                pParam->isCoalesingInIBSSAllowed;
         pMac->roam.configParam.allowDFSChannelRoam = pParam->allowDFSChannelRoam;
@@ -2101,6 +2103,8 @@ eHalStatus csrGetConfigParam(tpAniSirGlobal pMac, tCsrConfigParam *pParam)
         pParam->nSelect5GHzMargin = pMac->roam.configParam.nSelect5GHzMargin;
         pParam->ignorePeerErpInfo = pMac->roam.configParam.ignorePeerErpInfo;
         pParam->ignorePeerHTopMode = pMac->roam.configParam.ignorePeerHTopMode;
+        pParam->disableP2PMacSpoofing =
+                                pMac->roam.configParam.disableP2PMacSpoofing;
 
         pParam->isCoalesingInIBSSAllowed =
                                 pMac->roam.configParam.isCoalesingInIBSSAllowed;

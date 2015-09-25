@@ -440,13 +440,24 @@ void limContinuePostChannelScan(tpAniSirGlobal pMac)
         TX_TIMER *periodicScanTimer;
 
         pMac->lim.probeCounter++;
+        /* Prepare and send Probe Request frame for all
+         * the SSIDs present in the saved MLM
+         */
         do
         {
             tSirMacAddr         gSelfMacAddr;
-            /* Prepare and send Probe Request frame for all the SSIDs present in the saved MLM 
-                    */
-            if ((pMac->lim.isSpoofingEnabled != TRUE) &&
-                (TRUE == vos_is_macaddr_zero((v_MACADDR_t *)&pMac->lim.spoofMacAddr))) {
+
+            /* Send self MAC as src address if
+             * MAC spoof is not enabled OR
+             * spoofMacAddr is all 0 OR
+             * disableP2PMacSpoof is enabled and scan is P2P scan
+             * else use the spoofMac as src address
+             */
+            if ((pMac->lim.isSpoofingEnabled != TRUE) ||
+                (TRUE ==
+                vos_is_macaddr_zero((v_MACADDR_t *)&pMac->lim.spoofMacAddr)) ||
+                (pMac->roam.configParam.disableP2PMacSpoofing &&
+                pMac->lim.gpLimMlmScanReq->p2pSearch)) {
                 vos_mem_copy(gSelfMacAddr, pMac->lim.gSelfMacAddr, VOS_MAC_ADDRESS_LEN);
             } else {
                 vos_mem_copy(gSelfMacAddr, pMac->lim.spoofMacAddr, VOS_MAC_ADDRESS_LEN);
@@ -4079,15 +4090,24 @@ limProcessPeriodicProbeReqTimer(tpAniSirGlobal pMac)
          * to send probe request.
          */
         channelNum = limGetCurrentScanChannel(pMac);
+        /* Prepare and send Probe Request frame for all the SSIDs
+         * present in the saved MLM
+         */
         do
         {
             tSirMacAddr         gSelfMacAddr;
 
-            /* Prepare and send Probe Request frame for all the SSIDs
-             * present in the saved MLM
+            /* Send self MAC as src address if
+             * MAC spoof is not enabled OR
+             * spoofMacAddr is all 0 OR
+             * disableP2PMacSpoof is enabled and scan is P2P scan
+             * else use the spoofMac as src address
              */
-            if ((pMac->lim.isSpoofingEnabled != TRUE) &&
-               (TRUE == vos_is_macaddr_zero((v_MACADDR_t *)&pMac->lim.spoofMacAddr))) {
+            if ((pMac->lim.isSpoofingEnabled != TRUE) ||
+                (TRUE ==
+                vos_is_macaddr_zero((v_MACADDR_t *)&pMac->lim.spoofMacAddr)) ||
+                (pMac->roam.configParam.disableP2PMacSpoofing &&
+                pMac->lim.gpLimMlmScanReq->p2pSearch)) {
                 vos_mem_copy(gSelfMacAddr, pMac->lim.gSelfMacAddr, VOS_MAC_ADDRESS_LEN);
             } else {
                 vos_mem_copy(gSelfMacAddr, pMac->lim.spoofMacAddr, VOS_MAC_ADDRESS_LEN);
