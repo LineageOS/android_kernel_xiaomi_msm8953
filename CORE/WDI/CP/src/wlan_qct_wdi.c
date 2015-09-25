@@ -204,6 +204,7 @@ static placeHolderInCapBitmap supportEnabledFeatures[] =
    ,MGMT_FRAME_LOGGING             //53
    ,ENHANCED_TXBD_COMPLETION       //54
    ,LOGGING_ENHANCEMENT            //55
+   ,MEMORY_DUMP_SUPPORTED          //57
 };
 
 /*-------------------------------------------------------------------------- 
@@ -480,6 +481,8 @@ WDI_ReqProcFuncType  pfnReqProcTbl[WDI_MAX_UMAC_IND] =
   WDI_ProcessMonStartReq,          /* WDI_MON_START_REQ */
   WDI_ProcessMonStopReq,           /* WDI_MON_STOP_REQ */
   WDI_ProcessFatalEventLogsReq,     /*WDI_FATAL_EVENT_LOGGING_REQ*/
+  WDI_ProcessFwrMemDumpReq,           /* WDI_FWR_MEM_DUMP_REQ*/
+
   /*-------------------------------------------------------------------------
     Indications
   -------------------------------------------------------------------------*/
@@ -753,6 +756,7 @@ WDI_RspProcFuncType  pfnRspProcTbl[WDI_MAX_RESP] =
     WDI_ProcessMonStartRsp,                    /* WDI_MON_START_RSP*/
     WDI_ProcessMonStopRsp,                    /* WDI_MON_STOP_RSP*/
     WDI_ProcessFatalEventLogsRsp,              /*WDI_FATAL_EVENT_LOGGING_RSP*/
+    WDI_ProcessFwrMemDumpRsp,                 /* WDI_FWR_MEM_DUMP_RSP */
   /*---------------------------------------------------------------------
     Indications
   ---------------------------------------------------------------------*/
@@ -1183,6 +1187,7 @@ static char *WDI_getReqMsgString(wpt_uint16 wdiReqMsgId)
     CASE_RETURN_STRING( WDI_MON_STOP_REQ );
     CASE_RETURN_STRING( WDI_FATAL_EVENT_LOGGING_REQ );
     CASE_RETURN_STRING( WDI_SEND_FREQ_RANGE_CONTROL_IND );
+    CASE_RETURN_STRING( WDI_FWR_MEM_DUMP_REQ);
     default:
         return "Unknown WDI MessageId";
   }
@@ -1319,6 +1324,7 @@ static char *WDI_getRespMsgString(wpt_uint16 wdiRespMsgId)
     CASE_RETURN_STRING( WDI_FW_LOGGING_INIT_RSP);
     CASE_RETURN_STRING( WDI_GET_FRAME_LOG_RSP);
     CASE_RETURN_STRING (WDI_FATAL_EVENT_LOGGING_RSP);
+    CASE_RETURN_STRING( WDI_FWR_MEM_DUMP_RSP);
     default:
         return "Unknown WDI MessageId";
   }
@@ -1484,8 +1490,9 @@ void WDI_TraceHostFWCapabilities(tANI_U32 *capabilityBitmap)
                      case LOGGING_ENHANCEMENT: snprintf(pCapStr, sizeof("LOGGING_ENHANCEMENT"), "%s", "LOGGING_ENHANCEMENT");
                           pCapStr += strlen("LOGGING_ENHANCEMENT");
                           break;
-
-
+                     case MEMORY_DUMP_SUPPORTED:snprintf(pCapStr, sizeof("FW_MEM_DUMP_LOGGING"), "%s", "FW_MEM_DUMP_LOGGING");
+                          pCapStr += strlen("FW_MEM_DUMP_LOGGING");
+                          break;
                  }
                  *pCapStr++ = ',';
                  *pCapStr++ = ' ';
@@ -4447,6 +4454,67 @@ WDI_FWLoggingInitReq
 
    return WDI_PostMainEvent(&gWDICb, WDI_REQUEST_EVENT, &wdiEventData);
 }
+
+
+/**
+ @brief WDI_FwrMemDumpReq will be called when the upper
+        MAC wants to get fwr mem dump. Upon the call of
+        this API the WLAN DAL will pack and send a HAL
+        Frame logging init request message to
+        the lower RIVA sub-system.
+
+        In state BUSY this request will be queued. Request won't
+        be allowed in any other state.
+
+
+ @param pWdiFwrMemDumpReq: the fwr mem dump req params
+                      as specified by the Device Interface
+
+        wdiFWLoggingInitReqCb: callback for passing back the
+        response of the frame logging init operation received
+        from the device
+
+        pUserData: user data will be passed back with the
+        callback
+
+ @return Result of the function call
+*/
+
+WDI_Status
+WDI_FwrMemDumpReq
+
+(
+   WDI_FwrMemDumpReqType          *pwdiFwrMemDumpReqInfo,
+   WDI_FwrMemDumpCb                wdiFwrMemDumpRspCb,
+   void*                           pUserData
+)
+{
+   WDI_EventInfoType      wdiEventData;
+
+   /*------------------------------------------------------------------------
+     Sanity Check
+   ------------------------------------------------------------------------*/
+   if ( eWLAN_PAL_FALSE == gWDIInitialized )
+   {
+     WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+               "WDI API call before module is initialized - Fail request");
+
+     return WDI_STATUS_E_NOT_ALLOWED;
+   }
+
+   /*------------------------------------------------------------------------
+     Fill in Event data and post to the Main FSM
+   ------------------------------------------------------------------------*/
+   wdiEventData.wdiRequest      = WDI_FWR_MEM_DUMP_REQ;
+   wdiEventData.pEventData      = pwdiFwrMemDumpReqInfo;
+   wdiEventData.uEventDataSize  = sizeof(WDI_FwrMemDumpReqType);
+   wdiEventData.pCBfnc          = wdiFwrMemDumpRspCb;
+   wdiEventData.pUserData       = pUserData;
+
+   return WDI_PostMainEvent(&gWDICb, WDI_REQUEST_EVENT, &wdiEventData);
+}
+
+
 
 /**
  @brief WDI_ConfigureRxpFilterReq will be called when the upper
@@ -24278,6 +24346,9 @@ WDI_2_HAL_REQ_TYPE
        return WLAN_HAL_FATAL_EVENT_LOGGING_REQ;
   case WDI_SEND_FREQ_RANGE_CONTROL_IND:
        return WLAN_HAL_SEND_FREQ_RANGE_CONTROL_IND;
+  case WDI_FWR_MEM_DUMP_REQ:
+       return WLAN_HAL_FW_MEMORY_DUMP_REQ;
+
   default:
     return WLAN_HAL_MSG_MAX;
   }
@@ -24612,6 +24683,8 @@ case WLAN_HAL_DEL_STA_SELF_RSP:
        return WDI_MON_STOP_RSP;
   case WLAN_HAL_FATAL_EVENT_LOGGING_RSP:
        return WDI_FATAL_EVENT_LOGGING_RSP;
+  case WLAN_HAL_FW_MEMORY_DUMP_RSP:
+       return WDI_FWR_MEM_DUMP_RSP;
   default:
     return eDRIVER_TYPE_MAX;
   }
@@ -34567,9 +34640,61 @@ WDI_ProcessFWFrameLoggingInitRsp
   wpalMemoryCopy( &halRsp, pEventData->pEventData, sizeof(halRsp));
 
   wdiFWLogginginitRsp.status = WDI_HAL_2_WDI_STATUS(halRsp.status);
+  wdiFWLogginginitRsp.fw_mem_dump_max_size = halRsp.fw_dump_max_size;
 
   /*Notify UMAC*/
   wdiFWFrameLoggingInitRspCb( &wdiFWLogginginitRsp, pWDICtx->pRspCBUserData);
+
+  return WDI_STATUS_SUCCESS;
+}
+
+/**
+ @brief Process Fwr Mem Dump Rsp function
+        (called when a response is being received over the bus from HAL)
+
+ @param  pWDICtx:         pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+WDI_Status
+    WDI_ProcessFwrMemDumpRsp
+
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+)
+{
+  tHalFwMemoryDumpRespMsg      halRsp;
+  WDI_FwrMemDumpRspCb          wdiFwrMemDumpRspCb;
+  WDI_FwrMemDumpRsp            wdiFwrMemDumpRsp;
+
+  VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
+                  "%s: %d Enter",__func__, __LINE__);
+
+  /*-------------------------------------------------------------------------
+    Sanity check
+  -------------------------------------------------------------------------*/
+  if (( NULL == pWDICtx ) || ( NULL == pEventData ) ||
+      ( NULL == pEventData->pEventData))
+  {
+     WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
+                 "%s: Invalid parameters", __func__);
+     WDI_ASSERT(0);
+     return WDI_STATUS_E_FAILURE;
+  }
+  wdiFwrMemDumpRspCb = (WDI_FwrMemDumpRspCb)pWDICtx->pfncRspCB;
+
+  /*-------------------------------------------------------------------------
+    Extract response and send it to UMAC
+  -------------------------------------------------------------------------*/
+  wpalMemoryCopy( &halRsp.tFwMemoryDumpResp, pEventData->pEventData, sizeof(halRsp));
+
+  wdiFwrMemDumpRsp.dump_status = WDI_HAL_2_WDI_STATUS(halRsp.tFwMemoryDumpResp.status);
+
+  /*Notify UMAC*/
+  wdiFwrMemDumpRspCb( &wdiFwrMemDumpRsp, pWDICtx->pRspCBUserData);
 
   return WDI_STATUS_SUCCESS;
 }
@@ -34873,6 +34998,78 @@ WDI_ProcessFWLoggingInitReq
                              wdiFWLoggingInitRspCb, pEventData->pUserData,
                              WDI_FW_LOGGING_INIT_RSP);
 
+    return  wdiStatus;
+}
+
+/**
+ @brief Process FwrMemDumpReq Request
+
+ @param  pWDICtx:         pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+WDI_Status
+    WDI_ProcessFwrMemDumpReq
+
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+)
+{
+    WDI_FwrMemDumpReqType *            wdiFwrMemDumpReq;
+    wpt_uint8*                         pSendBuffer  = NULL;
+    wpt_uint16                         usDataOffset = 0;
+    wpt_uint16                         usSendSize   = 0;
+    WDI_Status                         wdiStatus;
+    tHalFwMemoryDumpReqMsg             halFwrMemDumpReq;
+    WDI_FwrMemDumpRspCb                wdiFwrMemDumpRspCb;
+
+    VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
+            "%s: %d Enter",__func__, __LINE__);
+
+    /*-------------------------------------------------------------------------
+      Sanity check
+      ------------------------------------------------------------------------*/
+    if (( NULL == pWDICtx ) || ( NULL == pEventData ) ||
+            ( NULL == pEventData->pEventData))
+    {
+        WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
+                "%s: Invalid parameters", __func__);
+        WDI_ASSERT(0);
+        return WDI_STATUS_E_FAILURE;
+    }
+
+    wdiFwrMemDumpReq = (WDI_FwrMemDumpReqType *)pEventData->pEventData;
+
+    /*-----------------------------------------------------------------------
+      Get message buffer
+      -----------------------------------------------------------------------*/
+    if (( WDI_STATUS_SUCCESS != WDI_GetMessageBuffer( pWDICtx,
+                    WDI_FWR_MEM_DUMP_REQ,
+                    sizeof(halFwrMemDumpReq.tFwMemoryDumpReqParam),
+                    &pSendBuffer, &usDataOffset, &usSendSize))||
+            (usSendSize < (usDataOffset +
+            sizeof(halFwrMemDumpReq.tFwMemoryDumpReqParam))))
+    {
+        WPAL_TRACE( eWLAN_MODULE_DAL_CTRL,  eWLAN_PAL_TRACE_LEVEL_FATAL,
+                "Unable to get send buffer in Process Fwr Mem Dump Req");
+        WDI_ASSERT(0);
+        return WDI_STATUS_E_FAILURE;
+    }
+
+    wdiFwrMemDumpRspCb   = (WDI_FwrMemDumpRspCb)pEventData->pCBfnc;
+    wpalMemoryCopy( pSendBuffer+usDataOffset,
+                    &halFwrMemDumpReq.tFwMemoryDumpReqParam,
+                    sizeof(halFwrMemDumpReq.tFwMemoryDumpReqParam));
+
+    /*-------------------------------------------------------------------------
+        Send Fwr Mem Dump Request to HAL
+      ------------------------------------------------------------------------*/
+    wdiStatus = WDI_SendMsg( pWDICtx, pSendBuffer, usSendSize,
+                             wdiFwrMemDumpRspCb, pEventData->pUserData,
+                             WDI_FWR_MEM_DUMP_RSP);
     return  wdiStatus;
 }
 

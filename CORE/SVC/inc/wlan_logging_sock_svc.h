@@ -63,6 +63,21 @@ void wlan_deinit_log_completion(void);
 
 void wlan_logging_set_log_level(void);
 
+enum FW_MEM_DUMP_STATE{
+       FW_MEM_DUMP_IDLE,
+       FW_MEM_DUMP_READ_IN_PROGRESS,
+       FW_MEM_DUMP_WRITE_IN_PROGRESS,
+       FW_MEM_DUMP_WRITE_DONE,
+};
+int wlan_fwr_mem_dump_buffer_allocation(void);
+bool wlan_fwr_mem_dump_test_and_set_write_allowed_bit(void);
+bool wlan_fwr_mem_dump_test_and_set_read_allowed_bit(void);
+void wlan_set_fwr_mem_dump_state(enum FW_MEM_DUMP_STATE fw_mem_dump_state);
+size_t wlan_fwr_mem_dump_fsread_handler(char __user *buf, size_t count, loff_t *pos);
+void wlan_indicate_mem_dump_complete(bool );
+void wlan_store_fwr_mem_dump_size(uint32 dump_size);
+void wlan_free_fwr_mem_dump_buffer(void);
+
 bool wlan_is_logger_thread(int threadId);
 void wlan_logging_reset_thread_stuck_count(int threadId);
 #endif /* WLAN_LOGGING_SOCK_SVC_H */

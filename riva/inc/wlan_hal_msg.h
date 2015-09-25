@@ -6782,6 +6782,7 @@ typedef enum {
     MGMT_FRAME_LOGGING     = 53,
     ENHANCED_TXBD_COMPLETION = 54,
     LOGGING_ENHANCEMENT    = 55,
+    MEMORY_DUMP_SUPPORTED  = 57,
     MAX_FEATURE_SUPPORTED  = 128,
 } placeHolderInCapBitmap;
 
@@ -8665,8 +8666,9 @@ typedef PACKED_PRE struct PACKED_POST
     tANI_U8 logMailBoxVer;
     /* Qshrink is enabled */
     tANI_BOOLEAN logCompressEnabled;
+    /* fw_dump_max_size is used to tell fwr mem dump size */
+    tANI_U32 fw_dump_max_size;
     /* Reserved for future purpose */
-    tANI_U32 reserved0;
     tANI_U32 reserved1;
     tANI_U32 reserved2;
 } tFWLoggingInitResp, * tpFWLoggingInitResp;
@@ -8715,6 +8717,35 @@ typedef PACKED_PRE struct PACKED_POST
     /* Indicate if Last segment of log is received*/
     tANI_BOOLEAN          done;
 }tLoggingMailBox, *tpLoggingMailBox;
+
+/*---------------------------------------------------------------------------
+ *WLAN_HAL_FW_MEMORY_DUMP_REQ
+ *--------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+    tANI_U32        reserved;
+}tHalFwMemoryDumpReqType, * tpHalFwMemoryDumpReqType;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tHalMsgHeader           header;
+    tHalFwMemoryDumpReqType tFwMemoryDumpReqParam;
+} tHalFwMemoryDumpReqMsg,   * tpHalFwMemoryDumpReqMsg;
+
+/*---------------------------------------------------------------------------
+ * WLAN_HAL_FW_MEMORY_DUMP_RSP
+ *-------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+    tANI_U32   status;
+} tHalFwMemoryDumpRespType, * tpHalFwMemoryDumpRespType;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tHalMsgHeader             header;
+    tHalFwMemoryDumpRespType  tFwMemoryDumpResp;
+}  tHalFwMemoryDumpRespMsg,   * tpHalFwMemoryDumpRespMsg;
+
 
 /*---------------------------------------------------------------------------
 * WLAN_HAL_ENABLE_MONITOR_MODE_REQ

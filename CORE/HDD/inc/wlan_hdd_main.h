@@ -63,6 +63,8 @@
 #endif
 #include "wlan_hdd_cfg80211.h"
 
+#include <linux/proc_fs.h> /* Necessary because we use the proc fs */
+#include <linux/fs.h>
 /*--------------------------------------------------------------------------- 
   Preprocessor definitions and constants
   -------------------------------------------------------------------------*/
@@ -1217,6 +1219,17 @@ typedef struct
 
 #define WLAN_WAIT_TIME_LL_STATS 5000
 
+/* FW memory dump feature
+@TODO : Move this code to a separate file later */
+#define PROCFS_MEMDUMP_DIR  "debug"
+#define PROCFS_MEMDUMP_NAME "fwdump"
+#define FW_MEM_DUMP_REQ_ID 1
+
+int memdump_init(void);
+int memdump_deinit(void);
+void wlan_hdd_fw_mem_dump_cb(void *,tAniFwrDumpRsp *);
+int wlan_hdd_fw_mem_dump_req(hdd_context_t * pHddCtx);
+
 #ifdef WLAN_FEATURE_LINK_LAYER_STATS
 /**
  * struct hdd_ll_stats_context - hdd link layer stats context
@@ -1533,6 +1546,7 @@ typedef enum
    WLAN_BMUHW_TRACE_LOG_EN = 1<<1,
    WLAN_QXDM_LOG_EN = 1<<2,
    WLAN_DPU_TXP_LOG_EN = 1<<3,
+   WLAN_FW_MEM_DUMP_EN = 1<<6,
 } WLAN_ENABLE_HW_FW_LOG_TYPE;
 
 /*--------------------------------------------------------------------------- 

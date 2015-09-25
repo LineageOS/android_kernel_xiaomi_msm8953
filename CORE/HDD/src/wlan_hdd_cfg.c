@@ -3396,6 +3396,13 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                  CFG_OPTIMIZE_CA_EVENT_DISABLE,
                  CFG_OPTIMIZE_CA_EVENT_ENABLE ),
 
+   REG_VARIABLE(CFG_FWR_MEM_DUMP_NAME, WLAN_PARAM_Integer,
+                 hdd_config_t,enableFwrMemDump,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_FWR_MEM_DUMP_DEF,
+                 CFG_FWR_MEM_DUMP_MIN,
+                 CFG_FWR_MEM_DUMP_MAX),
+
 };
 
 /*

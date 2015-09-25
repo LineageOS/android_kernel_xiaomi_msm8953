@@ -167,11 +167,12 @@ enum qca_nl80211_vendor_subcmds {
 
     /* Get Wifi Specific Info */
     QCA_NL80211_VENDOR_SUBCMD_GET_WIFI_INFO = 61,
+    /* Start Wifi Memory Dump */
+    QCA_NL80211_VENDOR_SUBCMD_WIFI_LOGGER_MEMORY_DUMP = 63,
     QCA_NL80211_VENDOR_SUBCMD_EXTSCAN_SET_SSID_HOTLIST = 65,
     QCA_NL80211_VENDOR_SUBCMD_EXTSCAN_RESET_SSID_HOTLIST = 66,
     QCA_NL80211_VENDOR_SUBCMD_EXTSCAN_HOTLIST_SSID_FOUND = 67,
     QCA_NL80211_VENDOR_SUBCMD_EXTSCAN_HOTLIST_SSID_LOST = 68,
-
     QCA_NL80211_VENDOR_SUBCMD_SETBAND = 105,
 };
 
@@ -199,6 +200,7 @@ enum qca_nl80211_vendor_subcmds_index {
     /*EXT TDLS*/
     QCA_NL80211_VENDOR_SUBCMD_TDLS_STATE_CHANGE_INDEX,
     QCA_NL80211_VENDOR_SUBCMD_NAN_INDEX,
+    QCA_NL80211_VENDOR_SUBCMD_WIFI_LOGGER_MEMORY_DUMP_INDEX,
 
     QCA_NL80211_VENDOR_SUBCMD_EXTSCAN_HOTLIST_AP_LOST_INDEX,
     QCA_NL80211_VENDOR_SUBCMD_EXTSCAN_SET_SSID_HOTLIST_INDEX,
@@ -1187,5 +1189,27 @@ backported_cfg80211_vendor_event_alloc(struct wiphy *wiphy,
 }
 #define cfg80211_vendor_event_alloc backported_cfg80211_vendor_event_alloc
 #endif
+
+/**
+ * enum qca_wlan_vendor_attr_memory_dump - values for memory dump attributes
+ * @QCA_WLAN_VENDOR_ATTR_MEMORY_DUMP_INVALID - Invalid
+ * @QCA_WLAN_VENDOR_ATTR_REQUEST_ID - Indicate request ID
+ * @QCA_WLAN_VENDOR_ATTR_MEMDUMP_SIZE - Indicate size of the memory dump
+ * @QCA_WLAN_VENDOR_ATTR_MEMORY_DUMP_AFTER_LAST - To keep track of the last enum
+ * @QCA_WLAN_VENDOR_ATTR_MEMORY_DUMP_MAX - max value possible for this type
+ *
+ * enum values are used for NL attributes for data used by
+ * QCA_NL80211_VENDOR_SUBCMD_WIFI_LOGGER_MEMORY_DUMP sub command.
+ */
+enum qca_wlan_vendor_attr_memory_dump {
+    QCA_WLAN_VENDOR_ATTR_MEMORY_DUMP_INVALID = 0,
+    QCA_WLAN_VENDOR_ATTR_REQUEST_ID = 1,
+    QCA_WLAN_VENDOR_ATTR_MEMDUMP_SIZE = 2,
+
+    QCA_WLAN_VENDOR_ATTR_MEMORY_DUMP_AFTER_LAST,
+    QCA_WLAN_VENDOR_ATTR_MEMORY_DUMP_MAX =
+    QCA_WLAN_VENDOR_ATTR_MEMORY_DUMP_AFTER_LAST - 1,
+};
+
 
 #endif

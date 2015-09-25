@@ -260,6 +260,9 @@ VOS_STATUS
 WDA_ProcessSetRtsCtsHTVhtInd(tWDA_CbContext *pWDA,
                          tANI_U32 val);
 
+VOS_STATUS
+WDA_ProcessFwrMemDumpReq(tWDA_CbContext *pWDA,
+                                tAniFwrDumpReq* pFwrMemDumpReq);
 
 VOS_STATUS WDA_ProcessMonStartReq( tWDA_CbContext *pWDA, void* wdaRequest);
 VOS_STATUS WDA_ProcessMonStopReq( tWDA_CbContext *pWDA, void* wdaRequest);
@@ -5494,6 +5497,7 @@ void WDA_FWLoggingInitRspCallback(WDI_FWLoggingInitRspParamType* wdiRsp,
 {
    tWDA_ReqParams *pWdaParams = (tWDA_ReqParams *)pUserData;
    tSirFWLoggingInitParam *pFWLoggingInitParams;
+   tAniLoggingInitRsp *pLoggingInitRsp;
 
    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
                                           "<------ %s " ,__func__);
@@ -5515,13 +5519,24 @@ void WDA_FWLoggingInitRspCallback(WDI_FWLoggingInitRspParamType* wdiRsp,
       return ;
    }
 
+   pLoggingInitRsp = (tAniLoggingInitRsp *)vos_mem_malloc(sizeof(tAniLoggingInitRsp)) ;
+   if(NULL == pWdaParams)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                 "%s: VOS MEM Alloc Failure for pLoggingInitRsp", __func__);
+      VOS_ASSERT(0);
+      vos_mem_free(pWdaParams);
+      return;
+   }
+
    pFWLoggingInitParams = (tSirFWLoggingInitParam *)pWdaParams->wdaMsgParam;
+   vos_mem_copy(pLoggingInitRsp, wdiRsp, sizeof(tAniLoggingInitRsp));
 
    if(pFWLoggingInitParams->fwlogInitCallback)
    {
       pFWLoggingInitParams->fwlogInitCallback(
                                pFWLoggingInitParams->fwlogInitCbContext,
-                               CONVERT_WDI2VOS_STATUS(wdiRsp->status));
+                               pLoggingInitRsp);
    }
    else
    {
@@ -5529,6 +5544,7 @@ void WDA_FWLoggingInitRspCallback(WDI_FWLoggingInitRspParamType* wdiRsp,
               "%s: pFWLoggingInitParams callback is NULL", __func__);
    }
 
+   vos_mem_free(pLoggingInitRsp);
    vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
    vos_mem_free(pWdaParams->wdaMsgParam);
    vos_mem_free(pWdaParams);
@@ -13703,6 +13719,136 @@ VOS_STATUS WDA_ProcessSetSpoofMacAddrReq(tWDA_CbContext *pWDA,
     return CONVERT_WDI2VOS_STATUS(wdiStatus) ;
 }
 
+
+/*
+ * FUNCTION: WDA_FwrMemDumpRespCallback
+ * recieves Mgmt Logging init response from FW
+ */
+ void WDA_FwrMemDumpRespCallback(WDI_FwrMemDumpRsp* wdiRsp,
+                                                            void* pUserData)
+{
+   tWDA_ReqParams *pWdaParams = (tWDA_ReqParams *)pUserData;
+   tAniFwrDumpReq *pFwrMemDumpReq;
+   tAniFwrDumpRsp  *pFwrMemDumpRsp;
+   VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                                          "<------ %s " ,__func__);
+
+   if(NULL == pWdaParams)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: pWdaParams received NULL", __func__);
+      VOS_ASSERT(0);
+      return ;
+   }
+
+   if(NULL == pWdaParams->wdaMsgParam)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: pWdaParams->wdaMsgParam is NULL", __func__);
+      VOS_ASSERT(0);
+      vos_mem_free(pWdaParams);
+      return ;
+   }
+
+   pFwrMemDumpRsp = (tAniFwrDumpRsp *)vos_mem_malloc(sizeof(tAniFwrDumpRsp));
+   if(pFwrMemDumpRsp == NULL)
+   {
+       VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               "%s: pFwrMemDumpRsp is NULL", __func__);
+       VOS_ASSERT(0);
+       vos_mem_free(pWdaParams);
+       return ;
+   }
+
+   pFwrMemDumpRsp->dump_status  = wdiRsp->dump_status;
+   pFwrMemDumpReq = (tAniFwrDumpReq *)pWdaParams->wdaMsgParam;
+
+   if(pFwrMemDumpReq->fwMemDumpReqCallback)
+   {
+      pFwrMemDumpReq->fwMemDumpReqCallback(
+                               pFwrMemDumpReq->fwMemDumpReqContext,
+                               pFwrMemDumpRsp);
+   }
+   else
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: FwrMemDump callback is NULL", __func__);
+   }
+
+   vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
+   vos_mem_free(pWdaParams->wdaMsgParam);
+   vos_mem_free(pWdaParams);
+   vos_mem_free(pFwrMemDumpRsp);
+
+   return ;
+}
+
+VOS_STATUS WDA_ProcessFwrMemDumpReq(tWDA_CbContext * pWDA,
+                         tAniFwrDumpReq* pFwrMemDumpReq)
+{
+   VOS_STATUS status = VOS_STATUS_SUCCESS;
+   WDI_Status wstatus;
+   WDI_FwrMemDumpReqType * pWdiFwrMemDumpReq;
+   tWDA_ReqParams *pWdaParams ;
+
+   VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                                          "------> %s " ,__func__);
+   /* Sanity Check*/
+   if(NULL == pFwrMemDumpReq)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                           "%s: pFwrMemDumpReq received NULL", __func__);
+      VOS_ASSERT(0) ;
+      return VOS_STATUS_E_FAULT;
+   }
+
+   pWdiFwrMemDumpReq = (WDI_FwrMemDumpReqType *)vos_mem_malloc(sizeof(WDI_FwrMemDumpReqType));
+   if(NULL == pWdiFwrMemDumpReq)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                           "%s: pWdiFwrMemDumpReq Alloc Failure", __func__);
+      VOS_ASSERT(0);
+      return VOS_STATUS_E_NOMEM;
+   }
+
+   pWdaParams = (tWDA_ReqParams *)vos_mem_malloc(sizeof(tWDA_ReqParams)) ;
+   if(NULL == pWdaParams)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                           "%s: pWdaParams Alloc Failure", __func__);
+      VOS_ASSERT(0);
+      vos_mem_free(pWdiFwrMemDumpReq);
+      return VOS_STATUS_E_NOMEM;
+   }
+
+   /* Store Params pass it to WDI */
+   pWdaParams->wdaWdiApiMsgParam = (void *)pWdiFwrMemDumpReq;
+   pWdaParams->pWdaContext = pWDA;
+   /* Store param pointer as passed in by caller */
+   pWdaParams->wdaMsgParam = pFwrMemDumpReq;
+
+   status = WDI_FwrMemDumpReq(pWdiFwrMemDumpReq,
+                              (WDI_FwrMemDumpCb)WDA_FwrMemDumpRespCallback,
+                              pWdaParams);
+
+   if(IS_WDI_STATUS_FAILURE(wstatus))
+   {
+       VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                 FL("Fwr Mem Dump Req failed, free all the memory"));
+       status = CONVERT_WDI2VOS_STATUS(wstatus);
+       vos_mem_free(pWdaParams->wdaWdiApiMsgParam) ;
+       vos_mem_free(pWdaParams->wdaMsgParam);
+       vos_mem_free(pWdaParams);
+       pWdaParams->wdaWdiApiMsgParam = NULL;
+       pWdaParams->wdaMsgParam = NULL;
+   }
+
+    return status;
+
+}
+
+
+
 /*
  * FUNCTION: WDA_McProcessMsg
  * Trigger DAL-AL to start CFG download 
@@ -14408,6 +14554,12 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
          WDA_ProcessSetPowerParamsReq(pWDA, (tSirSetPowerParamsReq *)pMsg->bodyptr);
          break;
       }
+      case WDA_FW_MEM_DUMP_REQ:
+      {
+          WDA_ProcessFwrMemDumpReq(pWDA, (tAniFwrDumpReq*)pMsg->bodyptr);
+          break;
+      }
+
 #ifdef WLAN_FEATURE_GTK_OFFLOAD
       case WDA_GTK_OFFLOAD_REQ:
       {

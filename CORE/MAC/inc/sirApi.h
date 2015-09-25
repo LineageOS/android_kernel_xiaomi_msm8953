@@ -3730,7 +3730,23 @@ typedef struct sSirWlanSetRxpFilters
     tANI_U8 setMcstBcstFilter;
 }tSirWlanSetRxpFilters,*tpSirWlanSetRxpFilters;
 
-typedef void(*FWLoggingInitReqCb)(void *fwlogInitCbContext, VOS_STATUS status);
+typedef struct
+{
+  //FW mail box address
+  uint64 logMailBoxAddr;
+  tANI_U32 status;
+  //Logging mail box version
+  tANI_U8 logMailBoxVer;
+  //Qshrink is enabled
+  tANI_U8 logCompressEnabled;
+  /* used to tell fwr mem dump size */
+  tANI_U32 fw_mem_dump_max_size;
+  //Reserved for future purpose
+  tANI_U32 reserved1;
+  tANI_U32 reserved2;
+}tAniLoggingInitRsp, *tpAniLoggingInitRsp;
+
+typedef void(*FWLoggingInitReqCb)(void *fwlogInitCbContext, tAniLoggingInitRsp *pRsp);
 typedef void ( *tGetFrameLogCallback) (void *pContext);
 
 typedef struct sAniGetFrameLogReq
@@ -5647,4 +5663,34 @@ typedef struct
     void *data;
     tSirMonModeCb callback;
 }tSirMonModeReq, *ptSirMonModeReq;
+
+/**
+ * struct tAniFwrDumpRsp - firmware dump response details.
+ *
+ * This structure is used to store the firmware dump
+ * response from the firmware.
+ */
+typedef struct
+{
+    tANI_U32 dump_status;
+}tAniFwrDumpRsp, *tpAniFwrDumpRsp;
+
+typedef void (*FWMemDumpReqCb)(void *fwMemDumpReqContext, tAniFwrDumpRsp *dump_rsp);
+
+/**
+ * struct tAniFwrDumpReq - firmware memory dump request details.
+.*.@FWMemDumpReqCb - Associated Callback
+ *.@fwMemDumpReqContext - Callback context
+ * @reserved - reserved field 1.
+ *
+ * This structure carries information about the firmware
+ * memory dump request.
+ */
+typedef struct
+{
+    FWMemDumpReqCb  fwMemDumpReqCallback;
+    void *          fwMemDumpReqContext;
+    tANI_U32        reserved1;
+}tAniFwrDumpReq, *tpAniFwrDumpReq;
+
 #endif /* __SIR_API_H */

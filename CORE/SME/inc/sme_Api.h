@@ -3214,6 +3214,8 @@ tANI_BOOLEAN sme_getIsFtFeatureEnabled(tHalHandle hHal);
 eHalStatus sme_UpdateRoamScanOffloadEnabled(tHalHandle hHal, v_BOOL_t nRoamScanOffloadEnabled);
 #endif
 
+eHalStatus sme_FwMemDumpReq(tHalHandle hHal, tAniFwrDumpReq *recv_req);
+
 
 /* ---------------------------------------------------------------------------
     \fn sme_IsFeatureSupportedByFW

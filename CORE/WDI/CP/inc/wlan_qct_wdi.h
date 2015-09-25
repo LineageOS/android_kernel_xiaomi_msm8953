@@ -2703,8 +2703,9 @@ typedef struct
   wpt_uint8 logMailBoxVer;
   //Qshrink is enabled
   wpt_boolean logCompressEnabled;
+  /* store the size of fw mem dump */
+  wpt_uint32 fw_mem_dump_max_size;
   //Reserved for future purpose
-  wpt_uint32 reserved0;
   wpt_uint32 reserved1;
   wpt_uint32 reserved2;
 }WDI_FWLoggingInitRspParamType;
@@ -6145,6 +6146,32 @@ typedef struct
 
 }WDI_MonStartReqType;
 
+/**
+ * struct WDI_FwrMemDumpReqType - firmware memory dump request details.
+.*.@FWMemDumpReqCb - Associated Callback
+ *.@fwMemDumpReqContext - Callback context
+ * @reserved - reserved field 1.
+ *
+ * This structure carries information about the firmware
+ * memory dump request.
+ */
+typedef struct
+{
+    wpt_uint32        reserved1;
+}WDI_FwrMemDumpReqType;
+
+/**
+ * struct WDI_FwrMemDumpRsp - firmware dump response details.
+ *
+ * This structure is used to store the firmware dump
+ * response from the firmware.
+ */
+typedef struct
+{
+    wpt_uint32 dump_status;
+}WDI_FwrMemDumpRsp;
+
+
 /*----------------------------------------------------------------------------
  *   WDI callback types
  *--------------------------------------------------------------------------*/
@@ -7896,6 +7923,25 @@ typedef void  (*WDI_HALDumpCmdRspCb)(WDI_HALDumpCmdRspParamsType* wdiHalDumpCmdR
 typedef void  (*WDI_SetPowerParamsCb)(WDI_Status  wdiStatus,
                                       void*       pUserData);
 
+
+/*---------------------------------------------------------------------------
+   WDA_FwrMemDumpRespCallback
+
+   DESCRIPTION
+
+   This callback is invoked by DAL when it has received a Fwr Mem dump
+   response from the underlying device.
+
+   PARAMETERS
+
+    IN
+    wdiStatus:  response status received from HAL
+    pUserData:  user data
+ ---------------------------------------------------------------------------*/
+typedef void (* WDI_FwrMemDumpCb) (WDI_FwrMemDumpRsp* wdiRsp,
+                                        void*       pUserData);
+
+
 #ifdef WLAN_FEATURE_GTK_OFFLOAD
 /*---------------------------------------------------------------------------
    WDI_GtkOffloadCb
@@ -8067,6 +8113,9 @@ typedef void  (*WDI_FatalEventLogsRspCb)(
                          WDI_FatalEventLogsRspParamType *wdiRsp, void *pUserData);
 
 typedef void  (*WDI_MonModeRspCb)(void *pEventData,void *pUserData);
+
+typedef void  (*WDI_FwrMemDumpRspCb)(WDI_FwrMemDumpRsp *wdiRsp, void *pUserData);
+
 
 /*========================================================================
  *     Function Declarations and Documentation
@@ -11549,6 +11598,16 @@ WDI_EncryptMsgReq(void* pwdiEncryptMsgParams,
         WDI_EncryptMsgRspCb wdiEncryptMsgCbRsp,
         void*                   pUserData
         );
+
+WDI_Status
+WDI_FwrMemDumpReq
+
+(
+   WDI_FwrMemDumpReqType          *pwdiFwrMemDumpReqInfo,
+   WDI_FwrMemDumpCb                wdiFwrMemDumpRspCb,
+   void*                           pUserData
+);
+
 
 /**
  @brief WDI_NanRequest

@@ -479,6 +479,7 @@ typedef enum
   WDI_MON_START_REQ                              = 107,
   WDI_MON_STOP_REQ                               = 108,
   WDI_FATAL_EVENT_LOGGING_REQ                    = 109,
+  WDI_FWR_MEM_DUMP_REQ                           = 110,
 
   WDI_MAX_REQ,
 
@@ -821,6 +822,7 @@ typedef enum
   WDI_MON_START_RSP                              = 107,
   WDI_MON_STOP_RSP                               = 108,
   WDI_FATAL_EVENT_LOGGING_RSP                    = 109,
+  WDI_FWR_MEM_DUMP_RSP                           = 110,
 
   /*-------------------------------------------------------------------------
     Indications
@@ -6311,6 +6313,20 @@ WDI_ProcessMonStopRsp
 
 WDI_Status
 WDI_ProcessEnableDisableCAEventInd
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessFwrMemDumpReq
+(
+    WDI_ControlBlockType*  pWDICtx,
+    WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+    WDI_ProcessFwrMemDumpRsp
 (
   WDI_ControlBlockType*  pWDICtx,
   WDI_EventInfoType*     pEventData

@@ -60,9 +60,14 @@
 #define HOST_LOG_POST_MASK   0x002
 #define LOGGER_FW_LOG_PKT_POST_MASK   0x003
 #define LOGGER_FATAL_EVENT_POST_MASK  0x004
+#define LOGGER_FW_MEM_DUMP_PKT_POST_MASK   0x005
+#define LOGGER_FW_MEM_DUMP_PKT_POST_DONE_MASK 0x006
+
 
 #define LOGGER_MAX_DATA_MGMT_PKT_Q_LEN   (8)
 #define LOGGER_MAX_FW_LOG_PKT_Q_LEN   (16)
+#define LOGGER_MAX_FW_MEM_DUMP_PKT_Q_LEN   (32)
+
 
 #define NL_BDCAST_RATELIMIT_INTERVAL (5*HZ)
 #define NL_BDCAST_RATELIMIT_BURST    1
@@ -97,6 +102,26 @@ struct logger_log_complete {
 	bool is_report_in_progress;
 	bool is_flush_complete;
 };
+
+struct fw_mem_dump_logging{
+	//It will hold the starting point of mem dump buffer
+	uint8 *fw_dump_start_loc;
+	//It will hold the current loc to tell how much data filled
+	uint8 *fw_dump_current_loc;
+	uint32 fw_dump_max_size;
+	vos_pkt_t *fw_mem_dump_queue;
+	/* Holds number of pkts in fw log vos pkt queue */
+	unsigned int fw_mem_dump_pkt_qcnt;
+	/* Number of dropped pkts for fw dump */
+	unsigned int fw_mem_dump_pkt_drop_cnt;
+	/* Lock to synchronize of queue/dequeue of pkts in fw log pkt queue */
+	spinlock_t fw_mem_dump_lock;
+	/* Fw memory dump state */
+	enum FW_MEM_DUMP_STATE fw_mem_dump_status;
+	/* Completion variable for handling SSR/unload during copy_to_user */
+	struct completion fw_mem_copy_to_user_completion;
+};
+
 
 struct wlan_logging {
 	/* Log Fatal and ERROR to console */
@@ -152,6 +177,7 @@ struct wlan_logging {
 	/* data structure for log complete event*/
 	struct logger_log_complete log_complete;
 	spinlock_t bug_report_lock;
+	struct fw_mem_dump_logging fw_mem_dump_ctx;
 };
 
 static struct wlan_logging gwlan_logging;
@@ -636,6 +662,83 @@ static int send_data_mgmt_log_pkt_to_user(void)
 	return ret;
 }
 
+static int fill_fw_mem_dump_buffer(void)
+{
+	struct sk_buff *skb = NULL;
+	vos_pkt_t *current_pkt;
+	vos_pkt_t *next_pkt;
+	VOS_STATUS status = VOS_STATUS_E_FAILURE;
+	unsigned long flags;
+	int  byte_left = 0;
+
+	do {
+		spin_lock_irqsave(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
+
+		if (!gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_queue) {
+			spin_unlock_irqrestore(
+				&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
+			return -EIO;
+		}
+
+		/* pick first pkt from queued chain */
+		current_pkt = gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_queue;
+
+		/* get the pointer to the next packet in the chain */
+		status = vos_pkt_walk_packet_chain(current_pkt, &next_pkt,
+							TRUE);
+
+		/* both "success" and "empty" are acceptable results */
+		if (!((status == VOS_STATUS_SUCCESS) ||
+					(status == VOS_STATUS_E_EMPTY))) {
+			spin_unlock_irqrestore(
+				&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
+			pr_err("%s: Failure walking packet chain", __func__);
+			return -EIO;
+		}
+
+		/* update queue head with next pkt ptr which could be NULL */
+		gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_queue = next_pkt;
+		--gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_pkt_qcnt;
+		spin_unlock_irqrestore(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
+
+		status = vos_pkt_get_os_packet(current_pkt, (v_VOID_t **)&skb,
+						VOS_FALSE);
+		if (!VOS_IS_STATUS_SUCCESS(status)) {
+			pr_err("%s: Failure extracting skb from vos pkt",
+				__func__);
+			return -EIO;
+		}
+
+		//Copy data from SKB to mem dump buffer
+		spin_lock_irqsave(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
+		if((skb) && (skb->len != 0))
+		{
+			// Prevent buffer overflow
+			byte_left = ((int)gwlan_logging.fw_mem_dump_ctx.fw_dump_max_size -
+					(int)(gwlan_logging.fw_mem_dump_ctx.fw_dump_current_loc - gwlan_logging.fw_mem_dump_ctx.fw_dump_start_loc));
+			if(skb->len > byte_left)
+			{
+				vos_mem_copy(gwlan_logging.fw_mem_dump_ctx.fw_dump_current_loc, &skb->data, byte_left);
+				//Update the current location ptr
+				gwlan_logging.fw_mem_dump_ctx.fw_dump_current_loc +=  byte_left;
+			}
+			else
+			{
+				vos_mem_copy(gwlan_logging.fw_mem_dump_ctx.fw_dump_current_loc, &skb->data, skb->len);
+				//Update the current location ptr
+				gwlan_logging.fw_mem_dump_ctx.fw_dump_current_loc +=  skb->len;
+			}
+		}
+		spin_unlock_irqrestore(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
+		//if(skb)
+		//	pr_err("Mem dump buffer overflow byte_left %d skb->len %d", byte_left, skb->len);
+		/*return vos pkt since skb is already detached */
+		vos_pkt_return_packet(current_pkt);
+	} while (next_pkt);
+
+	return 0;
+}
+
 static int send_filled_buffers_to_user(void)
 {
 	int ret = -1;
@@ -650,7 +753,7 @@ static int send_filled_buffers_to_user(void)
 	static int rate_limit;
 
 	while (!list_empty(&gwlan_logging.filled_list)
-		&& !gwlan_logging.exit) {
+			&& !gwlan_logging.exit) {
 
 		skb = dev_alloc_skb(MAX_LOGMSG_LENGTH);
 		if (skb == NULL) {
@@ -813,7 +916,10 @@ static int wlan_logging_thread(void *Arg)
 		   test_bit(LOGGER_FW_LOG_PKT_POST_MASK,
 						&gwlan_logging.event_flag) ||
 		   test_bit(LOGGER_FATAL_EVENT_POST_MASK,
-						&gwlan_logging.event_flag)));
+						&gwlan_logging.event_flag) ||
+		   test_bit(LOGGER_FW_MEM_DUMP_PKT_POST_MASK,&gwlan_logging.event_flag) ||
+		   test_bit(LOGGER_FW_MEM_DUMP_PKT_POST_DONE_MASK, &gwlan_logging.event_flag)));
+
 
 		if (ret_wait_status == -ERESTARTSYS) {
 			pr_err("%s: wait_event return -ERESTARTSYS", __func__);
@@ -856,6 +962,17 @@ static int wlan_logging_thread(void *Arg)
 				wake_up_interruptible(&gwlan_logging.wait_queue);
 			}
 		}
+
+		if (test_and_clear_bit(LOGGER_FW_MEM_DUMP_PKT_POST_MASK,
+			&gwlan_logging.event_flag)) {
+			fill_fw_mem_dump_buffer();
+		}
+		if(test_and_clear_bit(LOGGER_FW_MEM_DUMP_PKT_POST_DONE_MASK,&gwlan_logging.event_flag)){
+				/*indicate to user space that mem dump is complete */
+				fill_fw_mem_dump_buffer();
+				wlan_indicate_mem_dump_complete(true);
+		}
+
 	}
 
 	vos_timer_destroy(&gwlan_logging.threadStuckTimer);
@@ -1046,7 +1163,6 @@ int wlan_logging_flush_pkt_queue(void)
 {
 	vos_pkt_t *pkt_queue_head;
 	unsigned long flags;
-
 	spin_lock_irqsave(&gwlan_logging.data_mgmt_pkt_lock, flags);
 	if (NULL != gwlan_logging.data_mgmt_pkt_queue) {
 		pkt_queue_head = gwlan_logging.data_mgmt_pkt_queue;
@@ -1074,7 +1190,17 @@ int wlan_logging_flush_pkt_queue(void)
 		spin_unlock_irqrestore(&gwlan_logging.fw_log_pkt_lock,
 					flags);
 	}
-
+	spin_lock_irqsave(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
+	if (NULL != gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_queue) {
+		pkt_queue_head = gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_queue;
+		spin_unlock_irqrestore(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock,
+					flags);
+		vos_pkt_return_packet(pkt_queue_head);
+		wlan_free_fwr_mem_dump_buffer();
+	} else {
+		spin_unlock_irqrestore(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock,
+					flags);
+	}
 	return 0;
 }
 
@@ -1112,6 +1238,7 @@ int wlan_logging_sock_init_svc(void)
 	spin_lock_init(&gwlan_logging.spin_lock);
 	spin_lock_init(&gwlan_logging.data_mgmt_pkt_lock);
 	spin_lock_init(&gwlan_logging.fw_log_pkt_lock);
+	spin_lock_init(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock);
 	gapp_pid = INVALID_PID;
 	gwlan_logging.pcur_node = NULL;
 
@@ -1247,6 +1374,60 @@ int wlan_queue_fw_log_pkt_for_app(vos_pkt_t *pPacket)
 	return VOS_STATUS_SUCCESS;
 }
 
+int wlan_queue_fw_mem_dump_for_app(vos_pkt_t *pPacket)
+{
+	unsigned long flags;
+	vos_pkt_t *next_pkt;
+	vos_pkt_t *free_pkt;
+	VOS_STATUS status = VOS_STATUS_E_FAILURE;
+
+	spin_lock_irqsave(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
+	if (gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_pkt_qcnt >= LOGGER_MAX_FW_MEM_DUMP_PKT_Q_LEN) {
+		status = vos_pkt_walk_packet_chain(
+			gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_queue, &next_pkt, TRUE);
+		/*both "success" and "empty" are acceptable results*/
+		if (!((status == VOS_STATUS_SUCCESS) ||
+				(status == VOS_STATUS_E_EMPTY))) {
+			spin_unlock_irqrestore(
+				&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
+			pr_err("%s: Failure walking packet chain", __func__);
+			/*keep returning pkts to avoid low resource cond*/
+			vos_pkt_return_packet(pPacket);
+			return VOS_STATUS_E_FAILURE;
+		}
+
+		free_pkt = gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_queue;
+		gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_queue = next_pkt;
+		/*returning head of pkt queue. latest pkts are important*/
+		--gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_pkt_qcnt;
+                ++gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_pkt_drop_cnt ;
+		spin_unlock_irqrestore(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock,
+					flags);
+                pr_info("%s : fw mem_dump pkt cnt --> %d\n" ,__func__, gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_pkt_drop_cnt);
+		vos_pkt_return_packet(free_pkt);
+	} else {
+		spin_unlock_irqrestore(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock,
+					flags);
+	}
+
+	spin_lock_irqsave(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
+
+	if (gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_queue) {
+		vos_pkt_chain_packet(gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_queue,
+					pPacket, TRUE);
+	} else {
+		gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_queue = pPacket;
+	}
+	++gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_pkt_qcnt;
+
+	spin_unlock_irqrestore(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
+
+	set_bit(LOGGER_FW_MEM_DUMP_PKT_POST_MASK, &gwlan_logging.event_flag);
+	wake_up_interruptible(&gwlan_logging.wait_queue);
+
+	return VOS_STATUS_SUCCESS;
+}
+
 int wlan_queue_logpkt_for_app(vos_pkt_t *pPacket, uint32 pkt_type)
 {
 	VOS_STATUS status = VOS_STATUS_E_FAILURE;
@@ -1274,6 +1455,9 @@ int wlan_queue_logpkt_for_app(vos_pkt_t *pPacket, uint32 pkt_type)
 	case WLAN_FW_LOGS:
 		status = wlan_queue_fw_log_pkt_for_app(pPacket);
 		break;
+	case WLAN_FW_MEMORY_DUMP:
+		status = wlan_queue_fw_mem_dump_for_app(pPacket);
+		break;
 
 	default:
 		pr_info("%s: Unknown pkt received %d", __func__, pkt_type);
@@ -1290,8 +1474,15 @@ void wlan_process_done_indication(uint8 type, uint32 reason_code)
     {
         pr_info("%s: Setting LOGGER_FATAL_EVENT\n", __func__);
         set_bit(LOGGER_FATAL_EVENT_POST_MASK, &gwlan_logging.event_flag);
-        wake_up_interruptible(&gwlan_logging.wait_queue);
+	wake_up_interruptible(&gwlan_logging.wait_queue);
     }
+    if(type == WLAN_FW_MEMORY_DUMP)
+    {
+	    pr_info("%s: Setting FW MEM DUMP LOGGER event\n", __func__);
+	    set_bit(LOGGER_FW_MEM_DUMP_PKT_POST_DONE_MASK, &gwlan_logging.event_flag);
+	    wake_up_interruptible(&gwlan_logging.wait_queue);
+    }
+
 }
 
 /**
@@ -1335,6 +1526,204 @@ void wlan_logging_reset_thread_stuck_count(int threadId)
 		gwlan_logging.rxThreadStuckCount = 0;
 
 	spin_unlock_irqrestore(&gwlan_logging.thread_stuck_lock, flags);
+}
+
+int wlan_fwr_mem_dump_buffer_allocation(void)
+{
+	/*Allocate the dump memory as reported by fw.
+	  or if feature not supported just report to the user */
+	if(gwlan_logging.fw_mem_dump_ctx.fw_dump_max_size <= 0)
+	{
+	   pr_err("%s: fw_mem_dump_req not supported by firmware", __func__);
+	   return -EFAULT;
+	}
+	gwlan_logging.fw_mem_dump_ctx.fw_dump_start_loc =
+		(uint8 *)vos_mem_vmalloc(gwlan_logging.fw_mem_dump_ctx.fw_dump_max_size);
+	gwlan_logging.fw_mem_dump_ctx.fw_dump_current_loc = gwlan_logging.fw_mem_dump_ctx.fw_dump_start_loc;
+	if(NULL == gwlan_logging.fw_mem_dump_ctx.fw_dump_start_loc)
+	{
+		pr_err("%s: fw_mem_dump_req alloc failed for size %d bytes", __func__,gwlan_logging.fw_mem_dump_ctx.fw_dump_max_size);
+		return -ENOMEM;
+	}
+	return 0;
+}
+
+/*set the current fw mem dump state*/
+void wlan_set_fwr_mem_dump_state(enum FW_MEM_DUMP_STATE fw_mem_dump_state)
+{
+	unsigned long flags;
+	spin_lock_irqsave(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
+	gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_status = fw_mem_dump_state;
+	spin_unlock_irqrestore(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
+}
+/*check for new request validity and free memory if present from previous request */
+bool wlan_fwr_mem_dump_test_and_set_write_allowed_bit(){
+	unsigned long flags;
+	bool ret = false;
+	bool write_done = false;
+	spin_lock_irqsave(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
+
+	if(gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_status == FW_MEM_DUMP_IDLE){
+		ret = true;
+		gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_status = FW_MEM_DUMP_WRITE_IN_PROGRESS;
+	}
+	else if(gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_status == FW_MEM_DUMP_WRITE_DONE){
+		ret = true;
+		write_done =  true;
+		gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_status = FW_MEM_DUMP_WRITE_IN_PROGRESS;
+	}
+	spin_unlock_irqrestore(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
+	pr_info("%s:fw mem dump state --> %d ", __func__,gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_status);
+
+	if(write_done)
+		wlan_free_fwr_mem_dump_buffer();
+	return ret;
+}
+
+bool wlan_fwr_mem_dump_test_and_set_read_allowed_bit(){
+	unsigned long flags;
+	bool ret=false;
+	spin_lock_irqsave(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
+	if(gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_status == FW_MEM_DUMP_WRITE_DONE ||
+          gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_status == FW_MEM_DUMP_READ_IN_PROGRESS ){
+          ret = true;
+          gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_status = FW_MEM_DUMP_READ_IN_PROGRESS;
+	}
+	spin_unlock_irqrestore(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
+	pr_info("%s:fw mem dump state --> %d ", __func__,gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_status);
+
+	return ret;
+}
+size_t wlan_fwr_mem_dump_fsread_handler(char __user *buf,
+		size_t count, loff_t *pos)
+{
+	if (buf == NULL || gwlan_logging.fw_mem_dump_ctx.fw_dump_start_loc == NULL)
+	{
+		pr_err("%s : start loc : %p buf : %p ",__func__,gwlan_logging.fw_mem_dump_ctx.fw_dump_start_loc,buf);
+		return 0;
+	}
+
+	if (*pos < 0) {
+		pr_err("Invalid start offset for memdump read");
+		return 0;
+	} else if (*pos >= gwlan_logging.fw_mem_dump_ctx.fw_dump_max_size || !count) {
+		pr_err("No more data to copy");
+		return 0;
+	} else if (count > gwlan_logging.fw_mem_dump_ctx.fw_dump_max_size - *pos) {
+		count = gwlan_logging.fw_mem_dump_ctx.fw_dump_max_size - *pos;
+	}
+	if (copy_to_user(buf, gwlan_logging.fw_mem_dump_ctx.fw_dump_start_loc, count)) {
+		pr_err("copy to user space failed");
+		return 0;
+	}
+
+	/* offset(pos) should be updated here based on the copy done*/
+	*pos += count;
+
+	return count;
+}
+
+void wlan_free_fwr_mem_dump_buffer (void )
+{
+	unsigned long flags;
+	void * tmp = NULL;
+	spin_lock_irqsave(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
+	tmp = gwlan_logging.fw_mem_dump_ctx.fw_dump_start_loc;
+	gwlan_logging.fw_mem_dump_ctx.fw_dump_start_loc = NULL;
+	gwlan_logging.fw_mem_dump_ctx.fw_dump_current_loc = NULL;
+	spin_unlock_irqrestore(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
+	// Don't set fw_dump_max_size to 0, only free the buffera
+	if(tmp != NULL)
+		vos_mem_vfree((void *)tmp);
+}
+
+void wlan_store_fwr_mem_dump_size(uint32 dump_size)
+{
+	unsigned long flags;
+	spin_lock_irqsave(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
+	//Store the dump size
+	gwlan_logging.fw_mem_dump_ctx.fw_dump_max_size = dump_size;
+	spin_unlock_irqrestore(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
+}
+/**
+ * wlan_indicate_mem_dump_complete() -  When H2H for mem
+ * dump finish invoke the handler.
+ *
+ * This is a handler used to indicate user space about the
+ * availability for firmware memory dump via vendor event.
+ *
+ * Return: None
+ */
+void wlan_indicate_mem_dump_complete(bool status )
+{
+	hdd_context_t *hdd_ctx;
+	void *vos_ctx;
+	int ret;
+	struct sk_buff *skb = NULL;
+	unsigned long flags;
+
+	vos_ctx = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+	if (!vos_ctx) {
+		pr_err("Invalid VOS context");
+		return;
+	}
+
+	hdd_ctx = vos_get_context(VOS_MODULE_ID_HDD, vos_ctx);
+	if(!hdd_ctx) {
+		pr_err("Invalid HDD context");
+		return;
+	}
+
+	ret = wlan_hdd_validate_context(hdd_ctx);
+	if (0 != ret) {
+		pr_err("HDD context is not valid");
+		return;
+	}
+
+	spin_lock_irqsave(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
+	/*Chnage fw memory dump to indicate write done*/
+	gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_status = FW_MEM_DUMP_WRITE_DONE;
+        /*reset dropped packet count upon completion of this request*/
+        gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_pkt_drop_cnt = 0;
+	spin_unlock_irqrestore(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
+
+	skb = cfg80211_vendor_event_alloc(hdd_ctx->wiphy,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0))
+		NULL,
+#endif
+		sizeof(uint32_t) + NLA_HDRLEN + NLMSG_HDRLEN,
+		QCA_NL80211_VENDOR_SUBCMD_WIFI_LOGGER_MEMORY_DUMP_INDEX,
+		GFP_KERNEL);
+
+	if (!skb) {
+		pr_err("cfg80211_vendor_event_alloc failed");
+		return;
+	}
+	if(status)
+	{
+		if (nla_put_u32(skb, QCA_WLAN_VENDOR_ATTR_MEMDUMP_SIZE,
+				gwlan_logging.fw_mem_dump_ctx.fw_dump_max_size)) {
+			pr_err("nla put fail");
+			goto nla_put_failure;
+		}
+	}
+	else
+	{
+		pr_err("memdump failed.Returning size 0 to user");
+		if (nla_put_u32(skb, QCA_WLAN_VENDOR_ATTR_MEMDUMP_SIZE,
+				0)) {
+			pr_err("nla put fail");
+			goto nla_put_failure;
+		}
+	}
+
+	cfg80211_vendor_event(skb, GFP_KERNEL);
+	pr_info("Memdump event sent successfully to user space : recvd size %d",(int)(gwlan_logging.fw_mem_dump_ctx.fw_dump_current_loc - gwlan_logging.fw_mem_dump_ctx.fw_dump_start_loc));
+	return;
+
+nla_put_failure:
+	kfree_skb(skb);
+	return;
 }
 
 #endif /* WLAN_LOGGING_SOCK_SVC_ENABLE */

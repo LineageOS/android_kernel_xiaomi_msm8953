@@ -8859,6 +8859,9 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
    //Clean up HDD Nlink Service
    send_btc_nlink_msg(WLAN_MODULE_DOWN_IND, 0);
 
+   wlan_free_fwr_mem_dump_buffer();
+   memdump_deinit();
+
 #ifdef WLAN_LOGGING_SOCK_SVC_ENABLE
    if (pHddCtx->cfg_ini->wlanLoggingEnable)
    {
@@ -9436,7 +9439,7 @@ static eHalStatus hdd_11d_scan_done(tHalHandle halHandle, void *pContext,
   \return -  None
 
   --------------------------------------------------------------------------*/
-void hdd_init_frame_logging_done(void *fwlogInitCbContext, VOS_STATUS status)
+void hdd_init_frame_logging_done(void *fwlogInitCbContext, tAniLoggingInitRsp *pRsp)
 {
    hdd_context_t* pHddCtx = (hdd_context_t*)fwlogInitCbContext;
 
@@ -9447,7 +9450,7 @@ void hdd_init_frame_logging_done(void *fwlogInitCbContext, VOS_STATUS status)
       return;
    }
 
-   if ((VOS_STATUS_SUCCESS == status) &&
+   if ((pRsp->status == VOS_STATUS_SUCCESS) &&
        (TRUE == pHddCtx->cfg_ini->enableMgmtLogging))
    {
       hddLog(VOS_TRACE_LEVEL_INFO, FL("Mgmt Frame Logging init successful"));
@@ -9457,9 +9460,21 @@ void hdd_init_frame_logging_done(void *fwlogInitCbContext, VOS_STATUS status)
    {
       hddLog(VOS_TRACE_LEVEL_INFO, FL("Mgmt Frame Logging init not success"));
       pHddCtx->mgmt_frame_logging = FALSE;
+      return;
    }
 
-   return;
+   /*Check feature supported by FW*/
+   if(TRUE == sme_IsFeatureSupportedByFW(MEMORY_DUMP_SUPPORTED))
+   {
+      //Store fwr mem dump size given by firmware.
+      wlan_store_fwr_mem_dump_size(pRsp->fw_mem_dump_max_size);
+   }
+   else
+   {
+      wlan_store_fwr_mem_dump_size(0);
+   }
+
+
 }
 /**---------------------------------------------------------------------------
 
@@ -9492,10 +9507,11 @@ void hdd_init_frame_logging(hdd_context_t* pHddCtx)
 
    vos_mem_set(wlanFWLoggingInitParam, sizeof(tSirFWLoggingInitParam), 0);
 
-   hddLog(VOS_TRACE_LEVEL_INFO, "%s: Configuring %s %s %s Logging",__func__,
+   hddLog(VOS_TRACE_LEVEL_INFO, "%s: Configuring %s %s %s %s Logging",__func__,
                pHddCtx->cfg_ini->enableFWLogging?"FW Log,":"",
                pHddCtx->cfg_ini->enableContFWLogging ? "Cont FW log,":"",
-               pHddCtx->cfg_ini->enableMgmtLogging ? "Mgmt Pkt Log":"");
+               pHddCtx->cfg_ini->enableMgmtLogging ? "Mgmt Pkt Log":"",
+               pHddCtx->cfg_ini->enableFwrMemDump ? "Fw Mem dump":"");
 
    if (pHddCtx->cfg_ini->enableFWLogging ||
                  pHddCtx->cfg_ini->enableContFWLogging)
@@ -9511,7 +9527,16 @@ void hdd_init_frame_logging(hdd_context_t* pHddCtx)
    {
       wlanFWLoggingInitParam->enableFlag |= WLAN_BMUHW_TRACE_LOG_EN;
    }
-
+   if(pHddCtx->cfg_ini->enableFwrMemDump &&
+      (TRUE == sme_IsFeatureSupportedByFW(MEMORY_DUMP_SUPPORTED)))
+   {
+      wlanFWLoggingInitParam->enableFlag |= WLAN_FW_MEM_DUMP_EN;
+   }
+   if( wlanFWLoggingInitParam->enableFlag == 0 )
+   {
+      hddLog(VOS_TRACE_LEVEL_ERROR, "%s: Logging not enabled", __func__);
+      return;
+   }
    wlanFWLoggingInitParam->frameType = WLAN_FRAME_LOGGING_FRAMETYPE_MGMT;
    wlanFWLoggingInitParam->frameSize = WLAN_MGMT_LOGGING_FRAMESIZE_128BYTES;
    wlanFWLoggingInitParam->bufferMode = WLAN_FRAME_LOGGING_BUFFERMODE_CIRCULAR;
@@ -10284,7 +10309,9 @@ int hdd_wlan_startup(struct device *dev )
    if (pHddCtx->cfg_ini->wlanLoggingEnable &&
                (pHddCtx->cfg_ini->enableFWLogging ||
                 pHddCtx->cfg_ini->enableMgmtLogging ||
-                pHddCtx->cfg_ini->enableContFWLogging))
+                pHddCtx->cfg_ini->enableContFWLogging ||
+                pHddCtx->cfg_ini->enableFwrMemDump )
+                )
    {
        hdd_init_frame_logging(pHddCtx);
    }
@@ -10392,6 +10419,8 @@ int hdd_wlan_startup(struct device *dev )
    {
       hddLog(VOS_TRACE_LEVEL_INFO, FL("Registered IPv4 notifier"));
    }
+   /*Fw mem dump procfs initialization*/
+   memdump_init();
 
    goto success;
 
@@ -12022,6 +12051,272 @@ int hdd_sta_id_find_from_mac_addr(hdd_adapter_t *pAdapter,
     spin_unlock_bh( &pAdapter->sta_hash_lock);
     return sta_id;
 }
+
+/*FW memory dump feature*/
+/**
+ * This structure hold information about the /proc file
+ *
+ */
+static struct proc_dir_entry *proc_file, *proc_dir;
+
+/**
+ * memdump_read() - perform read operation in memory dump proc file
+ *
+ * @file  - handle for the proc file.
+ * @buf   - pointer to user space buffer.
+ * @count - number of bytes to be read.
+ * @pos   - offset in the from buffer.
+ *
+ * This function performs read operation for the memory dump proc file.
+ *
+ * Return: number of bytes read on success, error code otherwise.
+ */
+static ssize_t memdump_read(struct file *file, char __user *buf,
+                    size_t count, loff_t *pos)
+{
+    int status;
+    hdd_context_t *hdd_ctx = (hdd_context_t *)PDE_DATA(file_inode(file));
+    size_t ret_count;
+    ENTER();
+
+    hddLog(LOG1, FL("Read req for size:%zu pos:%llu"), count, *pos);
+    status = wlan_hdd_validate_context(hdd_ctx);
+    if (0 != status) {
+        return -EINVAL;
+    }
+
+    if (!wlan_fwr_mem_dump_test_and_set_read_allowed_bit()) {
+        hddLog(LOGE, FL("Current mem dump request timed out/failed"));
+        return -EINVAL;
+    }
+
+    /* run fs_read_handler in an atomic context*/
+    vos_ssr_protect(__func__);
+    ret_count = wlan_fwr_mem_dump_fsread_handler( buf, count, pos);
+    if(ret_count == 0)
+    {
+        /*Free the fwr mem dump buffer */
+        wlan_free_fwr_mem_dump_buffer();
+        wlan_set_fwr_mem_dump_state(FW_MEM_DUMP_IDLE);
+    }
+    /*if SSR/unload code is waiting for memdump_read to finish,signal it*/
+    vos_ssr_unprotect(__func__);
+    EXIT();
+    return ret_count;
+}
+
+/**
+ * struct memdump_fops - file operations for memory dump feature
+ * @read - read function for memory dump operation.
+ *
+ * This structure initialize the file operation handle for memory
+ * dump feature
+ */
+static const struct file_operations memdump_fops = {
+    read: memdump_read
+};
+
+/*
+* wlan_hdd_fw_mem_dump_cb : callback for Fw mem dump request
+* To be passed by HDD to WDA and called upon receiving of response
+* from firmware
+* @fwMemDumpReqContext : memory dump request context
+* @dump_rsp : dump response from HAL
+* Returns none
+*/
+void wlan_hdd_fw_mem_dump_cb(void *fwMemDumpReqContext,
+                         tAniFwrDumpRsp *dump_rsp)
+{
+    hdd_context_t *pHddCtx = (hdd_context_t *)fwMemDumpReqContext;
+    int status;
+    ENTER();
+    status = wlan_hdd_validate_context(pHddCtx);
+    if (0 != status) {
+        return;
+    }
+
+    if (dump_rsp->dump_status != eHAL_STATUS_SUCCESS) {
+        hddLog(LOGE, FL("fw dump request declined by fwr"));
+       //report failure to user space
+       wlan_indicate_mem_dump_complete(false);
+       //Free the allocated fwr dump
+       wlan_free_fwr_mem_dump_buffer();
+       wlan_set_fwr_mem_dump_state(FW_MEM_DUMP_IDLE);
+       return;
+    }
+    else
+        hddLog(LOG1, FL("fw dump request accepted by fwr"));
+    EXIT();
+
+}
+
+/**
+ * memdump_procfs_remove() - Remove file/dir under procfs for memory dump
+ *
+ * This function removes file/dir under proc file system that was
+ * processing firmware memory dump
+ *
+ * Return:  None
+ */
+static void memdump_procfs_remove(void)
+{
+    remove_proc_entry(PROCFS_MEMDUMP_NAME, proc_dir);
+    hddLog(LOG1 , FL("/proc/%s/%s removed\n"),
+           PROCFS_MEMDUMP_DIR, PROCFS_MEMDUMP_NAME);
+    remove_proc_entry(PROCFS_MEMDUMP_DIR, NULL);
+    hddLog(LOG1 , FL("/proc/%s removed\n"), PROCFS_MEMDUMP_DIR);
+}
+
+/**
+ * memdump_procfs_init() - Initialize procfs for memory dump
+ *
+ * @vos_ctx - Global vos context.
+ *
+ * This function create file under proc file system to be used later for
+ * processing firmware memory dump
+ *
+ * Return:   0 on success, error code otherwise.
+ */
+static int memdump_procfs_init(void *vos_ctx)
+{
+    hdd_context_t *hdd_ctx;
+
+    hdd_ctx = vos_get_context(VOS_MODULE_ID_HDD, vos_ctx);
+    if (!hdd_ctx) {
+        hddLog(LOGE , FL("Invalid HDD context"));
+        return -EINVAL;
+    }
+
+    proc_dir = proc_mkdir(PROCFS_MEMDUMP_DIR, NULL);
+    if (proc_dir == NULL) {
+        remove_proc_entry(PROCFS_MEMDUMP_DIR, NULL);
+        hddLog(LOGE , FL("Error: Could not initialize /proc/%s"),
+               PROCFS_MEMDUMP_DIR);
+        return -ENOMEM;
+    }
+
+    proc_file = proc_create_data(PROCFS_MEMDUMP_NAME,
+                                 S_IRUSR | S_IWUSR, proc_dir,
+                                 &memdump_fops, hdd_ctx);
+    if (proc_file == NULL) {
+        remove_proc_entry(PROCFS_MEMDUMP_NAME, proc_dir);
+        hddLog(LOGE , FL("Error: Could not initialize /proc/%s"),
+               PROCFS_MEMDUMP_NAME);
+        return -ENOMEM;
+    }
+
+    hddLog(LOG1 , FL("/proc/%s/%s created"),
+           PROCFS_MEMDUMP_DIR, PROCFS_MEMDUMP_NAME);
+
+    return 0;
+}
+
+/**
+ * memdump_init() - Initialization function for memory dump feature
+ *
+ * This function creates proc file for memdump feature and registers
+ * HDD callback function with SME.
+ *
+ * Return - 0 on success, error otherwise
+ */
+int memdump_init(void)
+{
+    hdd_context_t *hdd_ctx;
+    void *vos_ctx;
+    int status = 0;
+
+    vos_ctx = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+    if (!vos_ctx) {
+        hddLog(LOGE, FL("Invalid VOS context"));
+        return -EINVAL;
+    }
+
+    hdd_ctx = vos_get_context(VOS_MODULE_ID_HDD, vos_ctx);
+    if (!hdd_ctx) {
+        hddLog(LOGE , FL("Invalid HDD context"));
+        return -EINVAL;
+    }
+
+    status = memdump_procfs_init(vos_ctx);
+    if (status) {
+        hddLog(LOGE , FL("Failed to create proc file"));
+        return status;
+    }
+
+    return 0;
+}
+
+/**
+ * memdump_deinit() - De initialize memdump feature
+ *
+ * This function removes proc file created for memdump feature.
+ *
+ * Return: None
+ */
+int memdump_deinit(void)
+{
+    hdd_context_t *hdd_ctx;
+    void *vos_ctx;
+
+    vos_ctx = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+    if (!vos_ctx) {
+        hddLog(LOGE, FL("Invalid VOS context"));
+        return -EINVAL;
+    }
+
+    hdd_ctx = vos_get_context(VOS_MODULE_ID_HDD, vos_ctx);
+    if(!hdd_ctx) {
+        hddLog(LOGE , FL("Invalid HDD context"));
+        return -EINVAL;
+    }
+
+    memdump_procfs_remove();
+    return 0;
+}
+
+/**
+ * wlan_hdd_fw_mem_dump_req(pHddCtx) - common API(cfg80211/ioctl) for requesting fw mem dump to SME
+ * Return: HAL status
+ */
+
+int wlan_hdd_fw_mem_dump_req(hdd_context_t * pHddCtx)
+{
+   tAniFwrDumpReq fw_mem_dump_req={0};
+   eHalStatus status = eHAL_STATUS_FAILURE;
+   int ret=0;
+   ENTER();
+   /*Check whether a dump request is already going on
+    *Caution this function will free previously held memory if new dump request is allowed*/
+   if (!wlan_fwr_mem_dump_test_and_set_write_allowed_bit()) {
+       hddLog(LOGE, FL("Fw memdump already in progress"));
+       return -EBUSY;
+   }
+   //Allocate memory for fw mem dump buffer
+   ret = wlan_fwr_mem_dump_buffer_allocation();
+   if(ret == -EFAULT)
+   {
+      hddLog(LOGE, FL("Fwr mem dump not supported by FW"));
+      return ret;
+   }
+   if (0 != ret) {
+       hddLog(LOGE, FL("Fwr mem Allocation failed"));
+       return -ENOMEM;
+   }
+   fw_mem_dump_req.fwMemDumpReqCallback = wlan_hdd_fw_mem_dump_cb;
+   fw_mem_dump_req.fwMemDumpReqContext = pHddCtx;
+   status = sme_FwMemDumpReq(pHddCtx->hHal, &fw_mem_dump_req);
+   if(eHAL_STATUS_SUCCESS != status)
+   {
+       hddLog(VOS_TRACE_LEVEL_ERROR,
+          "%s: fw_mem_dump_req failed ", __func__);
+       wlan_free_fwr_mem_dump_buffer();
+   }
+   EXIT();
+
+   return status;
+}
+
+
 
 //Register the module init/exit functions
 module_init(hdd_module_init);

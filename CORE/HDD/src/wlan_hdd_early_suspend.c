@@ -2040,6 +2040,9 @@ VOS_STATUS hdd_wlan_shutdown(void)
    vos_sched_flush_rx_mqs(vosSchedContext);
 #ifdef WLAN_LOGGING_SOCK_SVC_ENABLE
    wlan_logging_flush_pkt_queue();
+   /*Free fw dump mem in case of SSR/Shutdown */
+   wlan_set_fwr_mem_dump_state(FW_MEM_DUMP_IDLE);
+   wlan_free_fwr_mem_dump_buffer();
 #endif
 
    /* Deinit all the TX and MC queues */
