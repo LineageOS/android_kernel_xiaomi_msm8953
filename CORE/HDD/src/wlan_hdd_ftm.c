@@ -835,12 +835,26 @@ static VOS_STATUS wlan_ftm_vos_close( v_CONTEXT_t vosContext )
      VOS_ASSERT( VOS_IS_STATUS_SUCCESS( vosStatus ) );
   }
 
-  vosStatus = WDA_close( vosContext );
-  if (!VOS_IS_STATUS_SUCCESS(vosStatus))
+  if ( TRUE == WDA_needShutdown(vosContext))
   {
-     VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
-         "%s: Failed to close WDA %d", __func__, vosStatus);
-     VOS_ASSERT( VOS_IS_STATUS_SUCCESS( vosStatus ) );
+     vosStatus = WDA_shutdown(vosContext, VOS_TRUE);
+     if (!VOS_IS_STATUS_SUCCESS(vosStatus))
+     {
+        VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+                            "%s: Failed to shutdown WDA %d", __func__, vosStatus);
+        VOS_ASSERT(VOS_IS_STATUS_SUCCESS(vosStatus));
+     }
+
+  }
+  else
+  {
+     vosStatus = WDA_close(vosContext);
+     if (!VOS_IS_STATUS_SUCCESS(vosStatus))
+     {
+        VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+            "%s: Failed to close WDA %d", __func__, vosStatus);
+        VOS_ASSERT(VOS_IS_STATUS_SUCCESS(vosStatus));
+     }
   }
 
   vos_mq_deinit(&((pVosContextType)vosContext)->freeVosMq);
@@ -1773,6 +1787,7 @@ static int wlan_hdd_ftm_start(hdd_context_t *pHddCtx)
                     "%s: WDA_NVDownload_Start reporting  other error",__func__);
        }
        VOS_ASSERT(0);
+       WDA_setNeedShutdown(pHddCtx->pvosContext);
        goto err_status_failure;
     }
 
