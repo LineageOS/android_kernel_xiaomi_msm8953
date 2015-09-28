@@ -186,6 +186,7 @@ typedef struct sPktMetaInfo
 
 typedef struct
 {
+   wpt_uint16 status;
    wpt_boolean active;
    wpt_uint64 logBuffAddress[MAX_NUM_OF_BUFFER];
    wpt_uint32 logBuffLength[MAX_NUM_OF_BUFFER];

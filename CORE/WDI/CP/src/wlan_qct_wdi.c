@@ -35191,7 +35191,7 @@ WDI_ProcessFWLoggingDXEdoneInd
                  &pLoggingSession->logBuffAddress, MAX_NUM_OF_BUFFER *
                  sizeof(FWLoggingDxeDoneIndParams->logBuffAddress[0]));
 
-  FWLoggingDxeDoneIndParams->status = eHAL_STATUS_SUCCESS;
+  FWLoggingDxeDoneIndParams->status = pLoggingSession->status;
   FWLoggingDxeDoneIndParams->doneIndicationForSource = (wpt_uint16)*pLogType;
 
   wpalMemoryCopy(&FWLoggingDxeDoneIndParams->logBuffLength,

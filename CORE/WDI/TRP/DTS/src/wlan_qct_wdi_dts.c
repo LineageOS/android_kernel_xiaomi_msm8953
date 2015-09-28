@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -875,55 +875,6 @@ wpt_status WDTS_OOResourceNotification(void *pContext, WDTS_ChannelType channel,
 
 }
 
-void WDTS_MbReceiveMsg(void *pContext)
-{
-  tpLoggingMailBox pLoggingMb;
-  WDI_DS_LoggingSessionType *pLoggingSession;
-  wpt_int8 i, noMem = 0;
-  wpt_uint32 totalLen = 0;
-
-  pLoggingMb = (tpLoggingMailBox)WDI_DS_GetLoggingMbAddr(pContext);
-  pLoggingSession = (WDI_DS_LoggingSessionType *)
-                       WDI_DS_GetLoggingSession(pContext);
-
-  for(i = 0; i < MAX_NUM_OF_BUFFER; i++)
-  {
-     pLoggingSession->logBuffAddress[i] = pLoggingMb->logBuffAddress[i];
-     if (!noMem && (pLoggingMb->logBuffLength[i] <= MAX_LOG_BUFFER_LENGTH))
-     {
-        pLoggingSession->logBuffLength[i] = gTransportDriver.setupLogTransfer(
-                                               pLoggingMb->logBuffAddress[i],
-                                               pLoggingMb->logBuffLength[i]);
-     }
-     else
-     {
-        pLoggingSession->logBuffLength[i] = 0;
-        continue;
-     }
-
-     totalLen += pLoggingSession->logBuffLength[i];
-
-     if (pLoggingSession->logBuffLength[i] < pLoggingMb->logBuffLength[i])
-     {
-        noMem = 1;
-     }
-  }
-
-  pLoggingSession->done = pLoggingMb->done;
-  pLoggingSession->logType = pLoggingMb->logType;
-  pLoggingSession->reasonCode = pLoggingMb->reasonCode;
-  // Done using Mailbox, zero out the memory.
-  wpalMemoryZero(pLoggingMb, sizeof(tLoggingMailBox));
-
-  if (totalLen)
-  {
-     if (gTransportDriver.startLogTransfer() == eWLAN_PAL_STATUS_SUCCESS)
-        return;
-  }
-
-  // Send Done event to upper layers, since we wont be getting any from DXE
-}
-
 void WDTS_LogRxDone(void *pContext)
 {
   WDI_DS_LoggingSessionType *pLoggingSession;
@@ -951,6 +902,76 @@ void WDTS_LogRxDone(void *pContext)
   pLoggingSession->reasonCode = 0;
 
   return;
+}
+
+void WDTS_MbReceiveMsg(void *pContext)
+{
+  tpLoggingMailBox pLoggingMb;
+  WDI_DS_LoggingSessionType *pLoggingSession;
+  wpt_int8 i, noMem = 0;
+  wpt_uint32 totalLen = 0;
+
+  pLoggingMb = (tpLoggingMailBox)WDI_DS_GetLoggingMbAddr(pContext);
+  pLoggingSession = (WDI_DS_LoggingSessionType *)
+                       WDI_DS_GetLoggingSession(pContext);
+
+  for(i = 0; i < MAX_NUM_OF_BUFFER; i++)
+  {
+      totalLen += pLoggingMb->logBuffLength[i];
+      // Send done indication when the logbuffer size exceeds 128KB.
+      if (totalLen > MAX_LOG_BUFFER_LENGTH || pLoggingMb->logBuffLength[i] > MAX_LOG_BUFFER_LENGTH)
+      {
+         DTI_TRACE( DTI_TRACE_LEVEL_ERROR, " %d received invalid log buffer length",
+                                              totalLen);
+         // Done using Mailbox, zero out the memory.
+         wpalMemoryZero(pLoggingMb, sizeof(tLoggingMailBox));
+         wpalMemoryZero(pLoggingSession, sizeof(WDI_DS_LoggingSessionType));
+         //Set Status as Failure
+         pLoggingSession->status = WDTS_LOGGING_STATUS_ERROR;
+         WDTS_LogRxDone(pContext);
+
+         return;
+      }
+  }
+
+  totalLen = 0;
+  for(i = 0; i < MAX_NUM_OF_BUFFER; i++)
+  {
+     pLoggingSession->logBuffAddress[i] = pLoggingMb->logBuffAddress[i];
+     if (!noMem)
+     {
+        pLoggingSession->logBuffLength[i] = gTransportDriver.setupLogTransfer(
+                                               pLoggingMb->logBuffAddress[i],
+                                               pLoggingMb->logBuffLength[i]);
+     }
+     else
+     {
+        pLoggingSession->logBuffLength[i] = 0;
+        continue;
+     }
+
+     totalLen += pLoggingSession->logBuffLength[i];
+
+     if (pLoggingSession->logBuffLength[i] < pLoggingMb->logBuffLength[i])
+     {
+        noMem = 1;
+     }
+  }
+
+  pLoggingSession->done = pLoggingMb->done;
+  pLoggingSession->logType = pLoggingMb->logType;
+  pLoggingSession->reasonCode = pLoggingMb->reasonCode;
+  pLoggingSession->status = WDTS_LOGGING_STATUS_SUCCESS;
+  // Done using Mailbox, zero out the memory.
+  wpalMemoryZero(pLoggingMb, sizeof(tLoggingMailBox));
+
+  if (totalLen)
+  {
+     if (gTransportDriver.startLogTransfer() == eWLAN_PAL_STATUS_SUCCESS)
+        return;
+  }
+
+  // Send Done event to upper layers, since we wont be getting any from DXE
 }
 
 /* DTS open  function. 
