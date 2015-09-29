@@ -677,17 +677,30 @@ limCreateTimers(tpAniSirGlobal pMac)
         goto err_timer;
     }
 
-    cfgValue = ACTIVE_TO_PASSIVE_CONVERISON_TIMEOUT;
-    cfgValue = SYS_MS_TO_TICKS(cfgValue);
-    if (tx_timer_create(&pMac->lim.limTimers.gLimActiveToPassiveChannelTimer,
+    if (eSIR_SUCCESS == wlan_cfgGetInt(pMac, WNI_CFG_ACTIVE_PASSIVE_CON,
+                                      &cfgValue))
+    {
+        limLog(pMac, LOGP,
+               FL("could not retrieve WNI_CFG_ACTIVE_PASSIVE_CON"));
+    }
+    if (cfgValue)
+    {
+        cfgValue = ACTIVE_TO_PASSIVE_CONVERISON_TIMEOUT;
+        cfgValue = SYS_MS_TO_TICKS(cfgValue);
+        if (tx_timer_create(&pMac->lim.limTimers.gLimActiveToPassiveChannelTimer,
                                   "ACTIVE TO PASSIVE CHANNEL", limTimerHandler,
                  SIR_LIM_CONVERT_ACTIVE_CHANNEL_TO_PASSIVE, cfgValue, 0,
                  TX_NO_ACTIVATE) != TX_SUCCESS)
-    {
-        limLog(pMac, LOGW,FL("could not create timer for passive channel to active channel"));
-        goto err_timer;
+        {
+            limLog(pMac, LOGW,FL("could not create timer for passive channel to active channel"));
+            goto err_timer;
+        }
     }
-
+    else
+    {
+        limLog(pMac, LOG1,
+               FL("gLimActiveToPassiveChannelTimer not created %d"), cfgValue);
+    }
 
     return TX_SUCCESS;
 

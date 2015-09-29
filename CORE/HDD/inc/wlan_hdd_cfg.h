@@ -2533,6 +2533,11 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_FWR_MEM_DUMP_MIN        ( 0 )
 #define CFG_FWR_MEM_DUMP_DEF        ( 1 )
 
+#define CFG_ACTIVE_PASSIVE_CHAN_CONV_NAME "gActivePassiveChCon"
+#define CFG_ACTIVE_PASSIVE_CHAN_CONV_MIN  (0)
+#define CFG_ACTIVE_PASSIVE_CHAN_CONV_MAX  (1)
+#define CFG_ACTIVE_PASSIVE_CHAN_CONV_DEF  (1)
+
 /*--------------------------------------------------------------------------- 
   Type declarations
   -------------------------------------------------------------------------*/ 
@@ -3047,6 +3052,7 @@ typedef struct
    v_BOOL_t                    ignorePeerHTopMode;
    v_U8_t                      gOptimizeCAevent;
    v_BOOL_t                    enableFwrMemDump;
+   v_U8_t                      gActivePassiveChCon;
 } hdd_config_t;
 
 /*--------------------------------------------------------------------------- 

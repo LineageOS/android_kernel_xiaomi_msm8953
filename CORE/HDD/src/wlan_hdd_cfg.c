@@ -3389,6 +3389,7 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                  CFG_LINK_FAIL_TX_CNT_DEF,
                  CFG_LINK_FAIL_TX_CNT_MIN,
                  CFG_LINK_FAIL_TX_CNT_MAX ),
+
    REG_VARIABLE( CFG_OPTIMIZE_CA_EVENT_NAME, WLAN_PARAM_Integer,
                  hdd_config_t, gOptimizeCAevent,
                  VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
@@ -3403,6 +3404,12 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                  CFG_FWR_MEM_DUMP_MIN,
                  CFG_FWR_MEM_DUMP_MAX),
 
+   REG_VARIABLE( CFG_ACTIVE_PASSIVE_CHAN_CONV_NAME, WLAN_PARAM_Integer,
+                 hdd_config_t, gActivePassiveChCon,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_ACTIVE_PASSIVE_CHAN_CONV_DEF,
+                 CFG_ACTIVE_PASSIVE_CHAN_CONV_MIN,
+                 CFG_ACTIVE_PASSIVE_CHAN_CONV_MAX ),
 };
 
 /*
@@ -5387,6 +5394,13 @@ v_BOOL_t hdd_update_config_dat( hdd_context_t *pHddCtx )
       hddLog(LOGE, "Could not pass on WNI_CFG_OPTIMIZE_CA_EVENT ");
    }
 
+   if (ccmCfgSetInt(pHddCtx->hHal, WNI_CFG_ACTIVE_PASSIVE_CON,
+                    pConfig->gActivePassiveChCon, NULL,
+                    eANI_BOOLEAN_FALSE) == eHAL_STATUS_FAILURE)
+   {
+      fStatus = FALSE;
+      hddLog(LOGE, "Could not pass on WNI_CFG_ACTIVE_PASSIVE_CON ");
+   }
    return fStatus;
 }
 
