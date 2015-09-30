@@ -578,6 +578,12 @@ typedef enum
 
    WLAN_HAL_SSID_HOTLIST_RESULT_IND         = 318,
 
+   WLAN_HAL_START_RSSI_MONITORING_REQ       = 321,
+   WLAN_HAL_START_RSSI_MONITORING_RSP       = 322,
+   WLAN_HAL_RSSI_MONITORING_IND             = 323,
+   WLAN_HAL_STOP_RSSI_MONITORING_REQ        = 324,
+   WLAN_HAL_STOP_RSSI_MONITORING_RSP        = 325,
+
    WLAN_HAL_MSG_MAX = WLAN_HAL_MSG_TYPE_MAX_ENUM_SIZE
 }tHalHostMsgType;
 
@@ -8685,6 +8691,72 @@ typedef PACKED_PRE struct PACKED_POST
     tANI_U32 reserved1;
     tANI_U32 reserved2;
 } tFWLoggingInitResp, * tpFWLoggingInitResp;
+
+
+typedef PACKED_PRE struct PACKED_POST {
+   tANI_U32     request_id;
+   tSirMacAddr  bssId;
+   tANI_S8      min_rssi;
+   tANI_S8      max_rssi;
+} tHalStartRssiMonitoringReqParams, * tpHalStartRssiMonitoringReqParams;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   tHalStartRssiMonitoringReqParams   startRssiMonitoringReqParams;
+}tHalStartRssimonitoringReq, * tpHalStartRssimonitoringReq;
+
+//Following structure will be used for WLAN_HAL_START_RSSI_MONITORING_RSP
+typedef PACKED_PRE struct PACKED_POST {
+   tANI_U32 request_id;
+   tANI_U32 status;
+}  tHalStartRssimonitoringRspParams, * tpHalStartRssimonitoringRspParams;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   tHalStartRssimonitoringRspParams startRssimonitoringRspParams;
+}tHalStartRssimonitoringRsp, * tpHalStartRssimonitoringRsp;
+
+//Following structures will be used for WLAN_HAL_RSSI_MONITORING_IND
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U32     request_id;
+   tSirMacAddr  bssId;
+   tANI_S8      rssi;
+} tHalRssiMonitorIndParams, * tpHalRssiMonitorIndParams;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   tHalRssiMonitorIndParams RssiMonitorIndParams;
+}tHalRssiMonitorInd, * tpHalRssiMonitorInd;
+
+
+//Following structures will be used for WLAN_HAL_STOP_RSSI_MONITORING_REQ
+typedef PACKED_PRE struct PACKED_POST {
+   tANI_U32 request_id;
+   tSirMacAddr  bssId;
+} tHalStopRssiMonitoringParams, * tpHalStopRssiMonitoringParams;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   tHalStopRssiMonitoringParams   stopRssiMonitoringParams;
+}tHalStopRssimonitoringReq, * tpHalStopRssimonitoringReq;
+
+//Following structures will be used for WLAN_HAL_STOP_RSSI_MONITORING_RSP
+typedef PACKED_PRE struct PACKED_POST {
+   tANI_U32 request_id;
+   tANI_U32 status;
+} tHalStopRssimonitoringRspParams, * tpHalStopRssimonitoringRspParams;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   tHalStopRssimonitoringRspParams stopRssimonitoringRspParams;
+}tHalStopRssimonitoringRsp, * tpHalStopRssimonitoringRsp;
+
 
 typedef PACKED_PRE struct PACKED_POST
 {
