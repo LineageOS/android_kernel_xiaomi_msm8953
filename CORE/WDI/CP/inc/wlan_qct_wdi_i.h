@@ -480,6 +480,8 @@ typedef enum
   WDI_MON_STOP_REQ                               = 108,
   WDI_FATAL_EVENT_LOGGING_REQ                    = 109,
   WDI_FWR_MEM_DUMP_REQ                           = 110,
+  WDI_START_RSSI_MONITOR_REQ                     = 111,
+  WDI_STOP_RSSI_MONITOR_REQ                      = 112,
 
   WDI_MAX_REQ,
 
@@ -823,6 +825,8 @@ typedef enum
   WDI_MON_STOP_RSP                               = 108,
   WDI_FATAL_EVENT_LOGGING_RSP                    = 109,
   WDI_FWR_MEM_DUMP_RSP                           = 110,
+  WDI_START_RSSI_MONITOR_RSP                     = 111,
+  WDI_STOP_RSSI_MONITOR_RSP                      = 112,
 
   /*-------------------------------------------------------------------------
     Indications
@@ -904,6 +908,7 @@ typedef enum
   WDI_HAL_DEL_BA_IND                 = WDI_HAL_IND_MIN + 27,
   WDI_HAL_NAN_EVENT                  = WDI_HAL_IND_MIN + 28,
   WDI_HAL_LOST_LINK_PARAMS_IND       = WDI_HAL_IND_MIN + 29,
+  WDI_HAL_RSSI_BREACHED_IND          = WDI_HAL_IND_MIN + 30,
   WDI_MAX_RESP
 }WDI_ResponseEnumType; 
 
@@ -6181,6 +6186,34 @@ WDI_ProcessFWFrameLoggingInitRsp
 );
 
 WDI_Status
+WDI_ProcessRssiMonitorStartReq
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessRssiMonitorStartRsp
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessRssiMonitorStopReq
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessRssiMonitorStopRsp
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
 WDI_ProcessEncryptMsgReq
 (
   WDI_ControlBlockType*  pWDICtx,
@@ -6259,6 +6292,13 @@ WDI_ProcessNanEvent
 
 WDI_Status
 WDI_Process_LostLinkParamInd
+(
+    WDI_ControlBlockType*  pWDICtx,
+    WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_Process_RssiBreachedInd
 (
     WDI_ControlBlockType*  pWDICtx,
     WDI_EventInfoType*     pEventData

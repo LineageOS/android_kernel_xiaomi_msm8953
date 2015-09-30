@@ -6201,6 +6201,301 @@ wlan_hdd_cfg80211_get_wifi_info(struct wiphy *wiphy,
 }
 
 
+/*
+ * define short names for the global vendor params
+ * used by __wlan_hdd_cfg80211_monitor_rssi()
+ */
+#define PARAM_MAX QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_MAX
+#define PARAM_REQUEST_ID QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_REQUEST_ID
+#define PARAM_CONTROL QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_CONTROL
+#define PARAM_MIN_RSSI QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_MIN_RSSI
+#define PARAM_MAX_RSSI QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_MAX_RSSI
+
+/**---------------------------------------------------------------------------
+
+  \brief hdd_rssi_monitor_start_done - callback to be executed when rssi
+                                       monitor start is completed successfully.
+
+  \return -  None
+
+  --------------------------------------------------------------------------*/
+void hdd_rssi_monitor_start_done(void *fwRssiMonitorCbContext, VOS_STATUS status)
+{
+   hdd_context_t* pHddCtx = (hdd_context_t*)fwRssiMonitorCbContext;
+
+   if (NULL == pHddCtx)
+   {
+      hddLog(VOS_TRACE_LEVEL_ERROR,
+                 "%s: HDD context is NULL",__func__);
+      return;
+   }
+
+   if (VOS_STATUS_SUCCESS == status)
+   {
+      hddLog(VOS_TRACE_LEVEL_INFO, FL("Rssi Monitor start successful"));
+   }
+   else
+   {
+      hddLog(VOS_TRACE_LEVEL_ERROR, FL("Rssi Monitor start not successful"));
+   }
+
+   return;
+}
+
+/**---------------------------------------------------------------------------
+
+  \brief hdd_rssi_monitor_stop_done - callback to be executed when rssi monitor
+                                      stop is completed successfully.
+
+  \return -  None
+
+  --------------------------------------------------------------------------*/
+void hdd_rssi_monitor_stop_done(void *fwRssiMonitorCbContext, VOS_STATUS status)
+{
+   hdd_context_t* pHddCtx = (hdd_context_t*)fwRssiMonitorCbContext;
+
+   if (NULL == pHddCtx)
+   {
+      hddLog(VOS_TRACE_LEVEL_ERROR,
+                 "%s: HDD context is NULL",__func__);
+      return;
+   }
+
+   if (VOS_STATUS_SUCCESS == status)
+   {
+      hddLog(VOS_TRACE_LEVEL_INFO, FL("Rssi Monitor stop successful"));
+   }
+   else
+   {
+      hddLog(VOS_TRACE_LEVEL_ERROR, FL("Rssi Monitor stop not successful"));
+   }
+
+   return;
+}
+
+/**
+ * __wlan_hdd_cfg80211_monitor_rssi() - monitor rssi
+ * @wiphy: Pointer to wireless phy
+ * @wdev: Pointer to wireless device
+ * @data: Pointer to data
+ * @data_len: Data length
+ *
+ * Return: 0 on success, negative errno on failure
+ */
+
+static int
+__wlan_hdd_cfg80211_monitor_rssi(struct wiphy *wiphy,
+                                 struct wireless_dev *wdev,
+                                 const void *data,
+                                 int data_len)
+{
+        struct net_device *dev = wdev->netdev;
+        hdd_adapter_t *pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
+        hdd_context_t *hdd_ctx = wiphy_priv(wiphy);
+        hdd_station_ctx_t *pHddStaCtx;
+        struct nlattr *tb[PARAM_MAX + 1];
+        tpSirRssiMonitorReq pReq;
+        eHalStatus status;
+        int ret;
+        uint32_t control;
+        static const struct nla_policy policy[PARAM_MAX + 1] = {
+                        [PARAM_REQUEST_ID] = { .type = NLA_U32 },
+                        [PARAM_CONTROL] = { .type = NLA_U32 },
+                        [PARAM_MIN_RSSI] = { .type = NLA_S8 },
+                        [PARAM_MAX_RSSI] = { .type = NLA_S8 },
+        };
+
+        ENTER();
+
+        ret = wlan_hdd_validate_context(hdd_ctx);
+        if (0 != ret) {
+                return -EINVAL;
+        }
+
+        if (!hdd_connIsConnected(WLAN_HDD_GET_STATION_CTX_PTR(pAdapter))) {
+                hddLog(LOGE, FL("Not in Connected state!"));
+                return -ENOTSUPP;
+        }
+
+        if (nla_parse(tb, PARAM_MAX, data, data_len, policy)) {
+                hddLog(LOGE, FL("Invalid ATTR"));
+                return -EINVAL;
+        }
+
+        if (!tb[PARAM_REQUEST_ID]) {
+                hddLog(LOGE, FL("attr request id failed"));
+                return -EINVAL;
+        }
+
+        if (!tb[PARAM_CONTROL]) {
+                hddLog(LOGE, FL("attr control failed"));
+                return -EINVAL;
+        }
+
+        pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
+
+        pReq = vos_mem_malloc(sizeof(tSirRssiMonitorReq));
+        if(NULL == pReq)
+        {
+            hddLog(LOGE,
+                 FL("vos_mem_alloc failed "));
+            return eHAL_STATUS_FAILED_ALLOC;
+        }
+        vos_mem_set(pReq, sizeof(tSirRssiMonitorReq), 0);
+
+        pReq->requestId = nla_get_u32(tb[PARAM_REQUEST_ID]);
+        pReq->sessionId = pAdapter->sessionId;
+        pReq->rssiMonitorCbContext = hdd_ctx;
+        control = nla_get_u32(tb[PARAM_CONTROL]);
+        vos_mem_copy( &pReq->currentBssId, pHddStaCtx->conn_info.bssId, WNI_CFG_BSSID_LEN);
+
+        hddLog(LOG1, FL("Request Id: %u Session_id: %d Control: %d"),
+                        pReq->requestId, pReq->sessionId, control);
+
+        if (control == QCA_WLAN_RSSI_MONITORING_START) {
+                if (!tb[PARAM_MIN_RSSI]) {
+                        hddLog(LOGE, FL("attr min rssi failed"));
+                        return -EINVAL;
+                }
+
+                if (!tb[PARAM_MAX_RSSI]) {
+                        hddLog(LOGE, FL("attr max rssi failed"));
+                        return -EINVAL;
+                }
+
+                pReq->minRssi = nla_get_s8(tb[PARAM_MIN_RSSI]);
+                pReq->maxRssi = nla_get_s8(tb[PARAM_MAX_RSSI]);
+                pReq->rssiMonitorCallback = hdd_rssi_monitor_start_done;
+
+                if (!(pReq->minRssi < pReq->maxRssi)) {
+                        hddLog(LOGW, FL("min_rssi: %d must be less than max_rssi: %d"),
+                                        pReq->minRssi, pReq->maxRssi);
+                        return -EINVAL;
+                }
+                hddLog(LOG1, FL("Min_rssi: %d Max_rssi: %d"),
+                       pReq->minRssi, pReq->maxRssi);
+                status = sme_StartRssiMonitoring(hdd_ctx->hHal, pReq);
+
+        }
+        else if (control == QCA_WLAN_RSSI_MONITORING_STOP) {
+                pReq->rssiMonitorCallback = hdd_rssi_monitor_stop_done;
+                status = sme_StopRssiMonitoring(hdd_ctx->hHal, pReq);
+        }
+        else {
+                hddLog(LOGE, FL("Invalid control cmd: %d"), control);
+                return -EINVAL;
+        }
+
+        if (!HAL_STATUS_SUCCESS(status)) {
+                hddLog(LOGE,
+                        FL("sme_set_rssi_monitoring failed(err=%d)"), status);
+                return -EINVAL;
+        }
+
+        return 0;
+}
+
+/*
+ * done with short names for the global vendor params
+ * used by __wlan_hdd_cfg80211_monitor_rssi()
+ */
+#undef PARAM_MAX
+#undef PARAM_CONTROL
+#undef PARAM_REQUEST_ID
+#undef PARAM_MAX_RSSI
+#undef PARAM_MIN_RSSI
+
+/**
+ * wlan_hdd_cfg80211_monitor_rssi() - SSR wrapper to rssi monitoring
+ * @wiphy:    wiphy structure pointer
+ * @wdev:     Wireless device structure pointer
+ * @data:     Pointer to the data received
+ * @data_len: Length of @data
+ *
+ * Return: 0 on success; errno on failure
+ */
+static int
+wlan_hdd_cfg80211_monitor_rssi(struct wiphy *wiphy, struct wireless_dev *wdev,
+                               const void *data, int data_len)
+{
+        int ret;
+
+        vos_ssr_protect(__func__);
+        ret = __wlan_hdd_cfg80211_monitor_rssi(wiphy, wdev, data, data_len);
+        vos_ssr_unprotect(__func__);
+
+        return ret;
+}
+
+/**
+ * hdd_rssi_threshold_breached_cb() - rssi breached NL event
+ * @hddctx: HDD context
+ * @data: rssi breached event data
+ *
+ * This function reads the rssi breached event %data and fill in the skb with
+ * NL attributes and send up the NL event.
+ * This callback execute in atomic context and must not invoke any
+ * blocking calls.
+ *
+ * Return: none
+ */
+void hdd_rssi_threshold_breached_cb(void *hddctx,
+                                 struct rssi_breach_event *data)
+{
+        hdd_context_t *pHddCtx  = (hdd_context_t *)hddctx;
+        int status;
+        struct sk_buff *skb;
+
+        ENTER();
+        status = wlan_hdd_validate_context(pHddCtx);
+
+        if (0 != status) {
+                return;
+        }
+
+        if (!data) {
+                hddLog(LOGE, FL("data is null"));
+                return;
+        }
+
+        skb = cfg80211_vendor_event_alloc(pHddCtx->wiphy,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0))
+                                  NULL,
+#endif
+                                  EXTSCAN_EVENT_BUF_SIZE + NLMSG_HDRLEN,
+                                  QCA_NL80211_VENDOR_SUBCMD_MONITOR_RSSI_INDEX,
+                                  GFP_KERNEL);
+
+        if (!skb) {
+                hddLog(LOGE, FL("cfg80211_vendor_event_alloc failed"));
+                return;
+        }
+
+        hddLog(LOG1, "Req Id: %u Current rssi: %d",
+                        data->request_id, data->curr_rssi);
+        hddLog(LOG1, "Current BSSID: "MAC_ADDRESS_STR,
+                        MAC_ADDR_ARRAY(data->curr_bssid.bytes));
+
+        if (nla_put_u32(skb, QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_REQUEST_ID,
+                data->request_id) ||
+            nla_put(skb, QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_CUR_BSSID,
+                sizeof(data->curr_bssid), data->curr_bssid.bytes) ||
+            nla_put_s8(skb, QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_CUR_RSSI,
+                data->curr_rssi)) {
+                hddLog(LOGE, FL("nla put fail"));
+                goto fail;
+        }
+
+        cfg80211_vendor_event(skb, GFP_KERNEL);
+        return;
+
+fail:
+        kfree_skb(skb);
+        return;
+}
+
+
+
 /**
  * __wlan_hdd_cfg80211_setband() - set band
  * @wiphy: Pointer to wireless phy
@@ -6486,6 +6781,14 @@ const struct wiphy_vendor_command hdd_wiphy_vendor_commands[] =
                  WIPHY_VENDOR_CMD_NEED_NETDEV |
                  WIPHY_VENDOR_CMD_NEED_RUNNING,
         .doit = wlan_hdd_cfg80211_wifi_logger_get_ring_data
+    },
+    {
+        .info.vendor_id = QCA_NL80211_VENDOR_ID,
+        .info.subcmd = QCA_NL80211_VENDOR_SUBCMD_MONITOR_RSSI,
+        .flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+                 WIPHY_VENDOR_CMD_NEED_NETDEV |
+                 WIPHY_VENDOR_CMD_NEED_RUNNING,
+        .doit = wlan_hdd_cfg80211_monitor_rssi
     }
 };
 
@@ -6608,8 +6911,11 @@ struct nl80211_vendor_cmd_info wlan_hdd_cfg80211_vendor_events[] =
     {
         .vendor_id = QCA_NL80211_VENDOR_ID,
         .subcmd = QCA_NL80211_VENDOR_SUBCMD_GET_WIFI_INFO,
-    }
-
+    },
+    [QCA_NL80211_VENDOR_SUBCMD_MONITOR_RSSI_INDEX] = {
+        .vendor_id = QCA_NL80211_VENDOR_ID,
+        .subcmd = QCA_NL80211_VENDOR_SUBCMD_MONITOR_RSSI
+    },
 
 };
 

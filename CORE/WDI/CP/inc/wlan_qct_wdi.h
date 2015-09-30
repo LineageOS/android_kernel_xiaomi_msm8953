@@ -419,6 +419,7 @@ typedef enum
   WDI_DEL_BA_IND,
   WDI_NAN_EVENT_IND,
   WDI_LOST_LINK_PARAMS_IND,
+  WDI_RSSI_BREACHED_IND,
   WDI_MAX_IND
 }WDI_LowLevelIndEnumType;
 
@@ -749,6 +750,13 @@ typedef struct
 
 }WDI_LostLinkParamsIndType;
 
+typedef struct
+{
+  wpt_uint32     request_id;
+  wpt_uint8      bssId[WDI_MAC_ADDR_LEN];
+  wpt_int8       rssi;
+}WDI_RssiBreachedIndType;
+
 /*---------------------------------------------------------------------------
  WDI_IbssPeerInactivityIndType
 -----------------------------------------------------------------------------*/
@@ -980,6 +988,7 @@ typedef struct
 
     WDI_TxBDStatus              wdiTxBdInd;
     WDI_LostLinkParamsIndType   wdiLostLinkParamsInd;
+    WDI_RssiBreachedIndType     wdiRssiBreachedInd;
   }  wdiIndicationData;
 }WDI_LowLevelIndType;
 
@@ -2710,7 +2719,17 @@ typedef struct
   wpt_uint32 reserved2;
 }WDI_FWLoggingInitRspParamType;
 
+typedef struct
+{
+  /* wdi status */
+  wpt_uint32   status;
+}WDI_RssiMonitorStartRspParamType;
 
+typedef struct
+{
+  /* wdi status */
+  wpt_uint32   status;
+}WDI_RssiMonitorStopRspParamType;
 /*---------------------------------------------------------------------------
   WDI_FatalEventLogsRspParamType
 ---------------------------------------------------------------------------*/
@@ -4102,6 +4121,14 @@ typedef struct
    wpt_uint8 minLogBufferSize;
    wpt_uint8 maxLogBufferSize;
 }WDI_FWLoggingInitReqInfoType;
+
+typedef struct
+{
+   wpt_uint32    requestId;
+   wpt_uint8     minRssi;
+   wpt_uint8     maxRssi;
+   wpt_macAddr   currentBssId;
+}WDI_RssiMonitorReqInfoType;
 
 typedef struct
 {
@@ -8113,6 +8140,8 @@ typedef void  (*WDI_FatalEventLogsRspCb)(
                          WDI_FatalEventLogsRspParamType *wdiRsp, void *pUserData);
 
 typedef void  (*WDI_MonModeRspCb)(void *pEventData,void *pUserData);
+typedef void  (*WDI_RssiMonitorStartRspCb)(void *pEventData,void *pUserData);
+typedef void  (*WDI_RssiMonitorStopRspCb)(void *pEventData,void *pUserData);
 
 typedef void  (*WDI_FwrMemDumpRspCb)(WDI_FwrMemDumpRsp *wdiRsp, void *pUserData);
 
@@ -9637,6 +9666,69 @@ WDI_FWLoggingInitReq
    WDI_FWLoggingInitReqInfoType      *pwdiFWLoggingInitReqInfo,
    WDI_FWLoggingInitRspCb             wdiFWLoggingInitReqCb,
    void*                                pUserData
+);
+
+/**
+ @brief WDI_StartRssiMonitorReq will be called when the upper
+        MAC wants to initialize Rssi Monitor on a bssid.
+        Upon the call of this API the WLAN DAL will pack and
+        send a HAL Rssi Monitor init request message to
+        the lower RIVA sub-system.
+
+        In state BUSY this request will be queued. Request won't
+        be allowed in any other state.
+
+
+ @param pwdiRssiMonitorInfo: the Rssi Monitor params
+                      as specified by the Device Interface
+
+        wdiRssiMonitorStartRspCb: callback for passing back the
+        response of the rssi monitor operation received
+        from the device
+
+        pUserData: user data will be passed back with the
+        callback
+
+ @return Result of the function call
+*/
+WDI_Status
+WDI_StartRssiMonitorReq
+(
+   WDI_RssiMonitorReqInfoType          *pwdiRssiMonitorInfo,
+   WDI_RssiMonitorStartRspCb            wdiRssiMonitorStartRspCb,
+   void*                                pUserData
+);
+
+
+/**
+ @brief WDI_StopRssiMonitorReq will be called when the upper
+        MAC wants to stop Rssi Monitor on a bssid.
+        Upon the call of this API the WLAN DAL will pack and
+        send a HAL Rssi Monitor stop request message to
+        the lower RIVA sub-system.
+
+        In state BUSY this request will be queued. Request won't
+        be allowed in any other state.
+
+
+ @param pwdiRssiMonitorInfo: the Rssi Monitor params
+                      as specified by the Device Interface
+
+        wdiRssiMonitorStopRspCb: callback for passing back the
+        response of the rssi monitor operation received
+        from the device
+
+        pUserData: user data will be passed back with the
+        callback
+
+ @return Result of the function call
+*/
+WDI_Status
+WDI_StopRssiMonitorReq
+(
+   WDI_RssiMonitorReqInfoType          *pwdiRssiMonitorInfo,
+   WDI_RssiMonitorStopRspCb            wdiRssiMonitorStopRspCb,
+   void*                               pUserData
 );
 
 /**

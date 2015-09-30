@@ -1259,6 +1259,8 @@ tSirRetStatus uMacPostCtrlMsg(void* pSirGlobal, tSirMbMsg* pMb);
 #define WDA_SET_RTS_CTS_HTVHT                   SIR_HAL_SET_RTS_CTS_HTVHT
 #define WDA_MON_START_REQ                      SIR_HAL_MON_START_REQ
 #define WDA_MON_STOP_REQ                       SIR_HAL_MON_STOP_REQ
+#define WDA_START_RSSI_MONITOR_REQ             SIR_HAL_RSSI_MON_START_REQ
+#define WDA_STOP_RSSI_MONITOR_REQ              SIR_HAL_RSSI_MON_STOP_REQ
 
 tSirRetStatus wdaPostCtrlMsg(tpAniSirGlobal pMac, tSirMsgQ *pMsg);
 

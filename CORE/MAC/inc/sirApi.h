@@ -3756,6 +3756,7 @@ typedef struct
 
 typedef void(*FWLoggingInitReqCb)(void *fwlogInitCbContext, tAniLoggingInitRsp *pRsp);
 typedef void ( *tGetFrameLogCallback) (void *pContext);
+typedef void(*RssiMonitorReqCb)(void *rssiMonitorCbContext, VOS_STATUS status);
 
 typedef struct sAniGetFrameLogReq
 {
@@ -3777,6 +3778,39 @@ typedef struct sSirFWLoggingInitParam
     FWLoggingInitReqCb     fwlogInitCallback;
     void                   *fwlogInitCbContext;
 }tSirFWLoggingInitParam,*tpSirFWLoggingInitParam;
+
+
+/*
+ * struct rssi_monitor_req - rssi monitoring
+ * @request_id: request id
+ * @session_id: session id
+ * @min_rssi: minimum rssi
+ * @max_rssi: maximum rssi
+ * @control: flag to indicate start or stop
+ */
+typedef struct sSirRssiMonitorReq
+{
+    tANI_U32               requestId;
+    tANI_U32               sessionId;
+    tANI_S8                minRssi;
+    tANI_S8                maxRssi;
+    tANI_U8                currentBssId[6];
+    RssiMonitorReqCb       rssiMonitorCallback;
+    void                   *rssiMonitorCbContext;
+}tSirRssiMonitorReq, *tpSirRssiMonitorReq;
+
+
+/**
+ * struct rssi_breach_event - rssi breached event structure
+ * @request_id: request id
+ * @curr_rssi: current rssi
+ * @curr_bssid: current bssid
+ */
+struct rssi_breach_event {
+        tANI_U32     request_id;
+        v_MACADDR_t  curr_bssid;
+        tANI_S8      curr_rssi;
+};
 
 typedef struct sSirFatalEventLogsReqParam
 {

@@ -10394,6 +10394,7 @@ int hdd_wlan_startup(struct device *dev )
                            pHddCtx);
 #endif /* WLAN_FEATURE_EXTSCAN */
 
+   sme_set_rssi_threshold_breached_cb(pHddCtx->hHal, hdd_rssi_threshold_breached_cb);
 #ifdef WLAN_NS_OFFLOAD
    // Register IPv6 notifier to notify if any change in IP
    // So that we can reconfigure the offload parameters

@@ -177,6 +177,8 @@ enum qca_nl80211_vendor_subcmds {
     QCA_NL80211_VENDOR_SUBCMD_EXTSCAN_HOTLIST_SSID_LOST = 68,
     QCA_NL80211_VENDOR_SUBCMD_GET_RING_DATA = 77,
 
+    QCA_NL80211_VENDOR_SUBCMD_MONITOR_RSSI = 80,
+
     QCA_NL80211_VENDOR_SUBCMD_SETBAND = 105,
 };
 
@@ -211,6 +213,8 @@ enum qca_nl80211_vendor_subcmds_index {
     QCA_NL80211_VENDOR_SUBCMD_EXTSCAN_RESET_SSID_HOTLIST_INDEX,
     QCA_NL80211_VENDOR_SUBCMD_EXTSCAN_HOTLIST_SSID_FOUND_INDEX,
     QCA_NL80211_VENDOR_SUBCMD_EXTSCAN_HOTLIST_SSID_LOST_INDEX,
+
+    QCA_NL80211_VENDOR_SUBCMD_MONITOR_RSSI_INDEX,
 };
 
 enum qca_wlan_vendor_attr
@@ -1123,6 +1127,49 @@ typedef struct sHddAvoidFreqList
 } tHddAvoidFreqList;
 #endif /* FEATURE_WLAN_CH_AVOID */
 
+
+/**
+ * enum qca_wlan_rssi_monitoring_control - rssi control commands
+ * @QCA_WLAN_RSSI_MONITORING_CONTROL_INVALID: invalid
+ * @QCA_WLAN_RSSI_MONITORING_START: rssi monitoring start
+ * @QCA_WLAN_RSSI_MONITORING_STOP: rssi monitoring stop
+ */
+enum qca_wlan_rssi_monitoring_control {
+        QCA_WLAN_RSSI_MONITORING_CONTROL_INVALID = 0,
+        QCA_WLAN_RSSI_MONITORING_START,
+        QCA_WLAN_RSSI_MONITORING_STOP,
+};
+
+/**
+ * enum qca_wlan_vendor_attr_rssi_monitoring - rssi monitoring
+ * @QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_INVALID: Invalid
+ * @QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_CONTROL: control
+ * @QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_MAX_RSSI: max rssi
+ * @QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_MIN_RSSI: min rssi
+ * @QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_CUR_BSSID: current bssid
+ * @QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_CUR_RSSI: current rssi
+ * @QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_AFTER_LAST: after last
+ * @QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_MAX: max
+ */
+enum qca_wlan_vendor_attr_rssi_monitoring {
+        QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_INVALID = 0,
+
+        QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_CONTROL,
+        QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_REQUEST_ID,
+
+        QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_MAX_RSSI,
+        QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_MIN_RSSI,
+
+        /* attributes to be used/received in callback */
+        QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_CUR_BSSID,
+        QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_CUR_RSSI,
+
+        /* keep last */
+        QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_AFTER_LAST,
+        QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_MAX =
+                QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_AFTER_LAST - 1,
+};
+
 struct cfg80211_bss* wlan_hdd_cfg80211_update_bss_db( hdd_adapter_t *pAdapter,
                                       tCsrRoamInfo *pRoamInfo
                                       );
@@ -1212,6 +1259,9 @@ int wlan_hdd_send_avoid_freq_event(hdd_context_t *pHddCtx,
 void wlan_hdd_cfg80211_extscan_callback(void *ctx, const tANI_U16 evType,
                                       void *pMsg);
 #endif /* WLAN_FEATURE_EXTSCAN */
+
+void hdd_rssi_threshold_breached_cb(void *hddctx,
+                                 struct rssi_breach_event *data);
 
 void wlan_hdd_cfg80211_nan_init(hdd_context_t *pHddCtx);
 

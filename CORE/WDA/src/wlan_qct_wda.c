@@ -5572,6 +5572,109 @@ void WDA_GetFrameLogRspCallback(WDI_GetFrameLogRspParamType* wdiRsp,
    return ;
 
 }
+
+/*
+ * FUNCTION: WDA_RssiMonitorStopRspCallback
+ * recieves Rssi Monitor stop response from FW
+ */
+void WDA_RssiMonitorStopRspCallback(WDI_RssiMonitorStopRspParamType *wdiRsp,
+                                                            void* pUserData)
+{
+   tWDA_ReqParams *pWdaParams = (tWDA_ReqParams *)pUserData;
+   tSirRssiMonitorReq *pRssiMonitorReqParams;
+
+   VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                                          "<------ %s " ,__func__);
+
+   if(NULL == pWdaParams)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: pWdaParams received NULL", __func__);
+      VOS_ASSERT(0);
+      return ;
+   }
+
+   if(NULL == pWdaParams->wdaMsgParam)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: pWdaParams->wdaMsgParam is NULL", __func__);
+      VOS_ASSERT(0);
+      vos_mem_free(pWdaParams);
+      return ;
+   }
+
+   pRssiMonitorReqParams = (tSirRssiMonitorReq *)pWdaParams->wdaMsgParam;
+
+   if(pRssiMonitorReqParams->rssiMonitorCallback)
+   {
+      pRssiMonitorReqParams->rssiMonitorCallback(
+                               pRssiMonitorReqParams->rssiMonitorCbContext,
+                               CONVERT_WDI2VOS_STATUS(wdiRsp->status));
+   }
+   else
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: pFWLoggingInitParams callback is NULL", __func__);
+   }
+
+   vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
+   vos_mem_free(pWdaParams->wdaMsgParam);
+   vos_mem_free(pWdaParams);
+
+   return;
+}
+
+/*
+ * FUNCTION: WDA_RssiMonitorStartRspCallback
+ * recieves Rssi Monitor start response from FW
+ */
+void WDA_RssiMonitorStartRspCallback(WDI_RssiMonitorStartRspParamType* wdiRsp,
+                                                            void* pUserData)
+{
+   tWDA_ReqParams *pWdaParams = (tWDA_ReqParams *)pUserData;
+   tSirRssiMonitorReq *pRssiMonitorReqParams;
+
+   VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                                          "<------ %s " ,__func__);
+
+   if(NULL == pWdaParams)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: pWdaParams received NULL", __func__);
+      VOS_ASSERT(0);
+      return ;
+   }
+
+   if(NULL == pWdaParams->wdaMsgParam)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: pWdaParams->wdaMsgParam is NULL", __func__);
+      VOS_ASSERT(0);
+      vos_mem_free(pWdaParams);
+      return ;
+   }
+
+   pRssiMonitorReqParams = (tSirRssiMonitorReq *)pWdaParams->wdaMsgParam;
+
+   if(pRssiMonitorReqParams->rssiMonitorCallback)
+   {
+      pRssiMonitorReqParams->rssiMonitorCallback(
+                               pRssiMonitorReqParams->rssiMonitorCbContext,
+                               CONVERT_WDI2VOS_STATUS(wdiRsp->status));
+   }
+   else
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: pFWLoggingInitParams callback is NULL", __func__);
+   }
+
+   vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
+   vos_mem_free(pWdaParams->wdaMsgParam);
+   vos_mem_free(pWdaParams);
+
+   return;
+}
+
 /*
  * FUNCTION: WDA_FWLoggingInitRspCallback
  * recieves Mgmt Logging init response from FW
@@ -10427,6 +10530,149 @@ VOS_STATUS WDA_ProcessFWLoggingInitReq(tWDA_CbContext *pWDA,
 }
 
 /*
+ * FUNCTION: WDA_ProcessStartRssiMonitorReq
+ *
+ */
+VOS_STATUS WDA_ProcessStartRssiMonitorReq(tWDA_CbContext *pWDA,
+                                tSirRssiMonitorReq *pRssiMonitorReqParam)
+{
+   VOS_STATUS status = VOS_STATUS_SUCCESS;
+   WDI_Status wstatus;
+   WDI_RssiMonitorReqInfoType *wdiRssiMonitorInfo;
+   tWDA_ReqParams *pWdaParams ;
+
+   VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                                          "------> %s " ,__func__);
+
+   /* Sanity Check*/
+   if(NULL == pRssiMonitorReqParam)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                           "%s: pRssiMonitorReqParam received NULL", __func__);
+      VOS_ASSERT(0) ;
+      return VOS_STATUS_E_FAULT;
+   }
+
+   wdiRssiMonitorInfo = (WDI_RssiMonitorReqInfoType *)vos_mem_malloc(
+                                       sizeof(WDI_RssiMonitorReqInfoType));
+   if(NULL == wdiRssiMonitorInfo)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                           "%s: VOS MEM Alloc Failure", __func__);
+      VOS_ASSERT(0);
+      vos_mem_free(pRssiMonitorReqParam);
+      return VOS_STATUS_E_NOMEM;
+   }
+
+   pWdaParams = (tWDA_ReqParams *)vos_mem_malloc(sizeof(tWDA_ReqParams)) ;
+   if(NULL == pWdaParams)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                           "%s: VOS MEM Alloc Failure", __func__);
+      VOS_ASSERT(0);
+      vos_mem_free(wdiRssiMonitorInfo);
+      vos_mem_free(pRssiMonitorReqParam);
+      return VOS_STATUS_E_NOMEM;
+   }
+
+   wdiRssiMonitorInfo->requestId = pRssiMonitorReqParam->requestId;
+   wdiRssiMonitorInfo->minRssi = pRssiMonitorReqParam->minRssi;
+   wdiRssiMonitorInfo->maxRssi = pRssiMonitorReqParam->maxRssi;
+   vos_mem_copy(wdiRssiMonitorInfo->currentBssId,
+                &(pRssiMonitorReqParam->currentBssId), sizeof(tSirMacAddr));
+
+   pWdaParams->pWdaContext = pWDA;
+   pWdaParams->wdaMsgParam = pRssiMonitorReqParam;
+   pWdaParams->wdaWdiApiMsgParam = (void *)wdiRssiMonitorInfo;
+
+   wstatus = WDI_StartRssiMonitorReq(wdiRssiMonitorInfo,
+                       (WDI_RssiMonitorStartRspCb)WDA_RssiMonitorStartRspCallback,
+                        pWdaParams);
+   if(IS_WDI_STATUS_FAILURE(wstatus))
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "Failure in Mgmt Logging init REQ WDI API, free all the memory" );
+      status = CONVERT_WDI2VOS_STATUS(wstatus);
+      vos_mem_free(pWdaParams->wdaWdiApiMsgParam) ;
+      vos_mem_free(pWdaParams->wdaMsgParam);
+      vos_mem_free(pWdaParams);
+   }
+
+   return status;
+}
+
+/*
+ * FUNCTION: WDA_ProcessStopRssiMonitorReq
+ *
+ */
+VOS_STATUS WDA_ProcessStopRssiMonitorReq(tWDA_CbContext *pWDA,
+                                tSirRssiMonitorReq *pRssiMonitorReqParam)
+{
+   VOS_STATUS status = VOS_STATUS_SUCCESS;
+   WDI_Status wstatus;
+   WDI_RssiMonitorReqInfoType *wdiRssiMonitorInfo;
+   tWDA_ReqParams *pWdaParams ;
+
+   VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                                          "------> %s " ,__func__);
+
+   /* Sanity Check*/
+   if(NULL == pRssiMonitorReqParam)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                           "%s: pRssiMonitorReqParam received NULL", __func__);
+      VOS_ASSERT(0) ;
+      return VOS_STATUS_E_FAULT;
+   }
+
+   wdiRssiMonitorInfo = (WDI_RssiMonitorReqInfoType *)vos_mem_malloc(
+                                       sizeof(WDI_RssiMonitorReqInfoType));
+   if(NULL == wdiRssiMonitorInfo)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                           "%s: VOS MEM Alloc Failure", __func__);
+      VOS_ASSERT(0);
+      vos_mem_free(pRssiMonitorReqParam);
+      return VOS_STATUS_E_NOMEM;
+   }
+
+   pWdaParams = (tWDA_ReqParams *)vos_mem_malloc(sizeof(tWDA_ReqParams)) ;
+   if(NULL == pWdaParams)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                           "%s: VOS MEM Alloc Failure", __func__);
+      VOS_ASSERT(0);
+      vos_mem_free(wdiRssiMonitorInfo);
+      vos_mem_free(pRssiMonitorReqParam);
+      return VOS_STATUS_E_NOMEM;
+   }
+
+   wdiRssiMonitorInfo->requestId = pRssiMonitorReqParam->requestId;
+   vos_mem_copy(wdiRssiMonitorInfo->currentBssId,
+                &(pRssiMonitorReqParam->currentBssId), sizeof(tSirMacAddr));
+
+   pWdaParams->pWdaContext = pWDA;
+   pWdaParams->wdaMsgParam = pRssiMonitorReqParam;
+   pWdaParams->wdaWdiApiMsgParam = (void *)wdiRssiMonitorInfo;
+
+   wstatus = WDI_StopRssiMonitorReq(wdiRssiMonitorInfo,
+                       (WDI_RssiMonitorStopRspCb)WDA_RssiMonitorStopRspCallback,
+                        pWdaParams);
+   if(IS_WDI_STATUS_FAILURE(wstatus))
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "Failure in Mgmt Logging init REQ WDI API, free all the memory" );
+      status = CONVERT_WDI2VOS_STATUS(wstatus);
+      vos_mem_free(pWdaParams->wdaWdiApiMsgParam) ;
+      vos_mem_free(pWdaParams->wdaMsgParam);
+      vos_mem_free(pWdaParams);
+   }
+
+   return status;
+}
+
+
+/*
  * FUNCTION: WDA_WdiIndicationCallback
  * 
  */ 
@@ -14473,6 +14719,16 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
                                         (tAniGetFrameLogReq *)pMsg->bodyptr);
          break;
       }
+      case WDA_START_RSSI_MONITOR_REQ:
+      {
+         WDA_ProcessStartRssiMonitorReq(pWDA,(tSirRssiMonitorReq *)pMsg->bodyptr);
+         break;
+      }
+      case WDA_STOP_RSSI_MONITOR_REQ:
+      {
+         WDA_ProcessStopRssiMonitorReq(pWDA,(tSirRssiMonitorReq *)pMsg->bodyptr);
+         break;
+      }
       case WDA_SEND_LOG_DONE_IND:
       {
          WDA_FWLoggingDXEdoneInd(pMsg->bodyval);
@@ -15895,6 +16151,61 @@ void WDA_lowLevelIndCallback(WDI_LowLevelIndType *wdiLowLevelInd,
           WDA_SendMsg(pWDA, SIR_HAL_LOST_LINK_PARAMS_IND,
                                        (void *)pLostLinkParamInd , 0) ;
           break;
+      }
+      case WDI_RSSI_BREACHED_IND:
+      {
+         WDI_RssiBreachedIndType *pRssiBreachedInd;
+         tpAniSirGlobal pMac;
+
+         pRssiBreachedInd =
+             (WDI_RssiBreachedIndType *)vos_mem_malloc(sizeof(WDI_RssiBreachedIndType));
+         VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                   "Received WDI_RSSI_BREACHED_IND from FW");
+
+         vos_mem_copy(pRssiBreachedInd,
+                    &wdiLowLevelInd->wdiIndicationData.wdiRssiBreachedInd,
+                    sizeof(WDI_RssiBreachedIndType));
+
+         /*sanity check*/
+         if (NULL == pWDA)
+         {
+            VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s:pWDA is NULL", __func__);
+            vos_mem_free(pRssiBreachedInd);
+            VOS_ASSERT(0);
+            return;
+         }
+
+         if (NULL == pRssiBreachedInd)
+         {
+            VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s:Breach indication from FW is null can't invoke HDD callback",
+              __func__);
+            VOS_ASSERT(0);
+            return;
+         }
+
+         pMac = (tpAniSirGlobal )VOS_GET_MAC_CTXT(pWDA->pVosContext);
+         if (NULL == pMac)
+         {
+            VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s:pMac is NULL", __func__);
+            VOS_ASSERT(0);
+            vos_mem_free(pRssiBreachedInd);
+            return;
+         }
+
+         if (pMac->sme.rssiThresholdBreachedCb)
+         {
+            pMac->sme.rssiThresholdBreachedCb(pMac->pAdapter, (void *)pRssiBreachedInd);
+         }
+         else
+         {
+            VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               "%s:HDD callback is null", __func__);
+         }
+         vos_mem_free(pRssiBreachedInd);
+         break;
       }
       default:
       {

@@ -2217,6 +2217,48 @@ eHalStatus sme_GetFramesLog(tHalHandle hHal, tANI_U8 flag);
 eHalStatus sme_InitMgmtFrameLogging( tHalHandle hHal,
                             tpSirFWLoggingInitParam wlanFWLoggingInitParam);
 
+
+/* ---------------------------------------------------------------------------
+
+  \fn    sme_StopRssiMonitoring
+
+  \brief
+    SME will pass this request to lower mac to stop monitoring rssi range on
+    a bssid.
+
+  \param
+
+    hHal - The handle returned by macOpen.
+
+    tSirRssiMonitorReq req- depict the monitor req params.
+
+  \return eHalStatus
+
+--------------------------------------------------------------------------- */
+eHalStatus sme_StopRssiMonitoring(tHalHandle hHal,
+                            tSirRssiMonitorReq *req);
+
+/* ---------------------------------------------------------------------------
+
+  \fn    sme_StartRssiMonitoring
+
+  \brief
+    SME will pass this request to lower mac to start monitoring rssi range on
+    a bssid.
+
+  \param
+
+    hHal - The handle returned by macOpen.
+
+    tSirRssiMonitorReq req- depict the monitor req params.
+
+  \return eHalStatus
+
+--------------------------------------------------------------------------- */
+eHalStatus sme_StartRssiMonitoring(tHalHandle hHal,
+                            tSirRssiMonitorReq *req);
+
+
 /* ---------------------------------------------------------------------------
 
   \fn    sme_ConfigureRxpFilter
@@ -3657,6 +3699,9 @@ void sme_UpdateChannelBondingMode24G(tHalHandle hHal,
 eHalStatus sme_SetHT2040Mode(tHalHandle hHal,
                    tANI_U8 sessionId, tANI_U8 cbMode);
 #endif
+
+eHalStatus sme_set_rssi_threshold_breached_cb(tHalHandle hal,
+                        void (*cb)(void *, struct rssi_breach_event *));
 
 void sme_disable_dfs_channel(tHalHandle hHal, bool disable_dfs);
 

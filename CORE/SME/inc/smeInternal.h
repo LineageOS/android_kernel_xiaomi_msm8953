@@ -165,6 +165,7 @@ typedef struct tagSmeStruct
    tSmeEncMsgHddCbkInfo pEncMsgInfoParams;
    void (*pBtCoexTDLSNotification) (void *pAdapter, int);
    void (*nanCallback) (void*, tSirNanEvent*);
+   void (*rssiThresholdBreachedCb)(void *, struct rssi_breach_event *);
 
 } tSmeStruct, *tpSmeStruct;
 
