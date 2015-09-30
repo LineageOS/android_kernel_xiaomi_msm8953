@@ -393,6 +393,30 @@ static int con_mode;
 static int curr_con_mode;
 #endif
 
+#ifdef WLAN_FEATURE_OFFLOAD_PACKETS
+/**
+ * hdd_init_offloaded_packets_ctx() - Initialize offload packets context
+ * @hdd_ctx: hdd global context
+ *
+ * Return: none
+ */
+static void hdd_init_offloaded_packets_ctx(hdd_context_t *hdd_ctx)
+{
+    uint8_t i;
+
+    mutex_init(&hdd_ctx->op_ctx.op_lock);
+    for (i = 0; i < MAXNUM_PERIODIC_TX_PTRNS; i++)
+    {
+        hdd_ctx->op_ctx.op_table[i].request_id = 0;
+        hdd_ctx->op_ctx.op_table[i].pattern_id = i;
+    }
+}
+#else
+static void hdd_init_offloaded_packets_ctx(hdd_context_t *hdd_ctx)
+{
+}
+#endif
+
 /**---------------------------------------------------------------------------
 
   \brief hdd_vos_trace_enable() - Configure initial VOS Trace enable
@@ -9674,6 +9698,7 @@ int hdd_wlan_startup(struct device *dev )
    mutex_init(&pHddCtx->spoofMacAddr.macSpoofingLock);
    mutex_init(&pHddCtx->wmmLock);
 
+   hdd_init_offloaded_packets_ctx(pHddCtx);
    /* By default Strict Regulatory For FCC should be false */
 
    pHddCtx->nEnableStrictRegulatoryForFCC = FALSE;

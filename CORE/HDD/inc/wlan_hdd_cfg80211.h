@@ -179,6 +179,8 @@ enum qca_nl80211_vendor_subcmds {
 
     QCA_NL80211_VENDOR_SUBCMD_MONITOR_RSSI = 80,
 
+    QCA_NL80211_VENDOR_SUBCMD_OFFLOADED_PACKETS = 79,
+
     QCA_NL80211_VENDOR_SUBCMD_SETBAND = 105,
 };
 
@@ -1169,6 +1171,50 @@ enum qca_wlan_vendor_attr_rssi_monitoring {
         QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_MAX =
                 QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_AFTER_LAST - 1,
 };
+
+#ifdef WLAN_FEATURE_OFFLOAD_PACKETS
+/**
+ * enum wlan_offloaded_packets_control - control commands
+ * @WLAN_START_OFFLOADED_PACKETS: start offloaded packets
+ * @WLAN_STOP_OFFLOADED_PACKETS: stop offloaded packets
+ *
+ */
+enum wlan_offloaded_packets_control
+{
+    WLAN_START_OFFLOADED_PACKETS = 1,
+    WLAN_STOP_OFFLOADED_PACKETS  = 2
+};
+
+/**
+ * enum qca_wlan_vendor_attr_offloaded_packets - offloaded packets
+ * @QCA_WLAN_VENDOR_ATTR_OFFLOADED_PACKETS_INVALID: invalid
+ * @QCA_WLAN_VENDOR_ATTR_OFFLOADED_PACKETS_SENDING_CONTROL: control
+ * @QCA_WLAN_VENDOR_ATTR_OFFLOADED_PACKETS_REQUEST_ID: request id
+ * @QCA_WLAN_VENDOR_ATTR_OFFLOADED_PACKETS_IP_PACKET_DATA: ip packet data
+ * @QCA_WLAN_VENDOR_ATTR_OFFLOADED_PACKETS_SRC_MAC_ADDR: src mac address
+ * @QCA_WLAN_VENDOR_ATTR_OFFLOADED_PACKETS_DST_MAC_ADDR: destination mac address
+ * @QCA_WLAN_VENDOR_ATTR_OFFLOADED_PACKETS_PERIOD: period in milli seconds
+ * @QCA_WLAN_VENDOR_ATTR_OFFLOADED_PACKETS_AFTER_LAST: after last
+ * @QCA_WLAN_VENDOR_ATTR_OFFLOADED_PACKETS_MAX: max
+ */
+enum qca_wlan_vendor_attr_offloaded_packets
+{
+    QCA_WLAN_VENDOR_ATTR_OFFLOADED_PACKETS_INVALID = 0,
+    QCA_WLAN_VENDOR_ATTR_OFFLOADED_PACKETS_SENDING_CONTROL,
+    QCA_WLAN_VENDOR_ATTR_OFFLOADED_PACKETS_REQUEST_ID,
+
+    /* Packet in hex format */
+    QCA_WLAN_VENDOR_ATTR_OFFLOADED_PACKETS_IP_PACKET_DATA,
+    QCA_WLAN_VENDOR_ATTR_OFFLOADED_PACKETS_SRC_MAC_ADDR,
+    QCA_WLAN_VENDOR_ATTR_OFFLOADED_PACKETS_DST_MAC_ADDR,
+    QCA_WLAN_VENDOR_ATTR_OFFLOADED_PACKETS_PERIOD,
+
+    /* keep last */
+    QCA_WLAN_VENDOR_ATTR_OFFLOADED_PACKETS_AFTER_LAST,
+    QCA_WLAN_VENDOR_ATTR_OFFLOADED_PACKETS_MAX =
+    QCA_WLAN_VENDOR_ATTR_OFFLOADED_PACKETS_AFTER_LAST - 1,
+};
+#endif
 
 struct cfg80211_bss* wlan_hdd_cfg80211_update_bss_db( hdd_adapter_t *pAdapter,
                                       tCsrRoamInfo *pRoamInfo

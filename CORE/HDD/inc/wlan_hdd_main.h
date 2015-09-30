@@ -1263,6 +1263,31 @@ struct hdd_ext_scan_context {
 };
 #endif /* End of WLAN_FEATURE_EXTSCAN */
 
+#ifdef WLAN_FEATURE_OFFLOAD_PACKETS
+/**
+ * struct hdd_offloaded_packets - request id to pattern id mapping
+ * @request_id: request id
+ * @pattern_id: pattern id
+ *
+ */
+struct hdd_offloaded_packets
+{
+    uint32_t request_id;
+    uint8_t  pattern_id;
+};
+
+/**
+ * struct hdd_offloaded_packets_ctx - offloaded packets context
+ * @op_table: request id to pattern id table
+ * @op_lock: mutex lock
+ */
+struct hdd_offloaded_packets_ctx
+{
+    struct hdd_offloaded_packets op_table[MAXNUM_PERIODIC_TX_PTRNS];
+    struct mutex op_lock;
+};
+#endif
+
 /** Adapter stucture definition */
 
 struct hdd_context_s
@@ -1498,6 +1523,9 @@ struct hdd_context_s
     unsigned long  last_suspend_success;
     v_U32_t  continuous_suspend_fail_cnt;
 
+#ifdef WLAN_FEATURE_OFFLOAD_PACKETS
+    struct hdd_offloaded_packets_ctx op_ctx;
+#endif
 };
 
 
