@@ -56,13 +56,7 @@ int wpa_tdls_is_allowed_force_peer(tdlsCtx_t *pHddTdlsCtx, u8 *mac);
 static void wlan_hdd_tdls_implicit_send_discovery_request(tdlsCtx_t *pHddTdlsCtx);
 #endif
 
-static u8 wlan_hdd_tdls_hash_key (
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
-                                  const u8 *mac
-#else
-                                  u8 *mac
-#endif
-                                 )
+static u8 wlan_hdd_tdls_hash_key (const u8 *mac)
 {
     int i;
     u8 key = 0;
@@ -1256,6 +1250,9 @@ hddTdlsPeer_t *wlan_hdd_tdls_get_peer(hdd_adapter_t *pAdapter,
         return peer;
     }
 
+    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+              FL("peer mac address %pM"), mac);
+
     /* not found, allocate and add the list */
     peer = vos_mem_malloc(sizeof(hddTdlsPeer_t));
     if (NULL == peer) {
@@ -1705,22 +1702,90 @@ void wlan_hdd_tdls_extract_sa(struct sk_buff *skb, u8 *mac)
     memcpy(mac, skb->data+6, 6);
 }
 
-int wlan_hdd_tdls_increment_pkt_count(hdd_adapter_t *pAdapter,
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
-                                      const u8 *mac,
-#else
-                                      u8 *mac,
-#endif
-                                      u8 tx)
+/**
+ * wlan_hdd_tdls_is_forced_peer - function to check if peer is forced peer
+ * @adapter: pointer to hdd apater
+ * @mac: peer mac address
+ *
+ * Function identified is the peer is forced for tdls connection
+ *
+ * return: true: peer is forced false: peer is not forced
+ */
+static bool wlan_hdd_tdls_is_forced_peer(hdd_adapter_t *adapter,
+                                         const u8 *mac)
+{
+    hddTdlsPeer_t *peer;
+    hdd_context_t *hddctx = WLAN_HDD_GET_CTX(adapter);
+    bool is_forced_peer;
+
+    mutex_lock(&hddctx->tdls_lock);
+    peer = wlan_hdd_tdls_find_peer(adapter, mac, FALSE);
+    if (!peer)
+    {
+        is_forced_peer = false;
+        goto ret;
+    }
+
+    if (!peer->isForcedPeer)
+    {
+        is_forced_peer = false;
+        goto ret;
+    }
+    is_forced_peer = true;
+
+ret:
+    mutex_unlock(&hddctx->tdls_lock);
+    return is_forced_peer;
+}
+
+/**
+ * wlan_hdd_tdls_increment_pkt_count - function to increment tdls tx packet cnt
+ * @pAdapter: pointer to hdd adapter
+ * @skb: pointer to sk_buff
+ *
+ * Function to increment packet count if packet is destined to tdls peer
+ *
+ * return: None
+ */
+static void wlan_hdd_tdls_increment_pkt_count(hdd_adapter_t *pAdapter,
+                                      struct sk_buff *skb)
 {
     hddTdlsPeer_t *curr_peer;
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+    hdd_station_ctx_t *hdd_sta_ctx;
+    u8 mac[6];
 
     if (0 != (wlan_hdd_validate_context(pHddCtx)))
-        return -EINVAL;
+        return;
 
     if (eTDLS_SUPPORT_ENABLED != pHddCtx->tdls_mode)
-        return -1;
+        goto error;
+
+    if (!pHddCtx->cfg_ini->fEnableTDLSImplicitTrigger)
+        goto error;
+
+    wlan_hdd_tdls_extract_da(skb, mac);
+
+    if (pHddCtx->cfg_ini->fTDLSExternalControl)
+    {
+        if (!wlan_hdd_tdls_is_forced_peer(pAdapter, mac))
+            goto error;
+    }
+
+    hdd_sta_ctx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
+
+    if (vos_is_macaddr_group((v_MACADDR_t *)mac))
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_MED,
+                  "broadcast packet, not adding to peer list");
+        goto error;
+    }
+
+    if (memcmp(hdd_sta_ctx->conn_info.bssId, mac, 6) == 0) {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_MED,
+                  "packet da is bssid, not adding to peer list");
+        goto error;
+    }
 
     mutex_lock(&pHddCtx->tdls_lock);
     curr_peer = wlan_hdd_tdls_get_peer(pAdapter, mac);
@@ -1729,16 +1794,20 @@ int wlan_hdd_tdls_increment_pkt_count(hdd_adapter_t *pAdapter,
        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                  FL("curr_peer is NULL"));
         mutex_unlock(&pHddCtx->tdls_lock);
-        return -1;
+        goto error;
     }
 
-    if (tx)
-        curr_peer->tx_pkt++;
-    else
-        curr_peer->rx_pkt++;
+    curr_peer->tx_pkt++;
 
     mutex_unlock(&pHddCtx->tdls_lock);
-    return 0;
+
+error:
+    return;
+}
+
+void wlan_hdd_tdls_notify_packet(hdd_adapter_t *adapter, struct sk_buff *skb)
+{
+    wlan_hdd_tdls_increment_pkt_count(adapter, skb);
 }
 
 static int wlan_hdd_tdls_check_config(tdls_config_params_t *config)
@@ -1924,11 +1993,7 @@ error:
    otherwise, it returns NULL
 */
 hddTdlsPeer_t *wlan_hdd_tdls_find_peer(hdd_adapter_t *pAdapter,
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
                                        const u8 *mac,
-#else
-                                       u8 *mac,
-#endif
                                        tANI_BOOLEAN mutexLock)
 {
     u8 key;
@@ -1962,8 +2027,6 @@ hddTdlsPeer_t *wlan_hdd_tdls_find_peer(hdd_adapter_t *pAdapter,
     list_for_each(pos, head) {
         curr_peer = list_entry (pos, hddTdlsPeer_t, node);
         if (!memcmp(mac, curr_peer->peerMac, 6)) {
-            VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-                     "findTdlsPeer: found staId %d", curr_peer->staId);
             if ( mutexLock )
                 mutex_unlock(&pHddCtx->tdls_lock);
             return curr_peer;

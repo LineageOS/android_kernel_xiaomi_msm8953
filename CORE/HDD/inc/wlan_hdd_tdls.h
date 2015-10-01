@@ -248,14 +248,6 @@ void wlan_hdd_tdls_extract_da(struct sk_buff *skb, u8 *mac);
 
 void wlan_hdd_tdls_extract_sa(struct sk_buff *skb, u8 *mac);
 
-int wlan_hdd_tdls_increment_pkt_count(hdd_adapter_t *pAdapter,
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
-                                      const u8 *mac,
-#else
-                                      u8 *mac,
-#endif
-                                      u8 tx);
-
 int wlan_hdd_tdls_set_sta_id(hdd_adapter_t *pAdapter,
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
                              const u8 *mac,
@@ -265,11 +257,7 @@ int wlan_hdd_tdls_set_sta_id(hdd_adapter_t *pAdapter,
                              u8 staId);
 
 hddTdlsPeer_t *wlan_hdd_tdls_find_peer(hdd_adapter_t *pAdapter,
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
                                        const u8 *mac,
-#else
-                                       u8 *mac,
-#endif
                                        tANI_BOOLEAN mutexLock);
 
 hddTdlsPeer_t *wlan_hdd_tdls_find_all_peer(hdd_context_t *pHddCtx,
@@ -470,6 +458,7 @@ hddTdlsPeer_t *wlan_hdd_tdls_get_connected_peer(hdd_adapter_t *pAdapter);
 int wlan_hdd_validate_tdls_context(hdd_context_t *pHddCtx, tdlsCtx_t *pTdlsCtx);
 
 void wlan_hdd_tdls_reenable(hdd_context_t *pHddCtx);
+void wlan_hdd_tdls_notify_packet(hdd_adapter_t *adapter, struct sk_buff *skb);
 #else
 static inline void hdd_tdls_notify_mode_change(hdd_adapter_t *pAdapter,
                                                hdd_context_t *pHddCtx)
@@ -481,6 +470,10 @@ wlan_hdd_tdls_disable_offchan_and_teardown_links(hdd_context_t *pHddCtx)
 }
 static inline void
 wlan_hdd_tdls_reenable(hdd_context_t *pHddCtx)
+{
+}
+static inline void
+wlan_hdd_tdls_notify_packet(hdd_adapter_t *adapter, struct sk_buff *skb)
 {
 }
 #endif
