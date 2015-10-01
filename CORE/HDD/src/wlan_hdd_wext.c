@@ -7090,7 +7090,7 @@ static int __iw_setnone_getnone(struct net_device *dev,
             vos_fatal_event_logs_req(WLAN_LOG_TYPE_NON_FATAL,
                      WLAN_LOG_INDICATOR_IOCTL,
                      WLAN_LOG_REASON_IOCTL,
-                     TRUE);
+                     TRUE, TRUE);
             break;
         }
         case WE_GET_FW_MEMDUMP:

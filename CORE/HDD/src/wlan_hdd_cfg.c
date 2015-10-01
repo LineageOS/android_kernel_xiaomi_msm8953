@@ -3171,6 +3171,13 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                 CFG_DISABLE_P2P_MAC_ADDR_SPOOFING_MIN,
                 CFG_DISABLE_P2P_MAC_ADDR_SPOOFING_MAX),
 
+   REG_VARIABLE(CFG_ENABLE_FATAL_EVENT_TRIGGER, WLAN_PARAM_Integer,
+                hdd_config_t, enableFatalEvent,
+                VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                CFG_ENABLE_FATAL_EVENT_TRIGGER_DEFAULT,
+                CFG_ENABLE_FATAL_EVENT_TRIGGER_MIN,
+                CFG_ENABLE_FATAL_EVENT_TRIGGER_MAX),
+
    REG_VARIABLE(CFG_ENABLE_MGMT_LOGGING, WLAN_PARAM_Integer,
                 hdd_config_t, enableMgmtLogging,
                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
@@ -3836,6 +3843,9 @@ static void print_hdd_cfg(hdd_context_t *pHddCtx)
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
                     "Name = [disableP2PMacSpoofing] Value = [%u] ",
                                        pHddCtx->cfg_ini->disableP2PMacSpoofing);
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+                    "Name = [enableFatalEvent] Value = [%u] ",
+                                       pHddCtx->cfg_ini->enableFatalEvent);
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [gRoamtoDFSChannel] Value = [%u] ",pHddCtx->cfg_ini->allowDFSChannelRoam);
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [gMaxConcurrentActiveSessions] Value = [%u] ", pHddCtx->cfg_ini->gMaxConcurrentActiveSessions);
 #ifdef WLAN_FEATURE_AP_HT40_24G
@@ -5650,6 +5660,7 @@ VOS_STATUS hdd_set_sme_config( hdd_context_t *pHddCtx )
    smeConfig->csrConfig.ignorePeerErpInfo = pConfig->ignorePeerErpInfo;
    smeConfig->csrConfig.ignorePeerHTopMode = pConfig->ignorePeerHTopMode;
    smeConfig->csrConfig.disableP2PMacSpoofing = pConfig->disableP2PMacSpoofing;
+   smeConfig->csrConfig.enableFatalEvent= pConfig->enableFatalEvent;
    smeConfig->csrConfig.initialScanSkipDFSCh = pConfig->initialScanSkipDFSCh;
 
    smeConfig->csrConfig.isCoalesingInIBSSAllowed =

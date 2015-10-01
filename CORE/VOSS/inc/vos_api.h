@@ -125,6 +125,8 @@ enum wifi_logging_ring_id {
     RING_ID_PER_PACKET_STATS,
 };
 
+/* 15 Min */
+#define WLAN_POWER_COLLAPSE_FAIL_THRESHOLD  (1000 * 60 * 15)
 /**
  * enum log_event_type - Type of event initiating bug report
  * @WLAN_LOG_TYPE_NON_FATAL: Non fatal event
@@ -143,6 +145,9 @@ enum log_event_type {
  * @WLAN_LOG_INDICATOR_FRAMEWORK: Framework triggers bug report
  * @WLAN_LOG_INDICATOR_HOST_DRIVER: Host driver triggers bug report
  * @WLAN_LOG_INDICATOR_FIRMWARE: FW initiates bug report
+ * @WLAN_LOG_INDICATOR_IOCTL: Bug report is initiated by IOCTL
+ * @WLAN_LOG_INDICATOR_HOST_ONLY: Host initiated and only Host
+ * logs are needed
  *
  * Enum indicating the module that triggered the bug report
  */
@@ -151,53 +156,54 @@ enum log_event_indicator {
 	WLAN_LOG_INDICATOR_FRAMEWORK,
 	WLAN_LOG_INDICATOR_HOST_DRIVER,
 	WLAN_LOG_INDICATOR_FIRMWARE,
-	WLAN_LOG_INDICATOR_IOCTL
+	WLAN_LOG_INDICATOR_IOCTL,
+	WLAN_LOG_INDICATOR_HOST_ONLY,
 };
 
 /**
  * enum log_event_host_reason_code - Reason code for bug report
  * @WLAN_LOG_REASON_CODE_UNUSED: Unused
- * @WLAN_LOG_REASON_COMMAND_UNSUCCESSFUL: Command response status from FW
- * is error
  * @WLAN_LOG_REASON_ROAM_FAIL: Driver initiated roam has failed
  * @WLAN_LOG_REASON_THREAD_STUCK: Monitor Health of host threads and report
  * fatal event if some thread is stuck
  * @WLAN_LOG_REASON_DATA_STALL: Unable to send/receive data due to low resource
  * scenario for a prolonged period
  * @WLAN_LOG_REASON_SME_COMMAND_STUCK: SME command is stuck in SME active queue
- * @WLAN_LOG_REASON_ZERO_SCAN_RESULTS: Full scan resulted in zero scan results
  * @WLAN_LOG_REASON_QUEUE_FULL: Defer queue becomes full for a prolonged period
  * @WLAN_LOG_REASON_POWER_COLLAPSE_FAIL: Unable to allow apps power collapse
  * for a prolonged period
- * @WLAN_LOG_REASON_SSR_FAIL: Unable to gracefully complete SSR
- * @WLAN_LOG_REASON_DISCONNECT_FAIL: Disconnect from Supplicant is not
- * successful
- * @WLAN_LOG_REASON_CLEAN_UP_FAIL: Clean up of  TDLS or Pre-Auth Sessions
- * not successful
  * @WLAN_LOG_REASON_MALLOC_FAIL: Memory allocation Fails
  * @WLAN_LOG_REASON_VOS_MSG_UNDER_RUN: VOS Core runs out of message wrapper
- * @WLAN_LOG_REASON_MSG_POST_FAIL: Unable to post msg
- *
+ * @WLAN_LOG_REASON_IOCTL: Initiated by IOCTL
+ * @WLAN_LOG_REASON_CODE_FRAMEWORK: Initiated by framework
+ * @WLAN_LOG_REASON_DEL_BSS_STA_FAIL: DEL BSS/STA rsp is failure
+ * @WLAN_LOG_REASON_ADD_BSS_STA_FAIL: ADD BSS/STA rsp is failure
+ * @WLAN_LOG_REASON_ENTER_IMPS_BMPS_FAIL: Enter IMPS/BMPS rsp failure
+ * @WLAN_LOG_REASON_EXIT_IMPS_BMPS_FAIL: Exit IMPS/BMPS rsp failure
+ * @WLAN_LOG_REASON_HDD_TIME_OUT: Wait for event Timeout in HDD layer
+ * @WLAN_LOG_REASON_MGMT_FRAME_TIMEOUT:Management frame timedout
+   @WLAN_LOG_REASON_SME_OUT_OF_CMD_BUFL sme out of cmd buffer
  * This enum contains the different reason codes for bug report
  */
 enum log_event_host_reason_code {
 	WLAN_LOG_REASON_CODE_UNUSED,
-	WLAN_LOG_REASON_COMMAND_UNSUCCESSFUL,
 	WLAN_LOG_REASON_ROAM_FAIL,
 	WLAN_LOG_REASON_THREAD_STUCK,
 	WLAN_LOG_REASON_DATA_STALL,
 	WLAN_LOG_REASON_SME_COMMAND_STUCK,
-	WLAN_LOG_REASON_ZERO_SCAN_RESULTS,
 	WLAN_LOG_REASON_QUEUE_FULL,
 	WLAN_LOG_REASON_POWER_COLLAPSE_FAIL,
-	WLAN_LOG_REASON_SSR_FAIL,
-	WLAN_LOG_REASON_DISCONNECT_FAIL,
-	WLAN_LOG_REASON_CLEAN_UP_FAIL,
 	WLAN_LOG_REASON_MALLOC_FAIL,
 	WLAN_LOG_REASON_VOS_MSG_UNDER_RUN,
-	WLAN_LOG_REASON_MSG_POST_FAIL,
 	WLAN_LOG_REASON_IOCTL,
 	WLAN_LOG_REASON_CODE_FRAMEWORK,
+	WLAN_LOG_REASON_DEL_BSS_STA_FAIL,
+	WLAN_LOG_REASON_ADD_BSS_STA_FAIL,
+	WLAN_LOG_REASON_ENTER_IMPS_BMPS_FAIL,
+	WLAN_LOG_REASON_EXIT_IMPS_BMPS_FAIL,
+	WLAN_LOG_REASON_HDD_TIME_OUT,
+	WLAN_LOG_REASON_MGMT_FRAME_TIMEOUT,
+	WLAN_LOG_REASON_SME_OUT_OF_CMD_BUF,
 };
 
 /*------------------------------------------------------------------------- 
@@ -306,10 +312,15 @@ VOS_STATUS vos_logger_pkt_serialize(vos_pkt_t *pPacket, uint32 pkt_type);
 bool vos_is_log_report_in_progress(void);
 void vos_reset_log_report_in_progress(void);
 int vos_set_log_completion(uint32 is_fatal, uint32 indicator, uint32 reason_code);
-void vos_get_log_completion(uint32 *is_fatal, uint32 *indicator, uint32 *reason_code);
+void vos_get_log_and_reset_completion(uint32 *is_fatal,
+           uint32 *indicator, uint32 *reason_code, bool reset);
+v_BOOL_t vos_isFatalEventEnabled(void);
 VOS_STATUS vos_fatal_event_logs_req( uint32_t is_fatal, uint32_t indicator,
-                                 uint32_t reason_code, bool waitRequired);
+                                 uint32_t reason_code, bool wait_required,
+                                 bool dump_vos_trace);
 VOS_STATUS vos_process_done_indication(v_U8_t type, v_U32_t reason_code);
+void vos_flush_host_logs_for_fatal(void);
+
 void vos_send_fatal_event_done(void);
 
 

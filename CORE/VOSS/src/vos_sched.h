@@ -342,6 +342,7 @@ typedef struct _VosContextType
    v_U32_t wakelock_log_level;
    v_U32_t connectivity_log_level;
    v_U32_t packet_stats_log_level;
+   v_U8_t      vosWrapperFullReported;
 } VosContextType, *pVosContextType;
 
 

@@ -55,6 +55,7 @@
  * ------------------------------------------------------------------------*/
 #include "vos_memory.h"
 #include "vos_trace.h"
+#include "vos_api.h"
 #include <vmalloc.h>
 
 #ifdef CONFIG_WCNSS_MEM_PRE_ALLOC
@@ -214,7 +215,16 @@ v_VOID_t * vos_mem_malloc_debug( v_SIZE_t size, char* fileName, v_U32_t lineNum)
                return pmem;
       }
 #endif
-      return kmalloc(size, flags);
+      memPtr = kmalloc(size, flags);
+      if ((flags != GFP_ATOMIC) && (NULL == memPtr))
+      {
+         WARN_ON(1);
+         vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                       WLAN_LOG_INDICATOR_HOST_ONLY,
+                       WLAN_LOG_REASON_MALLOC_FAIL,
+                       false, true);
+      }
+      return memPtr;
    }
 
    new_size = size + sizeof(struct s_vos_mem_struct) + 8; 
@@ -242,6 +252,14 @@ v_VOID_t * vos_mem_malloc_debug( v_SIZE_t size, char* fileName, v_U32_t lineNum)
       }
 
       memPtr = (v_VOID_t*)(memStruct + 1); 
+   }
+   if ((flags != GFP_ATOMIC) && (NULL == memStruct))
+   {
+      WARN_ON(1);
+      vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                    WLAN_LOG_INDICATOR_HOST_ONLY,
+                    WLAN_LOG_REASON_MALLOC_FAIL,
+                    false, true);
    }
    return memPtr;
 }
@@ -298,6 +316,7 @@ v_VOID_t vos_mem_free( v_VOID_t *ptr )
 v_VOID_t * vos_mem_malloc( v_SIZE_t size )
 {
    int flags = GFP_KERNEL;
+   v_VOID_t* memPtr = NULL;
 #ifdef CONFIG_WCNSS_MEM_PRE_ALLOC
     v_VOID_t* pmem;
 #endif    
@@ -319,7 +338,17 @@ v_VOID_t * vos_mem_malloc( v_SIZE_t size )
            return pmem;
    }
 #endif
-   return kmalloc(size, flags);
+   memPtr = kmalloc(size, flags);
+   if ((flags != GFP_ATOMIC) && (NULL == memPtr))
+   {
+       WARN_ON(1);
+       vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                     WLAN_LOG_INDICATOR_HOST_ONLY,
+                     WLAN_LOG_REASON_MALLOC_FAIL,
+                     false, true);
+   }
+   return memPtr;
+
 }   
 
 v_VOID_t vos_mem_free( v_VOID_t *ptr )

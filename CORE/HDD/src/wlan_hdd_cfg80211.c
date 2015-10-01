@@ -5644,7 +5644,7 @@ static int
     status = vos_fatal_event_logs_req(WLAN_LOG_TYPE_NON_FATAL,
                 WLAN_LOG_INDICATOR_FRAMEWORK,
                 WLAN_LOG_REASON_CODE_FRAMEWORK,
-                TRUE
+                TRUE, TRUE
                 );
     if (VOS_STATUS_SUCCESS != status) {
         hddLog(LOGE, FL("Failed to trigger bug report"));
@@ -16189,6 +16189,11 @@ static int __wlan_hdd_cfg80211_tdls_mgmt(struct wiphy *wiphy,
                       "%s: LOGP in Progress. Ignore!!!", __func__);
             return -EAGAIN;
         }
+        if (rc <= 0)
+            vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                 WLAN_LOG_INDICATOR_HOST_DRIVER,
+                 WLAN_LOG_REASON_HDD_TIME_OUT,
+                 TRUE, TRUE);
 
         ret = -EINVAL;
         goto tx_failed;

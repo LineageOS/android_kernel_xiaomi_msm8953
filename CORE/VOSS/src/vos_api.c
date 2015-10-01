@@ -1690,11 +1690,12 @@ int vos_set_log_completion(uint32 is_fatal,
                                    indicator,reason_code);
 }
 
-void vos_get_log_completion(uint32 *is_fatal,
+void vos_get_log_and_reset_completion(uint32 *is_fatal,
                              uint32 *indicator,
-                             uint32 *reason_code)
+                             uint32 *reason_code,
+                             bool reset)
 {
-    wlan_get_log_completion(is_fatal, indicator, reason_code);
+    wlan_get_log_and_reset_completion(is_fatal, indicator, reason_code, reset);
 }
 
 
@@ -1720,12 +1721,40 @@ void vos_send_fatal_event_done(void)
         return;
     }
     /*The below API will reset is_report_in_progress flag*/
-    vos_get_log_completion(&is_fatal, &indicator, &reason_code);
+    vos_get_log_and_reset_completion(&is_fatal, &indicator,
+                                         &reason_code, true);
     VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_INFO,
          "is_fatal : %d, indicator: %d, reason_code=%d",
          is_fatal, indicator, reason_code);
     wlan_report_log_completion(is_fatal, indicator, reason_code);
 
+}
+
+/**
+ * vos_isFatalEventEnabled()
+ *
+ * Return TRUE if Fatal event is enabled is in progress.
+ *
+ */
+v_BOOL_t vos_isFatalEventEnabled(void)
+{
+    hdd_context_t *pHddCtx = NULL;
+    v_CONTEXT_t pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+
+    if(!pVosContext)
+    {
+       hddLog(VOS_TRACE_LEVEL_FATAL,"%s: Global VOS context is Null", __func__);
+       return FALSE;
+    }
+
+    pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD, pVosContext );
+    if(!pHddCtx) {
+       VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+                "%s: HDD context is Null", __func__);
+       return FALSE;
+    }
+
+    return pHddCtx->cfg_ini->enableFatalEvent;
 }
 
 
@@ -1746,11 +1775,13 @@ void vos_send_fatal_event_done(void)
 VOS_STATUS vos_fatal_event_logs_req( uint32_t is_fatal,
                         uint32_t indicator,
                         uint32_t reason_code,
-                        bool waitRequired)
+                        bool wait_required,
+                        bool dump_vos_trace)
 {
     VOS_STATUS vosStatus;
     eHalStatus status;
     VosContextType *vos_context;
+    hdd_context_t *pHddCtx = NULL;
 
     vos_context = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
     if (!vos_context)
@@ -1759,7 +1790,27 @@ VOS_STATUS vos_fatal_event_logs_req( uint32_t is_fatal,
             "%s: vos context is Invalid", __func__);
         return eHAL_STATUS_FAILURE;
     }
+    pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD, vos_context );
+    if(!pHddCtx) {
+       VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+                "%s: HDD context is Null", __func__);
+       return eHAL_STATUS_FAILURE;
+    }
 
+    if(!pHddCtx->cfg_ini->enableFatalEvent)
+    {
+       VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_INFO,
+            "%s: Fatal event not enabled", __func__);
+        return eHAL_STATUS_FAILURE;
+    }
+
+    if (pHddCtx->isLoadUnloadInProgress ||
+        vos_context->isLogpInProgress)
+    {
+       VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+            "%s: un/Load/SSR in progress", __func__);
+        return eHAL_STATUS_FAILURE;
+    }
 
     if (vos_is_log_report_in_progress() == true)
     {
@@ -1775,16 +1826,16 @@ VOS_STATUS vos_fatal_event_logs_req( uint32_t is_fatal,
         "%s: Failed to set log trigger params for fatalEvent", __func__);
         return VOS_STATUS_E_FAILURE;
     }
-    VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_INFO,
+    VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
         "%s: Triggering fatal Event: type:%d, indicator=%d reason_code=%d",
         __func__, is_fatal, indicator, reason_code);
 
     vos_event_reset(&gpVosContext->fwLogsComplete);
     status = sme_fatal_event_logs_req(vos_context->pMACContext,
                                       is_fatal, indicator,
-                                      reason_code);
+                                      reason_code, dump_vos_trace);
 
-    if (HAL_STATUS_SUCCESS(status) && (waitRequired == TRUE))
+    if (HAL_STATUS_SUCCESS(status) && (wait_required == TRUE))
     {
 
         /* Need to update time out of complete */
@@ -1833,6 +1884,17 @@ VOS_STATUS vos_process_done_indication(v_U8_t type, v_U32_t reason_code)
     wlan_process_done_indication(type, reason_code);
     return VOS_STATUS_SUCCESS;
 }
+
+/**
+ * vos_flush_host_logs_for_fatal() -flush host logs and send
+ * fatal event to upper layer.
+ */
+void vos_flush_host_logs_for_fatal(void)
+{
+   wlan_flush_host_logs_for_fatal();
+   return;
+}
+
 
 /**---------------------------------------------------------------------------
 
@@ -2000,7 +2062,14 @@ VOS_STATUS vos_mq_post_message( VOS_MQ_ID msgQueueId, vos_msg_t *pMsg )
   {
     VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
               "%s: VOS Core run out of message wrapper", __func__);
-
+    if (!gpVosContext->vosWrapperFullReported)
+    {
+      gpVosContext->vosWrapperFullReported = 1;
+      vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                      WLAN_LOG_INDICATOR_HOST_ONLY,
+                      WLAN_LOG_REASON_VOS_MSG_UNDER_RUN,
+                      FALSE, TRUE);
+    }
     return VOS_STATUS_E_RESOURCES;
   }
   
@@ -2118,6 +2187,14 @@ VOS_STATUS vos_tx_mq_serialize( VOS_MQ_ID msgQueueId, vos_msg_t *pMsg )
   {
     VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
               "%s: VOS Core run out of message wrapper", __func__);
+    if (!gpVosContext->vosWrapperFullReported)
+    {
+      gpVosContext->vosWrapperFullReported = 1;
+      vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                      WLAN_LOG_INDICATOR_HOST_ONLY,
+                      WLAN_LOG_REASON_VOS_MSG_UNDER_RUN,
+                      FALSE, TRUE);
+    }
 
     return VOS_STATUS_E_RESOURCES;
   }
@@ -2233,6 +2310,14 @@ VOS_STATUS vos_rx_mq_serialize( VOS_MQ_ID msgQueueId, vos_msg_t *pMsg )
   {
     VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
               "%s: VOS Core run out of message wrapper", __func__);
+    if (!gpVosContext->vosWrapperFullReported)
+    {
+      gpVosContext->vosWrapperFullReported = 1;
+      vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                      WLAN_LOG_INDICATOR_HOST_ONLY,
+                      WLAN_LOG_REASON_VOS_MSG_UNDER_RUN,
+                      FALSE, TRUE);
+    }
 
     return VOS_STATUS_E_RESOURCES;
   }

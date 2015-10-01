@@ -49,13 +49,16 @@ int wlan_queue_logpkt_for_app(vos_pkt_t *pPacket, uint32 pkt_type);
 void wlan_process_done_indication(uint8 type, uint32 reason_code);
 int wlan_logging_sock_activate_svc(int log_fe_to_console, int num_buf,
                              int pkt_stats_enabled, int pkt_stats_buff);
+void wlan_flush_host_logs_for_fatal(void);
+
 void wlan_init_log_completion(void);
 int wlan_set_log_completion(uint32 is_fatal,
                             uint32 indicator,
                             uint32 reason_code);
-void wlan_get_log_completion(uint32 *is_fatal,
+void wlan_get_log_and_reset_completion(uint32 *is_fatal,
                              uint32 *indicator,
-                             uint32 *reason_code);
+                             uint32 *reason_code,
+                             bool reset);
 bool wlan_is_log_report_in_progress(void);
 void wlan_reset_log_report_in_progress(void);
 

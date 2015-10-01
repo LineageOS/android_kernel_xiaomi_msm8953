@@ -66,6 +66,7 @@
 #define LOGGER_FATAL_EVENT_POST_MASK  0x004
 #define LOGGER_FW_MEM_DUMP_PKT_POST_MASK   0x005
 #define LOGGER_FW_MEM_DUMP_PKT_POST_DONE_MASK 0x006
+#define DETECT_THREAD_STUCK_POST_MASK 0x007
 
 
 #define LOGGER_MAX_DATA_MGMT_PKT_Q_LEN   (8)
@@ -1133,18 +1134,16 @@ err:
 }
 
 /**
- * wlan_logging_detect_thread_stuck_cb()- Call back of the
- * thread stuck timer to detect thread stuck
+ * wlan_logging_detect_thread_stuck()- Detect thread stuck
  * by probing the MC, TX, RX threads and take action if
  * Thread doesnt respond.
- * @priv: timer data.
- * This function is called when the thread stuck timer expire
- * to detect thread stuck
+ *
+ * This function is called to detect thread stuck
  * and probe threads.
  *
  * Return: void
  */
-static void wlan_logging_detect_thread_stuck_cb(void *priv)
+static void wlan_logging_detect_thread_stuck(void)
 {
 	unsigned long flags;
 
@@ -1154,12 +1153,30 @@ static void wlan_logging_detect_thread_stuck_cb(void *priv)
 		(gwlan_logging.txThreadStuckCount == THREAD_STUCK_COUNT) ||
 		(gwlan_logging.rxThreadStuckCount == THREAD_STUCK_COUNT)) {
 		spin_unlock_irqrestore(&gwlan_logging.thread_stuck_lock, flags);
-		pr_err("%s: %s Thread Stuck !!!\n", __func__,
-		   ((gwlan_logging.mcThreadStuckCount == THREAD_STUCK_COUNT)?
-		   "MC" : (gwlan_logging.mcThreadStuckCount ==
-		   THREAD_STUCK_COUNT)? "TX" : "RX"));
+		pr_err("%s: Thread Stuck !!! MC Count %d RX count %d TX count %d\n",
+			__func__, gwlan_logging.mcThreadStuckCount,
+			gwlan_logging.rxThreadStuckCount,
+			gwlan_logging.txThreadStuckCount);
 		VOS_BUG(0);
 		return;
+	}
+
+	if (gwlan_logging.mcThreadStuckCount ||
+		gwlan_logging.txThreadStuckCount ||
+		gwlan_logging.rxThreadStuckCount) {
+
+		spin_unlock_irqrestore(&gwlan_logging.thread_stuck_lock, flags);
+
+		pr_err("%s: MC Count %d RX count %d TX count %d\n",
+		  __func__, gwlan_logging.mcThreadStuckCount,
+		  gwlan_logging.rxThreadStuckCount,
+		  gwlan_logging.txThreadStuckCount);
+		vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+				WLAN_LOG_INDICATOR_HOST_ONLY,
+				WLAN_LOG_REASON_THREAD_STUCK,
+				FALSE, TRUE);
+
+		spin_lock_irqsave(&gwlan_logging.thread_stuck_lock, flags);
 	}
 
 	/* Increment the thread stuck count for all threads */
@@ -1175,6 +1192,25 @@ static void wlan_logging_detect_thread_stuck_cb(void *priv)
 		vos_timer_start(&gwlan_logging.threadStuckTimer,
 				THREAD_STUCK_TIMER_VAL))
 		pr_err("%s: Unable to start thread stuck timer\n", __func__);
+}
+
+/**
+ * wlan_logging_detect_thread_stuck_cb()- Call back of the
+ * thread stuck timer.
+ * @priv: timer data.
+ * This function is called when the thread stuck timer
+ * expire to detect thread stuck and probe threads.
+ *
+ * Return: void
+ */
+static void wlan_logging_detect_thread_stuck_cb(void *priv)
+{
+	if (!gwlan_logging.exit)
+	{
+		set_bit(DETECT_THREAD_STUCK_POST_MASK,
+					  &gwlan_logging.event_flag);
+		wake_up_interruptible(&gwlan_logging.wait_queue);
+	}
 }
 
 /**
@@ -1224,7 +1260,9 @@ static int wlan_logging_thread(void *Arg)
 		   test_bit(LOGGER_FW_MEM_DUMP_PKT_POST_MASK,&gwlan_logging.event_flag) ||
 		   test_bit(LOGGER_FW_MEM_DUMP_PKT_POST_DONE_MASK, &gwlan_logging.event_flag)||
 		   test_bit(HOST_PKT_STATS_POST_MASK,
-						 &gwlan_logging.event_flag)));
+						 &gwlan_logging.event_flag) ||
+		   test_bit(DETECT_THREAD_STUCK_POST_MASK,
+						&gwlan_logging.event_flag)));
 
 		if (ret_wait_status == -ERESTARTSYS) {
 			pr_err("%s: wait_event return -ERESTARTSYS", __func__);
@@ -1241,6 +1279,11 @@ static int wlan_logging_thread(void *Arg)
 			if (-ENOMEM == ret) {
 				msleep(200);
 			}
+			if (WLAN_LOG_INDICATOR_HOST_ONLY ==
+				gwlan_logging.log_complete.indicator)
+			{
+				vos_send_fatal_event_done();
+			}
 		}
 
 		if (test_and_clear_bit(LOGGER_FW_LOG_PKT_POST_MASK,
@@ -1252,7 +1295,10 @@ static int wlan_logging_thread(void *Arg)
 			&gwlan_logging.event_flag)) {
 			send_data_mgmt_log_pkt_to_user();
 		}
-
+		if (test_and_clear_bit(DETECT_THREAD_STUCK_POST_MASK,
+			&gwlan_logging.event_flag)) {
+			wlan_logging_detect_thread_stuck();
+		}
 		if (test_and_clear_bit(LOGGER_FATAL_EVENT_POST_MASK,
 			&gwlan_logging.event_flag)) {
 			if (gwlan_logging.log_complete.is_flush_complete == true) {
@@ -1261,6 +1307,8 @@ static int wlan_logging_thread(void *Arg)
 			}
 			else {
 				gwlan_logging.log_complete.is_flush_complete = true;
+				/* Flush all current host logs*/
+				wlan_queue_logmsg_for_app();
 				set_bit(HOST_LOG_POST_MASK,&gwlan_logging.event_flag);
 				set_bit(LOGGER_FW_LOG_PKT_POST_MASK,&gwlan_logging.event_flag);
 				set_bit(LOGGER_FATAL_EVENT_POST_MASK,&gwlan_logging.event_flag);
@@ -1370,9 +1418,10 @@ int wlan_set_log_completion(uint32 is_fatal,
 	spin_unlock_irqrestore(&gwlan_logging.bug_report_lock, flags);
 	return 0;
 }
-void wlan_get_log_completion(uint32 *is_fatal,
+void wlan_get_log_and_reset_completion(uint32 *is_fatal,
                              uint32 *indicator,
-                             uint32 *reason_code)
+                             uint32 *reason_code,
+                             bool reset)
 {
 	unsigned long flags;
 
@@ -1380,7 +1429,13 @@ void wlan_get_log_completion(uint32 *is_fatal,
 	*indicator = gwlan_logging.log_complete.indicator;
 	*is_fatal = gwlan_logging.log_complete.is_fatal;
 	*reason_code = gwlan_logging.log_complete.reason_code;
-	gwlan_logging.log_complete.is_report_in_progress = false;
+	if (reset) {
+		gwlan_logging.log_complete.indicator = WLAN_LOG_TYPE_NON_FATAL;
+		gwlan_logging.log_complete.is_fatal = WLAN_LOG_INDICATOR_UNUSED;
+		gwlan_logging.log_complete.is_report_in_progress = false;
+		gwlan_logging.log_complete.reason_code =
+					 WLAN_LOG_REASON_CODE_UNUSED;
+	}
 	spin_unlock_irqrestore(&gwlan_logging.bug_report_lock, flags);
 }
 
@@ -1848,21 +1903,6 @@ int wlan_queue_logpkt_for_app(vos_pkt_t *pPacket, uint32 pkt_type)
 
 void wlan_process_done_indication(uint8 type, uint32 reason_code)
 {
-<<<<<<< HEAD
-    if ((type == WLAN_FW_LOGS) && (wlan_is_log_report_in_progress() == TRUE))
-    {
-        pr_info("%s: Setting LOGGER_FATAL_EVENT\n", __func__);
-        set_bit(LOGGER_FATAL_EVENT_POST_MASK, &gwlan_logging.event_flag);
-	wake_up_interruptible(&gwlan_logging.wait_queue);
-    }
-    if(type == WLAN_FW_MEMORY_DUMP)
-    {
-	    pr_info("%s: Setting FW MEM DUMP LOGGER event\n", __func__);
-	    set_bit(LOGGER_FW_MEM_DUMP_PKT_POST_DONE_MASK, &gwlan_logging.event_flag);
-	    wake_up_interruptible(&gwlan_logging.wait_queue);
-    }
-
-=======
 	if ((type == WLAN_FW_LOGS) && reason_code)
 	{
 		if(wlan_is_log_report_in_progress() == TRUE)
@@ -1883,8 +1923,28 @@ void wlan_process_done_indication(uint8 type, uint32 reason_code)
 			wake_up_interruptible(&gwlan_logging.wait_queue);
 		}
 	}
->>>>>>> 6ea54f9... wlan: Handle fatal event triggered from framework and FW
+	if(type == WLAN_FW_MEMORY_DUMP)
+	{
+		pr_info("%s: Setting FW MEM DUMP LOGGER event\n", __func__);
+		set_bit(LOGGER_FW_MEM_DUMP_PKT_POST_DONE_MASK, &gwlan_logging.event_flag);
+		wake_up_interruptible(&gwlan_logging.wait_queue);
+	}
 }
+/**
+ * wlan_flush_host_logs_for_fatal() -flush host logs and send
+ * fatal event to upper layer.
+ */
+void wlan_flush_host_logs_for_fatal()
+{
+	if (wlan_is_log_report_in_progress()) {
+		pr_info("%s:flush all host logs Setting HOST_LOG_POST_MASK\n",
+				 __func__);
+		wlan_queue_logmsg_for_app();
+		set_bit(HOST_LOG_POST_MASK, &gwlan_logging.event_flag);
+		wake_up_interruptible(&gwlan_logging.wait_queue);
+	}
+}
+
 
 /**
  * wlan_is_logger_thread()- Check if threadid is
@@ -1929,7 +1989,6 @@ void wlan_logging_reset_thread_stuck_count(int threadId)
 	spin_unlock_irqrestore(&gwlan_logging.thread_stuck_lock, flags);
 }
 
-<<<<<<< HEAD
 int wlan_fwr_mem_dump_buffer_allocation(void)
 {
 	/*Allocate the dump memory as reported by fw.
@@ -2127,7 +2186,6 @@ nla_put_failure:
 	kfree_skb(skb);
 	return;
 }
-=======
 #ifdef FEATURE_WLAN_DIAG_SUPPORT
 /**
  * wlan_report_log_completion() - Report bug report completion to userspace
@@ -2154,6 +2212,5 @@ void wlan_report_log_completion(uint32_t is_fatal,
 	WLAN_VOS_DIAG_EVENT_REPORT(&wlan_diag_event, EVENT_WLAN_LOG_COMPLETE);
 }
 #endif
->>>>>>> 6ea54f9... wlan: Handle fatal event triggered from framework and FW
 
 #endif /* WLAN_LOGGING_SOCK_SVC_ENABLE */

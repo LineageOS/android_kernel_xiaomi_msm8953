@@ -1955,6 +1955,8 @@ eHalStatus csrChangeDefaultConfigParam(tpAniSirGlobal pMac, tCsrConfigParam *pPa
         pMac->roam.configParam.ignorePeerHTopMode = pParam->ignorePeerHTopMode;
         pMac->roam.configParam.disableP2PMacSpoofing =
                                         pParam->disableP2PMacSpoofing;
+        pMac->roam.configParam.enableFatalEvent =
+                                        pParam->enableFatalEvent;
         pMac->roam.configParam.isCoalesingInIBSSAllowed =
                                pParam->isCoalesingInIBSSAllowed;
         pMac->roam.configParam.allowDFSChannelRoam = pParam->allowDFSChannelRoam;
@@ -2105,6 +2107,7 @@ eHalStatus csrGetConfigParam(tpAniSirGlobal pMac, tCsrConfigParam *pParam)
         pParam->ignorePeerHTopMode = pMac->roam.configParam.ignorePeerHTopMode;
         pParam->disableP2PMacSpoofing =
                                 pMac->roam.configParam.disableP2PMacSpoofing;
+        pParam->enableFatalEvent = pMac->roam.configParam.enableFatalEvent;
 
         pParam->isCoalesingInIBSSAllowed =
                                 pMac->roam.configParam.isCoalesingInIBSSAllowed;
@@ -8161,6 +8164,10 @@ static void csrRoamRoamingStateReassocRspProcessor( tpAniSirGlobal pMac, tpSirSm
     {
         smsLog( pMac, LOGW, "CSR SmeReassocReq failed with statusCode= 0x%08X [%d]", pSmeJoinRsp->statusCode, pSmeJoinRsp->statusCode );
         result = eCsrReassocFailure;
+        vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                          WLAN_LOG_INDICATOR_HOST_DRIVER,
+                          WLAN_LOG_REASON_ROAM_FAIL,
+                          FALSE, TRUE);
 #ifdef WLAN_FEATURE_VOWIFI_11R
         if ((eSIR_SME_FT_REASSOC_TIMEOUT_FAILURE == pSmeJoinRsp->statusCode) ||
             (eSIR_SME_FT_REASSOC_FAILURE == pSmeJoinRsp->statusCode) ||

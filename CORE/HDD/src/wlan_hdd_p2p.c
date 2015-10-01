@@ -318,6 +318,10 @@ VOS_STATUS wlan_hdd_cancel_existing_remain_on_channel(hdd_adapter_t *pAdapter)
                         "%s: timeout waiting for remain on channel"
                         " ready indication %d",
                         __func__, status);
+                vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                      WLAN_LOG_INDICATOR_HOST_DRIVER,
+                      WLAN_LOG_REASON_HDD_TIME_OUT,
+                      FALSE, TRUE);
                 return VOS_STATUS_E_FAILURE;
             }
 
@@ -1053,7 +1057,10 @@ int __wlan_hdd_cfg80211_cancel_remain_on_channel( struct wiphy *wiphy,
            if (cfgState->remain_on_chan_ctx)
                cfgState->remain_on_chan_ctx->is_pending_roc_cancelled = TRUE;
            mutex_unlock(&pHddCtx->roc_lock);
-
+           vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                 WLAN_LOG_INDICATOR_HOST_DRIVER,
+                 WLAN_LOG_REASON_HDD_TIME_OUT,
+                 FALSE, TRUE);
            return 0;
 
        }

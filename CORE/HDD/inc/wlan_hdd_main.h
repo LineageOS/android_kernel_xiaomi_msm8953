@@ -1493,8 +1493,11 @@ struct hdd_context_s
     struct hdd_ext_scan_context ext_scan_context;
 #endif /* WLAN_FEATURE_EXTSCAN */
 
-/* Time since boot up to WiFi turn ON (in micro seconds) */
-v_U64_t wifi_turn_on_time_since_boot;
+    /* Time since boot up to WiFi turn ON (in micro seconds) */
+    v_U64_t wifi_turn_on_time_since_boot;
+    unsigned long  last_suspend_success;
+    v_U32_t  continuous_suspend_fail_cnt;
+
 };
 
 

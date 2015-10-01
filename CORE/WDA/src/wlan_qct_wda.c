@@ -3789,6 +3789,16 @@ void WDA_ConfigBssRspCallback(WDI_ConfigBSSRspParamsType *wdiConfigBssRsp
       configBssReqParam->txMgmtPower = wdiConfigBssRsp->ucTxMgmtPower;
 #endif
    }
+   else
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                    "%s: Failure with status %d", __func__,
+                    wdiConfigBssRsp->wdiStatus);
+      vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                     WLAN_LOG_INDICATOR_HOST_DRIVER,
+                     WLAN_LOG_REASON_ADD_BSS_STA_FAIL,
+                     FALSE, TRUE);
+   }
    vos_mem_zero(pWdaParams->wdaWdiApiMsgParam,
                  sizeof(WDI_ConfigBSSReqParamsType));
    vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
@@ -3839,6 +3849,10 @@ void WDA_ConfigBssReqCallback(WDI_Status   wdiStatus,
    {
          vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
          vos_mem_free(pWdaParams) ;
+         vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                     WLAN_LOG_INDICATOR_HOST_DRIVER,
+                     WLAN_LOG_REASON_ADD_BSS_STA_FAIL,
+                     FALSE, TRUE);
          WDA_SendMsg(pWDA, WDA_ADD_BSS_RSP, (void *)addBssParams , 0);
    }
 
@@ -4071,6 +4085,16 @@ void WDA_AddStaRspCallback(WDI_ConfigSTARspParamsType *wdiConfigStaRsp,
          return ;
       }
    }
+   else
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                    "%s: Failure with status %d", __func__,
+                    wdiConfigStaRsp->wdiStatus);
+      vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                     WLAN_LOG_INDICATOR_HOST_DRIVER,
+                     WLAN_LOG_REASON_ADD_BSS_STA_FAIL,
+                     FALSE, TRUE);
+   }
    vos_mem_free(pWdaParams->wdaWdiApiMsgParam) ;
    vos_mem_free(pWdaParams) ;
    WDA_SendMsg(pWDA, WDA_ADD_STA_RSP, (void *)addStaReqParam, 0) ;
@@ -4104,6 +4128,10 @@ void WDA_AddStaReqCallback(WDI_Status   wdiStatus,
    {
          vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
          vos_mem_free(pWdaParams) ;
+         vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                     WLAN_LOG_INDICATOR_HOST_DRIVER,
+                     WLAN_LOG_REASON_ADD_BSS_STA_FAIL,
+                     FALSE, TRUE);
          WDA_SendMsg(pWDA, WDA_ADD_STA_RSP, (void *)addStaParams , 0);
    }
 
@@ -4194,6 +4222,16 @@ void WDA_DelBSSRspCallback(WDI_DelBSSRspParamsType *wdiDelBssRsp,
       vos_mem_copy(delBssReqParam->bssid, wdiDelBssRsp->macBSSID, 
                                              sizeof(tSirMacAddr)) ;
    }
+   else
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                    "%s: Failure with status %d", __func__,
+                    wdiDelBssRsp->wdiStatus);
+      vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                 WLAN_LOG_INDICATOR_HOST_DRIVER,
+                 WLAN_LOG_REASON_DEL_BSS_STA_FAIL,
+                 FALSE, TRUE);
+   }
    if(WDI_DS_GetStaIdxFromBssIdx(pWDA->pWdiContext, delBssReqParam->bssIdx, &staIdx))
    {
      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
@@ -4235,6 +4273,7 @@ void WDA_DelBSSRspCallback(WDI_DelBSSRspParamsType *wdiDelBssRsp,
          }
       }
    }
+
    WDA_SendMsg(pWDA, WDA_DELETE_BSS_RSP, (void *)delBssReqParam , 0) ;
    return ;
 }
@@ -4266,6 +4305,10 @@ void WDA_DelBSSReqCallback(WDI_Status   wdiStatus,
    {
          vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
          vos_mem_free(pWdaParams) ;
+         vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                 WLAN_LOG_INDICATOR_HOST_DRIVER,
+                 WLAN_LOG_REASON_DEL_BSS_STA_FAIL,
+                 FALSE, TRUE);
          WDA_SendMsg(pWDA, WDA_DELETE_BSS_RSP, (void *)delbssParams , 0) ;
    }
 
@@ -4358,6 +4401,16 @@ void WDA_DelSTARspCallback(WDI_DelSTARspParamsType *wdiDelStaRsp,
       delStaReqParam->staIdx = wdiDelStaRsp->ucSTAIdx ;
       WLANTL_StartForwarding(delStaReqParam->staIdx,0,0);
    }
+   else
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                    "%s: Failure with status %d", __func__,
+                    wdiDelStaRsp->wdiStatus);
+      vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                 WLAN_LOG_INDICATOR_HOST_DRIVER,
+                 WLAN_LOG_REASON_DEL_BSS_STA_FAIL,
+                 FALSE, TRUE);
+   }
    vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
    vos_mem_free(pWdaParams) ;
    /*Reset the BA information corresponding to this STAIdx */
@@ -4396,6 +4449,10 @@ void WDA_DelSTAReqCallback(WDI_Status   wdiStatus,
    {
          vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
          vos_mem_free(pWdaParams) ;
+         vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                 WLAN_LOG_INDICATOR_HOST_DRIVER,
+                 WLAN_LOG_REASON_DEL_BSS_STA_FAIL,
+                 FALSE, TRUE);
          WDA_SendMsg(pWDA, WDA_DELETE_STA_RSP, (void *)delStaParams , 0) ;
    }
 
@@ -4483,6 +4540,14 @@ void WDA_ProcessAddStaSelfRspCallback(WDI_AddSTASelfRspParamsType* pwdiAddSTASel
    {
        pWDA->wdaAddSelfStaParams.wdaAddSelfStaFailReason = WDA_ADDSTA_RSP_WDI_FAIL;
        pWDA->wdaAddSelfStaParams.wdiAddStaSelfStaFailCounter++;
+       VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                    "%s: Failure with status %d failcnter %d", __func__,
+                    pwdiAddSTASelfRsp->wdiStatus,
+                    pWDA->wdaAddSelfStaParams.wdiAddStaSelfStaFailCounter);
+       vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                     WLAN_LOG_INDICATOR_HOST_DRIVER,
+                     WLAN_LOG_REASON_ADD_BSS_STA_FAIL,
+                     FALSE, TRUE);
    }
    WDA_SendMsg( pWDA, WDA_ADD_STA_SELF_RSP, (void *)pAddStaSelfRsp, 0) ;
    return ;
@@ -4518,6 +4583,14 @@ void WDA_ProcessAddStaSelfReqCallback(WDI_Status   wdiStatus,
          pWDA->wdaAddSelfStaParams.wdaAddSelfStaFailReason
                                         = WDA_ADDSTA_REQ_WDI_FAIL;
          pWDA->wdaAddSelfStaParams.wdiAddStaSelfStaFailCounter++;
+         VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                    "%s: Failure with status %d failcnter %d", __func__,
+                    wdiStatus,
+                    pWDA->wdaAddSelfStaParams.wdiAddStaSelfStaFailCounter);
+         vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                     WLAN_LOG_INDICATOR_HOST_DRIVER,
+                     WLAN_LOG_REASON_ADD_BSS_STA_FAIL,
+                     FALSE, TRUE);
          WDA_SendMsg(pWDA, WDA_ADD_STA_SELF_RSP, (void *)addStaSelfParams , 0);
    }
 
@@ -4613,7 +4686,14 @@ void WDA_DelSTASelfRespCallback(WDI_DelSTASelfRspParamsType *
    
    vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
    vos_mem_free(pWdaParams) ;
-   
+   if (WDI_STATUS_SUCCESS != delStaSelfParams->status)
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                    "%s: Failure with status %d", __func__,
+                    wdiDelStaSelfRspParams->wdiStatus);
+      vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+               WLAN_LOG_INDICATOR_HOST_DRIVER,
+               WLAN_LOG_REASON_DEL_BSS_STA_FAIL,
+               FALSE, TRUE);
    WDA_SendMsg(pWDA, WDA_DEL_STA_SELF_RSP, (void *)delStaSelfParams , 0) ;
    return ;
 }
@@ -4650,6 +4730,10 @@ void WDA_DelSTASelfReqCallback(WDI_Status   wdiStatus,
          VOS_ASSERT(0);
          vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
          vos_mem_free(pWdaParams) ;
+         vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                 WLAN_LOG_INDICATOR_HOST_DRIVER,
+                 WLAN_LOG_REASON_DEL_BSS_STA_FAIL,
+                 FALSE, TRUE);
          WDA_SendMsg(pWDA, WDA_DEL_STA_SELF_RSP, (void *)delStaSelfParams , 0) ;
    }
 
@@ -8565,6 +8649,26 @@ void WDA_EnterImpsRspCallback(WDI_Status status, void* pUserData)
 
    vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
    vos_mem_free(pWdaParams);
+   if (WDI_STATUS_SUCCESS != status)
+   {
+       pWDA->failureCounts.enterImpsFailureCount++;
+       if (BMPS_IMPS_FAILURE_REPORT_THRESHOLD ==
+                 pWDA->failureCounts.enterImpsFailureCount)
+       {
+          VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               "%s: Status %d fail count %d", __func__, status,
+               pWDA->failureCounts.enterImpsFailureCount);
+           pWDA->failureCounts.enterImpsFailureCount = 0;
+           vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                 WLAN_LOG_INDICATOR_HOST_DRIVER,
+                 WLAN_LOG_REASON_ENTER_IMPS_BMPS_FAIL,
+                 FALSE, TRUE);
+       }
+   }
+   else
+   {
+      pWDA->failureCounts.enterImpsFailureCount = 0;
+   }
    WDA_SendMsg(pWDA, WDA_ENTER_IMPS_RSP, NULL , status) ;
    return ;
 }
@@ -8609,6 +8713,19 @@ void WDA_EnterImpsReqCallback(WDI_Status wdiStatus, void* pUserData)
    {
       vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
       vos_mem_free(pWdaParams);
+      pWDA->failureCounts.enterImpsFailureCount++;
+      if (BMPS_IMPS_FAILURE_REPORT_THRESHOLD ==
+                pWDA->failureCounts.enterImpsFailureCount)
+      {
+         VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               "%s: wdiStatus %d fail count %d", __func__, wdiStatus,
+               pWDA->failureCounts.enterImpsFailureCount);
+         pWDA->failureCounts.enterImpsFailureCount = 0;
+         vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+               WLAN_LOG_INDICATOR_HOST_DRIVER,
+               WLAN_LOG_REASON_ENTER_IMPS_BMPS_FAIL,
+               FALSE, TRUE);
+      }
       WDA_SendMsg(pWDA, WDA_ENTER_IMPS_RSP, NULL,
                   CONVERT_WDI2SIR_STATUS(wdiStatus));
    }
@@ -8698,6 +8815,27 @@ void WDA_ExitImpsRespCallback(WDI_Status status, void* pUserData)
 
    vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
    vos_mem_free(pWdaParams);
+   if (WDI_STATUS_SUCCESS != status)
+   {
+       pWDA->failureCounts.exitImpsFailureCount++;
+       if (BMPS_IMPS_FAILURE_REPORT_THRESHOLD ==
+                 pWDA->failureCounts.exitImpsFailureCount)
+       {
+          VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               "%s: Status %d fail count %d", __func__,
+               status,
+               pWDA->failureCounts.exitImpsFailureCount);
+           pWDA->failureCounts.exitImpsFailureCount = 0;
+           vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                 WLAN_LOG_INDICATOR_HOST_DRIVER,
+                 WLAN_LOG_REASON_EXIT_IMPS_BMPS_FAIL,
+                 FALSE, TRUE);
+       }
+   }
+   else
+   {
+      pWDA->failureCounts.exitImpsFailureCount = 0;
+   }
 
    WDA_SendMsg(pWDA, WDA_EXIT_IMPS_RSP, NULL , (status));
    return;
@@ -8709,6 +8847,7 @@ void WDA_ExitImpsRespCallback(WDI_Status status, void* pUserData)
 void WDA_ExitImpsReqCallback(WDI_Status status, void* pUserData)
 {
    tWDA_ReqParams *pWdaParams = (tWDA_ReqParams *)pUserData;
+   tWDA_CbContext *pWDA;
    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
                                           "<------ %s " ,__func__);
    if(NULL == pWdaParams)
@@ -8718,11 +8857,26 @@ void WDA_ExitImpsReqCallback(WDI_Status status, void* pUserData)
       VOS_ASSERT(0);
       return;
    }
-
+   pWDA = (tWDA_CbContext *)pWdaParams->pWdaContext;
    if (IS_WDI_STATUS_FAILURE(status))
    {
        vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
        vos_mem_free(pWdaParams);
+
+       pWDA->failureCounts.exitImpsFailureCount++;
+       if (BMPS_IMPS_FAILURE_REPORT_THRESHOLD ==
+                 pWDA->failureCounts.exitImpsFailureCount)
+       {
+          VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               "%s: wdiStatus %d fail count %d", __func__,
+               status,
+               pWDA->failureCounts.exitImpsFailureCount);
+          pWDA->failureCounts.exitImpsFailureCount = 0;
+          vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                     WLAN_LOG_INDICATOR_HOST_DRIVER,
+                     WLAN_LOG_REASON_EXIT_IMPS_BMPS_FAIL,
+                     FALSE, TRUE);
+       }
        if (WDI_STATUS_DEV_INTERNAL_FAILURE == status)
        {
            VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
@@ -8827,6 +8981,27 @@ void WDA_EnterBmpsRespCallback(WDI_EnterBmpsRspParamsType *pwdiEnterBmpsRsp, voi
 
    vos_mem_free(pWdaParams->wdaWdiApiMsgParam) ;
    vos_mem_free(pWdaParams) ;
+   if (eHAL_STATUS_SUCCESS != pEnterBmpsRspParams->status)
+   {
+       pWDA->failureCounts.enterBmpsFailureCount++;
+       if (BMPS_IMPS_FAILURE_REPORT_THRESHOLD ==
+                 pWDA->failureCounts.enterBmpsFailureCount)
+       {
+           VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               "%s: wdiStatus %d fail count %d", __func__,
+               pwdiEnterBmpsRsp->wdiStatus,
+               pWDA->failureCounts.enterBmpsFailureCount);
+           pWDA->failureCounts.enterBmpsFailureCount = 0;
+           vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                 WLAN_LOG_INDICATOR_HOST_DRIVER,
+                 WLAN_LOG_REASON_ENTER_IMPS_BMPS_FAIL,
+                 FALSE, TRUE);
+       }
+   }
+   else
+   {
+      pWDA->failureCounts.enterBmpsFailureCount = 0;
+   }
    WDA_SendMsg(pWDA, WDA_ENTER_BMPS_RSP, (void *)pEnterBmpsRspParams , 0);
 
    return ;
@@ -8869,6 +9044,20 @@ void WDA_EnterBmpsReqCallback(WDI_Status wdiStatus, void* pUserData)
    {
       vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
       vos_mem_free(pWdaParams);
+      pWDA->failureCounts.enterBmpsFailureCount++;
+      if (BMPS_IMPS_FAILURE_REPORT_THRESHOLD ==
+                 pWDA->failureCounts.enterBmpsFailureCount)
+      {
+         VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               "%s: wdiStatus %d fail count %d", __func__,
+               wdiStatus,
+               pWDA->failureCounts.enterBmpsFailureCount);
+         pWDA->failureCounts.enterBmpsFailureCount = 0;
+         vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                     WLAN_LOG_INDICATOR_HOST_DRIVER,
+                     WLAN_LOG_REASON_ENTER_IMPS_BMPS_FAIL,
+                     FALSE, TRUE);
+      }
       WDA_SendMsg(pWDA, WDA_ENTER_BMPS_RSP, (void *)pEnterBmpsRspParams, 0);
    }
 
@@ -8997,7 +9186,29 @@ void WDA_ExitBmpsRespCallback(WDI_ExitBmpsRspParamsType *pwdiExitBmpsRsp, void* 
    pExitBmpsRspParams->status = (pwdiExitBmpsRsp->wdiStatus);
 
    vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
-   vos_mem_free(pWdaParams) ;
+   vos_mem_free(pWdaParams);
+
+   if (WDI_STATUS_SUCCESS != pwdiExitBmpsRsp->wdiStatus)
+   {
+       pWDA->failureCounts.exitBmpsFailureCount++;
+       if (BMPS_IMPS_FAILURE_REPORT_THRESHOLD ==
+                 pWDA->failureCounts.exitBmpsFailureCount)
+       {
+          VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               "%s: Status %d fail count %d", __func__,
+               pExitBmpsRspParams->status,
+               pWDA->failureCounts.exitBmpsFailureCount);
+           pWDA->failureCounts.exitBmpsFailureCount = 0;
+           vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                 WLAN_LOG_INDICATOR_HOST_DRIVER,
+                 WLAN_LOG_REASON_EXIT_IMPS_BMPS_FAIL,
+                 FALSE, TRUE);
+       }
+   }
+   else
+   {
+      pWDA->failureCounts.exitBmpsFailureCount = 0;
+   }
 
    WDA_SendMsg(pWDA, WDA_EXIT_BMPS_RSP, (void *)pExitBmpsRspParams , 0) ;
    return ;
@@ -9040,6 +9251,20 @@ void WDA_ExitBmpsReqCallback(WDI_Status wdiStatus, void* pUserData)
    {
       vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
       vos_mem_free(pWdaParams);
+      pWDA->failureCounts.exitBmpsFailureCount++;
+      if (BMPS_IMPS_FAILURE_REPORT_THRESHOLD ==
+                 pWDA->failureCounts.exitBmpsFailureCount)
+      {
+         VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               "%s: wdiStatus %d fail count %d", __func__,
+               wdiStatus,
+               pWDA->failureCounts.exitBmpsFailureCount);
+         pWDA->failureCounts.exitBmpsFailureCount = 0;
+         vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                     WLAN_LOG_INDICATOR_HOST_DRIVER,
+                     WLAN_LOG_REASON_EXIT_IMPS_BMPS_FAIL,
+                     FALSE, TRUE);
+      }
       WDA_SendMsg(pWDA, WDA_EXIT_BMPS_RSP, (void *)pExitBmpsRspParams, 0);
    }
 
@@ -13537,7 +13762,6 @@ VOS_STATUS WDA_TxPacket(tWDA_CbContext *pWDA,
                  "%s: Status %d when waiting for TX Frame Event",
                  __func__, status);
 
-      VOS_BUG(0);
       /*Tag Frame as timed out for later deletion*/
       vos_pkt_set_user_data_ptr( (vos_pkt_t *)pFrmBuf, VOS_PKT_USER_DATA_ID_WDA,
                        (v_PVOID_t)WDA_TL_TX_MGMT_TIMED_OUT);
@@ -13555,6 +13779,13 @@ VOS_STATUS WDA_TxPacket(tWDA_CbContext *pWDA,
       {
          pCompFunc(VOS_GET_MAC_CTXT(pWDA->pVosContext), (vos_pkt_t *)pFrmBuf);
       } */
+      if (vos_isFatalEventEnabled())
+         vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                     WLAN_LOG_INDICATOR_HOST_DRIVER,
+                     WLAN_LOG_REASON_MGMT_FRAME_TIMEOUT,
+                     FALSE, TRUE);
+      else
+         VOS_BUG(0);
 
       if( pAckTxComp )
       {

@@ -431,6 +431,18 @@ typedef struct
    wpt_uint8            wdaAddSelfStaFailReason;
 } tWDA_AddSelfStaDebugParams;
 
+#define BMPS_IMPS_FAILURE_REPORT_THRESHOLD    10
+
+/* Continous Response failure counts */
+typedef struct
+{
+   wpt_uint8            enterBmpsFailureCount;
+   wpt_uint8            exitBmpsFailureCount;
+   wpt_uint8            enterImpsFailureCount;
+   wpt_uint8            exitImpsFailureCount;
+} tWDA_RespFailureCounts;
+
+
 typedef struct
 {
    v_PVOID_t            pVosContext;             /* global VOSS context*/
@@ -499,7 +511,7 @@ typedef struct
    vos_event_t          ftmStopDoneEvent;
 
    tWDA_AddSelfStaDebugParams wdaAddSelfStaParams;
-
+   tWDA_RespFailureCounts  failureCounts;
 } tWDA_CbContext ; 
 
 typedef struct

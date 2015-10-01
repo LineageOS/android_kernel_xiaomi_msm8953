@@ -2363,6 +2363,11 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_DISABLE_P2P_MAC_ADDR_SPOOFING_MAX          (1)
 #define CFG_DISABLE_P2P_MAC_ADDR_SPOOFING_DEFAULT      (0)
 
+#define CFG_ENABLE_FATAL_EVENT_TRIGGER                 "gEnableFatalEvent"
+#define CFG_ENABLE_FATAL_EVENT_TRIGGER_MIN             (0)
+#define CFG_ENABLE_FATAL_EVENT_TRIGGER_MAX             (1)
+#define CFG_ENABLE_FATAL_EVENT_TRIGGER_DEFAULT         (0)
+
 
 #define CFG_ENABLE_MGMT_LOGGING                         "gEnableMgmtLogging"
 #define CFG_ENABLE_MGMT_LOGGING_MIN                     (0)
@@ -3028,6 +3033,7 @@ typedef struct
    v_BOOL_t                    sendDeauthBeforeCon;
    v_BOOL_t                    enableMacSpoofing;
    v_BOOL_t                    disableP2PMacSpoofing;
+   v_BOOL_t                    enableFatalEvent;
    v_BOOL_t                    enableMgmtLogging;
    v_BOOL_t                    enableBMUHWtracing;
    v_BOOL_t                    enableFWLogging;
