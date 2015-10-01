@@ -1087,6 +1087,8 @@ VOS_STATUS hdd_hostapd_SAPEventCB( tpSap_Event pSapEvent, v_PVOID_t usrDataForCa
                 }
              }
 #endif
+            hdd_manage_delack_timer(pHddCtx);
+
             pScanInfo =  &pHddCtx->scan_info;
             // Lets do abort scan to ensure smooth authentication for client
             if ((pScanInfo != NULL) && pScanInfo->mScanPending)
@@ -1151,6 +1153,7 @@ VOS_STATUS hdd_hostapd_SAPEventCB( tpSap_Event pSapEvent, v_PVOID_t usrDataForCa
                 hddLog(LOGE, "%s: failed to update Beacon interval %d",
                         __func__, vos_status);
             }
+            hdd_manage_delack_timer(pHddCtx);
             break;
         case eSAP_WPS_PBC_PROBE_REQ_EVENT:
         {
