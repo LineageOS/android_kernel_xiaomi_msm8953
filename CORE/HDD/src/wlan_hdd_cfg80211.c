@@ -18033,6 +18033,9 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                         }
                     }
                 }
+                /* stop TCP delack timer if TDLS is enable  */
+                set_bit(WLAN_TDLS_MODE, &pHddCtx->mode);
+                hdd_manage_delack_timer(pHddCtx);
             }
             break;
         case NL80211_TDLS_DISABLE_LINK:
@@ -18173,6 +18176,11 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                     mutex_unlock(&pHddCtx->tdls_lock);
                     VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                               "%s: TDLS Peer Station doesn't exist.", __func__);
+                }
+                if (numCurrTdlsPeers == 0) {
+                   /* start TCP delack timer if TDLS is disable  */
+                    clear_bit(WLAN_TDLS_MODE, &pHddCtx->mode);
+                    hdd_manage_delack_timer(pHddCtx);
                 }
             }
             break;
