@@ -7136,16 +7136,22 @@ void hdd_wmm_tx_snapshot(hdd_adapter_t *pAdapter)
     ptSapContext pSapCtx = VOS_GET_SAP_CB(pVosContext);
     hdd_station_ctx_t *pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
     hdd_ibss_peer_info_t *pPeerInfo;
+    v_SIZE_t tx_queue_count[NUM_TX_QUEUES];
 
     for ( i=0; i< NUM_TX_QUEUES; i++)
     {
         spin_lock_bh(&pAdapter->wmm_tx_queue[i].lock);
-
-        hddLog(LOGE, "HDD WMM TxQueue Info For AC: %d Count: %d PrevAdress:%p, NextAddress:%p",
-               i, pAdapter->wmm_tx_queue[i].count,
-               pAdapter->wmm_tx_queue[i].anchor.prev, pAdapter->wmm_tx_queue[i].anchor.next);
+        tx_queue_count[i] = pAdapter->wmm_tx_queue[i].count;
         spin_unlock_bh(&pAdapter->wmm_tx_queue[i].lock);
     }
+
+    for ( i=0; i< NUM_TX_QUEUES; i++) {
+        if (tx_queue_count[i]) {
+            hddLog(LOGE, "HDD WMM TxQueue Info For AC: %d Count: %d",
+               i, tx_queue_count[i]);
+        }
+    }
+
     if(pSapCtx == NULL){
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                   FL("psapCtx is NULL"));
@@ -7163,11 +7169,8 @@ void hdd_wmm_tx_snapshot(hdd_adapter_t *pAdapter)
                 if( pSapCtx->aStaInfo[i].wmm_tx_queue[j].count )
                 {
                    spin_lock_bh(&pSapCtx->aStaInfo[i].wmm_tx_queue[j].lock);
-                   hddLog(LOGE, "HDD TxQueue Info For AC: %d Count: %d"
-                         "PrevAdress:%p, NextAddress:%p",
-                         j, pSapCtx->aStaInfo[i].wmm_tx_queue[j].count,
-                         pSapCtx->aStaInfo[i].wmm_tx_queue[j].anchor.prev,
-                         pSapCtx->aStaInfo[i].wmm_tx_queue[j].anchor.next);
+                   hddLog(LOGE, "HDD TxQueue Info For AC: %d Count: %d",
+                         j, pSapCtx->aStaInfo[i].wmm_tx_queue[j].count);
                   spin_unlock_bh(&pSapCtx->aStaInfo[i].wmm_tx_queue[j].lock);
                 }
              }
