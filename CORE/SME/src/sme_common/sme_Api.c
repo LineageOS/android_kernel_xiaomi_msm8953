@@ -11905,9 +11905,11 @@ void activeListCmdTimeoutHandle(void *userData)
     }
     else
     {
+       vosTraceDumpAll(pMac,0,0,0,0);
+       /* Initiate SSR to recover */
        if (!(vos_isLoadUnloadInProgress() ||
            vos_is_logp_in_progress(VOS_MODULE_ID_SME, NULL)))
-          VOS_BUG(0);
+          vos_wlanRestart();
     }
 }
 
