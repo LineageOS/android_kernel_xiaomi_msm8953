@@ -10330,7 +10330,8 @@ int hdd_wlan_startup(struct device *dev )
        //EAPOL and DHCP
        if (!pHddCtx->cfg_ini->gEnableDebugLog)
            pHddCtx->cfg_ini->gEnableDebugLog =
-           VOS_PKT_PROTO_TYPE_EAPOL | VOS_PKT_PROTO_TYPE_DHCP;
+           VOS_PKT_PROTO_TYPE_EAPOL | VOS_PKT_PROTO_TYPE_DHCP |
+           VOS_PKT_PROTO_TYPE_ARP;
    }
 
    if (pHddCtx->cfg_ini->wlanLoggingEnable &&
