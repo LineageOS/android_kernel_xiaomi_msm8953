@@ -1904,7 +1904,8 @@ int wlan_queue_logpkt_for_app(vos_pkt_t *pPacket, uint32 pkt_type)
 
 void wlan_process_done_indication(uint8 type, uint32 reason_code)
 {
-	if ((type == WLAN_FW_LOGS) && reason_code)
+	if ((type == WLAN_FW_LOGS) && reason_code &&
+				 vos_isFatalEventEnabled())
 	{
 		if(wlan_is_log_report_in_progress() == TRUE)
 		{
