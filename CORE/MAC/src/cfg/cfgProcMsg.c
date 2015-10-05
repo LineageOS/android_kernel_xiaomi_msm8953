@@ -2046,6 +2046,7 @@ ProcDnldRsp(tpAniSirGlobal pMac, tANI_U16 length, tANI_U32 *pParam)
     tpCfgBinHdr pHdr;
     tANI_U32    logLevel;
     tSirMsgQ    mmhMsg;
+    tANI_U32    paramList[WNI_CFG_DNLD_CNF_NUM];
 
     // First Dword must contain the AP or STA magic dword
     PELOGW(cfgLog(pMac, LOGW, FL("CFG size %d bytes MAGIC dword is 0x%x"),
@@ -2228,9 +2229,9 @@ ProcDnldRsp(tpAniSirGlobal pMac, tANI_U16 length, tANI_U32 *pParam)
         pMac->cfg.gCfgStatus = CFG_FAILURE;
 
     // Send response message to host
-    pMac->cfg.gParamList[WNI_CFG_DNLD_CNF_RES] = retVal;
+    paramList[WNI_CFG_DNLD_CNF_RES] = retVal;
     cfgSendHostMsg(pMac, WNI_CFG_DNLD_CNF, WNI_CFG_DNLD_CNF_LEN,
-                   WNI_CFG_DNLD_CNF_NUM, pMac->cfg.gParamList, 0, 0);
+                   WNI_CFG_DNLD_CNF_NUM, paramList, 0, 0);
 
     // Notify WDA that the config has downloaded
     mmhMsg.type = SIR_CFG_DOWNLOAD_COMPLETE_IND;
@@ -2272,6 +2273,7 @@ ProcGetReq(tpAniSirGlobal pMac, tANI_U16 length, tANI_U32 *pParam)
     tANI_U16    cfgId, i;
     tANI_U32    value, valueLen, result;
     tANI_U32    *pValue;
+    tANI_U32    paramList[WNI_CFG_GET_RSP_NUM];
 
     PELOG1(cfgLog(pMac, LOG1, FL("Rcvd cfg get request %d bytes"), length);)
     for (i=0; i<length/4; i++)
@@ -2281,11 +2283,11 @@ ProcGetReq(tpAniSirGlobal pMac, tANI_U16 length, tANI_U32 *pParam)
     {
         cfgId = (tANI_U16)sirReadU32N((tANI_U8*)pParam);
         PELOGE(cfgLog(pMac, LOGE, FL("CFG not ready, param %d"), cfgId);)
-        pMac->cfg.gParamList[WNI_CFG_GET_RSP_RES]  = WNI_CFG_NOT_READY;
-        pMac->cfg.gParamList[WNI_CFG_GET_RSP_PID]  = cfgId;
-        pMac->cfg.gParamList[WNI_CFG_GET_RSP_PLEN] = 0;
+        paramList[WNI_CFG_GET_RSP_RES]  = WNI_CFG_NOT_READY;
+        paramList[WNI_CFG_GET_RSP_PID]  = cfgId;
+        paramList[WNI_CFG_GET_RSP_PLEN] = 0;
         cfgSendHostMsg(pMac, WNI_CFG_GET_RSP, WNI_CFG_GET_RSP_PARTIAL_LEN,
-                       WNI_CFG_GET_RSP_NUM, pMac->cfg.gParamList, 0, 0);
+                       WNI_CFG_GET_RSP_NUM, paramList, 0, 0);
     }
     else
     {
@@ -2326,15 +2328,15 @@ ProcGetReq(tpAniSirGlobal pMac, tANI_U16 length, tANI_U32 *pParam)
             }
 
             // Send response message to host
-            pMac->cfg.gParamList[WNI_CFG_GET_RSP_RES]  = result;
-            pMac->cfg.gParamList[WNI_CFG_GET_RSP_PID]  = cfgId;
-            pMac->cfg.gParamList[WNI_CFG_GET_RSP_PLEN] = valueLen;
+            paramList[WNI_CFG_GET_RSP_RES]  = result;
+            paramList[WNI_CFG_GET_RSP_PID]  = cfgId;
+            paramList[WNI_CFG_GET_RSP_PLEN] = valueLen;
 
             // We need to round up buffer length to word-increment
             valueLen = (((valueLen + 3) >> 2) << 2);
             cfgSendHostMsg(pMac, WNI_CFG_GET_RSP,
                            WNI_CFG_GET_RSP_PARTIAL_LEN + valueLen,
-                           WNI_CFG_GET_RSP_NUM, pMac->cfg.gParamList, valueLen, pValue);
+                           WNI_CFG_GET_RSP_NUM, paramList, valueLen, pValue);
 
             // Decrement length
             length -= sizeof(tANI_U32);
@@ -2373,6 +2375,7 @@ ProcSetReqInternal(tpAniSirGlobal pMac, tANI_U16 length, tANI_U32 *pParam, tANI_
 {
     tANI_U16    cfgId, valueLen, valueLenRoundedUp4;
     tANI_U32    value, result;
+    tANI_U32    paramList[WNI_CFG_SET_CNF_NUM];
 
     PELOG1(cfgLog(pMac, LOG1, FL("Rcvd cfg set request %d bytes"), length);)
     //for (i=0; i<length/4; i++)
@@ -2381,13 +2384,13 @@ ProcSetReqInternal(tpAniSirGlobal pMac, tANI_U16 length, tANI_U32 *pParam, tANI_
     if (!pMac->cfg.gCfgStatus)
     {
         cfgId = (tANI_U16)sirReadU32N((tANI_U8*)pParam);
-        PELOG1(cfgLog(pMac, LOGW, FL("CFG not ready, param %d"), cfgId);)
-        pMac->cfg.gParamList[WNI_CFG_SET_CNF_RES] = WNI_CFG_NOT_READY;
-        pMac->cfg.gParamList[WNI_CFG_SET_CNF_PID] = cfgId;
-        if( fRsp )
+        cfgLog(pMac, LOGW, FL("CFG not ready, param %d"), cfgId);
+        if (fRsp)
         {
+           paramList[WNI_CFG_SET_CNF_RES] = WNI_CFG_NOT_READY;
+           paramList[WNI_CFG_SET_CNF_PID] = cfgId;
            cfgSendHostMsg(pMac, WNI_CFG_SET_CNF, WNI_CFG_SET_CNF_LEN,
-                          WNI_CFG_SET_CNF_NUM, pMac->cfg.gParamList, 0, 0);
+                          WNI_CFG_SET_CNF_NUM, paramList, 0, 0);
         }
     }
     else
@@ -2474,13 +2477,13 @@ ProcSetReqInternal(tpAniSirGlobal pMac, tANI_U16 length, tANI_U32 *pParam, tANI_
                 result = WNI_CFG_INVALID_LEN;
             }
 
-            // Send confirm message to host
-            pMac->cfg.gParamList[WNI_CFG_SET_CNF_RES] = result;
-            pMac->cfg.gParamList[WNI_CFG_SET_CNF_PID] = cfgId;
-            if( fRsp )
+            if (fRsp)
             {
+                /* Send confirm message to host */
+                paramList[WNI_CFG_SET_CNF_RES] = result;
+                paramList[WNI_CFG_SET_CNF_PID] = cfgId;
                 cfgSendHostMsg(pMac, WNI_CFG_SET_CNF, WNI_CFG_SET_CNF_LEN,
-                               WNI_CFG_SET_CNF_NUM, pMac->cfg.gParamList, 0, 0);
+                               WNI_CFG_SET_CNF_NUM, paramList, 0, 0);
             }
             else
             {
@@ -2729,9 +2732,6 @@ processCfgDownloadReq(tpAniSirGlobal pMac)
     pMac->cfg.gCfgStatus = CFG_SUCCESS;
     retVal = WNI_CFG_SUCCESS;
     PELOG1(cfgLog(pMac, LOG1, "<CFG> Completed successfully");)
-
-
-    pMac->cfg.gParamList[WNI_CFG_DNLD_CNF_RES] = retVal;
 
 } /*** end ProcessDownloadReq() ***/
 
