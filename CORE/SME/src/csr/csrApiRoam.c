@@ -15509,7 +15509,8 @@ void csrRoamStatsRspProcessor(tpAniSirGlobal pMac, tSirSmeRsp *pSirMsg)
        /* If riva is not sending rssi, continue to use the hack */
        rssi = RSSI_HACK_BMPS;
    }
-   pMac->roam.perPktStatsInfo.avgRssi = rssi;
+   /* send positive value of rssi to wifi_hal */
+   pMac->roam.perPktStatsInfo.avgRssi = (-1)*rssi;
    vos_updatePktStatsInfo(&pMac->roam.perPktStatsInfo);
    WDA_UpdateRssiBmps(pvosGCtx, pSmeStatsRsp->staId, rssi);
 
