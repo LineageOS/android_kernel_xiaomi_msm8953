@@ -1105,8 +1105,8 @@ void wlan_hdd_tdls_exit(hdd_adapter_t *pAdapter, tANI_BOOLEAN mutexLock)
     pHddTdlsCtx = WLAN_HDD_GET_TDLS_CTX_PTR(pAdapter);
     if (NULL == pHddTdlsCtx)
     {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-                 FL("pHddTdlsCtx is NULL"));
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                FL("pHddTdlsCtx is NULL"));
         return;
     }
 
@@ -2461,13 +2461,12 @@ void wlan_hdd_tdls_check_bmps(hdd_adapter_t *pAdapter)
         return;
     }
 
-    pHddTdlsCtx = WLAN_HDD_GET_TDLS_CTX_PTR(pAdapter);
     pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
 
-    if ((NULL == pHddCtx) || (NULL == pHddTdlsCtx))
+    if (NULL == pHddCtx)
     {
        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-               FL(" pHddCtx or  pHddTdlsCtx points to NULL"));
+               FL("pHddCtx points to NULL"));
        return;
     }
 
@@ -2480,10 +2479,20 @@ void wlan_hdd_tdls_check_bmps(hdd_adapter_t *pAdapter)
         return;
     }
 
+    mutex_lock(&pHddCtx->tdls_lock);
+    pHddTdlsCtx = WLAN_HDD_GET_TDLS_CTX_PTR(pAdapter);
+    if (NULL == pHddTdlsCtx)
+    {
+        mutex_unlock(&pHddCtx->tdls_lock);
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                FL("pHddTdlsCtx points to NULL"));
+        return;
+    }
     if ((TDLS_CTX_MAGIC != pHddCtx->tdls_scan_ctxt.magic) &&
         (0 == pHddCtx->connected_peer_count) &&
         (0 == pHddTdlsCtx->discovery_sent_cnt))
     {
+        mutex_unlock(&pHddCtx->tdls_lock);
         if (FALSE == sme_IsPmcBmps(WLAN_HDD_GET_HAL_CTX(pAdapter)))
         {
             VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_WARN,
@@ -2494,6 +2503,7 @@ void wlan_hdd_tdls_check_bmps(hdd_adapter_t *pAdapter)
     }
     else
     {
+        mutex_unlock(&pHddCtx->tdls_lock);
         if (TRUE == sme_IsPmcBmps(WLAN_HDD_GET_HAL_CTX(pAdapter)))
         {
             VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
