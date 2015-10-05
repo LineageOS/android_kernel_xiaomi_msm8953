@@ -775,8 +775,12 @@ static void hdd_GetRssiCB( v_S7_t rssi, tANI_U32 staId, void *pContext )
    /* paranoia: invalidate the magic */
    pStatsContext->magic = 0;
 
-   /* copy over the rssi */
-   pAdapter->rssi = rssi;
+   /* copy over the rssi.FW will return RSSI as -100
+    * if there are no samples to calculate the average
+    * RSSI
+    */
+   if (rssi != -100)
+       pAdapter->rssi = rssi;
    if (pAdapter->rssi > 0)
        pAdapter->rssi = 0;
    /* notify the caller */
@@ -1119,8 +1123,13 @@ static void hdd_GetRoamRssiCB( v_S7_t rssi, tANI_U32 staId, void *pContext )
    /* paranoia: invalidate the magic */
    pStatsContext->magic = 0;
 
-   /* copy over the rssi */
-   pAdapter->rssi = rssi;
+   /* copy over the rssi.FW will return RSSI as -100
+    * if there are no samples to calculate the average
+    * RSSI
+    */
+   if (rssi != -100)
+       pAdapter->rssi = rssi;
+
    if (pAdapter->rssi > 0)
        pAdapter->rssi = 0;
    /* notify the caller */
