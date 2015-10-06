@@ -1157,7 +1157,7 @@ static void wlan_logging_detect_thread_stuck(void)
 			__func__, gwlan_logging.mcThreadStuckCount,
 			gwlan_logging.rxThreadStuckCount,
 			gwlan_logging.txThreadStuckCount);
-		VOS_BUG(0);
+		vos_wlanRestart();
 		return;
 	}
 

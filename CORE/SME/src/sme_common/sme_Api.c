@@ -476,8 +476,9 @@ tSmeCmd *smeGetCommandBuffer( tpAniSirGlobal pMac )
         }
         else
         {
-           /* panic with out-of-command */
-           VOS_BUG(0);
+           vosTraceDumpAll(pMac,0,0,0,0);
+           /* Trigger SSR */
+           vos_wlanRestart();
         }
     }
 

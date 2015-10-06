@@ -1729,6 +1729,13 @@ void vos_send_fatal_event_done(void)
          is_fatal, indicator, reason_code);
     wlan_report_log_completion(is_fatal, indicator, reason_code);
 
+    /* Do ssr after reporting fatal event to recover from
+     * below conditions
+     */
+    if (WLAN_LOG_REASON_SME_COMMAND_STUCK == reason_code ||
+         WLAN_LOG_REASON_SME_OUT_OF_CMD_BUF == reason_code ||
+         WLAN_LOG_REASON_MGMT_FRAME_TIMEOUT == reason_code)
+         vos_wlanRestart();
 }
 
 /**

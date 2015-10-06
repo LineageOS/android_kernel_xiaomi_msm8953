@@ -14076,7 +14076,7 @@ VOS_STATUS WDA_TxPacket(tWDA_CbContext *pWDA,
                      WLAN_LOG_REASON_MGMT_FRAME_TIMEOUT,
                      FALSE, TRUE);
       else
-         VOS_BUG(0);
+         vos_wlanRestart();
 
       if( pAckTxComp )
       {
