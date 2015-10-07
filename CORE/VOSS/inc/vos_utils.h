@@ -187,7 +187,7 @@ typedef struct {
 
 typedef struct {
     v_U32_t lastTxRate;           // 802.11 data rate at which the last data frame is transmitted.
-    v_U8_t  txAvgRetry;           // Average number of retries per 10 packets.
+    v_U32_t  txAvgRetry;           // Average number of retries per 10 packets.
     v_S7_t  avgRssi;              // Average of the Beacon RSSI.
 } tPerTxPacketFrmFw;
 

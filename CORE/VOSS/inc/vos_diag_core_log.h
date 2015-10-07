@@ -130,7 +130,7 @@ typedef struct {
    mcs_stats MCS;    // modulation and bandwidth
    v_S7_t  rssi;    // TX: RSSI of ACK for that packet
                 // RX: RSSI of packet
-   v_U8_t  num_retries;                   // number of attempted retries
+   v_U32_t  num_retries;                   // number of attempted retries
    v_U16_t last_transmit_rate;           // last transmit rate in .5 mbps
    v_U16_t link_layer_transmit_sequence; // receive sequence for that MPDU packet
    v_U64_t dxe_timestamp;     // DXE timestamp

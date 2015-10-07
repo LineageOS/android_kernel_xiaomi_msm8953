@@ -2431,7 +2431,7 @@ typedef struct sAniPerStaStatsInfo
 typedef struct sAniPerTxPktStatsInfo
 {
     tANI_U32 lastTxRate;       // 802.11 data rate at which the last data frame is transmitted.
-    tANI_U8  txAvgRetry;      // Average number of retries per 10 packets.
+    tANI_U32  txAvgRetry;      // Average number of retries per 10 packets.
 }tAniPerTxPktStatsInfo, *tpAniPerTxPktStatsInfo;
 
 
