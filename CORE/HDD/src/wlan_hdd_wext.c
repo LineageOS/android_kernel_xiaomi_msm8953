@@ -5367,15 +5367,17 @@ static int __iw_setint_getnone(struct net_device *dev,
     {
         return ret;
     }
+
+    hHal = WLAN_HDD_GET_HAL_CTX(pAdapter);
+    if (NULL == hHal)
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                 "%s: Hal Context is NULL",__func__);
+        return -EINVAL;
+    }
+
     if ( VOS_MONITOR_MODE != hdd_get_conparam())
     {
-      hHal = WLAN_HDD_GET_HAL_CTX(pAdapter);
-      if (NULL == hHal)
-      {
-          VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                    "%s: Hal Context is NULL",__func__);
-          return -EINVAL;
-      }
       pWextState = WLAN_HDD_GET_WEXT_STATE_PTR(pAdapter);
       if (NULL == pWextState)
       {
@@ -6101,7 +6103,8 @@ static int __iw_setchar_getnone(struct net_device *dev,
           {
               hddLog(VOS_TRACE_LEVEL_ERROR,
                       "%s: vos_mem_alloc failed", __func__);
-              return -ENOMEM;
+              ret = -ENOMEM;
+              break;
           }
 
           memset(pkt, 0, sizeof(tSirpkt80211));

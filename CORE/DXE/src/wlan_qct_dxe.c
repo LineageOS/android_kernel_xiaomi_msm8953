@@ -5750,7 +5750,7 @@ wpt_status WLANDXE_StartLogTransfer(void)
       return status;
    }
 
-   wpalWriteRegister(channelEntry->channelRegister.chDXECtrlRegAddr,
+   status = wpalWriteRegister(channelEntry->channelRegister.chDXECtrlRegAddr,
                           channelEntry->extraConfig.chan_mask);
    if(eWLAN_PAL_STATUS_SUCCESS != status)
    {

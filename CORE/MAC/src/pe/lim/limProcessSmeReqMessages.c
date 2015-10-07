@@ -1408,6 +1408,7 @@ __limProcessSmeScanReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
                                         pScanReq->sessionId,
                                         pScanReq->transactionId);
                   }
+                  vos_mem_free(pMlmScanReq);
                   return;
               }
               pMlmScanReq->channelList.numChannels = (tANI_U8) cfg_len;

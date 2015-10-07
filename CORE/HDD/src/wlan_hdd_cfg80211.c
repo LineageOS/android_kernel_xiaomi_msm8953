@@ -13610,15 +13610,6 @@ int wlan_hdd_cfg80211_set_ie( hdd_adapter_t *pAdapter,
                                 "on WNI_CFG_PROBE_RSP_ADDNIE_FLAG to CCM");
                        }
                    }
-                   else
-                   {
-                      // Reset WNI_CFG_PROBE_RSP Flags
-                      wlan_hdd_reset_prob_rspies(pAdapter);
-
-                      hddLog(VOS_TRACE_LEVEL_INFO,
-                            "%s: No Probe Response IE received in set beacon",
-                            __func__);
-                   }
                 } /* end of if (WLAN_HDD_IBSS == pAdapter->device_mode) */
                 break;
             case DOT11F_EID_RSN:
