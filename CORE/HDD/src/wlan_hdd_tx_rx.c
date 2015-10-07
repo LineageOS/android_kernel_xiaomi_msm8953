@@ -91,6 +91,11 @@ const v_U8_t hdd_QdiscAcToTlAC[] = {
 #define HDD_TX_STALL_SSR_THRESHOLD_HIGH   13
 #define HDD_TX_STALL_RECOVERY_THRESHOLD HDD_TX_STALL_SSR_THRESHOLD - 2
 #define HDD_TX_STALL_FATAL_EVENT_THRESHOLD 2
+#define EAPOL_MASK 0x8013
+#define EAPOL_M1_BIT_MASK 0x8000
+#define EAPOL_M2_BIT_MASK 0x0001
+#define EAPOL_M3_BIT_MASK 0x8013
+#define EAPOL_M4_BIT_MASK 0x0003
 
 
 int gRatefromIdx[] = {
@@ -2916,8 +2921,31 @@ void wlan_hdd_log_eapol(struct sk_buff *skb,
 
     wlan_hdd_get_eapol_params(skb, &eapol_params, event_type);
     wlan_hdd_event_eapol_log(eapol_params);
-    VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_INFO,
-               "Eapol subtype is %d and key info is %d\n",
-               eapol_params.event_sub_type,eapol_params.eapol_key_info);
+
+    if ((eapol_params.eapol_key_info & EAPOL_MASK )== EAPOL_M1_BIT_MASK)
+    {
+        hddLog(LOG1, FL("%s: M1 packet"),eapol_params.event_sub_type ==
+               WIFI_EVENT_DRIVER_EAPOL_FRAME_RECEIVED ? "RX" : "TX");
+    }
+    else if ((eapol_params.eapol_key_info & EAPOL_MASK )== EAPOL_M2_BIT_MASK)
+    {
+        hddLog(LOG1, FL("%s: M2 packet"),eapol_params.event_sub_type ==
+               WIFI_EVENT_DRIVER_EAPOL_FRAME_RECEIVED ? "RX" : "TX");
+
+    }
+
+    else if ((eapol_params.eapol_key_info & EAPOL_MASK )== EAPOL_M3_BIT_MASK)
+    {
+        hddLog(LOG1, FL("%s: M3 packet"),eapol_params.event_sub_type ==
+               WIFI_EVENT_DRIVER_EAPOL_FRAME_RECEIVED ? "RX" : "TX");
+    }
+
+    else if ((eapol_params.eapol_key_info & EAPOL_MASK )== EAPOL_M4_BIT_MASK)
+    {
+        hddLog(LOG1, FL("%s: M4 packet"),eapol_params.event_sub_type ==
+               WIFI_EVENT_DRIVER_EAPOL_FRAME_RECEIVED ? "RX" : "TX");
+
+    }
+
 }
 #endif /* FEATURE_WLAN_DIAG_SUPPORT */
