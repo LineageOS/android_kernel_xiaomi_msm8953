@@ -16736,6 +16736,7 @@ static int __wlan_hdd_cfg80211_sched_scan_stop(struct wiphy *wiphy,
     {
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                   "%s: LOGP in Progress. Ignore!!!", __func__);
+        pHddCtx->isPnoEnable = FALSE;
         return ret;
     }
 
