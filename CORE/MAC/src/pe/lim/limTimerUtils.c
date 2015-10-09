@@ -677,7 +677,8 @@ limCreateTimers(tpAniSirGlobal pMac)
         goto err_timer;
     }
 
-    if (eSIR_SUCCESS == wlan_cfgGetInt(pMac, WNI_CFG_ACTIVE_PASSIVE_CON,
+    cfgValue = WNI_CFG_ACTIVE_PASSIVE_CON_MAX;
+    if (eSIR_SUCCESS != wlan_cfgGetInt(pMac, WNI_CFG_ACTIVE_PASSIVE_CON,
                                       &cfgValue))
     {
         limLog(pMac, LOGP,
