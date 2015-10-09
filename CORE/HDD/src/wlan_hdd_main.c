@@ -8279,6 +8279,14 @@ static void __hdd_set_multicast_list(struct net_device *dev)
       }
    }
 
+   if (pHddCtx->hdd_wlan_suspended)
+   {
+       /*
+        * Configure the Mcast address list to FW
+        * If wlan is already in suspend mode
+        */
+       wlan_hdd_set_mc_addr_list(pAdapter, TRUE);
+   }
    EXIT();
    return;
 }
