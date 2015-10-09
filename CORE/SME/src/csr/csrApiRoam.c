@@ -15488,8 +15488,9 @@ void csrRoamStatsRspProcessor(tpAniSirGlobal pMac, tSirSmeRsp *pSirMsg)
                 txPacketInfo = (tAniPerTxPktStatsInfo *)pStats;
                 pMac->roam.perPktStatsInfo.lastTxRate = txPacketInfo->lastTxRate;
                 pMac->roam.perPktStatsInfo.txAvgRetry = txPacketInfo->txAvgRetry;
-                pStats += sizeof(tAniPerTxPktStatsInfo);
-                length -= sizeof(tAniPerTxPktStatsInfo);
+                /* for reserved bytes */
+                pStats += (sizeof(tAniPerTxPktStatsInfo) + 2*sizeof(tANI_U32));
+                length -= (sizeof(tAniPerTxPktStatsInfo) + 2*sizeof(tANI_U32));
             }
             break;
          default:
