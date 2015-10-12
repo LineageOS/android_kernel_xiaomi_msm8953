@@ -204,7 +204,11 @@ static placeHolderInCapBitmap supportEnabledFeatures[] =
    ,MGMT_FRAME_LOGGING             //53
    ,ENHANCED_TXBD_COMPLETION       //54
    ,LOGGING_ENHANCEMENT            //55
-   ,FEATURE_NOT_SUPPORTED          //56
+#ifdef WLAN_FEATURE_EXTSCAN
+   ,EXT_SCAN_ENHANCED              //56
+#else
+    ,FEATURE_NOT_SUPPORTED         //56
+#endif
    ,MEMORY_DUMP_SUPPORTED          //57
    ,PER_PKT_STATS_SUPPORTED        //58
 };
@@ -1470,6 +1474,9 @@ void WDI_TraceHostFWCapabilities(tANI_U32 *capabilityBitmap)
 #ifdef WLAN_FEATURE_EXTSCAN
                      case EXTENDED_SCAN: snprintf(pCapStr, sizeof("EXTENDED_SCAN"), "%s", "EXTENDED_SCAN");
                           pCapStr += strlen("EXTENDED_SCAN");
+                          break;
+                     case EXT_SCAN_ENHANCED: snprintf(pCapStr, sizeof("EXT_SCAN_ENHANCED"), "%s", "EXT_SCAN_ENHANCED");
+                          pCapStr += strlen("EXT_SCAN_ENHANCED");
                           break;
 #endif
                      case MU_MIMO: snprintf(pCapStr, sizeof("MU_MIMO"), "%s", "MU_MIMO");

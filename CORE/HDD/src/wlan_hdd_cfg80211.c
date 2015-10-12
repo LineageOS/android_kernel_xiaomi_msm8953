@@ -3462,7 +3462,8 @@ static int __wlan_hdd_cfg80211_extscan_get_capabilities(struct wiphy *wiphy,
     }
     /* check the EXTScan Capability */
     if ( (TRUE != pHddCtx->cfg_ini->fEnableEXTScan) ||
-         (TRUE != sme_IsFeatureSupportedByFW(EXTENDED_SCAN)))
+         (TRUE != sme_IsFeatureSupportedByFW(EXTENDED_SCAN)) ||
+         (TRUE != sme_IsFeatureSupportedByFW(EXT_SCAN_ENHANCED)))
     {
         hddLog(VOS_TRACE_LEVEL_ERROR,
                FL("EXTScan not enabled/supported by Firmware"));
@@ -3561,7 +3562,8 @@ static int __wlan_hdd_cfg80211_extscan_get_cached_results(struct wiphy *wiphy,
     }
     /* check the EXTScan Capability */
     if ( (TRUE != pHddCtx->cfg_ini->fEnableEXTScan) ||
-         (TRUE != sme_IsFeatureSupportedByFW(EXTENDED_SCAN)))
+         (TRUE != sme_IsFeatureSupportedByFW(EXTENDED_SCAN)) ||
+         (TRUE != sme_IsFeatureSupportedByFW(EXT_SCAN_ENHANCED)))
     {
         hddLog(VOS_TRACE_LEVEL_ERROR,
                FL("EXTScan not enabled/supported by Firmware"));
@@ -3682,7 +3684,8 @@ static int __wlan_hdd_cfg80211_extscan_set_bssid_hotlist(struct wiphy *wiphy,
     }
     /* check the EXTScan Capability */
     if ( (TRUE != pHddCtx->cfg_ini->fEnableEXTScan) ||
-         (TRUE != sme_IsFeatureSupportedByFW(EXTENDED_SCAN)))
+         (TRUE != sme_IsFeatureSupportedByFW(EXTENDED_SCAN)) ||
+         (TRUE != sme_IsFeatureSupportedByFW(EXT_SCAN_ENHANCED)))
     {
         hddLog(VOS_TRACE_LEVEL_ERROR,
                FL("EXTScan not enabled/supported by Firmware"));
@@ -3897,7 +3900,8 @@ __wlan_hdd_cfg80211_extscan_set_ssid_hotlist(struct wiphy *wiphy,
 
     /* check the EXTScan Capability */
     if ( (TRUE != hdd_ctx->cfg_ini->fEnableEXTScan) ||
-         (TRUE != sme_IsFeatureSupportedByFW(EXTENDED_SCAN)))
+         (TRUE != sme_IsFeatureSupportedByFW(EXTENDED_SCAN)) ||
+         (TRUE != sme_IsFeatureSupportedByFW(EXT_SCAN_ENHANCED)))
     {
         hddLog(VOS_TRACE_LEVEL_ERROR,
                FL("EXTScan not enabled/supported by Firmware"));
@@ -4104,7 +4108,8 @@ __wlan_hdd_cfg80211_extscan_reset_ssid_hotlist(struct wiphy *wiphy,
 
     /* check the EXTScan Capability */
     if ( (TRUE != hdd_ctx->cfg_ini->fEnableEXTScan) ||
-         (TRUE != sme_IsFeatureSupportedByFW(EXTENDED_SCAN)))
+         (TRUE != sme_IsFeatureSupportedByFW(EXTENDED_SCAN)) ||
+         (TRUE != sme_IsFeatureSupportedByFW(EXT_SCAN_ENHANCED)))
     {
         hddLog(LOGE,
                FL("EXTScan not enabled/supported by Firmware"));
@@ -4574,7 +4579,8 @@ static int __wlan_hdd_cfg80211_extscan_start(struct wiphy *wiphy,
     }
     /* check the EXTScan Capability */
     if ( (TRUE != pHddCtx->cfg_ini->fEnableEXTScan) ||
-         (TRUE != sme_IsFeatureSupportedByFW(EXTENDED_SCAN)))
+         (TRUE != sme_IsFeatureSupportedByFW(EXTENDED_SCAN)) ||
+         (TRUE != sme_IsFeatureSupportedByFW(EXT_SCAN_ENHANCED)))
     {
         hddLog(VOS_TRACE_LEVEL_ERROR,
                FL("EXTScan not enabled/supported by Firmware"));
@@ -4765,7 +4771,8 @@ static int __wlan_hdd_cfg80211_extscan_stop(struct wiphy *wiphy,
     }
     /* check the EXTScan Capability */
     if ( (TRUE != pHddCtx->cfg_ini->fEnableEXTScan) ||
-         (TRUE != sme_IsFeatureSupportedByFW(EXTENDED_SCAN)))
+         (TRUE != sme_IsFeatureSupportedByFW(EXTENDED_SCAN)) ||
+         (TRUE != sme_IsFeatureSupportedByFW(EXT_SCAN_ENHANCED)))
     {
         hddLog(VOS_TRACE_LEVEL_ERROR,
                FL("EXTScan not enabled/supported by Firmware"));
@@ -4870,7 +4877,8 @@ static int __wlan_hdd_cfg80211_extscan_reset_bssid_hotlist(struct wiphy *wiphy,
     }
     /* check the EXTScan Capability */
     if ( (TRUE != pHddCtx->cfg_ini->fEnableEXTScan) ||
-         (TRUE != sme_IsFeatureSupportedByFW(EXTENDED_SCAN)))
+         (TRUE != sme_IsFeatureSupportedByFW(EXTENDED_SCAN)) ||
+         (TRUE != sme_IsFeatureSupportedByFW(EXT_SCAN_ENHANCED)))
     {
         hddLog(VOS_TRACE_LEVEL_ERROR,
                FL("EXTScan not enabled/supported by Firmware"));
@@ -5499,8 +5507,9 @@ __wlan_hdd_cfg80211_get_supported_features(struct wiphy *wiphy,
 
 #ifdef WLAN_FEATURE_EXTSCAN
     if ((TRUE == pHddCtx->cfg_ini->fEnableEXTScan) &&
-            sme_IsFeatureSupportedByFW(EXTENDED_SCAN)) {
-        hddLog(LOG1, FL("EXTScan is supported by firmware"));
+            sme_IsFeatureSupportedByFW(EXTENDED_SCAN) &&
+            sme_IsFeatureSupportedByFW(EXT_SCAN_ENHANCED)) {
+        hddLog(LOG1, FL("Enhanced EXTScan is supported by firmware"));
         fset |= WIFI_FEATURE_EXTSCAN;
     }
 #endif
