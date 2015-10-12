@@ -2366,7 +2366,7 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_ENABLE_FATAL_EVENT_TRIGGER                 "gEnableFatalEvent"
 #define CFG_ENABLE_FATAL_EVENT_TRIGGER_MIN             (0)
 #define CFG_ENABLE_FATAL_EVENT_TRIGGER_MAX             (1)
-#define CFG_ENABLE_FATAL_EVENT_TRIGGER_DEFAULT         (0)
+#define CFG_ENABLE_FATAL_EVENT_TRIGGER_DEFAULT         (1)
 
 
 #define CFG_ENABLE_MGMT_LOGGING                         "gEnableMgmtLogging"
