@@ -105,6 +105,8 @@ typedef struct connection_info_s
 
    /** Dot11Mode */
    tANI_U32 dot11Mode;
+
+   uint32_t  rate_flags;
    
 }connection_info_t;
 /*Forward declaration of Adapter*/

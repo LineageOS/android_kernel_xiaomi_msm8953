@@ -183,6 +183,10 @@ typedef struct {
    /** Track HT40 Intolerant station */
    v_BOOL_t isHT40IntolerantSet;
 #endif
+
+  /** Rate Flags for this connection */
+  uint32_t  rate_flags;
+
 } hdd_station_info_t;
 
 typedef struct sSapContext {

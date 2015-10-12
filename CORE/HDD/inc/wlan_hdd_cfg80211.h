@@ -181,6 +181,9 @@ enum qca_nl80211_vendor_subcmds {
 
     QCA_NL80211_VENDOR_SUBCMD_OFFLOADED_PACKETS = 79,
 
+    /* subcommand to get link properties */
+    QCA_NL80211_VENDOR_SUBCMD_LINK_PROPERTIES = 101,
+
     QCA_NL80211_VENDOR_SUBCMD_SETBAND = 105,
 };
 
@@ -1055,6 +1058,25 @@ enum qca_wlan_vendor_attr_wifi_logger_start {
     QCA_WLAN_VENDOR_ATTR_WIFI_LOGGER_START_MAX =
        QCA_WLAN_VENDOR_ATTR_WIFI_LOGGER_START_AFTER_LAST - 1,
 };
+
+/* NL attributes for data used by
+ * QCA_NL80211_VENDOR_SUBCMD_LINK_PROPERTIES.
+ */
+enum qca_wlan_vendor_attr_link_properties {
+    QCA_WLAN_VENDOR_ATTR_LINK_PROPERTIES_INVALID    = 0,
+    /* Unsigned 8bit value for specifying nof spatial streams */
+    QCA_WLAN_VENDOR_ATTR_LINK_PROPERTIES_NSS        = 1,
+    /* Unsigned 8bit value for the rate flags */
+    QCA_WLAN_VENDOR_ATTR_LINK_PROPERTIES_RATE_FLAGS = 2,
+    /* Unsigned 32bit value for operating frequency */
+    QCA_WLAN_VENDOR_ATTR_LINK_PROPERTIES_FREQ       = 3,
+
+    /* KEEP LAST */
+    QCA_WLAN_VENDOR_ATTR_LINK_PROPERTIES_AFTER_LAST,
+    QCA_WLAN_VENDOR_ATTR_LINK_PROPERTIES_MAX =
+    QCA_WLAN_VENDOR_ATTR_LINK_PROPERTIES_AFTER_LAST - 1,
+};
+
 
 /* Feature defines */
 #define WIFI_FEATURE_INFRA              0x0001   /* Basic infrastructure mode */

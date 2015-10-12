@@ -1201,6 +1201,7 @@ typedef struct sSirSmeAssocInd
     tANI_U8*             beaconPtr;
     tANI_U32             assocReqLength;
     tANI_U8*             assocReqPtr;
+    uint32_t             rate_flags;
 } tSirSmeAssocInd, *tpSirSmeAssocInd;
 
 

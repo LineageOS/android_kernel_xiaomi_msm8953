@@ -1212,6 +1212,8 @@ limFillAssocIndParams(tpAniSirGlobal pMac, tpLimMlmAssocInd pAssocInd,
     limLog(pMac, LOGW, FL("HT40MHzIntoPresent: %d"),
                  pSirSmeAssocInd->HT40MHzIntoEnabledSta);
 #endif
+    // Fill in rate flags
+    pSirSmeAssocInd->rate_flags = pAssocInd->rate_flags;
 } /*** end limAssocIndSerDes() ***/
 
 

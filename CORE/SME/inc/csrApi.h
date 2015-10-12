@@ -1315,6 +1315,7 @@ typedef struct sSirSmeAssocIndToUpperLayerCnf
 #ifdef WLAN_FEATURE_AP_HT40_24G
     tANI_U8              HT40MHzIntoEnabledSta; //set to true if 40 MHz Intolerant enabled STA
 #endif
+    uint32_t             rate_flags;
 } tSirSmeAssocIndToUpperLayerCnf, *tpSirSmeAssocIndToUpperLayerCnf;
 
 typedef struct tagCsrSummaryStatsInfo

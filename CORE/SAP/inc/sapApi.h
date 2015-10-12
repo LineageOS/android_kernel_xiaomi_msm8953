@@ -286,7 +286,8 @@ typedef struct sap_StationAssocReassocCompleteEvent_s {
     tANI_U32     assocReqLength;
     tANI_U8*     assocReqPtr;
     tANI_U32     assocRespLength;
-    tANI_U8*     assocRespPtr;    
+    tANI_U8*     assocRespPtr;
+    uint32_t rate_flags;
 } tSap_StationAssocReassocCompleteEvent;
 
 typedef struct sap_StationDisassocCompleteEvent_s {

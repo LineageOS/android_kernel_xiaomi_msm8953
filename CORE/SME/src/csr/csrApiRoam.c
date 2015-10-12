@@ -8698,6 +8698,7 @@ void csrRoamJoinedStateMsgProcessor( tpAniSirGlobal pMac, void *pMsgBuf )
             smsLog( pMac, LOGW, FL("HT40MHzIntoEnabledSta: %d \n"),
                                     pRoamInfo->HT40MHzIntoEnabledSta);
 #endif
+            pRoamInfo->maxRateFlags = pUpperLayerAssocCnf->rate_flags;
             if(CSR_IS_INFRA_AP(pRoamInfo->u.pConnectedProfile) )
             {
                 pMac->roam.roamSession[sessionId].connectState = eCSR_ASSOC_STATE_TYPE_INFRA_CONNECTED;
@@ -9649,6 +9650,7 @@ void csrRoamCheckForLinkStatusChange( tpAniSirGlobal pMac, tSirSmeRsp *pSirMsg )
                     vos_mem_copy(&pRoamInfo->bssid, pAssocInd->bssId,
                                  sizeof(tCsrBssid));
                     pRoamInfo->wmmEnabledSta = pAssocInd->wmmEnabledSta;
+                    pRoamInfo->maxRateFlags =  pAssocInd->rate_flags;
 #ifdef WLAN_FEATURE_AP_HT40_24G
                     pRoamInfo->HT40MHzIntoEnabledSta =
                                pAssocInd->HT40MHzIntoEnabledSta;
@@ -14255,6 +14257,8 @@ eHalStatus csrSendAssocIndToUpperLayerCnfMsg(   tpAniSirGlobal pMac,
         *pBuf = pAssocInd->HT40MHzIntoEnabledSta;
         pBuf += sizeof (tANI_U8);
 #endif
+        *pBuf = pAssocInd->rate_flags;
+        pBuf += sizeof (uint32_t);
         msgQ.type = eWNI_SME_UPPER_LAYER_ASSOC_CNF;
         msgQ.bodyptr = pMsg;
         msgQ.bodyval = 0;

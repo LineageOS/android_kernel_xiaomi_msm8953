@@ -821,6 +821,8 @@ sapSignalHDDevent
                             pCsrRoamInfo->addIELen);
             }
 
+            sapApAppEvent.sapevt.sapStationAssocReassocCompleteEvent.rate_flags = pCsrRoamInfo->maxRateFlags;
+
             sapApAppEvent.sapevt.sapStationAssocReassocCompleteEvent.wmmEnabled = pCsrRoamInfo->wmmEnabledSta;
             sapApAppEvent.sapevt.sapStationAssocReassocCompleteEvent.status = (eSapStatus )context;
             //TODO: Need to fill sapAuthType
