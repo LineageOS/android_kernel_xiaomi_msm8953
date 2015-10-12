@@ -66,6 +66,7 @@
 #define PKTLOG_TYPE_PKT_STAT         9
 
 
+
 /*-------------------------------------------------------------------------- 
   Type declarations
   ------------------------------------------------------------------------*/
@@ -182,7 +183,11 @@ typedef struct {
     v_U16_t seq_num; // receive sequence for that MPDU packet
     v_U64_t dxe_timestamp;     // DXE timestamp
     v_U32_t data_len;
-    v_U8_t data[52]; // 802.11 Header for management packets and 802.11 plus IP header for Data packets
+    /* Whole frame for management/EAPOl/DHCP frames and 802.11 + LLC
+    * header + 40 bytes or full frame whichever is smaller for
+    * remaining Data packets
+    */
+    v_U8_t data[MAX_PKT_STAT_DATA_LEN];
 } tPerPacketStats;
 
 typedef struct {
@@ -319,8 +324,7 @@ v_BOOL_t vos_roam_delay_stats_deinit(void);
 void    vos_reset_roam_timer_log(void);
 void    vos_dump_roam_time_log_service(void);
 void    vos_record_roam_event(enum e_roaming_event, void *pBuff, v_ULONG_t buff_len);
-v_U32_t vos_copy_80211_header(void *pBuff, v_U8_t *dst, v_U8_t frametype,
-                              v_U8_t Qos);
+v_U32_t vos_copy_80211_data(void *pBuff, v_U8_t *dst, v_U8_t frametype);
 extern  v_U8_t vos_get_ring_log_level(v_U32_t ring_id);
 bool vos_isPktStatsEnabled(void);
 #endif // #if !defined __VOSS_UTILS_H

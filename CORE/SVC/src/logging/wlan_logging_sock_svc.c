@@ -478,7 +478,8 @@ int wlan_pkt_stats_to_user(void *perPktStat)
 	rx_tx_stats.ps_hdr.timestamp = vos_timer_get_system_ticks();
 	rx_tx_stats.ps_hdr.missed_cnt = 0;
 	rx_tx_stats.ps_hdr.size = sizeof(tx_rx_pkt_stats) -
-				sizeof(pkt_stats_hdr) + pktstats->data_len - IP_PLUS_80211_HDR_LEN;
+				sizeof(pkt_stats_hdr) + pktstats->data_len-
+				MAX_PKT_STAT_DATA_LEN;
 
 	rx_tx_stats.stats.flags |= PER_PACKET_ENTRY_FLAGS_TX_SUCCESS;
 	rx_tx_stats.stats.flags |= PER_PACKET_ENTRY_FLAGS_80211_HEADER;
@@ -486,8 +487,11 @@ int wlan_pkt_stats_to_user(void *perPktStat)
 		rx_tx_stats.stats.flags |= PER_PACKET_ENTRY_FLAGS_DIRECTION_TX;
 
 	hdr = (tpSirMacMgmtHdr)pktstats->data;
-	if (hdr->fc.wep)
-	   rx_tx_stats.stats.flags |= PER_PACKET_ENTRY_FLAGS_PROTECTED;
+	if (hdr->fc.wep) {
+		rx_tx_stats.stats.flags |= PER_PACKET_ENTRY_FLAGS_PROTECTED;
+		/* Reset wep bit to parse frame properly */
+		hdr->fc.wep = 0;
+	}
 
 	rx_tx_stats.stats.tid = pktstats->tid;
 	rx_tx_stats.stats.dxe_timestamp = pktstats->dxe_timestamp;
@@ -517,7 +521,8 @@ int wlan_pkt_stats_to_user(void *perPktStat)
 	vos_mem_copy(rx_tx_stats.stats.data,pktstats->data, pktstats->data_len);
 
 	/* 1+1 indicate '\n'+'\0' */
-	total_log_len = sizeof(tx_rx_pkt_stats) + pktstats->data_len - IP_PLUS_80211_HDR_LEN;
+	total_log_len = sizeof(tx_rx_pkt_stats) + pktstats->data_len -
+						 MAX_PKT_STAT_DATA_LEN;
 	spin_lock_irqsave(&gwlan_logging.pkt_stats_lock, flags);
 	// wlan logging svc resources are not yet initialized
 	if (!gwlan_logging.pkt_stats_pcur_node) {

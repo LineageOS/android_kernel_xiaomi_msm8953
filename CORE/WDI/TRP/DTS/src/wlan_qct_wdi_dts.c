@@ -785,11 +785,7 @@ wpt_status WDTS_RxPacket (void *pContext, wpt_packet *pFrame, WDTS_ChannelType c
       }
       if ((WLAN_LOG_LEVEL_ACTIVE ==
             vos_get_ring_log_level(RING_ID_PER_PACKET_STATS)) &&
-          !(WDI_MAC_CTRL_FRAME == pRxMetadata->type) &&
-          !((WDI_MAC_MGMT_FRAME== pRxMetadata->type) &&
-          ((WDI_MAC_MGMT_BEACON == (pRxMetadata->subtype)) ||
-          (WDI_MAC_MGMT_PROBE_REQ == (pRxMetadata->subtype)) ||
-          (WDI_MAC_MGMT_PROBE_RSP == (pRxMetadata->subtype)))))
+          !(WDI_MAC_CTRL_FRAME == pRxMetadata->type))
       {
           vos_mem_zero(&rxStats,sizeof(tPerPacketStats));
           /* Peer tx packet and it is an Rx packet for us */
@@ -800,11 +796,8 @@ wpt_status WDTS_RxPacket (void *pContext, wpt_packet *pFrame, WDTS_ChannelType c
           rxStats.rate_idx = pRxMetadata->rateIndex;
           rxStats.seq_num = pRxMetadata->currentPktSeqNo;
           rxStats.dxe_timestamp = vos_timer_get_system_ticks();
-          rxStats.data_len = ucMPDUHLen;
-          if(WDI_MAC_DATA_FRAME== pRxMetadata->type)
-             rxStats.data_len += WDI_MAC_LLC_HEADER_SIZE;
-          vos_mem_copy(rxStats.data,pRxMetadata->mpduHeaderPtr,rxStats.data_len);
-
+          rxStats.data_len =
+               vos_copy_80211_data(pFrame, rxStats.data, pRxMetadata->type);
           wpalPerPktSerialize(&rxStats);
       }
       // Invoke Rx complete callback
@@ -1111,11 +1104,7 @@ wpt_status WDTS_TxPacket(void *pContext, wpt_packet *pFrame)
   status =  gTransportDriver.xmit(pDTDriverContext, pFrame, channel);
   if ((WLAN_LOG_LEVEL_ACTIVE ==
            vos_get_ring_log_level(RING_ID_PER_PACKET_STATS)) &&
-       !(pTxMetadata->frmType & WDI_MAC_CTRL_FRAME) &&
-      !((WDI_MAC_MGMT_FRAME== pTxMetadata->frmType) &&
-        ((WDI_MAC_MGMT_BEACON == (pTxMetadata->typeSubtype & 0x0F)) ||
-        (WDI_MAC_MGMT_PROBE_REQ == (pTxMetadata->typeSubtype & 0x0F)) ||
-        (WDI_MAC_MGMT_PROBE_RSP == (pTxMetadata->typeSubtype & 0x0F))))){
+       !(pTxMetadata->frmType & WDI_MAC_CTRL_FRAME)){
 
       vos_mem_zero(&txPktStat,sizeof(tPerPacketStats));
       txPktStat.tid = pTxMetadata->fUP;
@@ -1123,8 +1112,8 @@ wpt_status WDTS_TxPacket(void *pContext, wpt_packet *pFrame)
       /*HW limitation cant get the seq number*/
       txPktStat.seq_num = 0;
       txPktStat.data_len =
-      vos_copy_80211_header((void *)pFrame, txPktStat.data,
-                   pTxMetadata->frmType, pTxMetadata->qosEnabled);
+      vos_copy_80211_data((void *)pFrame, txPktStat.data,
+                   pTxMetadata->frmType);
       wpalPerPktSerialize(&txPktStat);
   }
   if (((WDI_ControlBlockType *)pContext)->roamDelayStatsEnabled)

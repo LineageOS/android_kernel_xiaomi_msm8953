@@ -66,6 +66,9 @@
   (( ( ( (_x) << 24 ) & 0xFF000000 ) | ( ( (_x) >> 24 ) & 0x000000FF ) ) | \
    ( ( ( (_x) << 8 ) & 0x00FF0000 ) | ( ( (_x) >> 8 ) & 0x0000FF00 ) ))
 
+/* Length enough to include full DHCP/EAPOL/Management frame */
+#define MAX_PKT_STAT_DATA_LEN         800
+
 // Endian operations for Big Endian and Small Endian modes
 #ifdef ANI_LITTLE_BYTE_ENDIAN
 

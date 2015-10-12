@@ -65,8 +65,6 @@ extern "C" {
 #define VOS_LOG_MAX_NUM_HO_CANDIDATE_APS                    20
 #define VOS_LOG_MAX_WOW_PTRN_SIZE                           128
 #define VOS_LOG_MAX_WOW_PTRN_MASK_SIZE                      16
-/*802.11 Header for management packets and 802.11 plus IP header for Data packets*/
-# define IP_PLUS_80211_HDR_LEN                              52
 /* Version to be updated whenever format of vos_log_pktlog_info changes */
 #define VERSION_LOG_WLAN_PKT_LOG_INFO_C                     1
 
@@ -136,7 +134,11 @@ typedef struct {
    v_U64_t dxe_timestamp;     // DXE timestamp
    v_U64_t start_contention_timestamp; // 0 Not supported
    v_U64_t transmit_success_timestamp; // 0 Not Supported
-   v_U8_t data[IP_PLUS_80211_HDR_LEN]; // 802.11 Header for management packets and 802.11 plus IP header for Data packets
+   /* Whole frame for management/EAPOl/DHCP frames and 802.11 + LLC
+    * header + 40 bytes or full frame whichever is smaller for
+    * remaining Data packets
+    */
+   v_U8_t data[MAX_PKT_STAT_DATA_LEN];
 } __attribute__((packed)) per_packet_stats;
 
 typedef struct
