@@ -5852,6 +5852,16 @@ __wlan_hdd_cfg80211_get_fw_mem_dump(struct wiphy *wiphy,
     /*call common API for FW mem dump req*/
     ret = wlan_hdd_fw_mem_dump_req(pHddCtx);
 
+    if (true == ret)
+    {
+        /*indicate to userspace the status of fw mem dump */
+        wlan_indicate_mem_dump_complete(true);
+    }
+    else
+    {
+        /*else send failure to userspace */
+        wlan_indicate_mem_dump_complete(false);
+    }
     EXIT();
     return ret;
 }

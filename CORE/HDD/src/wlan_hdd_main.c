@@ -12165,6 +12165,7 @@ static ssize_t memdump_read(struct file *file, char __user *buf,
     int status;
     hdd_context_t *hdd_ctx = (hdd_context_t *)PDE_DATA(file_inode(file));
     size_t ret_count;
+    loff_t bytes_left;
     ENTER();
 
     hddLog(LOG1, FL("Read req for size:%zu pos:%llu"), count, *pos);
@@ -12180,12 +12181,13 @@ static ssize_t memdump_read(struct file *file, char __user *buf,
 
     /* run fs_read_handler in an atomic context*/
     vos_ssr_protect(__func__);
-    ret_count = wlan_fwr_mem_dump_fsread_handler( buf, count, pos);
-    if(ret_count == 0)
+    ret_count = wlan_fwr_mem_dump_fsread_handler( buf, count, pos, &bytes_left);
+    if(bytes_left == 0)
     {
         /*Free the fwr mem dump buffer */
         wlan_free_fwr_mem_dump_buffer();
         wlan_set_fwr_mem_dump_state(FW_MEM_DUMP_IDLE);
+        ret_count=0;
     }
     /*if SSR/unload code is waiting for memdump_read to finish,signal it*/
     vos_ssr_unprotect(__func__);
@@ -12215,25 +12217,29 @@ static const struct file_operations memdump_fops = {
 void wlan_hdd_fw_mem_dump_cb(void *fwMemDumpReqContext,
                          tAniFwrDumpRsp *dump_rsp)
 {
-    hdd_context_t *pHddCtx = (hdd_context_t *)fwMemDumpReqContext;
-    int status;
-    ENTER();
-    status = wlan_hdd_validate_context(pHddCtx);
-    if (0 != status) {
-        return;
-    }
+    struct hdd_fw_mem_dump_req_ctx *pHddFwMemDumpCtx = (struct hdd_fw_mem_dump_req_ctx *)fwMemDumpReqContext;
 
+    ENTER();
+    spin_lock(&hdd_context_lock);
+    if(!pHddFwMemDumpCtx || (FW_MEM_DUMP_MAGIC != pHddFwMemDumpCtx->magic)) {
+       spin_unlock(&hdd_context_lock);
+       return;
+    }
+    /* report the status to requesting function and free mem.*/
     if (dump_rsp->dump_status != eHAL_STATUS_SUCCESS) {
-        hddLog(LOGE, FL("fw dump request declined by fwr"));
-       //report failure to user space
-       wlan_indicate_mem_dump_complete(false);
+       hddLog(LOGE, FL("fw dump request declined by fwr"));
+       //set the request completion variable
+       complete(&(pHddFwMemDumpCtx->req_completion));
        //Free the allocated fwr dump
        wlan_free_fwr_mem_dump_buffer();
        wlan_set_fwr_mem_dump_state(FW_MEM_DUMP_IDLE);
-       return;
     }
-    else
-        hddLog(LOG1, FL("fw dump request accepted by fwr"));
+    else {
+       hddLog(LOG1, FL("fw dump request accepted by fwr"));
+       /* register the HDD callback which will be called by SVC */
+       wlan_set_svc_fw_mem_dump_req_cb((void*)wlan_hdd_fw_mem_dump_req_cb,(void*)pHddFwMemDumpCtx);
+    }
+    spin_unlock(&hdd_context_lock);
     EXIT();
 
 }
@@ -12370,9 +12376,11 @@ int memdump_deinit(void)
 int wlan_hdd_fw_mem_dump_req(hdd_context_t * pHddCtx)
 {
    tAniFwrDumpReq fw_mem_dump_req={0};
+   struct hdd_fw_mem_dump_req_ctx fw_mem_dump_ctx;
    eHalStatus status = eHAL_STATUS_FAILURE;
    int ret=0;
    ENTER();
+
    /*Check whether a dump request is already going on
     *Caution this function will free previously held memory if new dump request is allowed*/
    if (!wlan_fwr_mem_dump_test_and_set_write_allowed_bit()) {
@@ -12390,18 +12398,61 @@ int wlan_hdd_fw_mem_dump_req(hdd_context_t * pHddCtx)
        hddLog(LOGE, FL("Fwr mem Allocation failed"));
        return -ENOMEM;
    }
+   init_completion(&fw_mem_dump_ctx.req_completion);
+   fw_mem_dump_ctx.magic = FW_MEM_DUMP_MAGIC;
+   fw_mem_dump_ctx.status = false;
+
    fw_mem_dump_req.fwMemDumpReqCallback = wlan_hdd_fw_mem_dump_cb;
-   fw_mem_dump_req.fwMemDumpReqContext = pHddCtx;
+   fw_mem_dump_req.fwMemDumpReqContext = &fw_mem_dump_ctx;
    status = sme_FwMemDumpReq(pHddCtx->hHal, &fw_mem_dump_req);
    if(eHAL_STATUS_SUCCESS != status)
    {
        hddLog(VOS_TRACE_LEVEL_ERROR,
           "%s: fw_mem_dump_req failed ", __func__);
        wlan_free_fwr_mem_dump_buffer();
+       ret = -EFAULT;
+       goto cleanup;
    }
-   EXIT();
+   /*wait for fw mem dump completion to send event to userspace*/
+   ret = wait_for_completion_timeout(&fw_mem_dump_ctx.req_completion,msecs_to_jiffies(FW_MEM_DUMP_TIMEOUT_MS));
+   if (0 >= ret )
+   {
+      hddLog(VOS_TRACE_LEVEL_ERROR,
+          "%s: fw_mem_dump_req timeout %d ", __func__,ret);
+   }
+cleanup:
+   spin_lock(&hdd_context_lock);
+   fw_mem_dump_ctx.magic = 0;
+   spin_unlock(&hdd_context_lock);
 
-   return status;
+   EXIT();
+   return fw_mem_dump_ctx.status;
+}
+
+/**
+ * HDD callback which will be called by SVC to indicate mem dump completion.
+ */
+void wlan_hdd_fw_mem_dump_req_cb(struct hdd_fw_mem_dump_req_ctx* pHddFwMemDumpCtx)
+{
+   if (!pHddFwMemDumpCtx) {
+       hddLog(VOS_TRACE_LEVEL_ERROR,
+          "%s: HDD context not valid ", __func__);
+       return;
+   }
+   spin_lock(&hdd_context_lock);
+   /* check the req magic and set status */
+   if (pHddFwMemDumpCtx->magic == FW_MEM_DUMP_MAGIC)
+   {
+       pHddFwMemDumpCtx->status = true;
+       //signal the completion
+       complete(&(pHddFwMemDumpCtx->req_completion));
+   }
+   else
+   {
+       hddLog(VOS_TRACE_LEVEL_ERROR,
+          "%s: fw mem dump request possible timeout ", __func__);
+   }
+   spin_unlock(&hdd_context_lock);
 }
 
 void hdd_initialize_adapter_common(hdd_adapter_t *pAdapter)
