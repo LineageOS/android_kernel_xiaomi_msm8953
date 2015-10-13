@@ -6166,7 +6166,6 @@ static int __iw_setnone_getint(struct net_device *dev,
     hdd_context_t *pHddCtx;
     int *value = (int *)extra;
     int ret = 0; /* success */
-    tSmeConfigParams smeConfig;
 
     ENTER();
 
@@ -6284,6 +6283,7 @@ static int __iw_setnone_getint(struct net_device *dev,
 
         case WE_GET_SCAN_BAND_PREFERENCE:
         {
+            tSmeConfigParams smeConfig;
             sme_GetConfigParam(hHal, &smeConfig);
             *value = smeConfig.csrConfig.scanBandPreference;
 

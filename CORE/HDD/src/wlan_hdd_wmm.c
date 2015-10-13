@@ -357,7 +357,7 @@ static void hdd_wmm_disable_tl_uapsd (hdd_wmm_qos_context_t* pQosContext)
 static void hdd_wmm_free_context (hdd_wmm_qos_context_t* pQosContext)
 {
    v_CONTEXT_t pVosContext = vos_get_global_context( VOS_MODULE_ID_HDD, NULL );
-   hdd_context_t *pHddCtx;
+   hdd_context_t *pHddCtx = NULL;
 
    if (NULL == pVosContext)
    {
@@ -420,7 +420,7 @@ static void hdd_wmm_notify_app (hdd_wmm_qos_context_t* pQosContext)
    union iwreq_data wrqu;
    char buf[MAX_NOTIFY_LEN+1];
    v_CONTEXT_t pVosContext = vos_get_global_context( VOS_MODULE_ID_HDD, NULL );
-   hdd_context_t *pHddCtx;
+   hdd_context_t *pHddCtx = NULL;
 
    if (NULL == pVosContext)
    {
@@ -550,7 +550,7 @@ void hdd_wmm_inactivity_timer_cb( v_PVOID_t pUserData )
     v_U32_t currentTrafficCnt = 0;
     WLANTL_ACEnumType acType = 0;
     v_CONTEXT_t pVosContext = vos_get_global_context( VOS_MODULE_ID_HDD, NULL );
-    hdd_context_t *pHddCtx;
+    hdd_context_t *pHddCtx = NULL;
 
     ENTER();
     if (NULL == pVosContext)
@@ -734,7 +734,7 @@ static eHalStatus hdd_wmm_sme_callback (tHalHandle hHal,
    hdd_wmm_ac_status_t *pAc;
    VOS_STATUS status;
    v_CONTEXT_t pVosContext = vos_get_global_context( VOS_MODULE_ID_HDD, NULL );
-   hdd_context_t *pHddCtx;
+   hdd_context_t *pHddCtx = NULL;
 
    if (NULL == pVosContext)
    {
@@ -1429,7 +1429,7 @@ static void __hdd_wmm_do_implicit_qos(struct work_struct *work)
 #endif
    sme_QosWmmTspecInfo qosInfo;
    v_CONTEXT_t pVosContext = vos_get_global_context( VOS_MODULE_ID_HDD, NULL );
-   hdd_context_t *pHddCtx;
+   hdd_context_t *pHddCtx = NULL;
    int ret = 0;
 
    if (NULL == pVosContext)
@@ -1796,7 +1796,7 @@ VOS_STATUS hdd_wmm_adapter_close ( hdd_adapter_t* pAdapter )
 {
    hdd_wmm_qos_context_t* pQosContext;
    v_CONTEXT_t pVosContext = vos_get_global_context( VOS_MODULE_ID_HDD, NULL );
-   hdd_context_t *pHddCtx;
+   hdd_context_t *pHddCtx = NULL;
 
    if (NULL == pVosContext)
    {
@@ -2738,7 +2738,7 @@ hdd_wlan_wmm_status_e hdd_wmm_addts( hdd_adapter_t* pAdapter,
 #endif
    v_BOOL_t found = VOS_FALSE;
    v_CONTEXT_t pVosContext = vos_get_global_context( VOS_MODULE_ID_HDD, NULL );
-   hdd_context_t *pHddCtx;
+   hdd_context_t *pHddCtx = NULL;
 
    if (NULL == pVosContext)
    {
@@ -2937,7 +2937,7 @@ hdd_wlan_wmm_status_e hdd_wmm_delts( hdd_adapter_t* pAdapter,
    sme_QosStatusType smeStatus;
 #endif
    v_CONTEXT_t pVosContext = vos_get_global_context( VOS_MODULE_ID_HDD, NULL );
-   hdd_context_t *pHddCtx;
+   hdd_context_t *pHddCtx = NULL;
 
    if (NULL == pVosContext)
    {
@@ -3062,7 +3062,7 @@ hdd_wlan_wmm_status_e hdd_wmm_checkts( hdd_adapter_t* pAdapter,
    hdd_wmm_qos_context_t *pQosContext;
    hdd_wlan_wmm_status_e status = HDD_WLAN_WMM_STATUS_LOST;
    v_CONTEXT_t pVosContext = vos_get_global_context( VOS_MODULE_ID_HDD, NULL );
-   hdd_context_t *pHddCtx;
+   hdd_context_t *pHddCtx = NULL;
 
    if (NULL == pVosContext)
    {

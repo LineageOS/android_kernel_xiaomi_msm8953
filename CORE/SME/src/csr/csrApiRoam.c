@@ -802,7 +802,7 @@ eHalStatus csrRoamOpen(tpAniSirGlobal pMac)
 {
     eHalStatus status = eHAL_STATUS_SUCCESS;
     tANI_U32 i;
-    tCsrRoamSession *pSession;
+    tCsrRoamSession *pSession = NULL;
     do
     {
         for( i = 0; i < CSR_ROAM_SESSION_MAX; i++ )
@@ -2599,7 +2599,7 @@ eHalStatus csrRoamCallCallback(tpAniSirGlobal pMac, tANI_U32 sessionId, tCsrRoam
 #ifdef FEATURE_WLAN_DIAG_SUPPORT_CSR
     WLAN_VOS_DIAG_EVENT_DEF(connectionStatus, vos_event_wlan_status_payload_type);
 #endif
-    tCsrRoamSession *pSession;
+    tCsrRoamSession *pSession = NULL;
     if( CSR_IS_SESSION_VALID( pMac, sessionId) )
     {
         pSession = CSR_GET_SESSION( pMac, sessionId );
@@ -4723,7 +4723,7 @@ static eHalStatus csrRoam( tpAniSirGlobal pMac, tSmeCmd *pCommand )
 eHalStatus csrProcessFTReassocRoamCommand ( tpAniSirGlobal pMac, tSmeCmd *pCommand )
 {
     tANI_U32 sessionId;
-    tCsrRoamSession *pSession;
+    tCsrRoamSession *pSession = NULL;
     tCsrScanResult *pScanResult = NULL;
     tSirBssDescription *pBssDesc = NULL;
     eHalStatus status = eHAL_STATUS_SUCCESS;
@@ -7682,7 +7682,7 @@ void csrRoamReissueRoamCommand(tpAniSirGlobal pMac)
     tSmeCmd *pCommand;
     tCsrRoamInfo roamInfo;
     tANI_U32 sessionId;
-    tCsrRoamSession *pSession;
+    tCsrRoamSession *pSession = NULL;
             
     pEntry = csrLLPeekHead(&pMac->sme.smeCmdActiveList, LL_ACCESS_LOCK);
     if(pEntry)
@@ -7919,7 +7919,7 @@ static void csrRoamingStateConfigCnfProcessor( tpAniSirGlobal pMac, tANI_U32 res
     tSirBssDescription *pBssDesc = NULL;
     tSmeCmd *pCommand = NULL;
     tANI_U32 sessionId;
-    tCsrRoamSession *pSession;
+    tCsrRoamSession *pSession = NULL;
     if(NULL == pEntry)
     {
         smsLog(pMac, LOGE, "   CFG_CNF with active list empty");
@@ -8249,7 +8249,7 @@ void csrRoamRoamingStateDisassocRspProcessor( tpAniSirGlobal pMac, tSirSmeDisass
     tSmeCmd *pCommand = NULL;
 #endif
     tANI_U32 sessionId;
-    tCsrRoamSession *pSession;
+    tCsrRoamSession *pSession = NULL;
 
     tSirSmeDisassocRsp SmeDisassocRsp;
 
@@ -8661,7 +8661,7 @@ void csrRoamJoinedStateMsgProcessor( tpAniSirGlobal pMac, void *pMsgBuf )
           break;
         case eWNI_SME_UPPER_LAYER_ASSOC_CNF:
         {
-            tCsrRoamSession  *pSession;
+            tCsrRoamSession *pSession = NULL;
             tSirSmeAssocIndToUpperLayerCnf *pUpperLayerAssocCnf;
             tCsrRoamInfo roamInfo;
             tCsrRoamInfo *pRoamInfo = NULL;
@@ -9614,7 +9614,7 @@ void csrRoamCheckForLinkStatusChange( tpAniSirGlobal pMac, tSirSmeRsp *pSirMsg )
     {
         case eWNI_SME_ASSOC_IND:
             {
-                tCsrRoamSession  *pSession;
+                tCsrRoamSession *pSession = NULL;
                 smsLog( pMac, LOG1, FL("Receive WNI_SME_ASSOC_IND from SME"));
                 pAssocInd = (tSirSmeAssocInd *)pSirMsg;
                 status = csrRoamGetSessionIdFromBSSID( pMac, (tCsrBssid *)pAssocInd->bssId, &sessionId );
@@ -12356,7 +12356,7 @@ eHalStatus csrRoamSetBKIDCache( tpAniSirGlobal pMac, tANI_U32 sessionId, tBkidCa
                                  tANI_U32 numItems )
 {
    eHalStatus status = eHAL_STATUS_INVALID_PARAMETER;
-   tCsrRoamSession *pSession;
+   tCsrRoamSession *pSession = NULL;
    if(!CSR_IS_SESSION_VALID( pMac, sessionId ))
    {
        smsLog(pMac, LOGE, FL("  Invalid session ID"));
@@ -12382,7 +12382,7 @@ eHalStatus csrRoamGetBKIDCache(tpAniSirGlobal pMac, tANI_U32 sessionId, tANI_U32
                                 tBkidCacheInfo *pBkidCache)
 {
    eHalStatus status = eHAL_STATUS_INVALID_PARAMETER;
-   tCsrRoamSession *pSession;
+   tCsrRoamSession *pSession = NULL;
    if(!CSR_IS_SESSION_VALID( pMac, sessionId ))
    {
        smsLog(pMac, LOGE, FL("  Invalid session ID"));
@@ -14761,7 +14761,7 @@ eHalStatus csrRoamOpenSession(tpAniSirGlobal pMac,
 {
     eHalStatus status = eHAL_STATUS_SUCCESS;
     tANI_U32 i;
-    tCsrRoamSession *pSession;
+    tCsrRoamSession *pSession = NULL;
     *pbSessionId = CSR_SESSION_ID_INVALID;
     for( i = 0; i < CSR_ROAM_SESSION_MAX; i++ )
     {
@@ -16452,7 +16452,7 @@ eHalStatus csrRoamOffloadScan(tpAniSirGlobal pMac, tANI_U8 command, tANI_U8 reas
    vos_msg_t msg;
    tSirRoamOffloadScanReq *pRequestBuf;
    tpCsrNeighborRoamControlInfo    pNeighborRoamInfo = &pMac->roam.neighborRoamInfo;
-   tCsrRoamSession *pSession;
+   tCsrRoamSession *pSession = NULL;
    tANI_U8 i,j,num_channels = 0, ucDot11Mode;
    tANI_U8 *ChannelList = NULL;
    tANI_U32 sessionId;
