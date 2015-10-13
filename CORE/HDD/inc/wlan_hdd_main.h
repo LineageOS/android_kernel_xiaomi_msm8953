@@ -1227,12 +1227,34 @@ typedef struct
 #define PROCFS_MEMDUMP_DIR  "debug"
 #define PROCFS_MEMDUMP_NAME "fwdump"
 #define FW_MEM_DUMP_REQ_ID 1
+#define FW_MEM_DUMP_TIMEOUT_MS 3000
+#define FW_MEM_DUMP_MAGIC 0x3C3A2D44
+
+/**
+ * struct hdd_fw_mem_dump_req_ctx - hdd fw mem dump req context
+ *
+ * @magic : magic for validating cfg80211 requests
+ * @status: status for cfg80211 requests
+ * @pHDDCtx: ptr to HDD context
+ * @req_completion: completion variable for fw mem dump
+ */
+struct hdd_fw_mem_dump_req_ctx {
+   uint32_t magic;
+   bool status;
+   struct completion req_completion;
+};
+
+/**
+ * callback type to check fw mem dump request.Called from SVC
+ * context and update status in HDD.
+ */
+typedef void (*hdd_fw_mem_dump_req_cb)(struct hdd_fw_mem_dump_req_ctx *);
 
 int memdump_init(void);
 int memdump_deinit(void);
 void wlan_hdd_fw_mem_dump_cb(void *,tAniFwrDumpRsp *);
 int wlan_hdd_fw_mem_dump_req(hdd_context_t * pHddCtx);
-
+void wlan_hdd_fw_mem_dump_req_cb(struct hdd_fw_mem_dump_req_ctx*);
 #ifdef WLAN_FEATURE_LINK_LAYER_STATS
 /**
  * struct hdd_ll_stats_context - hdd link layer stats context
