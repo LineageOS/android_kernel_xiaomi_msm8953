@@ -3439,6 +3439,13 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                  CFG_EXT_SCAN_CONC_MODE_DEFAULT,
                  CFG_EXT_SCAN_CONC_MODE_MIN,
                  CFG_EXT_SCAN_CONC_MODE_MAX ),
+
+    REG_VARIABLE( CFG_RPS_CPU_MAP_NAME, WLAN_PARAM_HexInteger,
+                 hdd_config_t, rps_mask,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_RPS_CPU_MAP_DEFAULT,
+                 CFG_RPS_CPU_MAP_MIN,
+                 CFG_RPS_CPU_MAP_MAX),
 };
 
 /*

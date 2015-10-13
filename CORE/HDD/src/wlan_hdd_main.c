@@ -9231,6 +9231,7 @@ void wlan_hdd_send_svc_nlink_msg(int type, void *data, int len)
        struct nlmsghdr *nlh;
        tAniMsgHdr *ani_hdr;
        int flags = GFP_KERNEL;
+       void *nl_data = NULL;
 
        if (in_interrupt() || irqs_disabled() || in_atomic())
            flags = GFP_ATOMIC;
@@ -9258,6 +9259,13 @@ void wlan_hdd_send_svc_nlink_msg(int type, void *data, int len)
                        nlh->nlmsg_len = NLMSG_LENGTH((sizeof(tAniMsgHdr)));
                        skb_put(skb, NLMSG_SPACE(sizeof(tAniMsgHdr)));
                        break;
+               case WLAN_MSG_RPS_ENABLE_IND:
+                        ani_hdr->length = len;
+                        nlh->nlmsg_len = NLMSG_LENGTH((sizeof(tAniMsgHdr) + len));
+                        nl_data = (char *)ani_hdr + sizeof(tAniMsgHdr);
+                        memcpy(nl_data, data, len);
+                        skb_put(skb, NLMSG_SPACE(sizeof(tAniMsgHdr) + len));
+                        break;
                default:
                        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                        "Attempt to send unknown nlink message %d", type);
@@ -9600,6 +9608,46 @@ void hdd_init_frame_logging(hdd_context_t* pHddCtx)
    }
 
    return;
+}
+
+static void hdd_dp_util_send_rps_ind(hdd_context_t  *hdd_ctxt)
+{
+    hdd_adapter_t *adapter;
+    hdd_adapter_list_node_t *adapter_node, *next;
+    VOS_STATUS status = VOS_STATUS_SUCCESS;
+    struct wlan_rps_data rps_data;
+    int count;
+
+    if(!hdd_ctxt->cfg_ini->rps_mask)
+    {
+      return;
+    }
+
+    for (count=0; count < WLAN_SVC_IFACE_NUM_QUEUES; count++)
+    {
+       rps_data.cpu_map[count] = hdd_ctxt->cfg_ini->rps_mask;
+    }
+
+    rps_data.num_queues = WLAN_SVC_IFACE_NUM_QUEUES;
+
+    hddLog(LOG1, FL("0x%x 0x%x 0x%x 0x%x 0x%x 0x%x"),
+             rps_data.cpu_map[0], rps_data.cpu_map[1],rps_data.cpu_map[2],
+                 rps_data.cpu_map[3], rps_data.cpu_map[4], rps_data.cpu_map[5]);
+
+    status = hdd_get_front_adapter (hdd_ctxt, &adapter_node);
+
+    while (NULL != adapter_node && VOS_STATUS_SUCCESS == status)
+    {
+        adapter = adapter_node->pAdapter;
+        if (NULL != adapter) {
+               strlcpy(rps_data.ifname, adapter->dev->name,
+                                        sizeof(rps_data.ifname));
+          wlan_hdd_send_svc_nlink_msg(WLAN_MSG_RPS_ENABLE_IND,
+                   (void *)&rps_data,sizeof(rps_data));
+        }
+        status = hdd_get_next_adapter (hdd_ctxt, adapter_node, &next);
+        adapter_node = next;
+   }
 }
 
 /**---------------------------------------------------------------------------
@@ -10466,6 +10514,7 @@ int hdd_wlan_startup(struct device *dev )
    }
    /*Fw mem dump procfs initialization*/
    memdump_init();
+   hdd_dp_util_send_rps_ind(pHddCtx);
 
    goto success;
 
