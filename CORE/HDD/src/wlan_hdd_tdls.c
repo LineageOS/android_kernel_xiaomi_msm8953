@@ -3102,7 +3102,7 @@ void wlan_hdd_tdls_scan_done_callback(hdd_adapter_t *pAdapter)
     /* if tdls is not enabled or BtCoex is on then don't revert tdls mode */
     if ((eTDLS_SUPPORT_NOT_ENABLED == pHddCtx->tdls_mode) ||
         (pHddCtx->is_tdls_btc_enabled == FALSE)) {
-            hddLog(VOS_TRACE_LEVEL_ERROR, FL("Failed to revert: Mode=%d, BTC enabled=%d"),
+            hddLog(VOS_TRACE_LEVEL_INFO, FL("Failed to revert: Mode=%d, BTC enabled=%d"),
                    pHddCtx->tdls_mode, pHddCtx->is_tdls_btc_enabled);
             return;
     }
