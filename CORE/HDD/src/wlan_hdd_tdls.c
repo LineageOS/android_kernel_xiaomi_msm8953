@@ -812,7 +812,6 @@ void wlan_hdd_tdls_btCoex_cb(void *data, int indType)
     hdd_adapter_t *pAdapter;
     hdd_context_t *pHddCtx;
     u16 connectedTdlsPeers;
-    tdlsCtx_t *pHddTdlsCtx;
     hddTdlsPeer_t *currPeer;
 
     ENTER();
@@ -843,14 +842,6 @@ void wlan_hdd_tdls_btCoex_cb(void *data, int indType)
     {
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                   FL("pAdapter is not valid"));
-        return;
-    }
-
-    pHddTdlsCtx = WLAN_HDD_GET_TDLS_CTX_PTR(pAdapter);
-    if (NULL == pHddTdlsCtx)
-    {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  FL("pHddTdlsCtx is not valid"));
         return;
     }
 
