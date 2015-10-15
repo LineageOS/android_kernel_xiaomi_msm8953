@@ -17747,10 +17747,12 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                         " %s : NL80211_TDLS_DISABLE_LINK for " MAC_ADDRESS_STR,
                                 __func__, MAC_ADDR_ARRAY(peer));
 
-                pTdlsPeer = wlan_hdd_tdls_find_peer(pAdapter, peer, TRUE);
+                mutex_lock(&pHddCtx->tdls_lock);
+                pTdlsPeer = wlan_hdd_tdls_find_peer(pAdapter, peer, FALSE);
 
 
                 if ( NULL == pTdlsPeer ) {
+                    mutex_unlock(&pHddCtx->tdls_lock);
                     hddLog(VOS_TRACE_LEVEL_ERROR, "%s: " MAC_ADDRESS_STR
                            " (oper %d) not exsting. ignored",
                            __func__, MAC_ADDR_ARRAY(peer), (int)oper);
@@ -17773,6 +17775,8 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                               (pTdlsPeer->link_status == eTDLS_LINK_TEARING)?
                               eTDLS_LINK_UNSPECIFIED:
                               eTDLS_LINK_DROPPED_BY_REMOTE);
+                    mutex_unlock(&pHddCtx->tdls_lock);
+
                     INIT_COMPLETION(pAdapter->tdls_del_station_comp);
 
                     status = sme_DeleteTdlsPeerSta(
@@ -17784,9 +17788,22 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
 
                     status = wait_for_completion_interruptible_timeout(&pAdapter->tdls_del_station_comp,
                               msecs_to_jiffies(WAIT_TIME_TDLS_DEL_STA));
+
+                    mutex_lock(&pHddCtx->tdls_lock);
+                    pTdlsPeer = wlan_hdd_tdls_find_peer(pAdapter, peer, FALSE);
+                    if ( NULL == pTdlsPeer ) {
+                        mutex_unlock(&pHddCtx->tdls_lock);
+                        hddLog(VOS_TRACE_LEVEL_ERROR, "%s: " MAC_ADDRESS_STR
+                                " peer was freed in other context",
+                                __func__, MAC_ADDR_ARRAY(peer));
+                        return -EINVAL;
+                    }
+
                     wlan_hdd_tdls_set_peer_link_status(pTdlsPeer,
                                                        eTDLS_LINK_IDLE,
                                                        eTDLS_LINK_UNSPECIFIED);
+                    mutex_unlock(&pHddCtx->tdls_lock);
+
                     if (status <= 0)
                     {
                         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -17800,33 +17817,43 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                     numCurrTdlsPeers = wlan_hdd_tdlsConnectedPeers(pAdapter);
                     if (numCurrTdlsPeers == 1)
                     {
+                        tSirMacAddr peerMac;
+                        int channel;
+                        mutex_lock(&pHddCtx->tdls_lock);
                         connPeer = wlan_hdd_tdls_get_connected_peer(pAdapter);
+                        vos_mem_copy(peerMac, connPeer->peerMac, sizeof(tSirMacAddr));
+                        channel = connPeer->peerParams.channel;
+
+                        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                                "%s: TDLS channel switch "
+                                "isOffChannelSupported %d "
+                                "isOffChannelConfigured %d "
+                                "isOffChannelEstablished %d",
+                                __func__,
+                                (connPeer ? connPeer->isOffChannelSupported : -1),
+                                (connPeer ? connPeer->isOffChannelConfigured : -1),
+                                (connPeer ? connPeer->isOffChannelEstablished : -1));
+
                         if ((connPeer) &&
                             (connPeer->isOffChannelSupported == TRUE) &&
                             (connPeer->isOffChannelConfigured == TRUE))
                         {
                             connPeer->isOffChannelEstablished = TRUE;
+                            mutex_unlock(&pHddCtx->tdls_lock);
                             status = sme_SendTdlsChanSwitchReq(
                                          WLAN_HDD_GET_HAL_CTX(pAdapter),
                                          pAdapter->sessionId,
-                                         connPeer->peerMac,
-                                         connPeer->peerParams.channel,
+                                         peerMac,
+                                         channel,
                                          TDLS_OFF_CHANNEL_BW_OFFSET,
                                          TDLS_CHANNEL_SWITCH_ENABLE);
                             if (status != VOS_STATUS_SUCCESS) {
                                 hddLog(VOS_TRACE_LEVEL_ERROR, FL("Failed to send TDLS switch channel req"));
                             }
                         }
-                        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-                                  "%s: TDLS channel switch "
-                                  "isOffChannelSupported %d "
-                                  "isOffChannelConfigured %d "
-                                  "isOffChannelEstablished %d",
-                                  __func__,
-                                  (connPeer ? connPeer->isOffChannelSupported : -1),
-                                  (connPeer ? connPeer->isOffChannelConfigured : -1),
-                                  (connPeer ? connPeer->isOffChannelEstablished : -1));
-                    }
+                        else
+                            mutex_unlock(&pHddCtx->tdls_lock);
+                   }
                     else
                     {
                         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -17837,6 +17864,7 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                 }
                 else
                 {
+                    mutex_unlock(&pHddCtx->tdls_lock);
                     VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                               "%s: TDLS Peer Station doesn't exist.", __func__);
                 }
