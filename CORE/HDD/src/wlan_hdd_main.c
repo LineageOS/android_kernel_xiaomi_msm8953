@@ -3751,14 +3751,22 @@ static int hdd_driver_command(hdd_adapter_t *pAdapter,
            if (VOS_TRUE == vos_mem_compare(targetApBssid,
                                            pHddStaCtx->conn_info.bssId, sizeof(tSirMacAddr)))
            {
-               VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-                         "%s:11r Reassoc BSSID is same as currently associated AP bssid",
-                         __func__);
+               /* Reassoc to same AP, only supported for Open Security*/
+               if ((pHddStaCtx->conn_info.ucEncryptionType ||
+                   pHddStaCtx->conn_info.mcEncryptionType))
+               {
+                   hddLog(LOGE,
+                      FL("Reassoc to same AP, only supported for Open Security"));
+                   ret = -ENOTSUPP;
+                   goto exit;
+               }
+               hddLog(LOG1,
+                     FL("11r Reassoc BSSID is same as currently associated AP bssid"));
                sme_GetModifyProfileFields(hHal, pAdapter->sessionId,
                                        &modProfileFields);
                sme_RoamReassoc(hHal, pAdapter->sessionId,
                             NULL, modProfileFields, &roamId, 1);
-               return 0;
+               goto exit;
            }
 
            /* Check channel number is a valid channel number */
@@ -3767,7 +3775,8 @@ static int hdd_driver_command(hdd_adapter_t *pAdapter,
            {
                hddLog(VOS_TRACE_LEVEL_ERROR,
                       "%s: Invalid Channel  [%d]", __func__, channel);
-               return -EINVAL;
+               ret = -EINVAL;
+               goto exit;
            }
 
            trigger = eSME_ROAM_TRIGGER_SCAN;
