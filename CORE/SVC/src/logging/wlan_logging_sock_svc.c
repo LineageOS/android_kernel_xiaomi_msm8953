@@ -58,7 +58,6 @@
 #define INVALID_PID -1
 
 #define MAX_PKTSTATS_LOG_LENGTH 2048
-#define HOST_PKT_STATS_POST_MASK 0x004
 #define MAX_LOGMSG_LENGTH 4096
 #define LOGGER_MGMT_DATA_PKT_POST_MASK   0x001
 #define HOST_LOG_POST_MASK   0x002
@@ -67,6 +66,7 @@
 #define LOGGER_FW_MEM_DUMP_PKT_POST_MASK   0x005
 #define LOGGER_FW_MEM_DUMP_PKT_POST_DONE_MASK 0x006
 #define DETECT_THREAD_STUCK_POST_MASK 0x007
+#define HOST_PKT_STATS_POST_MASK 0x008
 
 
 #define LOGGER_MAX_DATA_MGMT_PKT_Q_LEN   (8)
@@ -1909,12 +1909,26 @@ int wlan_queue_logpkt_for_app(vos_pkt_t *pPacket, uint32 pkt_type)
 
 void wlan_process_done_indication(uint8 type, uint32 reason_code)
 {
+        if (FALSE == sme_IsFeatureSupportedByFW(MEMORY_DUMP_SUPPORTED))
+        {
+            if ((type == WLAN_FW_LOGS) &&
+                (wlan_is_log_report_in_progress() == TRUE))
+            {
+                pr_info("%s: Setting LOGGER_FATAL_EVENT %d\n",
+                         __func__, reason_code);
+                set_bit(LOGGER_FATAL_EVENT_POST_MASK, &gwlan_logging.event_flag);
+                wake_up_interruptible(&gwlan_logging.wait_queue);
+            }
+            return;
+        }
+
 	if ((type == WLAN_FW_LOGS) && reason_code &&
 				 vos_isFatalEventEnabled())
 	{
 		if(wlan_is_log_report_in_progress() == TRUE)
 		{
-			pr_info("%s : Setting LOGGER_FATAL_EVENT\n", __func__);
+                        pr_info("%s: Setting LOGGER_FATAL_EVENT %d\n",
+                                 __func__, reason_code);
 			set_bit(LOGGER_FATAL_EVENT_POST_MASK, &gwlan_logging.event_flag);
 			wake_up_interruptible(&gwlan_logging.wait_queue);
 		}
