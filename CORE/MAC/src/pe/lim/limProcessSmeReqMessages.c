@@ -2863,6 +2863,14 @@ __limProcessSmeDisassocCnf(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
                      MAC_ADDR_ARRAY(smeDisassocCnf.peerMacAddr));)
             return;
         }
+
+       if(aid != smeDisassocCnf.assocId)
+        {
+            PELOGE(limLog(pMac, LOGE, FL("same peerMacAddr but assocId is different "
+                     "aid=%d, assocId=%d, addr= "MAC_ADDRESS_STR),
+                      aid, smeDisassocCnf.assocId, MAC_ADDR_ARRAY(smeDisassocCnf.peerMacAddr));)
+            return;
+        }
         /*
          * If MlM state is either of del_sta or del_bss state, then no need to
          * go ahead and clean up further as there must be some cleanup in

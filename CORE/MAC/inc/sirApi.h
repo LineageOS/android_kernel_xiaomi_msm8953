@@ -1618,6 +1618,7 @@ typedef struct sSirSmeDisassocInd
     tSirMacAddr         peerMacAddr;
     tAniStaStatStruct  perStaStats; // STA stats
     tANI_U16            staId;
+    tANI_U16            assocId;
     tANI_U32            reasonCode;
 } tSirSmeDisassocInd, *tpSirSmeDisassocInd;
 
@@ -1630,6 +1631,7 @@ typedef struct sSirSmeDisassocCnf
     tSirResultCodes     statusCode;
     tSirMacAddr         bssId;            
     tSirMacAddr         peerMacAddr;
+    tANI_U16            assocId;
 } tSirSmeDisassocCnf, *tpSirSmeDisassocCnf;
 
 /// Definition for Deauthetication request
@@ -1667,6 +1669,7 @@ typedef struct sSirSmeDeauthInd
     tSirMacAddr         peerMacAddr;
 
     tANI_U16            staId;
+    tANI_U16            assocId;
     tANI_U32            reasonCode;
 } tSirSmeDeauthInd, *tpSirSmeDeauthInd;
 
@@ -1679,6 +1682,7 @@ typedef struct sSirSmeDeauthCnf
     tSirResultCodes     statusCode;
     tSirMacAddr         bssId;             // AP BSSID
     tSirMacAddr        peerMacAddr;
+    tANI_U16            assocId;
 } tSirSmeDeauthCnf, *tpSirSmeDeauthCnf;
 
 /// Definition for stop BSS request message
