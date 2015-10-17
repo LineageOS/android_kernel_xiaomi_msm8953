@@ -17819,8 +17819,17 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                     {
                         tSirMacAddr peerMac;
                         int channel;
+
                         mutex_lock(&pHddCtx->tdls_lock);
                         connPeer = wlan_hdd_tdls_get_connected_peer(pAdapter);
+
+                        if (connPeer == NULL) {
+                            mutex_unlock(&pHddCtx->tdls_lock);
+                            hddLog(VOS_TRACE_LEVEL_ERROR,
+                                    "%s connPeer is NULL", __func__);
+                            return -EINVAL;
+                        }
+
                         vos_mem_copy(peerMac, connPeer->peerMac, sizeof(tSirMacAddr));
                         channel = connPeer->peerParams.channel;
 
