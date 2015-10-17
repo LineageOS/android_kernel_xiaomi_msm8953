@@ -187,46 +187,6 @@ void hdd_tdls_notify_mode_change(hdd_adapter_t *adapter, hdd_context_t *hddctx)
         wlan_hdd_tdls_disable_offchan_and_teardown_links(hddctx);
 }
 
-static v_VOID_t wlan_hdd_tdls_start_peer_discover_timer(tdlsCtx_t *pHddTdlsCtx,
-                                                        tANI_BOOLEAN mutexLock,
-                                                        v_U32_t discoveryExpiry)
-{
-    hdd_station_ctx_t *pHddStaCtx;
-    hdd_context_t *pHddCtx;
-
-    ENTER();
-
-    if ((NULL == pHddTdlsCtx) || (NULL == pHddTdlsCtx->pAdapter) )
-    {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-               FL(" pHddTdlsCtx or pAdapter points to NULL"));
-        return;
-    }
-
-    pHddCtx = WLAN_HDD_GET_CTX( pHddTdlsCtx->pAdapter );
-
-    if(0 != (wlan_hdd_validate_context(pHddCtx)))
-    {
-        return;
-    }
-
-    if ( mutexLock )
-    {
-       mutex_lock(&pHddCtx->tdls_lock);
-    }
-
-    pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pHddTdlsCtx->pAdapter);
-
-    VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO, "beacon rssi: %d",
-               pHddTdlsCtx->ap_rssi);
-
-    if ( mutexLock )
-        mutex_unlock(&pHddCtx->tdls_lock);
-
-    EXIT();
-    return;
-}
-
 #ifdef TDLS_USE_SEPARATE_DISCOVERY_TIMER
 static v_VOID_t wlan_hdd_tdls_discover_peer_cb( v_PVOID_t userData )
 {
@@ -238,7 +198,6 @@ static v_VOID_t wlan_hdd_tdls_discover_peer_cb( v_PVOID_t userData )
     tdlsCtx_t *pHddTdlsCtx;
     int discover_req_sent = 0;
     v_U32_t discover_expiry = TDLS_SUB_DISCOVERY_PERIOD;
-    tANI_BOOLEAN doMutexLock = eANI_BOOLEAN_TRUE;
     v_CONTEXT_t pVosContext;
 
     ENTER();
@@ -331,14 +290,12 @@ exit_loop:
                   "discovery_peer_cnt is %d , Starting SUB_DISCOVERY_TIMER",
                   pHddTdlsCtx->discovery_peer_cnt);
         discover_expiry = TDLS_SUB_DISCOVERY_PERIOD;
-        doMutexLock = eANI_BOOLEAN_FALSE;
         goto done;
     }
     discover_expiry = pHddTdlsCtx->threshold_config.discovery_period_t;
 
     wlan_hdd_tdls_peer_reset_discovery_processed(pHddTdlsCtx);
 
-    mutex_unlock(&pHddCtx->tdls_lock);
 
     /* Commenting out the following function as it was introducing
      * a race condition when pHddTdlsCtx is deleted. Also , this
@@ -351,10 +308,7 @@ exit_loop:
      */
 
 done:
-    wlan_hdd_tdls_start_peer_discover_timer(pHddTdlsCtx, doMutexLock, discover_expiry);
-
-    if ( !doMutexLock )
-        mutex_unlock(&pHddCtx->tdls_lock);
+    mutex_unlock(&pHddCtx->tdls_lock);
     EXIT();
     return;
 }
@@ -1626,16 +1580,24 @@ int wlan_hdd_tdls_set_rssi(hdd_adapter_t *pAdapter,
                            tANI_S8 rxRssi)
 {
     hddTdlsPeer_t *curr_peer;
+    hdd_context_t *hdd_ctx = WLAN_HDD_GET_CTX(pAdapter);
 
-    curr_peer = wlan_hdd_tdls_find_peer(pAdapter, mac, TRUE);
+    if (0 != (wlan_hdd_validate_context(hdd_ctx))) {
+        return -1;
+    }
+
+    mutex_lock(&hdd_ctx->tdls_lock);
+    curr_peer = wlan_hdd_tdls_find_peer(pAdapter, mac, FALSE);
     if (curr_peer == NULL)
     {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 "%s: curr_peer is NULL", __func__);
+        mutex_unlock(&hdd_ctx->tdls_lock);
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                FL("curr_peer is NULL"));
         return -1;
     }
 
     curr_peer->rssi = rxRssi;
+    mutex_unlock(&hdd_ctx->tdls_lock);
 
     return 0;
 }
@@ -2952,7 +2914,8 @@ int wlan_hdd_tdls_scan_callback (hdd_adapter_t *pAdapter,
     if ((eTDLS_SUPPORT_NOT_ENABLED == pHddCtx->tdls_mode) ||
         (pHddCtx->is_tdls_btc_enabled == FALSE))
         return 1;
-    curr_peer = wlan_hdd_tdls_is_progress(pHddCtx, NULL, 0, TRUE);
+    mutex_lock(&pHddCtx->tdls_lock);
+    curr_peer = wlan_hdd_tdls_is_progress(pHddCtx, NULL, 0, FALSE);
     if (NULL != curr_peer)
     {
         if (pHddCtx->tdls_scan_ctxt.reject++ >= TDLS_MAX_SCAN_REJECT)
@@ -2965,13 +2928,17 @@ int wlan_hdd_tdls_scan_callback (hdd_adapter_t *pAdapter,
             wlan_hdd_tdls_set_peer_link_status (curr_peer,
                                                 eTDLS_LINK_IDLE,
                                                 eTDLS_LINK_UNSPECIFIED);
+            mutex_unlock(&pHddCtx->tdls_lock);
             return 1;
         }
+        mutex_unlock(&pHddCtx->tdls_lock);
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                 "%s: tdls in progress. scan rejected %d",
                 __func__, pHddCtx->tdls_scan_ctxt.reject);
         return -EBUSY;
     }
+    else
+        mutex_unlock(&pHddCtx->tdls_lock);
 
     /* tdls teardown is ongoing */
     if (eTDLS_SUPPORT_DISABLED == pHddCtx->tdls_mode)
@@ -3025,9 +2992,11 @@ int wlan_hdd_tdls_scan_callback (hdd_adapter_t *pAdapter,
              (TRUE == sme_IsFeatureSupportedByFW(TDLS_SCAN_COEXISTENCE)) &&
              (connectedTdlsPeers == 1) )
         {
+            mutex_lock(&pHddCtx->tdls_lock);
             /* get connected peer information */
             connected_peer = wlan_hdd_tdls_get_connected_peer(pAdapter);
             if (NULL == connected_peer) {
+                mutex_unlock(&pHddCtx->tdls_lock);
                 VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_FATAL,
                     "%s: Invalid connected_peer, Continue Scanning", __func__);
                 /* scan should continue */
@@ -3039,20 +3008,23 @@ int wlan_hdd_tdls_scan_callback (hdd_adapter_t *pAdapter,
 
             if (connected_peer->isBufSta)
             {
-                 pHddCtx->isTdlsScanCoexistence = TRUE;
-                 if ((cfg_param->dynSplitscan) && (!pHddCtx->issplitscan_enabled))
-                 {
-                           pHddCtx->issplitscan_enabled = TRUE;
-                           sme_enable_disable_split_scan(
-                                               WLAN_HDD_GET_HAL_CTX(pAdapter),
-                                               cfg_param->nNumStaChanCombinedConc,
-                                               cfg_param->nNumP2PChanCombinedConc);
-                 }
-                 VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-                           ("%s:%d TDLS Scan Co-exist supported splitscan_enabled =%d "),
-                            __func__, __LINE__, pHddCtx->issplitscan_enabled);
-                 return 1;
+                mutex_unlock(&pHddCtx->tdls_lock);
+                pHddCtx->isTdlsScanCoexistence = TRUE;
+                if ((cfg_param->dynSplitscan) && (!pHddCtx->issplitscan_enabled))
+                {
+                    pHddCtx->issplitscan_enabled = TRUE;
+                    sme_enable_disable_split_scan(
+                            WLAN_HDD_GET_HAL_CTX(pAdapter),
+                            cfg_param->nNumStaChanCombinedConc,
+                            cfg_param->nNumP2PChanCombinedConc);
+                }
+                VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                        ("%s:%d TDLS Scan Co-exist supported splitscan_enabled =%d "),
+                        __func__, __LINE__, pHddCtx->issplitscan_enabled);
+                return 1;
             }
+            else
+                mutex_unlock(&pHddCtx->tdls_lock);
 
         }
         else
@@ -3091,12 +3063,16 @@ int wlan_hdd_tdls_scan_callback (hdd_adapter_t *pAdapter,
                 if (pHddCtx->tdlsConnInfo[staIdx].staId)
                 {
                     VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-                                   ("%s: indicate TDLS teardown (staId %d)"), __func__, pHddCtx->tdlsConnInfo[staIdx].staId) ;
+                                   ("%s: indicate TDLS teardown (staId %d)"),
+                                   __func__, pHddCtx->tdlsConnInfo[staIdx].staId) ;
 
 #ifdef CONFIG_TDLS_IMPLICIT
-                    curr_peer = wlan_hdd_tdls_find_all_peer(pHddCtx, pHddCtx->tdlsConnInfo[staIdx].peerMac.bytes);
+                    curr_peer = wlan_hdd_tdls_find_all_peer(pHddCtx,
+                            pHddCtx->tdlsConnInfo[staIdx].peerMac.bytes);
                     if(curr_peer)
-                        wlan_hdd_tdls_indicate_teardown(curr_peer->pHddTdlsCtx->pAdapter, curr_peer, eSIR_MAC_TDLS_TEARDOWN_UNSPEC_REASON);
+                        wlan_hdd_tdls_indicate_teardown(
+                                curr_peer->pHddTdlsCtx->pAdapter, curr_peer,
+                                eSIR_MAC_TDLS_TEARDOWN_UNSPEC_REASON);
 #endif
                 }
             }
