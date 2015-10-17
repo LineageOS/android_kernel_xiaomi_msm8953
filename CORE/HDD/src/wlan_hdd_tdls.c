@@ -1641,21 +1641,6 @@ int wlan_hdd_tdls_set_responder(hdd_adapter_t *pAdapter,
     return 0;
 }
 
-int wlan_hdd_tdls_get_responder(hdd_adapter_t *pAdapter, u8 *mac)
-{
-    hddTdlsPeer_t *curr_peer;
-
-    curr_peer = wlan_hdd_tdls_find_peer(pAdapter, mac, TRUE);
-    if (curr_peer == NULL)
-    {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 "%s: curr_peer is NULL", __func__);
-        return -1;
-    }
-
-    return (curr_peer->is_responder);
-}
-
 int wlan_hdd_tdls_set_signature(hdd_adapter_t *pAdapter,
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
                                 const u8 *mac,
@@ -2469,16 +2454,17 @@ void wlan_hdd_tdls_check_bmps(hdd_adapter_t *pAdapter)
        return;
     }
 
-    curr_peer = wlan_hdd_tdls_is_progress(pHddCtx, NULL, 0, TRUE);
+    mutex_lock(&pHddCtx->tdls_lock);
+    curr_peer = wlan_hdd_tdls_is_progress(pHddCtx, NULL, 0, FALSE);
     if (NULL != curr_peer)
     {
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                 "%s: tdls in progress. Dont check for BMPS " MAC_ADDRESS_STR,
                 __func__, MAC_ADDR_ARRAY (curr_peer->peerMac));
+        mutex_unlock(&pHddCtx->tdls_lock);
         return;
     }
 
-    mutex_lock(&pHddCtx->tdls_lock);
     pHddTdlsCtx = WLAN_HDD_GET_TDLS_CTX_PTR(pAdapter);
     if (NULL == pHddTdlsCtx)
     {
@@ -2511,21 +2497,6 @@ void wlan_hdd_tdls_check_bmps(hdd_adapter_t *pAdapter)
         }
     }
     return;
-}
-
-u8 wlan_hdd_tdls_is_peer_progress(hdd_adapter_t *pAdapter, u8 *mac)
-{
-    hddTdlsPeer_t *curr_peer;
-
-    curr_peer = wlan_hdd_tdls_find_peer(pAdapter, mac, TRUE);
-    if (curr_peer == NULL)
-    {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 "%s: curr_peer is NULL", __func__);
-        return 0;
-    }
-
-    return (eTDLS_LINK_CONNECTING == curr_peer->link_status);
 }
 
 /* return pointer to hddTdlsPeer_t if TDLS is ongoing. Otherwise return NULL.

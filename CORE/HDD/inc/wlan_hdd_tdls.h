@@ -331,8 +331,6 @@ int wlan_hdd_tdls_set_responder(hdd_adapter_t *pAdapter,
 #endif
                                 tANI_U8 responder);
 
-int wlan_hdd_tdls_get_responder(hdd_adapter_t *pAdapter, u8 *mac);
-
 int wlan_hdd_tdls_set_signature(hdd_adapter_t *pAdapter,
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
                                 const u8 *mac,
@@ -366,8 +364,6 @@ void wlan_hdd_tdls_increment_peer_count(hdd_adapter_t *pAdapter);
 void wlan_hdd_tdls_decrement_peer_count(hdd_adapter_t *pAdapter);
 
 void wlan_hdd_tdls_check_bmps(hdd_adapter_t *pAdapter);
-
-u8 wlan_hdd_tdls_is_peer_progress(hdd_adapter_t *pAdapter, u8 *mac);
 
 hddTdlsPeer_t *wlan_hdd_tdls_is_progress(hdd_context_t *pHddCtx,
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
