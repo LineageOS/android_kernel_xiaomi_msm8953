@@ -1379,15 +1379,24 @@ void wlan_hdd_tdls_set_link_status(hdd_adapter_t *pAdapter,
 int wlan_hdd_tdls_recv_discovery_resp(hdd_adapter_t *pAdapter, u8 *mac)
 {
     hddTdlsPeer_t *curr_peer;
-    tdlsCtx_t *pHddTdlsCtx = WLAN_HDD_GET_TDLS_CTX_PTR(pAdapter);
+    tdlsCtx_t *pHddTdlsCtx = NULL;
     hdd_context_t *pHddCtx;
 
     ENTER();
 
+    pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+    if (0 != wlan_hdd_validate_context(pHddCtx))
+        return -1;
+
+    mutex_lock(&pHddCtx->tdls_lock);
+
+    pHddTdlsCtx = WLAN_HDD_GET_TDLS_CTX_PTR(pAdapter);
     if ( NULL == pHddTdlsCtx )
     {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 FL("pHddTdlsCtx is NULL device mode = %d"), pAdapter->device_mode);
+        mutex_unlock(&pHddCtx->tdls_lock);
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  FL("pHddTdlsCtx is NULL device mode = %d"),
+                  pAdapter->device_mode);
         return -1;
     }
 
@@ -1395,29 +1404,26 @@ int wlan_hdd_tdls_recv_discovery_resp(hdd_adapter_t *pAdapter, u8 *mac)
 
     if(0 != (wlan_hdd_validate_context(pHddCtx)))
     {
+        mutex_unlock(&pHddCtx->tdls_lock);
         return 0;
     }
 
-    mutex_lock(&pHddCtx->tdls_lock);
     curr_peer = wlan_hdd_tdls_get_peer(pAdapter, mac);
 
     if (NULL == curr_peer)
     {
+       mutex_unlock(&pHddCtx->tdls_lock);
        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                  FL("curr_peer is NULL"));
-        mutex_unlock(&pHddCtx->tdls_lock);
         return -1;
     }
-    mutex_unlock(&pHddCtx->tdls_lock);
 
     if (pHddTdlsCtx->discovery_sent_cnt)
         pHddTdlsCtx->discovery_sent_cnt--;
 
-    mutex_lock(&pHddCtx->tdls_lock);
 
     wlan_hdd_tdls_check_power_save_prohibited(pAdapter);
 
-    mutex_unlock(&pHddCtx->tdls_lock);
     if (0 == pHddTdlsCtx->discovery_sent_cnt)
     {
         vos_timer_stop(&pHddTdlsCtx->peerDiscoveryTimeoutTimer);
@@ -1427,6 +1433,8 @@ int wlan_hdd_tdls_recv_discovery_resp(hdd_adapter_t *pAdapter, u8 *mac)
                "Discovery(%u) Response from " MAC_ADDRESS_STR " link_status %d",
                pHddTdlsCtx->discovery_sent_cnt, MAC_ADDR_ARRAY(curr_peer->peerMac),
                curr_peer->link_status);
+
+    curr_peer->tdls_support = eTDLS_CAP_SUPPORTED;
 
     if (eTDLS_LINK_DISCOVERING == curr_peer->link_status)
     {
@@ -1460,13 +1468,14 @@ int wlan_hdd_tdls_recv_discovery_resp(hdd_adapter_t *pAdapter, u8 *mac)
                                                eTDLS_LINK_IDLE,
                                                eTDLS_LINK_UNSPECIFIED);
         }
+        mutex_unlock(&pHddCtx->tdls_lock);
     }
     else
     {
+        mutex_unlock(&pHddCtx->tdls_lock);
         wlan_hdd_tdls_check_bmps(pAdapter);
     }
 
-    curr_peer->tdls_support = eTDLS_CAP_SUPPORTED;
     EXIT();
     return 0;
 }

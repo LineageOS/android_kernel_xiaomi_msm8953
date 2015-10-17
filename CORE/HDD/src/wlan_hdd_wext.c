@@ -10206,7 +10206,7 @@ int iw_set_tdlsoffchannelmode(hdd_adapter_t *pAdapter, int offchanmode)
     hddTdlsPeer_t *connPeer = NULL;
     hdd_station_ctx_t *pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
-
+    tSirMacAddr peerMac;
     if (offchanmode < 0 || offchanmode > 4)
     {
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -10235,6 +10235,7 @@ int iw_set_tdlsoffchannelmode(hdd_adapter_t *pAdapter, int offchanmode)
                      "%s: No TDLS Connected Peer", __func__);
            return -1;
        }
+       vos_mem_copy(peerMac, connPeer->peerMac, sizeof(tSirMacAddr));
        mutex_unlock(&pHddCtx->tdls_lock);
     }
     else
@@ -10260,7 +10261,7 @@ int iw_set_tdlsoffchannelmode(hdd_adapter_t *pAdapter, int offchanmode)
            {
 
                sme_SendTdlsChanSwitchReq(WLAN_HDD_GET_HAL_CTX(pAdapter),
-                                       pAdapter->sessionId, connPeer->peerMac,
+                                       pAdapter->sessionId, peerMac,
                                        tdlsOffCh, tdlsOffChBwOffset,
                                        offchanmode);
            }
