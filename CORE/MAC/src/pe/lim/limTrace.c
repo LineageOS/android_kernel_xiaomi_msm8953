@@ -151,21 +151,21 @@ void limTraceDump(tpAniSirGlobal pMac, tpvosTraceRecord pRecord, tANI_U16 recInd
 
     switch (pRecord->code) {
         case TRACE_CODE_MLM_STATE:
-            limLog(pMac, LOGW, "%04d %012u S%d %-14s  %-30s(0x%x)",
+            limLog(pMac, LOG1, "%04d %012u S%d %-14s  %-30s(0x%x)",
                recIndex, pRecord->time, pRecord->session,
                "MLM State:",
                limTraceGetMlmStateString((tANI_U16)pRecord->data),
                pRecord->data);
             break;
         case TRACE_CODE_SME_STATE:
-            limLog(pMac, LOGW, "%04d %012u S%d %-14s %-30s(0x%x)",
+            limLog(pMac, LOG1, "%04d %012u S%d %-14s %-30s(0x%x)",
                recIndex, pRecord->time, pRecord->session,
                "SME State:",
                limTraceGetSmeStateString((tANI_U16)pRecord->data),
                pRecord->data);
             break;
         case TRACE_CODE_TX_MGMT:
-            limLog(pMac, LOGW, "%04d %012u S%d %-14s %-30s(0x%x)",
+            limLog(pMac, LOG1, "%04d %012u S%d %-14s %-30s(0x%x)",
                recIndex, pRecord->time, pRecord->session,
                "TX Mgmt:", frameSubtypeStr[pRecord->data], pRecord->data);
             break;
@@ -173,13 +173,13 @@ void limTraceDump(tpAniSirGlobal pMac, tpvosTraceRecord pRecord, tANI_U16 recInd
         case TRACE_CODE_RX_MGMT:
             if (LIM_TRACE_MAX_SUBTYPES <= LIM_TRACE_GET_SUBTYPE(pRecord->data))
             {
-                limLog(pMac, LOGW, "Wrong Subtype - %d",
+                limLog(pMac, LOG1, "Wrong Subtype - %d",
                     LIM_TRACE_GET_SUBTYPE(pRecord->data));
             }
             else
             {
                 limLog(pMac,
-                    LOGW, "%04d %012u S%d %-14s %-30s(%d) SN: %d ",
+                    LOG1, "%04d %012u S%d %-14s %-30s(%d) SN: %d ",
                     recIndex, pRecord->time, pRecord->session,
                     "RX Mgmt:",
                     frameSubtypeStr[LIM_TRACE_GET_SUBTYPE(pRecord->data)],
@@ -188,7 +188,7 @@ void limTraceDump(tpAniSirGlobal pMac, tpvosTraceRecord pRecord, tANI_U16 recInd
             }
             break;
         case TRACE_CODE_RX_MGMT_DROP:
-            limLog(pMac, LOGW, "%04d %012u S%d %-14s %-30s(%d)",
+            limLog(pMac, LOG1, "%04d %012u S%d %-14s %-30s(%d)",
                    recIndex, pRecord->time, pRecord->session,
                    "Drop RX Mgmt:",
                    __limTraceGetMgmtDropReasonString((tANI_U16)pRecord->data),
@@ -197,26 +197,26 @@ void limTraceDump(tpAniSirGlobal pMac, tpvosTraceRecord pRecord, tANI_U16 recInd
 
 
         case TRACE_CODE_RX_MGMT_TSF:
-            limLog(pMac, LOGW, "%04d %012u S%d %-14s %-30s0x%x(%d)",
+            limLog(pMac, LOG1, "%04d %012u S%d %-14s %-30s0x%x(%d)",
                    recIndex, pRecord->time, pRecord->session,
                    "RX Mgmt TSF:", " ", pRecord->data, pRecord->data);
             break;
 
         case TRACE_CODE_TX_COMPLETE:
-            limLog(pMac, LOGW, "%04d %012u S%d %-14s  %d",
+            limLog(pMac, LOG1, "%04d %012u S%d %-14s  %d",
                    recIndex, pRecord->time, pRecord->session,
                    "TX Complete", pRecord->data);
             break;
 
         case TRACE_CODE_TX_SME_MSG:
-            limLog(pMac, LOGW, "%04d %012u S%d %-14s %-30s(0x%x)",
+            limLog(pMac, LOG1, "%04d %012u S%d %-14s %-30s(0x%x)",
                    recIndex, pRecord->time, pRecord->session,
                    "TX SME Msg:",
                    macTraceGetSmeMsgString((tANI_U16)pRecord->data),
                    pRecord->data );
             break;
         case TRACE_CODE_RX_SME_MSG:
-            limLog(pMac, LOGW, "%04d %012u S%d %-14s %-30s(0x%x)",
+            limLog(pMac, LOG1, "%04d %012u S%d %-14s %-30s(0x%x)",
                    recIndex, pRecord->time, pRecord->session,
                    LIM_TRACE_GET_DEFRD_OR_DROPPED(pRecord->data)
                    ? "Def/Drp LIM Msg:": "RX Sme Msg:",
@@ -225,7 +225,7 @@ void limTraceDump(tpAniSirGlobal pMac, tpvosTraceRecord pRecord, tANI_U16 recInd
             break;
 
         case TRACE_CODE_TX_WDA_MSG:
-            limLog(pMac, LOGW, "%04d %012u S%d %-14s %-30s(0x%x)",
+            limLog(pMac, LOG1, "%04d %012u S%d %-14s %-30s(0x%x)",
                    recIndex, pRecord->time, pRecord->session,
                    "TX WDA Msg:",
                    macTraceGetWdaMsgString((tANI_U16)pRecord->data),
@@ -233,7 +233,7 @@ void limTraceDump(tpAniSirGlobal pMac, tpvosTraceRecord pRecord, tANI_U16 recInd
             break;
 
         case TRACE_CODE_RX_WDA_MSG:
-            limLog(pMac, LOGW, "%04d %012u S%d %-14s %-30s(0x%x)",
+            limLog(pMac, LOG1, "%04d %012u S%d %-14s %-30s(0x%x)",
                    recIndex, pRecord->time, pRecord->session,
                    LIM_TRACE_GET_DEFRD_OR_DROPPED(pRecord->data)
                    ? "Def/Drp LIM Msg:": "RX WDA Msg:",
@@ -242,14 +242,14 @@ void limTraceDump(tpAniSirGlobal pMac, tpvosTraceRecord pRecord, tANI_U16 recInd
             break;
 
         case TRACE_CODE_TX_LIM_MSG:
-            limLog(pMac, LOGW, "%04d %012u S%d %-14s %-30s(0x%x)",
+            limLog(pMac, LOG1, "%04d %012u S%d %-14s %-30s(0x%x)",
                    recIndex, pRecord->time, pRecord->session,
                    "TX LIM Msg:",
                    macTraceGetLimMsgString((tANI_U16)pRecord->data),
                    pRecord->data);
             break;
         case TRACE_CODE_RX_LIM_MSG:
-            limLog(pMac, LOGW, "%04d %012u S%d %-14s %-30s(0x%x)",
+            limLog(pMac, LOG1, "%04d %012u S%d %-14s %-30s(0x%x)",
                    recIndex, pRecord->time, pRecord->session,
                    LIM_TRACE_GET_DEFRD_OR_DROPPED(pRecord->data)
                    ? "Def/Drp LIM Msg:": "RX LIM Msg",
@@ -257,14 +257,14 @@ void limTraceDump(tpAniSirGlobal pMac, tpvosTraceRecord pRecord, tANI_U16 recInd
                    pRecord->data );
             break;
         case TRACE_CODE_TX_CFG_MSG:
-            limLog(pMac, LOGW, "%04d %012u S%d %-14s %-30s(0x%x)",
+            limLog(pMac, LOG1, "%04d %012u S%d %-14s %-30s(0x%x)",
                    recIndex, pRecord->time, pRecord->session,
                    "TX CFG Msg:",
                    macTraceGetCfgMsgString((tANI_U16)pRecord->data),
                    pRecord->data);
             break;
         case TRACE_CODE_RX_CFG_MSG:
-            limLog(pMac, LOGW, "%04d %012u S%d %-14s %-30s(0x%x)",
+            limLog(pMac, LOG1, "%04d %012u S%d %-14s %-30s(0x%x)",
                    recIndex, pRecord->time, pRecord->session,
                    LIM_TRACE_GET_DEFRD_OR_DROPPED(pRecord->data)
                    ? "Def/Drp LIM Msg:": "RX CFG Msg:",
@@ -274,14 +274,14 @@ void limTraceDump(tpAniSirGlobal pMac, tpvosTraceRecord pRecord, tANI_U16 recInd
             break;
 
         case TRACE_CODE_TIMER_ACTIVATE:
-            limLog(pMac, LOGW, "%04d %012u S%d %-14s %-30s(0x%x)",
+            limLog(pMac, LOG1, "%04d %012u S%d %-14s %-30s(0x%x)",
                    recIndex, pRecord->time, pRecord->session,
                    "Timer Actvtd",
                    __limTraceGetTimerString((tANI_U16)pRecord->data),
                    pRecord->data);
             break;
         case TRACE_CODE_TIMER_DEACTIVATE:
-            limLog(pMac, LOGW, "%04d %012u S%d %-14s %-30s(0x%x)",
+            limLog(pMac, LOG1, "%04d %012u S%d %-14s %-30s(0x%x)",
                   recIndex, pRecord->time, pRecord->session,
                   "Timer DeActvtd",
                   __limTraceGetTimerString((tANI_U16)pRecord->data),
@@ -289,14 +289,14 @@ void limTraceDump(tpAniSirGlobal pMac, tpvosTraceRecord pRecord, tANI_U16 recInd
             break;
 
         case TRACE_CODE_INFO_LOG:
-            limLog(pMac, LOGW, "%04d %012u S%d %-14s %-30s(0x%x)",
+            limLog(pMac, LOG1, "%04d %012u S%d %-14s %-30s(0x%x)",
                   recIndex, pRecord->time, pRecord->session,
                   "INFORMATION_LOG",
                   macTraceGetInfoLogString((tANI_U16)pRecord->data),
                   pRecord->data);
             break;
         default :
-            limLog(pMac, LOGW, "%04d %012u S%d %-14s(%d) (0x%x)",
+            limLog(pMac, LOG1, "%04d %012u S%d %-14s(%d) (0x%x)",
                   recIndex, pRecord->time, pRecord->session,
                   "Unknown Code", pRecord->code, pRecord->data);
             break;
