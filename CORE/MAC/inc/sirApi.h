@@ -5754,4 +5754,18 @@ typedef struct
     tANI_U32        reserved1;
 }tAniFwrDumpReq, *tpAniFwrDumpReq;
 
+/**
+* struct tSetWifiConfigParams - Structure to store the wificonfig related params
+* @paramType: 1. Average Stats factor 2. Guard type
+* @paramvalue: Value to be set in the firmware.
+* @bssId: macaddr of the connected BssId
+*/
+typedef struct
+{
+   tANI_U8  paramType;
+   tANI_U8  sessionId;
+   tANI_U32 paramValue;
+   tSirMacAddr  bssId;
+} tSetWifiConfigParams, *tpSetWifiConfigParams;
+
 #endif /* __SIR_API_H */

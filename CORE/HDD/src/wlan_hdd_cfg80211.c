@@ -7175,6 +7175,178 @@ static int wlan_hdd_cfg80211_get_link_properties(struct wiphy *wiphy,
     return cfg80211_vendor_cmd_reply(reply_skb);
 }
 
+#define PARAM_WIFICONFIG_MAX QCA_WLAN_VENDOR_ATTR_CONFIG_MAX
+#define PARAM_MODULATED_DTIM QCA_WLAN_VENDOR_ATTR_CONFIG_MODULATED_DTIM
+#define PARAM_STATS_AVG_FACTOR QCA_WLAN_VENDOR_ATTR_CONFIG_STATS_AVG_FACTOR
+#define PARAM_GUARD_TIME QCA_WLAN_VENDOR_ATTR_CONFIG_GUARD_TIME
+
+/**
+ * __wlan_hdd_cfg80211_wifi_configuration_set() - Wifi configuration
+ * vendor command
+ *
+ * @wiphy: wiphy device pointer
+ * @wdev: wireless device pointer
+ * @data: Vendor command data buffer
+ * @data_len: Buffer length
+ *
+ * Handles QCA_WLAN_VENDOR_ATTR_CONFIG_MAX.
+ *
+ * Return: EOK or other error codes.
+ */
+
+static int __wlan_hdd_cfg80211_wifi_configuration_set(struct wiphy *wiphy,
+                            struct wireless_dev *wdev,
+                            const void *data,
+                            int data_len)
+{
+    struct net_device *dev = wdev->netdev;
+    hdd_adapter_t *pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
+    hdd_context_t *pHddCtx  = wiphy_priv(wiphy);
+    hdd_station_ctx_t *pHddStaCtx;
+    struct nlattr *tb[PARAM_WIFICONFIG_MAX + 1];
+    tpSetWifiConfigParams pReq;
+    eHalStatus status;
+    int ret_val;
+    static const struct nla_policy policy[PARAM_WIFICONFIG_MAX + 1] = {
+                        [PARAM_STATS_AVG_FACTOR] = { .type = NLA_U16 },
+                        [PARAM_MODULATED_DTIM] = { .type = NLA_U32 },
+                       [PARAM_GUARD_TIME] = { .type = NLA_U32},
+    };
+
+    ENTER();
+
+    if (VOS_FTM_MODE == hdd_get_conparam()) {
+        hddLog(LOGE, FL("Command not allowed in FTM mode"));
+        return -EINVAL;
+    }
+
+    ret_val = wlan_hdd_validate_context(pHddCtx);
+    if (ret_val) {
+        return ret_val;
+    }
+
+    pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
+
+    if (!hdd_connIsConnected(WLAN_HDD_GET_STATION_CTX_PTR(pAdapter))) {
+                hddLog(LOGE, FL("Not in Connected state!"));
+                return -ENOTSUPP;
+    }
+
+    if (nla_parse(tb, PARAM_WIFICONFIG_MAX, data, data_len, policy)) {
+               hddLog(LOGE, FL("Invalid ATTR"));
+               return -EINVAL;
+    }
+
+    /* check the Wifi Capability */
+    if ( (TRUE != pHddCtx->cfg_ini->fEnableWifiConfig) &&
+         (TRUE != sme_IsFeatureSupportedByFW(WIFI_CONFIG)))
+    {
+        hddLog(VOS_TRACE_LEVEL_ERROR,
+               FL("WIFICONFIG not supported by Firmware"));
+        return -EINVAL;
+    }
+
+   pReq = vos_mem_malloc(sizeof(tSetWifiConfigParams));
+
+    if (!pReq) {
+      VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+             "%s: Not able to allocate memory for tSetWifiConfigParams",
+             __func__);
+       return eHAL_STATUS_E_MALLOC_FAILED;
+   }
+
+   vos_mem_set(pReq, sizeof(tSetWifiConfigParams), 0);
+
+   pReq->sessionId = pAdapter->sessionId;
+   vos_mem_copy( &pReq->bssId, pHddStaCtx->conn_info.bssId, WNI_CFG_BSSID_LEN);
+
+    if (tb[PARAM_MODULATED_DTIM]) {
+       pReq->paramValue = nla_get_u32(
+            tb[PARAM_MODULATED_DTIM]);
+       hddLog(LOG1, FL("Modulated DTIM: pReq->paramValue:%d "),
+                                        pReq->paramValue);
+       pHddCtx->cfg_ini->fMaxLIModulatedDTIM = pReq->paramValue;
+       hdd_set_pwrparams(pHddCtx);
+    if (BMPS == pmcGetPmcState(pHddCtx->hHal)) {
+       hddLog( LOG1, FL("WifiConfig: Requesting FullPower!"));
+
+       sme_RequestFullPower(WLAN_HDD_GET_HAL_CTX(pAdapter),
+                            iw_full_power_cbfn, pAdapter,
+                            eSME_FULL_PWR_NEEDED_BY_HDD);
+       }
+       else
+       {
+            hddLog( LOG1, FL("WifiConfig Not in BMPS state"));
+       }
+    }
+
+    if (tb[PARAM_STATS_AVG_FACTOR]) {
+        pReq->paramType = WIFI_CONFIG_SET_AVG_STATS_FACTOR;
+        pReq->paramValue = nla_get_u16(
+            tb[PARAM_STATS_AVG_FACTOR]);
+        hddLog(LOG1, FL("AVG_STATS_FACTOR pReq->paramType:%d,pReq->paramValue:%d "),
+                                        pReq->paramType, pReq->paramValue);
+        status = sme_set_wificonfig_params(pHddCtx->hHal, pReq);
+
+        if (eHAL_STATUS_SUCCESS != status)
+        {
+            vos_mem_free(pReq);
+            pReq = NULL;
+            ret_val = -EPERM;
+            return ret_val;
+        }
+    }
+
+
+    if (tb[PARAM_GUARD_TIME]) {
+        pReq->paramType = WIFI_CONFIG_SET_GUARD_TIME;
+        pReq->paramValue = nla_get_u32(
+            tb[PARAM_GUARD_TIME]);
+       hddLog(LOG1, FL("GUARD_TIME pReq->paramType:%d,pReq->paramValue:%d "),
+                                        pReq->paramType, pReq->paramValue);
+        status = sme_set_wificonfig_params(pHddCtx->hHal, pReq);
+
+        if (eHAL_STATUS_SUCCESS != status)
+        {
+            vos_mem_free(pReq);
+            pReq = NULL;
+            ret_val = -EPERM;
+            return ret_val;
+        }
+
+    }
+
+    EXIT();
+    return ret_val;
+}
+
+/**
+ * wlan_hdd_cfg80211_wifi_configuration_set() - Wifi configuration
+ * vendor command
+ *
+ * @wiphy: wiphy device pointer
+ * @wdev: wireless device pointer
+ * @data: Vendor command data buffer
+ * @data_len: Buffer length
+ *
+ * Handles QCA_WLAN_VENDOR_ATTR_CONFIG_MAX.
+ *
+ * Return: EOK or other error codes.
+ */
+static int wlan_hdd_cfg80211_wifi_configuration_set(struct wiphy *wiphy,
+                            struct wireless_dev *wdev,
+                            const void *data,
+                            int data_len)
+{
+    int ret;
+
+    vos_ssr_protect(__func__);
+    ret = __wlan_hdd_cfg80211_wifi_configuration_set(wiphy, wdev,
+                             data, data_len);
+    vos_ssr_unprotect(__func__);
+
+    return ret;
+}
 const struct wiphy_vendor_command hdd_wiphy_vendor_commands[] =
 {
     {
@@ -7412,6 +7584,14 @@ const struct wiphy_vendor_command hdd_wiphy_vendor_commands[] =
             WIPHY_VENDOR_CMD_NEED_NETDEV |
             WIPHY_VENDOR_CMD_NEED_RUNNING,
         .doit = wlan_hdd_cfg80211_get_link_properties
+    },
+    {
+        .info.vendor_id = QCA_NL80211_VENDOR_ID,
+        .info.subcmd = QCA_NL80211_VENDOR_SUBCMD_SET_WIFI_CONFIGURATION,
+        .flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+                 WIPHY_VENDOR_CMD_NEED_NETDEV |
+                 WIPHY_VENDOR_CMD_NEED_RUNNING,
+        .doit = wlan_hdd_cfg80211_wifi_configuration_set
     }
 };
 

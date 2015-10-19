@@ -147,4 +147,6 @@ void hdd_indicateEseBcnReportNoResults(const hdd_adapter_t *pAdapter,
                                        const tANI_U8 numBss);
 #endif /* FEATURE_WLAN_ESE && FEATURE_WLAN_ESE_UPLOAD */
 
+void iw_full_power_cbfn (void *pContext, eHalStatus status);
+
 #endif

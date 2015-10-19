@@ -2576,6 +2576,12 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_ACTIVE_PASSIVE_CHAN_CONV_MAX  (1)
 #define CFG_ACTIVE_PASSIVE_CHAN_CONV_DEF  (1)
 
+#define CFG_WIFI_CONFIG_ENABLE                  "gEnableWifiConfig"
+#define CFG_WIFI_CONFIG_MIN                          (0)
+#define CFG_WIFI_CONFIG_MAX                          (1)
+#define CFG_WIFI_CONFIG_DEFAULT                      (1)
+
+
 /*--------------------------------------------------------------------------- 
   Type declarations
   -------------------------------------------------------------------------*/ 
@@ -3095,7 +3101,8 @@ typedef struct
    v_BOOL_t                    enableFwrMemDump;
    v_U8_t                      gActivePassiveChCon;
    v_U32_t                     cfgExtScanConcMode;
-   v_U16_t                      rps_mask;
+   v_U16_t                     rps_mask;
+   v_BOOL_t                    fEnableWifiConfig;
 } hdd_config_t;
 
 /*--------------------------------------------------------------------------- 

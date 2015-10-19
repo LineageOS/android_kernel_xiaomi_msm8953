@@ -268,6 +268,9 @@ WDA_ProcessFwrMemDumpReq(tWDA_CbContext *pWDA,
 VOS_STATUS WDA_ProcessMonStartReq( tWDA_CbContext *pWDA, void* wdaRequest);
 VOS_STATUS WDA_ProcessMonStopReq( tWDA_CbContext *pWDA, void* wdaRequest);
 VOS_STATUS WDA_ProcessEnableDisableCAEventInd(tWDA_CbContext *pWDA, tANI_U8 val);
+
+VOS_STATUS  WDA_ProcessWifiConfigReq(tWDA_CbContext *pWDA,
+                                     tSetWifiConfigParams *pwdaWificonfig);
 /*
  * FUNCTION: WDA_ProcessNanRequest
  * Process NAN request
@@ -15285,6 +15288,11 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
          WDA_ProcessEnableDisableCAEventInd(pWDA, pMsg->bodyval);
          break;
       }
+     case WDA_WIFI_CONFIG_REQ:
+     {
+       WDA_ProcessWifiConfigReq(pWDA,(tSetWifiConfigParams *)pMsg->bodyptr);
+       break;
+      }
       default:
       {
          VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
@@ -20437,4 +20445,124 @@ VOS_STATUS WDA_ProcessEnableDisableCAEventInd(tWDA_CbContext *pWDA, tANI_U8 val)
                FL("Failure status %d"), status);
     }
     return CONVERT_WDI2VOS_STATUS(status) ;
+}
+
+/*==========================================================================
+  FUNCTION WDA_WifiConfigSetRspCallback
+
+  DESCRIPTION
+    API to process set WifiConfig response from FW
+
+  PARAMETERS
+    pRsp: Pointer to set WifiConfig response
+    pUserData: Pointer to user data
+
+  RETURN VALUE
+    NONE
+
+===========================================================================*/
+void WDA_WifiConfigSetRspCallback(void *pEventData, void* pUserData)
+{
+   tWDA_ReqParams *pWdaParams = (tWDA_ReqParams *)pUserData;
+
+   VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                                          "<------ %s " ,__func__);
+
+   if(NULL == pWdaParams)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: pWdaParams received NULL", __func__);
+      VOS_ASSERT(0);
+      return ;
+   }
+
+   if(NULL == pWdaParams->wdaMsgParam)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: pWdaParams->wdaMsgParam is NULL", __func__);
+      VOS_ASSERT(0);
+      vos_mem_free(pWdaParams);
+      return ;
+   }
+
+   vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
+   vos_mem_free(pWdaParams->wdaMsgParam);
+   vos_mem_free(pWdaParams);
+
+   return;
+}
+
+/*==========================================================================
+  FUNCTION   WDA_ProcessWifiConfigReq
+
+  DESCRIPTION
+    API to send Set WifiConfig params request to WDI
+
+  PARAMETERS
+    pWDA: Pointer to WDA context
+    wdaRequest: Pointer to set WifiConfig req parameters
+===========================================================================*/
+
+VOS_STATUS  WDA_ProcessWifiConfigReq(tWDA_CbContext *pWDA,
+                                     tSetWifiConfigParams *pwdaWificonfig)
+{
+    WDI_Status status = WDI_STATUS_SUCCESS;
+    WDI_WifiConfigSetReqType    *pwdiWifConfigSetReqParams;
+    tWDA_ReqParams *pWdaParams ;
+    WDI_Status wstatus;
+
+    /* Sanity Check*/
+   if(NULL == pwdaWificonfig)
+  {
+     VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                          "%s: tSetWifiConfigParams received NULL", __func__);
+     VOS_ASSERT(0) ;
+     return VOS_STATUS_E_FAULT;
+   }
+
+   pwdiWifConfigSetReqParams = (WDI_WifiConfigSetReqType *)vos_mem_malloc(
+                                      sizeof(WDI_WifiConfigSetReqType));
+  if(NULL == pwdiWifConfigSetReqParams)
+  {
+     VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                          "%s: VOS MEM Alloc Failure", __func__);
+     VOS_ASSERT(0);
+     vos_mem_free(pwdaWificonfig);
+     return VOS_STATUS_E_NOMEM;
+  }
+
+  pWdaParams = (tWDA_ReqParams *)vos_mem_malloc(sizeof(tWDA_ReqParams)) ;
+  if(NULL == pWdaParams)
+  {
+     VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                          "%s: VOS MEM Alloc Failure", __func__);
+     VOS_ASSERT(0);
+     vos_mem_free(pwdiWifConfigSetReqParams);
+     vos_mem_free(pwdaWificonfig);
+     return VOS_STATUS_E_NOMEM;
+  }
+  pwdiWifConfigSetReqParams->paramType = pwdaWificonfig->paramType;
+  pwdiWifConfigSetReqParams->paramValue = pwdaWificonfig->paramValue;
+  vos_mem_copy(pwdiWifConfigSetReqParams->bssId,
+               &(pwdaWificonfig->bssId), sizeof(tSirMacAddr));
+
+  pWdaParams->pWdaContext = pWDA;
+  pWdaParams->wdaMsgParam = pwdiWifConfigSetReqParams;
+  pWdaParams->wdaWdiApiMsgParam = (void *)pwdiWifConfigSetReqParams;
+
+  wstatus = WDI_WifiConfigSetReq(pwdiWifConfigSetReqParams,
+                      (WDI_WifiConfigSetRspCb)WDA_WifiConfigSetRspCallback,
+                       pWdaParams);
+  if(IS_WDI_STATUS_FAILURE(wstatus))
+  {
+     VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+             "Failure in sendind WifiConfigReq, free all the memory" );
+     status = CONVERT_WDI2VOS_STATUS(wstatus);
+     vos_mem_free(pWdaParams->wdaWdiApiMsgParam) ;
+     vos_mem_free(pWdaParams->wdaMsgParam);
+     vos_mem_free(pWdaParams);
+  }
+
+  return status;
+
 }

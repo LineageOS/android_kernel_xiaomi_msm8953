@@ -483,6 +483,8 @@ typedef enum
   WDI_START_RSSI_MONITOR_REQ                     = 111,
   WDI_STOP_RSSI_MONITOR_REQ                      = 112,
 
+  WDI_WIFI_CONFIG_SET_REQ                        = 113,
+
   WDI_MAX_REQ,
 
   /*Send a suspend Indication down to HAL*/
@@ -831,6 +833,8 @@ typedef enum
   WDI_FWR_MEM_DUMP_RSP                           = 110,
   WDI_START_RSSI_MONITOR_RSP                     = 111,
   WDI_STOP_RSSI_MONITOR_RSP                      = 112,
+
+  WDI_WIFI_CONFIG_SET_RSP                        = 113,
 
   /*-------------------------------------------------------------------------
     Indications
@@ -6378,6 +6382,20 @@ WDI_ProcessFwrMemDumpReq
 
 WDI_Status
     WDI_ProcessFwrMemDumpRsp
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessWifiConfigReq
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessWificonfigSetRsp
 (
   WDI_ControlBlockType*  pWDICtx,
   WDI_EventInfoType*     pEventData

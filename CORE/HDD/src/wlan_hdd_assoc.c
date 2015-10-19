@@ -3146,7 +3146,7 @@ eHalStatus hdd_RoamTdlsStatusUpdateHandler(hdd_adapter_t *pAdapter,
 }
 #endif
 
-static void iw_full_power_cbfn (void *pContext, eHalStatus status)
+void iw_full_power_cbfn (void *pContext, eHalStatus status)
 {
     hdd_adapter_t *pAdapter = (hdd_adapter_t *)pContext;
     hdd_context_t *pHddCtx = NULL;

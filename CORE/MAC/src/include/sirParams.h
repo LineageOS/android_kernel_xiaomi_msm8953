@@ -137,6 +137,7 @@ typedef enum {
 
    MEMORY_DUMP_SUPPORTED = 57,
    PER_PKT_STATS_SUPPORTED  = 58,
+   WIFI_CONFIG            = 61,
    //MAX_FEATURE_SUPPORTED = 128
 } placeHolderInCapBitmap;
 
@@ -730,6 +731,7 @@ typedef struct sSirMbMsgP2p
 #define SIR_HAL_RSSI_MON_STOP_REQ            (SIR_HAL_ITC_MSG_TYPES_BEGIN + 278)
 #define SIR_HAL_HIGH_PRIORITY_DATA_INFO_IND  (SIR_HAL_ITC_MSG_TYPES_BEGIN + 279)
 
+#define SIR_HAL_WIFI_CONFIG_PARAMS           (SIR_HAL_ITC_MSG_TYPES_BEGIN + 280)
 #define SIR_HAL_MSG_TYPES_END              (SIR_HAL_MSG_TYPES_BEGIN + 0x1FF)
 
 // CFG message types

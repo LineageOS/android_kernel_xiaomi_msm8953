@@ -13465,3 +13465,36 @@ eHalStatus sme_FwMemDumpReq(tHalHandle hHal, tAniFwrDumpReq *recv_req)
     return status;
 }
 
+eHalStatus sme_set_wificonfig_params(tHalHandle hHal, tSetWifiConfigParams *req)
+{
+   eHalStatus status = eHAL_STATUS_SUCCESS;
+   tpAniSirGlobal pMac = PMAC_STRUCT(hHal);
+   vos_msg_t    msg;
+
+   status = sme_AcquireGlobalLock(&pMac->sme);
+
+   if (eHAL_STATUS_SUCCESS == status){
+
+       /* serialize the req through MC thread */
+       msg.type = WDA_WIFI_CONFIG_REQ;
+       msg.reserved = 0;
+       msg.bodyptr = req;
+
+       MTRACE(vos_trace(VOS_MODULE_ID_SME,
+                 TRACE_CODE_SME_TX_WDA_MSG, NO_SESSION, msg.type));
+
+       if(VOS_STATUS_SUCCESS != vos_mq_post_message(VOS_MODULE_ID_WDA, &msg))
+        {
+            VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR, "%s: "
+                   "Not able to post SIR_HAL_WIFI_CONFIG_PARAMS message to HAL", __func__);
+            status = eHAL_STATUS_FAILURE;
+        }
+        sme_ReleaseGlobalLock( &pMac->sme );
+   }
+   else
+    {
+        VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR, "%s: "
+                "sme_AcquireGlobalLock error", __func__);
+    }
+    return status;
+}

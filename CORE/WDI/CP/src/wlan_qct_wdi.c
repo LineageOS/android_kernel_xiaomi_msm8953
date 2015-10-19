@@ -211,6 +211,9 @@ static placeHolderInCapBitmap supportEnabledFeatures[] =
 #endif
    ,MEMORY_DUMP_SUPPORTED          //57
    ,PER_PKT_STATS_SUPPORTED        //58
+   ,FEATURE_NOT_SUPPORTED          //59
+   ,FEATURE_NOT_SUPPORTED          //60
+   ,WIFI_CONFIG                    //61
 };
 
 /*-------------------------------------------------------------------------- 
@@ -491,6 +494,8 @@ WDI_ReqProcFuncType  pfnReqProcTbl[WDI_MAX_UMAC_IND] =
 
   WDI_ProcessRssiMonitorStartReq,          /* WDI_START_RSSI_MONITOR_REQ */
   WDI_ProcessRssiMonitorStopReq,           /* WDI_STOP_RSSI_MONITOR_REQ */
+
+  WDI_ProcessWifiConfigReq,                /*WDI_WIFI_CONFIG_SET_REQ*/
   /*-------------------------------------------------------------------------
     Indications
   -------------------------------------------------------------------------*/
@@ -774,6 +779,8 @@ WDI_RspProcFuncType  pfnRspProcTbl[WDI_MAX_RESP] =
     WDI_ProcessFwrMemDumpRsp,                 /* WDI_FWR_MEM_DUMP_RSP */
     WDI_ProcessRssiMonitorStartRsp,            /* WDI_START_RSSI_MONITOR_RSP*/
     WDI_ProcessRssiMonitorStopRsp,             /* WDI_STOP_RSSI_MONITOR_RSP*/
+
+    WDI_ProcessWificonfigSetRsp,                   /* /WDI_WIFI_CONFIG_SET_RSP*/
   /*---------------------------------------------------------------------
     Indications
   ---------------------------------------------------------------------*/
@@ -1347,6 +1354,7 @@ static char *WDI_getRespMsgString(wpt_uint16 wdiRespMsgId)
     CASE_RETURN_STRING( WDI_FWR_MEM_DUMP_RSP);
     CASE_RETURN_STRING (WDI_START_RSSI_MONITOR_RSP);
     CASE_RETURN_STRING (WDI_STOP_RSSI_MONITOR_RSP);
+    CASE_RETURN_STRING( WDI_WIFI_CONFIG_SET_RSP);
     default:
         return "Unknown WDI MessageId";
   }
@@ -24523,6 +24531,8 @@ WDI_2_HAL_REQ_TYPE
        return WLAN_HAL_START_RSSI_MONITORING_REQ;
   case WDI_STOP_RSSI_MONITOR_REQ:
        return WLAN_HAL_STOP_RSSI_MONITORING_REQ;
+  case WDI_WIFI_CONFIG_SET_REQ:
+       return WLAN_HAL_WIFI_CONFIG_SET_PARAMS_REQ;
   default:
     return WLAN_HAL_MSG_MAX;
   }
@@ -24864,6 +24874,8 @@ case WLAN_HAL_DEL_STA_SELF_RSP:
        return WDI_STOP_RSSI_MONITOR_RSP;
   case WLAN_HAL_RSSI_MONITORING_IND:
        return WDI_HAL_RSSI_BREACHED_IND;
+  case WLAN_HAL_WIFI_CONFIG_SET_PARAMS_RSP:
+       return WDI_WIFI_CONFIG_SET_RSP;
   default:
     return eDRIVER_TYPE_MAX;
   }
@@ -36274,3 +36286,156 @@ WDI_EnableDisableCAEventInd
   return WDI_PostMainEvent(&gWDICb, WDI_REQUEST_EVENT, &wdiEventData);
 
 } /* WDI_EnableDisableCAEventInd */
+
+/**
+ @brief WDI_WifiConfigSetReq
+    This API is called to set WifiConfig params request in FW
+
+ @param pwdiWifiConfigSetReqParams : pointer to set WifiCofig request params
+        wdiWifiConfigSetRspCb : WifiConfig stats resp callback
+        usrData : Client context
+ @see
+ @return SUCCESS or FAIL
+*/
+WDI_Status
+WDI_WifiConfigSetReq(WDI_WifiConfigSetReqType* pwdiWifConfigSetReqParams,
+                           WDI_WifiConfigSetRspCb   wdiWifiConfigSetRspCb,
+                           void*                   pUserData)
+{
+   WDI_EventInfoType      wdiEventData;
+
+  /*------------------------------------------------------------------------
+    Sanity Check
+  ------------------------------------------------------------------------*/
+  if ( eWLAN_PAL_FALSE == gWDIInitialized )
+  {
+     VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_ERROR,
+                "WDI API call before module is initialized - Fail request");
+
+     return WDI_STATUS_E_NOT_ALLOWED;
+  }
+
+  wdiEventData.wdiRequest      = WDI_WIFI_CONFIG_SET_REQ;
+  wdiEventData.pEventData      = pwdiWifConfigSetReqParams;
+  wdiEventData.uEventDataSize  = sizeof(*pwdiWifConfigSetReqParams);
+  wdiEventData.pCBfnc          = wdiWifiConfigSetRspCb;
+  wdiEventData.pUserData       = pUserData;
+
+  return WDI_PostMainEvent(&gWDICb, WDI_REQUEST_EVENT, &wdiEventData);
+}
+
+/**
+ @brief WDI_ProcessWifiConfigReq -
+    Set WifiConfig request to FW
+
+ @param  pWDICtx : wdi context
+         pEventData : indication data
+
+ @see
+ @return none
+*/
+   WDI_Status
+   WDI_ProcessWifiConfigReq
+   (
+     WDI_ControlBlockType*  pWDICtx,
+     WDI_EventInfoType*     pEventData
+   )
+   {
+     WDI_WifiConfigSetReqType* pwdiWifiConfigSetReqParams;
+     WDI_WifiConfigSetRspCb wdiWifiConfigSetRspCb;
+     wpt_uint8*               pSendBuffer         = NULL;
+     wpt_uint16               usSendSize          = 0;
+     wpt_uint16               usDataOffset        = 0;
+     tSetWifiConfigParamsReq halWifiConfigSetParams;
+
+     if (( NULL == pEventData ) || ( NULL == pEventData->pEventData ) ||
+         ( NULL == pEventData->pCBfnc ))
+     {
+        WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
+                    "%s: Invalid parameters", __func__);
+        WDI_ASSERT(0);
+        return WDI_STATUS_E_FAILURE;
+     }
+     pwdiWifiConfigSetReqParams = (WDI_WifiConfigSetReqType*)pEventData->pEventData;
+     wdiWifiConfigSetRspCb   = (WDI_WifiConfigSetRspCb)pEventData->pCBfnc;
+
+     /*-----------------------------------------------------------------------
+       Get message buffer
+       ! TO DO : proper conversion into the HAL Message Request Format
+     -----------------------------------------------------------------------*/
+     if (( WDI_STATUS_SUCCESS != WDI_GetMessageBuffer(
+                                           pWDICtx,
+                                           WDI_WIFI_CONFIG_SET_REQ,
+                                           sizeof(halWifiConfigSetParams.wifiConfigParams),
+                                           &pSendBuffer, &usDataOffset,
+                                           &usSendSize))||
+         ( usSendSize < (usDataOffset + sizeof(halWifiConfigSetParams.wifiConfigParams) )))
+     {
+        WPAL_TRACE( eWLAN_MODULE_DAL_CTRL,  eWLAN_PAL_TRACE_LEVEL_WARN,
+                 "Unable to get send buffer in %s %p %p %p", __func__,
+                   pEventData, pwdiWifiConfigSetReqParams, wdiWifiConfigSetRspCb);
+        WDI_ASSERT(0);
+        return WDI_STATUS_E_FAILURE;
+     }
+
+     halWifiConfigSetParams.wifiConfigParams.paramType = pwdiWifiConfigSetReqParams->paramType;
+     halWifiConfigSetParams.wifiConfigParams.paramValue =
+         pwdiWifiConfigSetReqParams->paramValue;
+     vos_mem_copy(halWifiConfigSetParams.wifiConfigParams.bssid, &(pwdiWifiConfigSetReqParams->bssId),
+                                            sizeof(tSirMacAddr));
+
+     wpalMemoryCopy(pSendBuffer+usDataOffset,
+                     &halWifiConfigSetParams.wifiConfigParams,
+                     sizeof(halWifiConfigSetParams.wifiConfigParams));
+
+     pWDICtx->pReqStatusUserData = pEventData->pUserData;
+
+     /*-------------------------------------------------------------------------
+       Send Clear Link Layer Stats Request to HAL
+     -------------------------------------------------------------------------*/
+     return  WDI_SendMsg( pWDICtx, pSendBuffer, usSendSize,
+                          wdiWifiConfigSetRspCb, pEventData->pUserData,
+                          WDI_WIFI_CONFIG_SET_RSP);
+   }
+
+WDI_Status
+WDI_ProcessWificonfigSetRsp
+( WDI_ControlBlockType* pWDICtx,
+  WDI_EventInfoType* pEventData )
+
+{
+  tHalSetWifiConfigRspParams    halRsp;
+  WDI_WifiConfigSetRspCb        wdiWifiConfigSetRspCb;
+  WDI_WifconfigSetRsp           wdiWifconfigSetRsp;
+
+  VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
+                  "%s: %d Enter",__func__, __LINE__);
+
+  /*-------------------------------------------------------------------------
+    Sanity check
+  -------------------------------------------------------------------------*/
+  if (( NULL == pWDICtx ) || ( NULL == pEventData ) ||
+      ( NULL == pEventData->pEventData))
+  {
+     WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
+                 "%s: Invalid parameters", __func__);
+     WDI_ASSERT(0);
+     return WDI_STATUS_E_FAILURE;
+  }
+  wdiWifiConfigSetRspCb = (WDI_WifiConfigSetRspCb)pWDICtx->pfncRspCB;
+
+  /*-------------------------------------------------------------------------
+    Extract response and send it to UMAC
+  -------------------------------------------------------------------------*/
+  wpalMemoryCopy(&halRsp, pEventData->pEventData, sizeof(halRsp));
+
+  wdiWifconfigSetRsp.wificonfigset_status = WDI_HAL_2_WDI_STATUS(halRsp.status);
+
+  VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
+                     "WifiConfig RSP status = %d",
+                     wdiWifconfigSetRsp.wificonfigset_status);
+  /*Notify UMAC*/
+  wdiWifiConfigSetRspCb( &wdiWifconfigSetRsp, pWDICtx->pRspCBUserData);
+
+  return WDI_STATUS_SUCCESS;
+}

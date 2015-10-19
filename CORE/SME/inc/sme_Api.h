@@ -3802,4 +3802,15 @@ eHalStatus sme_fatal_event_logs_req(tHalHandle hHal, tANI_U32 is_fatal,
 eHalStatus sme_enableDisableChanAvoidIndEvent(tHalHandle hHal,
                                               tANI_U8 set_value);
 
+/* ---------------------------------------------------------------------------
+    \fn sme_set_wificonfig_params
+    \brief  API to set WifiConfiguration Parameters.
+
+    \param  wifi_config_param - Wificonfig parameter 1.Averaging factor 2. Guard time
+    \- return VOS_STATUS_SUCCES if INdication is posted to
+       WDA else return eHAL_STATUS_FAILURE
+    -------------------------------------------------------------------------*/
+
+eHalStatus sme_set_wificonfig_params(tHalHandle hHal, tSetWifiConfigParams *req);
+
 #endif //#if !defined( __SME_API_H )
