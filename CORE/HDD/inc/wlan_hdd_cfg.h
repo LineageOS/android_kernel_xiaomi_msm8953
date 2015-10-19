@@ -1933,7 +1933,7 @@ static __inline tANI_U32 defHddRateToDefCfgRate( tANI_U32 defRateIndex )
 #define CFG_EXTSCAN_ENABLE                  "gEnableEXTScan"
 #define CFG_EXTSCAN_ENABLE_MIN              (0)
 #define CFG_EXTSCAN_ENABLE_MAX              (1)
-#define CFG_EXTSCAN_ENABLE_DEFAULT          (0)
+#define CFG_EXTSCAN_ENABLE_DEFAULT          (1)
 #endif
 
 #ifdef WLAN_ACTIVEMODE_OFFLOAD_FEATURE
