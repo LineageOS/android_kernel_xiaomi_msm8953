@@ -4500,10 +4500,64 @@ static int iw_get_nick(struct net_device *dev,
    return ret;
 }
 
+/* cat /proc/net/wireless invokes this function to get wireless stats */
 static struct iw_statistics * __get_wireless_stats(struct net_device *dev)
 {
-   ENTER();
-   return NULL;
+    hdd_adapter_t *pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
+    hdd_context_t *pHddCtx;
+    hdd_station_ctx_t *pHddStaCtx;
+    v_S7_t snr = 0, rssi = 0;
+    eHalStatus status = eHAL_STATUS_SUCCESS;
+
+    ENTER();
+
+    if (NULL == pAdapter)
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                 "%s: Adapter is NULL",__func__);
+        return NULL;
+    }
+
+    pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+    status = wlan_hdd_validate_context(pHddCtx);
+    if (0 != status)
+    {
+       return NULL;
+    }
+
+    pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
+    if (NULL == pHddStaCtx)
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                 "%s: STA Context is NULL",__func__);
+        return NULL;
+    }
+
+    if (eConnectionState_Associated == pHddStaCtx->conn_info.connState)
+    {
+        wlan_hdd_get_station_stats(pAdapter);
+        wlan_hdd_get_snr(pAdapter, &snr);
+        wlan_hdd_get_rssi(pAdapter, &rssi);
+
+        vos_mem_zero(&pAdapter->iwStats, sizeof(pAdapter->iwStats));
+        pAdapter->iwStats.status = 0;
+        pAdapter->iwStats.qual.qual = snr;
+        pAdapter->iwStats.qual.level = rssi;
+        pAdapter->iwStats.qual.noise = rssi - snr;
+        pAdapter->iwStats.discard.code = 0;
+        pAdapter->iwStats.discard.retries= 0;
+        pAdapter->iwStats.miss.beacon = 0;
+        pAdapter->iwStats.qual.updated = IW_QUAL_ALL_UPDATED | IW_QUAL_DBM;
+    }
+    else
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_WARN,
+            FL("not in associated state: %d"), pHddStaCtx->conn_info.connState);
+        return NULL;
+    }
+
+    EXIT();
+    return &(pAdapter->iwStats);
 }
 
 static struct iw_statistics *get_wireless_stats(struct net_device *dev)

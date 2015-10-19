@@ -1162,6 +1162,9 @@ struct hdd_adapter_s
 
    /* Time stamp for start RoC request */
    v_TIME_t startRocTs;
+
+   /* Wireless statistics */
+   struct iw_statistics iwStats;
 };
 
 #define WLAN_HDD_GET_STATION_CTX_PTR(pAdapter) (&(pAdapter)->sessionCtx.station)
