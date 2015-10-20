@@ -1102,11 +1102,47 @@ static v_BOOL_t put_wifi_iface_stats(hdd_adapter_t *pAdapter,
                     pWifiIfaceStat->rssiAck))
     {
         hddLog(VOS_TRACE_LEVEL_ERROR,
-                FL("QCA_WLAN_VENDOR_ATTR put fail"));
-        vos_mem_free(pWifiIfaceStatTL);
+               FL("QCA_WLAN_VENDOR_ATTR put fail"));
+               vos_mem_free(pWifiIfaceStatTL);
         return FALSE;
     }
 
+#ifdef FEATURE_EXT_LL_STAT
+   /*
+    * Ensure when EXT_LL_STAT is supported by both host and fwr,
+    * then host should send Leaky AP stats to upper layer,
+    * otherwise no need to send these stats.
+    */
+   if(sme_IsFeatureSupportedByFW(EXT_LL_STAT) &&
+      sme_IsFeatureSupportedByDriver(EXT_LL_STAT)
+     )
+   {
+       hddLog(VOS_TRACE_LEVEL_INFO,
+              FL("EXT_LL_STAT is supported by fwr and host %u %u %u %llu"),
+              pWifiIfaceStat->leakyApStat.is_leaky_ap,
+              pWifiIfaceStat->leakyApStat.avg_rx_frms_leaked,
+              pWifiIfaceStat->leakyApStat.rx_leak_window,
+              pWifiIfaceStat->leakyApStat.avg_bcn_spread);
+       if (nla_put_u32(vendor_event,
+               QCA_WLAN_VENDOR_ATTR_LL_STATS_IFACE_LEAKY_AP_DETECTED,
+               pWifiIfaceStat->leakyApStat.is_leaky_ap) ||
+           nla_put_u32(vendor_event,
+               QCA_WLAN_VENDOR_ATTR_LL_STATS_IFACE_LEAKY_AP_AVG_NUM_FRAMES_LEAKED,
+               pWifiIfaceStat->leakyApStat.avg_rx_frms_leaked) ||
+           nla_put_u32(vendor_event,
+               QCA_WLAN_VENDOR_ATTR_LL_STATS_IFACE_LEAKY_AP_GUARD_TIME,
+               pWifiIfaceStat->leakyApStat.rx_leak_window) ||
+           nla_put_u64(vendor_event,
+               QCA_WLAN_VENDOR_ATTR_LL_STATS_IFACE_AVERAGE_TSF_OFFSET,
+               pWifiIfaceStat->leakyApStat.avg_bcn_spread))
+       {
+           hddLog(VOS_TRACE_LEVEL_ERROR,
+                  FL("EXT_LL_STAT put fail"));
+           vos_mem_free(pWifiIfaceStatTL);
+           return FALSE;
+       }
+   }
+#endif
     wmmInfo = nla_nest_start(vendor_event,
                             QCA_WLAN_VENDOR_ATTR_LL_STATS_WMM_INFO);
     if(!wmmInfo)

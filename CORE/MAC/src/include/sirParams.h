@@ -137,6 +137,7 @@ typedef enum {
 
    MEMORY_DUMP_SUPPORTED = 57,
    PER_PKT_STATS_SUPPORTED  = 58,
+   EXT_LL_STAT              = 60,
    WIFI_CONFIG            = 61,
    //MAX_FEATURE_SUPPORTED = 128
 } placeHolderInCapBitmap;

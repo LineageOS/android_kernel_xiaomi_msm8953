@@ -5082,6 +5082,32 @@ typedef PACKED_PRE struct PACKED_POST
     tANI_U32 contentionNumSamples;
 } tSirWifiWmmAcStat, *tpSirWifiWmmAcStat;
 
+#ifdef FEATURE_EXT_LL_STAT
+typedef PACKED_PRE struct PACKED_POST
+{
+    /* Average Beacon spread offset is the averaged
+     * time delay between TBTT and beacon TSF
+     */
+    tANI_U64 avg_bcn_spread;
+    /* Average number of frames received from AP after
+     * receiving the ACK for a frame with PM=1
+     */
+    tANI_U32 avg_rx_frms_leaked;
+    /* Rx leak watch window currently in force to minimize data loss
+     * because of leaky AP. Rx leak window is the time driver waits
+     * before shutting down the radio or switching the channel and
+     * after receiving an ACK for a data frame with PM bit set)
+     */
+    tANI_U32 rx_leak_window;
+
+    /* Takes value of 1 if AP leaks packets after sending
+     * an ACK for PM=1 otherwise 0
+     */
+    tANI_U32 is_leaky_ap;
+
+} tSirWifiIfaceLeakyApStat, *tpSirWifiIfaceLeakyApStat;
+#endif
+
 /* Interface statistics - corresponding to 2nd most
  * LSB in wifi statistics bitmap  for getting statistics
  */
@@ -5106,6 +5132,10 @@ typedef PACKED_PRE struct PACKED_POST
     tANI_S32            rssiAck;
     // per ac data packet statistics
     tSirWifiWmmAcStat    AccessclassStats[WIFI_AC_MAX];
+#ifdef FEATURE_EXT_LL_STAT
+    //Leaky Ap Stats
+    tSirWifiIfaceLeakyApStat leakyApStat;
+#endif
 } tSirWifiIfaceStat, *tpSirWifiIfaceStat;
 
 /* Peer statistics - corresponding to 3rd most LSB in

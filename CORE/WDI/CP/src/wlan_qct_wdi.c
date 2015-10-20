@@ -212,7 +212,11 @@ static placeHolderInCapBitmap supportEnabledFeatures[] =
    ,MEMORY_DUMP_SUPPORTED          //57
    ,PER_PKT_STATS_SUPPORTED        //58
    ,FEATURE_NOT_SUPPORTED          //59
-   ,FEATURE_NOT_SUPPORTED          //60
+#ifdef FEATURE_EXT_LL_STAT
+   ,EXT_LL_STAT                    //60
+#else
+   ,FEATURE_NOT_SUPPORTED
+#endif
    ,WIFI_CONFIG                    //61
 };
 
@@ -1529,7 +1533,9 @@ void WDI_TraceHostFWCapabilities(tANI_U32 *capabilityBitmap)
                      case PER_PKT_STATS_SUPPORTED: snprintf(pCapStr, sizeof("PER_PKT_STATS_SUPPORTED"), "%s", "PER_PKT_STATS_SUPPORTED");
                           pCapStr += strlen("PER_PKT_STATS_SUPPORTED");
                           break;
-
+                     case EXT_LL_STAT: snprintf(pCapStr, sizeof("EXT_LL_STAT"), "%s", "EXT_LL_STAT");
+                          pCapStr += strlen("EXT_LL_STAT");
+                          break;
 
                  }
                  *pCapStr++ = ',';
@@ -29816,6 +29822,7 @@ WDI_ProcessFeatureCapsExchangeRsp
       gpFwWlanFeatCaps->featCaps[2],
       gpFwWlanFeatCaps->featCaps[3]
    );
+
    WPAL_TRACE(  eWLAN_MODULE_DAL_CTRL,  eWLAN_PAL_TRACE_LEVEL_INFO, "Firmware Capability");
    WDI_TraceHostFWCapabilities(gpFwWlanFeatCaps->featCaps);
    wdiFeatureCapsExchangeCb = (WDI_featureCapsExchangeCb) pWDICtx -> pfncRspCB; 
