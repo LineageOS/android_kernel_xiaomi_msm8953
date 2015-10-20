@@ -587,6 +587,10 @@ typedef enum
    WLAN_HAL_STOP_RSSI_MONITORING_REQ        = 324,
    WLAN_HAL_STOP_RSSI_MONITORING_RSP        = 325,
 
+   //RTT3 SUPPORT
+   WLAN_HAL_START_OEM_DATA_REQ_IND_NEW      = 326,
+   WLAN_HAL_START_OEM_DATA_RSP_IND_NEW      = 327,
+
    WLAN_HAL_WIFI_CONFIG_SET_PARAMS_REQ      = 328,
    WLAN_HAL_WIFI_CONFIG_SET_PARAMS_RSP      = 329,
 
@@ -2882,6 +2886,42 @@ typedef PACKED_PRE struct PACKED_POST
    tHalMsgHeader             header;
    tStartOemDataRspParams    startOemDataRspParams;
 } tStartOemDataRspMsg, *tpStartOemDataRspMsg;
+
+#ifndef NEW_OEM_DATA_REQ_SIZE
+#define NEW_OEM_DATA_REQ_SIZE 292
+#endif
+
+#ifndef NEW_OEM_DATA_RSP_SIZE
+#define NEW_OEM_DATA_RSP_SIZE 2100
+#endif
+
+/*-------------------------------------------------------------------------
+WLAN_HAL_START_OEM_DATA_REQ_IND_NEW------------------------------------
+--------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U8   oemDataReq[NEW_OEM_DATA_REQ_SIZE];
+} tStartOemDataReqParamsNew, *tpStartOemDataReqParamsNew;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader  header;
+   tStartOemDataReqParamsNew  startOemDataReqParams;
+} tStartOemDataReqMsgNew, *tpStartOemDataReqMsgNew;
+
+/*-------------------------------------------------------------------------
+WLAN_HAL_START_OEM_DATA_RSP_IND_NEW------------------------------------
+--------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U8  oemDataRsp[NEW_OEM_DATA_RSP_SIZE];
+} tStartOemDataRspParamsNew, *tpStartOemDataRspParamsNew;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader  header;
+   tStartOemDataRspParamsNew    startOemDataReqParams;
+} tStartOemDataRspMsgNew, *tpStartOemDataRspMsgNew;
 
 #endif
 
