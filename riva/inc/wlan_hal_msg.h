@@ -1015,6 +1015,14 @@ typedef PACKED_PRE struct PACKED_POST
     tANI_U32 contention_num_samples;     // num of data pkts used for contention statistics
 } wifi_wmm_ac_stat;
 
+typedef PACKED_PRE struct PACKED_POST
+{
+    tANI_U64            average_tsf_offset;
+    tANI_U32            leaky_ap_avg_num_frames_leaked;
+    tANI_U32            leaky_ap_guard_time;
+    tANI_U32            leaky_ap_detected;
+} wifi_iface_leaky_ap_info;
+
 /* Interface statistics - corresponding to 2nd most LSB in wifi statistics bitmap  for getting statistics */
 typedef PACKED_PRE struct PACKED_POST
 {
@@ -1027,6 +1035,7 @@ typedef PACKED_PRE struct PACKED_POST
     tANI_U32            rssi_data;                                  // access Point Data Frames RSSI (averaged) from connected AP
     tANI_U32            rssi_ack;                                   // access Point ACK RSSI (averaged) from connected AP
     wifi_wmm_ac_stat    AccessclassStats[WIFI_AC_MAX];              // per ac data packet statistics
+    wifi_iface_leaky_ap_info leakyApInfo;
 } wifi_iface_stat;
 
 /* Peer statistics - corresponding to 3rd most LSB in wifi statistics bitmap  for getting statistics */
@@ -6809,6 +6818,7 @@ typedef enum {
     EXT_SCAN_ENHANCED      = 56,
     MEMORY_DUMP_SUPPORTED  = 57,
     PER_PKT_STATS_SUPPORTED  = 58,
+    EXT_LL_STAT              = 60,
     WIFI_CONFIG            = 61,
     MAX_FEATURE_SUPPORTED  = 128,
 } placeHolderInCapBitmap;
