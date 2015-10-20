@@ -46,6 +46,7 @@
 #include <wlan_hdd_includes.h>
 #include <net/arp.h>
 #include <vos_sched.h>
+#include "qwlan_version.h"
 /*---------------------------------------------------------------------------------------------
 
   \brief hdd_OemDataReqCallback() - 
@@ -313,6 +314,110 @@ int iw_set_oem_data_req(
     vos_ssr_unprotect(__func__);
 
     return ret;
+}
+
+/**---------------------------------------------------------------------------
+
+  \brief iw_get_oem_data_cap()
+
+  This function gets the capability information for OEM Data Request
+  and Response.
+
+  \param - dev  - Pointer to the net device
+         - info - Pointer to the t_iw_oem_data_cap
+         - wrqu - Pointer to the iwreq data
+         - extra - Pointer to the data
+
+  \return - 0 for success, non zero for failure
+
+----------------------------------------------------------------------------*/
+int iw_get_oem_data_cap(
+        struct net_device *dev,
+        struct iw_request_info *info,
+        union iwreq_data *wrqu,
+        char *extra)
+{
+    eHalStatus status;
+    t_iw_oem_data_cap oemDataCap;
+    t_iw_oem_data_cap *pHddOemDataCap;
+    hdd_adapter_t *pAdapter = netdev_priv(dev);
+    hdd_context_t *pHddContext;
+    hdd_config_t *pConfig;
+    tANI_U32 numChannels;
+    tANI_U8 chanList[OEM_CAP_MAX_NUM_CHANNELS];
+    tANI_U32 i;
+    int ret;
+
+    ENTER();
+
+    if (!pAdapter)
+    {
+       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                 "%s:Invalid context, pAdapter is null", __func__);
+       return -EINVAL;
+    }
+
+    pHddContext = WLAN_HDD_GET_CTX(pAdapter);
+    ret = wlan_hdd_validate_context(pHddContext);
+    if (0 != ret)
+      return ret;
+
+    pConfig = pHddContext->cfg_ini;
+
+    do
+    {
+       vos_mem_zero(&oemDataCap, sizeof(oemDataCap));
+       strlcpy(oemDataCap.oem_target_signature, OEM_TARGET_SIGNATURE,
+               OEM_TARGET_SIGNATURE_LEN);
+       oemDataCap.oem_target_type = TARGET_TYPE_PRONTO;
+       oemDataCap.oem_fw_version = 0;
+       oemDataCap.driver_version.major = QWLAN_VERSION_MAJOR;
+       oemDataCap.driver_version.minor = QWLAN_VERSION_MINOR;
+       oemDataCap.driver_version.patch = QWLAN_VERSION_PATCH;
+       oemDataCap.driver_version.build = QWLAN_VERSION_BUILD;
+       oemDataCap.allowed_dwell_time_min = pConfig->nNeighborScanMinChanTime;
+       oemDataCap.allowed_dwell_time_max = pConfig->nNeighborScanMaxChanTime;
+       oemDataCap.curr_dwell_time_min =
+               sme_getNeighborScanMinChanTime(pHddContext->hHal);
+       oemDataCap.curr_dwell_time_max =
+               sme_getNeighborScanMaxChanTime(pHddContext->hHal);
+       oemDataCap.supported_bands = pConfig->nBandCapability;
+
+       /* request for max num of channels */
+       numChannels = WNI_CFG_VALID_CHANNEL_LIST_LEN;
+       status = sme_GetCfgValidChannels(pHddContext->hHal,
+                                        &chanList[0],
+                                        &numChannels);
+       if (eHAL_STATUS_SUCCESS != status)
+       {
+         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                   "%s:failed to get valid channel list", __func__);
+         return -ENOENT;
+       }
+       else
+       {
+         /* make sure num channels is not more than chan list array */
+         if (numChannels > OEM_CAP_MAX_NUM_CHANNELS)
+         {
+           VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                     "%s:Num of channels(%d) more than length(%d) of chanlist",
+                     __func__, numChannels, OEM_CAP_MAX_NUM_CHANNELS);
+           return -ENOMEM;
+         }
+
+         oemDataCap.num_channels = numChannels;
+         for (i = 0; i < numChannels; i++)
+         {
+           oemDataCap.channel_list[i] = chanList[i];
+         }
+       }
+
+       pHddOemDataCap = (t_iw_oem_data_cap *)(extra);
+       vos_mem_copy(pHddOemDataCap, &oemDataCap, sizeof(*pHddOemDataCap));
+    } while (0);
+
+    EXIT();
+    return 0;
 }
 
 #endif
