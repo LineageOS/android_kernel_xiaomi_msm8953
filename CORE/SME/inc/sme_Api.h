@@ -293,6 +293,13 @@ eHalStatus sme_EXTScanRegisterCallback (tHalHandle hHal,
                           void *);
 
 #endif /* WLAN_FEATURE_EXTSCAN */
+
+#ifdef FEATURE_OEM_DATA_SUPPORT
+eHalStatus sme_OemDataRegisterCallback (tHalHandle hHal,
+                          void (*pOemDataIndCb)(void *, const tANI_U16, void *),
+                          void *callbackContext);
+#endif
+
 /* ---------------------------------------------------------------------------
     \fn sme_SpoofMacAddrReq
     \brief  SME API to send Spoof Mac Addr req to HAL
@@ -2079,6 +2086,14 @@ eHalStatus sme_OemDataReq(tHalHandle hHal,
   ---------------------------------------------------------------------------*/
 eHalStatus sme_getOemDataRsp(tHalHandle hHal, 
                                          tOemDataRsp **pOemDataRsp);
+
+/* ---------------------------------------------------------------------------
+    \fn sme_OemDataReqNew
+    \brief a wrapper function for OEM DATA REQ NEW
+    \param pOemDataReqNewConfig - Data to be passed to FW
+  ---------------------------------------------------------------------------*/
+void sme_OemDataReqNew(tHalHandle hHal,
+        tOemDataReqNewConfig *pOemDataReqNewConfig);
 
 #endif /*FEATURE_OEM_DATA_SUPPORT*/
 

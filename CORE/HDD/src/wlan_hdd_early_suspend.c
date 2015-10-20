@@ -2283,6 +2283,13 @@ VOS_STATUS hdd_wlan_re_init(void)
             wlan_hdd_cfg80211_extscan_callback,
                            pHddCtx);
 #endif /* WLAN_FEATURE_EXTSCAN */
+
+#ifdef FEATURE_OEM_DATA_SUPPORT
+    sme_OemDataRegisterCallback(pHddCtx->hHal,
+             wlan_hdd_cfg80211_oemdata_callback,
+                          pHddCtx);
+#endif /* FEATURE_OEM_DATA_SUPPORT */
+
    goto success;
 
 err_unregister_pmops:

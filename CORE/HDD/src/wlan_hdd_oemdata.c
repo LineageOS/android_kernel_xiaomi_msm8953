@@ -816,6 +816,9 @@ static int oem_msg_callback(struct sk_buff *skb)
    tAniMsgHdr *msg_hdr;
    int ret;
    char *sign_str = NULL;
+   char* aniMsgBody;
+   tANI_U32 *oemMsgSubType;
+
    nlh = (struct nlmsghdr *)skb->data;
 
    if (!nlh) {
@@ -844,6 +847,8 @@ static int oem_msg_callback(struct sk_buff *skb)
                                   OEM_ERR_INVALID_MESSAGE_LENGTH);
        return -EPERM;
    }
+
+   hddLog(LOG1, FL("Received App msg type: %d"), msg_hdr->type);
 
    switch (msg_hdr->type) {
    case ANI_MSG_APP_REG_REQ:
@@ -891,6 +896,10 @@ static int oem_msg_callback(struct sk_buff *skb)
                                        OEM_ERR_INVALID_MESSAGE_LENGTH);
           return -EPERM;
       }
+      aniMsgBody = (char *)((char *)msg_hdr + sizeof(tAniMsgHdr));
+      oemMsgSubType = (tANI_U32*) aniMsgBody;
+      hddLog(LOGE, FL("oemMsgSubType: 0x%x"), *oemMsgSubType);
+
       oem_process_data_req_msg(msg_hdr->length,
                               (char *) ((char *)msg_hdr +
                               sizeof(tAniMsgHdr)));

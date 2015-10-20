@@ -54,6 +54,14 @@
 #define OEM_DATA_RSP_SIZE 1968
 #endif
 
+#ifndef NEW_OEM_DATA_REQ_SIZE
+#define NEW_OEM_DATA_REQ_SIZE 292
+#endif
+
+#ifndef NEW_OEM_DATA_RSP_SIZE
+#define NEW_OEM_DATA_RSP_SIZE 2100
+#endif
+
 /*************************************************************************************************************
   OEM DATA REQ/RSP - DATA STRUCTURES
 *************************************************************************************************************/
@@ -132,6 +140,28 @@ eHalStatus sme_HandleOemDataRsp(tHalHandle hHal, tANI_U8*);
     \return eHalStatus     
   -------------------------------------------------------------------------------*/
 eHalStatus oemData_IsOemDataReqAllowed(tHalHandle hHal);
+
+
+/* ---------------------------------------------------------------------------
+  OEM DATA REQ NEW - DATA STRUCTURES
+  -------------------------------------------------------------------------------*/
+/* Structure for defining req sent to the PE */
+typedef struct tagOemDataReqNew
+{
+    tANI_U8   oemDataReqNew[NEW_OEM_DATA_REQ_SIZE];
+} tOemDataReqNew, tOemDataReqNewConfig;
+
+/* ---------------------------------------------------------------------------
+  OEM DATA RESPONSE - DATA STRUCTURES
+  -------------------------------------------------------------------------------*/
+typedef struct tagOemDataRspNew
+{
+    tANI_U8   oemDataRspNew[NEW_OEM_DATA_RSP_SIZE];
+} tOemDataRspNew;
+
+/*************************************************************************************************************/
+
+void send_oem_data_rsp_msg(int length, tANI_U8 *oemDataRsp);
 
 #endif //_OEM_DATA_API_H__
 

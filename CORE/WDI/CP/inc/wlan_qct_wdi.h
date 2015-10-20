@@ -420,6 +420,9 @@ typedef enum
   WDI_NAN_EVENT_IND,
   WDI_LOST_LINK_PARAMS_IND,
   WDI_RSSI_BREACHED_IND,
+#ifdef FEATURE_OEM_DATA_SUPPORT
+  WDI_START_OEM_DATA_RSP_IND_NEW,
+#endif
   WDI_MAX_IND
 }WDI_LowLevelIndEnumType;
 
@@ -989,6 +992,10 @@ typedef struct
     WDI_TxBDStatus              wdiTxBdInd;
     WDI_LostLinkParamsIndType   wdiLostLinkParamsInd;
     WDI_RssiBreachedIndType     wdiRssiBreachedInd;
+#ifdef FEATURE_OEM_DATA_SUPPORT
+/*OEM Data Rsp New Results from FW*/
+    void *pOemRspNewIndData;
+#endif
   }  wdiIndicationData;
 }WDI_LowLevelIndType;
 
@@ -4668,6 +4675,14 @@ typedef struct
 #define OEM_DATA_RSP_SIZE 1968
 #endif
 
+#ifndef NEW_OEM_DATA_REQ_SIZE
+#define NEW_OEM_DATA_REQ_SIZE 292
+#endif
+
+#ifndef NEW_OEM_DATA_RSP_SIZE
+#define NEW_OEM_DATA_RSP_SIZE 2100
+#endif
+
 /*----------------------------------------------------------------------------
   WDI_oemDataReqInfoType
 ----------------------------------------------------------------------------*/
@@ -4703,6 +4718,25 @@ typedef struct
 {
   wpt_uint8           oemDataRsp[OEM_DATA_RSP_SIZE];
 }WDI_oemDataRspParamsType;
+
+/*----------------------------------------------------------------------------
+  OEM DATA REQ NEW/OEM DATA RSP NEW - DATA STRUCTURES
+----------------------------------------------------------------------------*/
+/* Structure for defining req sent to the PE */
+typedef struct
+{
+    wpt_uint8  oemDataReqNew[NEW_OEM_DATA_REQ_SIZE];
+} WDI_OemDataReqNew, WDI_OemDataReqNewConfig;
+
+/*----------------------------------------------------------------------------
+  OEM DATA RESPONSE - DATA STRUCTURES
+----------------------------------------------------------------------------*/
+typedef struct
+{
+    wpt_uint8  oemDataRspNew[NEW_OEM_DATA_RSP_SIZE];
+} WDI_OemDataRspNew;
+
+/*************************************************************************************************************/
 
 #endif /* FEATURE_OEM_DATA_SUPPORT */
 
@@ -11785,6 +11819,22 @@ WDI_EnableDisableCAEventInd
 (
 wpt_uint32 val
 );
+
+#ifdef FEATURE_OEM_DATA_SUPPORT
+
+/**
+ @brief WDI_HighPriorityDataInfoInd
+
+ @param pHighPriorityDataInfoIndParams: Req parameter for the FW
+
+ @return SUCCESS or FAIL
+*/
+WDI_Status
+WDI_StartOemDataReqIndNew
+(
+   WDI_OemDataReqNewConfig *pOemDataReqNewConfig
+);
+#endif
 
 #ifdef __cplusplus
  }

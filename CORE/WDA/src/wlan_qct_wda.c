@@ -271,6 +271,10 @@ VOS_STATUS WDA_ProcessEnableDisableCAEventInd(tWDA_CbContext *pWDA, tANI_U8 val)
 
 VOS_STATUS  WDA_ProcessWifiConfigReq(tWDA_CbContext *pWDA,
                                      tSetWifiConfigParams *pwdaWificonfig);
+
+VOS_STATUS WDA_ProcessStartOemDataReqIndNew(tWDA_CbContext *pWDA,
+                                   tOemDataReqNewConfig *pOemDataReqNewConfig);
+
 /*
  * FUNCTION: WDA_ProcessNanRequest
  * Process NAN request
@@ -15293,6 +15297,14 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
        WDA_ProcessWifiConfigReq(pWDA,(tSetWifiConfigParams *)pMsg->bodyptr);
        break;
       }
+#ifdef FEATURE_OEM_DATA_SUPPORT
+      case WDA_START_OEM_DATA_REQ_IND_NEW:
+      {
+         WDA_ProcessStartOemDataReqIndNew(pWDA,
+                                         (tOemDataReqNewConfig *)pMsg->bodyptr);
+         break;
+      }
+#endif
       default:
       {
          VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
@@ -16282,6 +16294,64 @@ void WDA_lowLevelIndCallback(WDI_LowLevelIndType *wdiLowLevelInd,
          vos_mem_free(pRssiBreachedInd);
          break;
       }
+#ifdef FEATURE_OEM_DATA_SUPPORT
+      case  WDI_START_OEM_DATA_RSP_IND_NEW:
+      {
+            void *pCallbackContext;
+            tpAniSirGlobal pMac;
+            tANI_U16 indType;
+            void *pOemRspNewIndData;
+
+            VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+            "Received WDI_START_OEM_DATA_RSP_IND_NEW Indications from FW");
+
+            /*sanity check*/
+            if (NULL == pWDA)
+           {
+                VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                           "%s:pWDA is NULL", __func__);
+                VOS_ASSERT(0);
+                return;
+           }
+
+           indType = WDA_START_OEM_DATA_RSP_IND_NEW;
+           pOemRspNewIndData =
+                   (void *)wdiLowLevelInd->wdiIndicationData.pOemRspNewIndData;
+           if (NULL == pOemRspNewIndData)
+           {
+               VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               "%s: OEM_DATA_RSP_IND_NEW Indication Data is null, can't invoke HDD callback",
+                __func__);
+               VOS_ASSERT(0);
+               return;
+           }
+
+           pMac = (tpAniSirGlobal )VOS_GET_MAC_CTXT(pWDA->pVosContext);
+           if (NULL == pMac)
+           {
+               VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                         "%s:pMac is NULL", __func__);
+               VOS_ASSERT(0);
+               return;
+           }
+
+           pCallbackContext = pMac->sme.pOemDataCallbackContext;
+
+          if(pMac->sme.pOemDataIndCb)
+          {
+             pMac->sme.pOemDataIndCb(pCallbackContext,
+                                     indType,
+                                     pOemRspNewIndData);
+          }
+          else
+          {
+             VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                        "%s:HDD callback is null", __func__);
+          }
+          break;
+      }
+#endif /* FEATURE_OEM_DATA_SUPPORT */
+
       default:
       {
          /* TODO error */
@@ -20566,3 +20636,63 @@ VOS_STATUS  WDA_ProcessWifiConfigReq(tWDA_CbContext *pWDA,
   return status;
 
 }
+
+#ifdef FEATURE_OEM_DATA_SUPPORT
+/*
+ * FUNCTION: WDA_ProcessStartOemDataReqIndNew
+ * Request to WDI.
+ */
+VOS_STATUS WDA_ProcessStartOemDataReqIndNew(tWDA_CbContext *pWDA,
+                                  tOemDataReqNewConfig *pOemDataReqNewConfig)
+{
+   VOS_STATUS status = VOS_STATUS_SUCCESS;
+   WDI_Status wstatus;
+   WDI_OemDataReqNewConfig *wdiOemDataReqNewConfig;
+
+   /* Sanity Check*/
+   if(NULL == pOemDataReqNewConfig)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                           "%s: pOemDataReqNewConfig received NULL", __func__);
+      VOS_ASSERT(0) ;
+      return VOS_STATUS_E_FAULT;
+   }
+
+   wdiOemDataReqNewConfig = (WDI_OemDataReqNewConfig *)vos_mem_malloc(
+                                              sizeof(WDI_OemDataReqNewConfig));
+   VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                                          "------> %s " ,__func__);
+
+   if(NULL == wdiOemDataReqNewConfig)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                           "%s: VOS MEM Alloc Failure", __func__);
+      VOS_ASSERT(0);
+      vos_mem_free(pOemDataReqNewConfig);
+      return VOS_STATUS_E_NOMEM;
+   }
+
+   vos_mem_copy(wdiOemDataReqNewConfig, pOemDataReqNewConfig,
+                                              sizeof(WDI_OemDataReqNewConfig));
+
+   wstatus = WDI_StartOemDataReqIndNew(wdiOemDataReqNewConfig);
+
+   if (WDI_STATUS_PENDING == wstatus)
+   {
+       VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                  FL("pending status received "));
+   }
+   else if ((WDI_STATUS_SUCCESS_SYNC != wstatus) && (WDI_STATUS_SUCCESS != wstatus))
+   {
+       VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+       FL("Failure in OemDataReqIndNew WDI API, free all memory %d"), wstatus);
+       vos_mem_free(wdiOemDataReqNewConfig);
+   }
+
+   // Free the memory allocated in sme_OemDataReqNew
+   vos_mem_free(pOemDataReqNewConfig);
+
+   return status;
+}
+#endif
+

@@ -1361,6 +1361,11 @@ void hdd_rssi_threshold_breached_cb(void *hddctx,
 
 void wlan_hdd_cfg80211_nan_init(hdd_context_t *pHddCtx);
 
+#ifdef FEATURE_OEM_DATA_SUPPORT
+void wlan_hdd_cfg80211_oemdata_callback(void *ctx, const tANI_U16 evType,
+                                      void *pMsg);
+#endif /* FEATURE_OEM_DATA_SUPPORT */
+
 #if !(defined (SUPPORT_WDEV_CFG80211_VENDOR_EVENT_ALLOC))
 static inline struct sk_buff *
 backported_cfg80211_vendor_event_alloc(struct wiphy *wiphy,

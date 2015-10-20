@@ -18979,6 +18979,56 @@ int wlan_hdd_cfg80211_suspend_wlan(struct wiphy *wiphy,
 
     return ret;
 }
+
+#ifdef FEATURE_OEM_DATA_SUPPORT
+static void wlan_hdd_cfg80211_oem_data_rsp_ind_new(void *ctx,
+                                                      void *pMsg)
+{
+    hdd_context_t *pHddCtx         = (hdd_context_t *)ctx;
+
+    ENTER();
+
+    if (wlan_hdd_validate_context(pHddCtx)) {
+        return;
+    }
+    if (!pMsg)
+    {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("pMsg is null"));
+        return;
+    }
+
+    send_oem_data_rsp_msg(sizeof(tOemDataRspNew), pMsg);
+
+    EXIT();
+    return;
+
+}
+
+void wlan_hdd_cfg80211_oemdata_callback(void *ctx, const tANI_U16 evType,
+                                      void *pMsg)
+{
+    hdd_context_t *pHddCtx = (hdd_context_t *)ctx;
+
+    ENTER();
+
+    if (wlan_hdd_validate_context(pHddCtx)) {
+        return;
+    }
+
+    hddLog(VOS_TRACE_LEVEL_INFO, FL("Rcvd Event (%d)"), evType);
+
+    switch(evType) {
+    case SIR_HAL_START_OEM_DATA_RSP_IND_NEW:
+        wlan_hdd_cfg80211_oem_data_rsp_ind_new(ctx, pMsg);
+        break;
+    default:
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("invalid event type %d "), evType);
+        break;
+    }
+    EXIT();
+}
+#endif
+
 /* cfg80211_ops */
 static struct cfg80211_ops wlan_hdd_cfg80211_ops =
 {

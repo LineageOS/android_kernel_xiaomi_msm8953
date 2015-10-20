@@ -166,6 +166,10 @@ typedef struct tagSmeStruct
    void (*pBtCoexTDLSNotification) (void *pAdapter, int);
    void (*nanCallback) (void*, tSirNanEvent*);
    void (*rssiThresholdBreachedCb)(void *, struct rssi_breach_event *);
+#ifdef FEATURE_OEM_DATA_SUPPORT
+   void (*pOemDataIndCb) (void *, const tANI_U16, void *);
+   void *pOemDataCallbackContext;
+#endif /* FEATURE_OEM_DATA_SUPPORT */
 
 } tSmeStruct, *tpSmeStruct;
 

@@ -531,6 +531,10 @@ typedef enum
   WDI_HIGH_PRIORITY_DATA_INFO_IND,
 #endif
 
+#ifdef FEATURE_OEM_DATA_SUPPORT
+  WDI_START_OEM_DATA_REQ_IND_NEW,
+#endif
+
   /*Keep adding the indications to the max request
     such that we keep them separate */
   WDI_MAX_UMAC_IND
@@ -917,6 +921,7 @@ typedef enum
   WDI_HAL_NAN_EVENT                  = WDI_HAL_IND_MIN + 28,
   WDI_HAL_LOST_LINK_PARAMS_IND       = WDI_HAL_IND_MIN + 29,
   WDI_HAL_RSSI_BREACHED_IND          = WDI_HAL_IND_MIN + 30,
+  WDI_HAL_START_OEM_DATA_RSP_IND_NEW = WDI_HAL_IND_MIN + 31,
   WDI_MAX_RESP
 }WDI_ResponseEnumType; 
 
@@ -6400,6 +6405,42 @@ WDI_ProcessWificonfigSetRsp
   WDI_ControlBlockType*  pWDICtx,
   WDI_EventInfoType*     pEventData
 );
+
+#ifdef FEATURE_OEM_DATA_SUPPORT
+/**
+ @brief WDI_ProcessStartOemDataReqIndNew -
+    Send OEM Data request new indication to FW
+
+ @param  pWDICtx : wdi context
+         pEventData : indication data
+
+ @see
+ @return none
+*/
+WDI_Status
+WDI_ProcessStartOemDataReqIndNew
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+/**
+ @brief Process OemDataRsp New Indication indication from FW
+
+ @param  pWDICtx:         pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+WDI_Status
+WDI_ProcessStartOemDataRspIndNew
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+#endif
+
 
 #endif /*WLAN_QCT_WDI_I_H*/
 

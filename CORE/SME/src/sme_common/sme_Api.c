@@ -6739,6 +6739,50 @@ eHalStatus sme_OemDataReq(tHalHandle hHal,
     return(status);
 }
 
+/* ---------------------------------------------------------------------------
+    \fn sme_OemDataReqNew
+    \brief a wrapper function for OEM DATA REQ NEW
+    \param pOemDataReqNewConfig - Data to be passed to FW
+  ---------------------------------------------------------------------------*/
+void sme_OemDataReqNew(tHalHandle hHal,
+        tOemDataReqNewConfig *pOemDataReqNewConfig)
+{
+    eHalStatus status = eHAL_STATUS_SUCCESS;
+    tpAniSirGlobal pMac = PMAC_STRUCT(hHal);
+    tOemDataReqNewConfig *pLocalOemDataReqNewConfig;
+    vos_msg_t vosMessage = {0};
+
+    pLocalOemDataReqNewConfig =
+            vos_mem_malloc(sizeof(*pLocalOemDataReqNewConfig));
+
+    if (!pLocalOemDataReqNewConfig)
+    {
+        smsLog(pMac, LOGE,
+        "Failed to allocate memory for WDA_START_OEM_DATA_REQ_IND_NEW");
+        return;
+    }
+
+    vos_mem_zero(pLocalOemDataReqNewConfig, sizeof(tOemDataReqNewConfig));
+    vos_mem_copy(pLocalOemDataReqNewConfig, pOemDataReqNewConfig,
+                                            sizeof(tOemDataReqNewConfig));
+
+    if (eHAL_STATUS_SUCCESS == (status = sme_AcquireGlobalLock(&pMac->sme))) {
+        /* Serialize the req through MC thread */
+        vosMessage.bodyptr = pLocalOemDataReqNewConfig;
+        vosMessage.type    = WDA_START_OEM_DATA_REQ_IND_NEW;
+        MTRACE(vos_trace(VOS_MODULE_ID_SME,
+                 TRACE_CODE_SME_TX_WDA_MSG, NO_SESSION, vosMessage.type));
+
+        if(VOS_STATUS_SUCCESS !=
+                          vos_mq_post_message(VOS_MQ_ID_WDA, &vosMessage)) {
+           VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR, "%s:"
+                 "Failed to post WDA_START_OEM_DATA_REQ_IND_NEW msg to WDA",
+                __func__);
+        }
+        sme_ReleaseGlobalLock(&pMac->sme);
+    }
+}
+
 #endif /*FEATURE_OEM_DATA_SUPPORT*/
 
 /*--------------------------------------------------------------------------
@@ -12866,6 +12910,23 @@ eHalStatus sme_EXTScanRegisterCallback (tHalHandle hHal,
     }
     return(status);
 }
+
+#ifdef FEATURE_OEM_DATA_SUPPORT
+eHalStatus sme_OemDataRegisterCallback (tHalHandle hHal,
+                          void (*pOemDataIndCb)(void *, const tANI_U16, void *),
+                          void *callbackContext)
+{
+    eHalStatus status    = eHAL_STATUS_SUCCESS;
+    tpAniSirGlobal pMac  = PMAC_STRUCT(hHal);
+
+    if (eHAL_STATUS_SUCCESS == (status = sme_AcquireGlobalLock(&pMac->sme))) {
+        pMac->sme.pOemDataIndCb = pOemDataIndCb;
+        pMac->sme.pOemDataCallbackContext = callbackContext;
+        sme_ReleaseGlobalLock(&pMac->sme);
+    }
+    return(status);
+}
+#endif
 
 void sme_SetMiracastMode (tHalHandle hHal,tANI_U8 mode)
 {
