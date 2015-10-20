@@ -10353,6 +10353,16 @@ int hdd_wlan_startup(struct device *dev )
       goto err_nl_srv;
    }
 
+#ifdef FEATURE_OEM_DATA_SUPPORT
+   //Initialize the OEM service
+   if (oem_activate_service(pHddCtx) != 0)
+   {
+       hddLog(VOS_TRACE_LEVEL_FATAL,
+              "%s: oem_activate_service failed", __func__);
+       goto err_nl_srv;
+   }
+#endif
+
 #ifdef PTT_SOCK_SVC_ENABLE
    //Initialize the PTT service
    if(ptt_sock_activate_svc(pHddCtx) != 0)

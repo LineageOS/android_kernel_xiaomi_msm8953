@@ -13498,3 +13498,40 @@ eHalStatus sme_set_wificonfig_params(tHalHandle hHal, tSetWifiConfigParams *req)
     }
     return status;
 }
+
+eHalStatus sme_getRegInfo(tHalHandle hHal, tANI_U8 chanId,
+                         tANI_U32  *regInfo1, tANI_U32  *regInfo2)
+{
+    tpAniSirGlobal pMac = PMAC_STRUCT(hHal);
+    eHalStatus status;
+    tANI_U8 i;
+    eAniBoolean found = false;
+
+    status = sme_AcquireGlobalLock(&pMac->sme);
+    *regInfo1 = 0;
+    *regInfo2 = 0;
+    if (HAL_STATUS_SUCCESS(status))
+    {
+        for (i = 0 ; i < WNI_CFG_VALID_CHANNEL_LIST_LEN; i++)
+        {
+            if (pMac->scan.defaultPowerTable[i].chanId == chanId)
+            {
+                SME_SET_CHANNEL_REG_POWER(*regInfo1,
+                                          pMac->scan.defaultPowerTable[i].pwr);
+
+                SME_SET_CHANNEL_MAX_TX_POWER(*regInfo2,
+                                          pMac->scan.defaultPowerTable[i].pwr);
+
+
+                found = true;
+                break;
+            }
+        }
+
+        if (!found)
+            status = eHAL_STATUS_FAILURE;
+
+        sme_ReleaseGlobalLock(&pMac->sme);
+    }
+    return status;
+}

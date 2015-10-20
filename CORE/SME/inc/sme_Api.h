@@ -88,6 +88,16 @@
 //Macro to indicate invalid no of tspecs
 #define INVALID_TSPEC 100
 
+#define SME_SET_CHANNEL_REG_POWER(reg_info_1, val) do { \
+    reg_info_1 &= 0xff00ffff;             \
+    reg_info_1 |= ((val & 0xff) << 16);   \
+} while(0)
+
+#define SME_SET_CHANNEL_MAX_TX_POWER(reg_info_2, val) do { \
+    reg_info_2 &= 0xffff00ff;             \
+    reg_info_2 |= ((val & 0xff) << 8);   \
+} while(0)
+
 /*-------------------------------------------------------------------------- 
   Type declarations
   ------------------------------------------------------------------------*/
@@ -3812,5 +3822,7 @@ eHalStatus sme_enableDisableChanAvoidIndEvent(tHalHandle hHal,
     -------------------------------------------------------------------------*/
 
 eHalStatus sme_set_wificonfig_params(tHalHandle hHal, tSetWifiConfigParams *req);
+eHalStatus sme_getRegInfo(tHalHandle hHal, tANI_U8 chanId,
+                          tANI_U32 *regInfo1, tANI_U32 *regInfo2);
 
 #endif //#if !defined( __SME_API_H )

@@ -1395,6 +1395,15 @@ struct hdd_context_s
 #ifdef WLAN_KD_READY_NOTIFIER
    v_BOOL_t kd_nl_init;
 #endif /* WLAN_KD_READY_NOTIFIER */
+
+#ifdef FEATURE_OEM_DATA_SUPPORT
+   /* OEM App registered or not */
+   v_BOOL_t oem_app_registered;
+
+   /* OEM App Process ID */
+   v_SINT_t oem_pid;
+#endif
+
    v_U8_t change_iface;
 
    /** Concurrency Parameters*/
