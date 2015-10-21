@@ -20547,7 +20547,7 @@ VOS_STATUS  WDA_ProcessWifiConfigReq(tWDA_CbContext *pWDA,
                &(pwdaWificonfig->bssId), sizeof(tSirMacAddr));
 
   pWdaParams->pWdaContext = pWDA;
-  pWdaParams->wdaMsgParam = pwdiWifConfigSetReqParams;
+  pWdaParams->wdaMsgParam = pwdaWificonfig;
   pWdaParams->wdaWdiApiMsgParam = (void *)pwdiWifConfigSetReqParams;
 
   wstatus = WDI_WifiConfigSetReq(pwdiWifConfigSetReqParams,
