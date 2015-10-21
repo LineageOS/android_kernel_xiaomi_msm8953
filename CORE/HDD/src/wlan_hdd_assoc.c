@@ -1004,9 +1004,6 @@ static eHalStatus hdd_DisConnectHandler( hdd_adapter_t *pAdapter, tCsrRoamInfo *
     pAdapter->hdd_stats.hddTxRxStats.continuousTxTimeoutCount = 0;
 
     INIT_COMPLETION(pAdapter->disconnect_comp_var);
-    /* HDD has initiated disconnect, do not send disconnect indication
-     * to kernel as it will be handled by __cfg80211_disconnect.
-     */
     /* If only STA mode is on */
     if((pHddCtx->concurrency_mode <= 1) &&
        (pHddCtx->no_of_open_sessions[WLAN_HDD_INFRA_STATION] <= 1))
@@ -1020,7 +1017,14 @@ static eHalStatus hdd_DisConnectHandler( hdd_adapter_t *pAdapter, tCsrRoamInfo *
      */
 
     spin_lock_bh(&pAdapter->lock_for_active_session);
-    if ( eConnectionState_Disconnecting == pHddStaCtx->conn_info.connState )
+
+    /* HDD has initiated disconnect, do not send disconnect indication
+     * to kernel. Sending disconnected event to kernel for userspaces
+     * initiated disconnect will be handled by hdd_DisConnectHandler call
+     * to cfg80211_disconnected.
+     */
+    if ((eConnectionState_Disconnecting == pHddStaCtx->conn_info.connState) ||
+        (eConnectionState_NotConnected == pHddStaCtx->conn_info.connState))
     {
        VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                    FL(" HDD has initiated a disconnect, no need to send"
@@ -1030,7 +1034,7 @@ static eHalStatus hdd_DisConnectHandler( hdd_adapter_t *pAdapter, tCsrRoamInfo *
     else if (eConnectionState_Associated == pHddStaCtx->conn_info.connState)
     {
        VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-               FL(" Set HDD connState to eConnectionState_Disconnecting from %d "),
+            FL("Set HDD connState to eConnectionState_Disconnecting from %d "),
                        pHddStaCtx->conn_info.connState);
        hdd_connSetConnectionState( pHddStaCtx, eConnectionState_Disconnecting );
        wlan_hdd_decr_active_session(pHddCtx, pAdapter->device_mode);
