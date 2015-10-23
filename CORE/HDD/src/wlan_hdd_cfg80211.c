@@ -14307,6 +14307,8 @@ static int wlan_hdd_try_disconnect( hdd_adapter_t *pAdapter )
       (eConnectionState_Associated == pHddStaCtx->conn_info.connState) ||
       (eConnectionState_IbssConnected == pHddStaCtx->conn_info.connState))
     {
+        hdd_connSetConnectionState(pHddStaCtx,
+                     eConnectionState_Disconnecting);
         /* Issue disconnect to CSR */
         INIT_COMPLETION(pAdapter->disconnect_comp_var);
         if( eHAL_STATUS_SUCCESS ==
