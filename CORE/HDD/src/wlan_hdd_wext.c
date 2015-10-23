@@ -3916,11 +3916,20 @@ VOS_STATUS  wlan_hdd_enter_bmps(hdd_adapter_t *pAdapter, int mode)
    }
    else if (DRIVER_POWER_MODE_AUTO == mode)
    {
-       if (VOS_FALSE == pHddStaCtx->conn_info.uIsAuthenticated)
+       /* If this is called by hdd_suspend_wlan or hdd_resume_wlan, driver
+        * was already in BMPS state and thus either STA or P2P-CLI is in
+        * associated state and authenticated, so even if STA connState is
+        * not associated it can be assumed that P2P-CLI is associated and
+        * authenticated. Thus driver can enter BMPS. And even if we try to enter
+        * BMPS with no adaptor in associated state, pmcRequestBmps will check
+        * if all condition are satisfied for entering BMPS.
+        */
+       if ((eConnectionState_Associated  == pHddStaCtx->conn_info.connState) &&
+           (VOS_FALSE == pHddStaCtx->conn_info.uIsAuthenticated))
        {
-           hddLog(VOS_TRACE_LEVEL_ERROR,
-                   "%s:station is in still not Authenticated ignore the "
-                   "power save mode", __func__);
+           hddLog(LOGE,
+              FL("Station is associated but, still not Authenticated ignore "
+               "power save mode"));
            return VOS_STATUS_E_AGAIN;
        }
 
