@@ -173,6 +173,14 @@
  */
 #define EXTTDLS_EVENT_BUF_SIZE 4096
 
+/*
+ * Values for Mac spoofing feature
+ *
+ */
+#define MAC_ADDR_SPOOFING_FW_HOST_DISABLE           0
+#define MAC_ADDR_SPOOFING_FW_HOST_ENABLE            1
+#define MAC_ADDR_SPOOFING_FW_ENABLE_HOST_DISABLE    2
+
 static const u32 hdd_cipher_suites[] =
 {
     WLAN_CIPHER_SUITE_WEP40,
@@ -5053,7 +5061,7 @@ static int __wlan_hdd_cfg80211_set_spoofed_mac_oui(struct wiphy *wiphy,
     if (0 != wlan_hdd_validate_context(pHddCtx)){
         return -EINVAL;
     }
-    if (FALSE == pHddCtx->cfg_ini->enableMacSpoofing) {
+    if (0 == pHddCtx->cfg_ini->enableMacSpoofing) {
         hddLog(VOS_TRACE_LEVEL_INFO, FL("MAC_SPOOFED_SCAN disabled in ini"));
         return -ENOTSUPP;
     }
@@ -12617,7 +12625,9 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
     cfg80211_scan_done(req, aborted);
     complete(&pScanInfo->abortscan_event_var);
 
-    if (pHddCtx->spoofMacAddr.isEnabled || pHddCtx->spoofMacAddr.isReqDeferred) {
+    if ((pHddCtx->cfg_ini->enableMacSpoofing == MAC_ADDR_SPOOFING_FW_HOST_ENABLE
+       ) && (pHddCtx->spoofMacAddr.isEnabled
+         ||  pHddCtx->spoofMacAddr.isReqDeferred)) {
         /* Generate new random mac addr for next scan */
         hddLog(VOS_TRACE_LEVEL_INFO, "scan completed - generate new spoof mac addr");
         hdd_processSpoofMacAddrRequest(pHddCtx);
@@ -13183,7 +13193,8 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
            scanRequest.minChnTime, scanRequest.maxChnTime,
            scanRequest.p2pSearch, scanRequest.skipDfsChnlInP2pSearch);
 
-    if (pHddCtx->spoofMacAddr.isEnabled)
+    if (pHddCtx->spoofMacAddr.isEnabled &&
+        pHddCtx->cfg_ini->enableMacSpoofing == 1)
     {
         hddLog(VOS_TRACE_LEVEL_INFO,
                         "%s: MAC Spoofing enabled for current scan", __func__);

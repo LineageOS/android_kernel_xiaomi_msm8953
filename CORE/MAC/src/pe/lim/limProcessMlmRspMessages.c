@@ -5232,11 +5232,20 @@ void limProcessRxScanEvent(tpAniSirGlobal pMac, void *buf)
 
 void limProcessMlmSpoofMacAddrRsp(tpAniSirGlobal pMac, tSirRetStatus rspStatus)
 {
+    tANI_U32 val;
 
-    if ((rspStatus != eSIR_SUCCESS) ||
+    if (wlan_cfgGetInt(pMac, WNI_CFG_ENABLE_MAC_ADDR_SPOOFING, &val)
+                        != eSIR_SUCCESS)
+    {
+        limLog(pMac, LOGP, FL("fail to Get WNI_CFG_ENABLE_MAC_ADDR_SPOOFING"));
+        /*If we here means mac spoofing is enable. So enable both Host and
+          FW spoofing */
+        val = 1;
+    }
+    if ((rspStatus != eSIR_SUCCESS) || (val != 1) ||
        (TRUE == vos_is_macaddr_zero((v_MACADDR_t *)&pMac->lim.spoofMacAddr)))
     {
-        limLog(pMac, LOG1, FL(" LIM Disabling Spoofing"));
+        limLog(pMac, LOG1, FL(" LIM Disabling Spoofing %d"), val);
         pMac->lim.isSpoofingEnabled = FALSE;
     } else {
         limLog(pMac, LOG1, FL(" LIM Enabling Spoofing"));
