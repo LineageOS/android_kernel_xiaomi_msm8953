@@ -6720,7 +6720,9 @@ void hdd_set_pwrparams(hdd_context_t *pHddCtx)
 
            /* switch to the DTIM specified in cfg.ini */
             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-                      "Switch to DTIM %d", powerRequest.uListenInterval);
+                "Switch to DTIM %d Listen interval %d",
+                powerRequest.uDTIMPeriod,
+                powerRequest.uListenInterval);
             sme_SetPowerParams( pHddCtx->hHal, &powerRequest, TRUE);
             break;
 
