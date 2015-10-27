@@ -6064,6 +6064,14 @@ static int __iw_setchar_getnone(struct net_device *dev,
     tSirpkt80211 *pkt;
 
     ENTER();
+
+    if (!capable(CAP_NET_ADMIN))
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  FL("permission check failed"));
+        return -EPERM;
+    }
+
     pAdapter = (netdev_priv(dev));
     if (NULL == pAdapter)
     {
