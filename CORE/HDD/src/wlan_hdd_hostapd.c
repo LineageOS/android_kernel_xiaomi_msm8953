@@ -2703,6 +2703,13 @@ static __iw_softap_disassoc_sta(struct net_device *dev,
     int ret = 0;
 
     ENTER();
+
+    if (!capable(CAP_NET_ADMIN)) {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  FL("permission check failed"));
+        return -EPERM;
+    }
+
     pHostapdAdapter = (netdev_priv(dev));
     if (NULL == pHostapdAdapter)
     {
