@@ -1228,6 +1228,7 @@ static int wlan_logging_thread(void *Arg)
 {
 	int ret_wait_status = 0;
 	int ret = 0;
+	unsigned long flags;
 
 	set_user_nice(current, -2);
 
@@ -1312,8 +1313,12 @@ static int wlan_logging_thread(void *Arg)
 			}
 			else {
 				gwlan_logging.log_complete.is_flush_complete = true;
+
+				spin_lock_irqsave(&gwlan_logging.spin_lock, flags);
 				/* Flush all current host logs*/
 				wlan_queue_logmsg_for_app();
+				spin_unlock_irqrestore(&gwlan_logging.spin_lock, flags);
+
 				set_bit(HOST_LOG_POST_MASK,&gwlan_logging.event_flag);
 				set_bit(LOGGER_FW_LOG_PKT_POST_MASK,&gwlan_logging.event_flag);
 				set_bit(LOGGER_FATAL_EVENT_POST_MASK,&gwlan_logging.event_flag);
