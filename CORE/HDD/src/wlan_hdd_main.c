@@ -7343,20 +7343,20 @@ VOS_STATUS hdd_stop_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter,
 
    ENTER();
 
-   if ( VOS_TRUE == bCloseSession )
-   {
-      status = hdd_sta_id_hash_detach(pAdapter);
-      if (status != VOS_STATUS_SUCCESS)
-          hddLog(VOS_TRACE_LEVEL_ERROR,
-                    FL("sta id hash detach failed"));
-   }
-
    pScanInfo =  &pHddCtx->scan_info;
    switch(pAdapter->device_mode)
    {
+      case WLAN_HDD_IBSS:
+          if ( VOS_TRUE == bCloseSession )
+          {
+              status = hdd_sta_id_hash_detach(pAdapter);
+              if (status != VOS_STATUS_SUCCESS)
+              hddLog(VOS_TRACE_LEVEL_ERROR,
+                  FL("sta id hash detach failed"));
+          }
+
       case WLAN_HDD_INFRA_STATION:
       case WLAN_HDD_P2P_CLIENT:
-      case WLAN_HDD_IBSS:
       case WLAN_HDD_P2P_DEVICE:
       {
          hdd_station_ctx_t *pstation = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
@@ -7482,6 +7482,14 @@ VOS_STATUS hdd_stop_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter,
 
       case WLAN_HDD_SOFTAP:
       case WLAN_HDD_P2P_GO:
+          if ( VOS_TRUE == bCloseSession )
+          {
+              status = hdd_sta_id_hash_detach(pAdapter);
+              if (status != VOS_STATUS_SUCCESS)
+              hddLog(VOS_TRACE_LEVEL_ERROR,
+                  FL("sta id hash detach failed"));
+          }
+
          //Any softap specific cleanup here...
          if (pAdapter->device_mode == WLAN_HDD_P2P_GO) {
             while (pAdapter->is_roc_inprogress) {
