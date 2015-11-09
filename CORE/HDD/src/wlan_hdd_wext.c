@@ -7163,20 +7163,8 @@ static int __iw_setnone_getnone(struct net_device *dev,
             tpAniSirGlobal pMac = WLAN_HDD_GET_HAL_CTX(pAdapter);
             v_U32_t roamId = 0;
             tCsrRoamModifyProfileFields modProfileFields;
-            hdd_station_ctx_t *pHddStaCtx =
-                       WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
-            /* Reassoc to same AP, only supported for Open Security*/
-            if ((pHddStaCtx->conn_info.ucEncryptionType ||
-                  pHddStaCtx->conn_info.mcEncryptionType))
-            {
-                 hddLog(LOGE,
-                  FL("Reassoc to same AP, only supported for Open Security"));
-                 return -ENOTSUPP;
-            }
-            sme_GetModifyProfileFields(pMac,
-                      pAdapter->sessionId, &modProfileFields);
-            sme_RoamReassoc(pMac, pAdapter->sessionId,
-                              NULL, modProfileFields, &roamId, 1);
+            sme_GetModifyProfileFields(pMac, pAdapter->sessionId, &modProfileFields);
+            sme_RoamReassoc(pMac, pAdapter->sessionId, NULL, modProfileFields, &roamId, 1);
             return 0;
         }
 
