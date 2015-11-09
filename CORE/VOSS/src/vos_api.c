@@ -1765,11 +1765,9 @@ v_BOOL_t vos_isFatalEventEnabled(void)
     return pHddCtx->cfg_ini->enableFatalEvent;
 }
 
-
-
 /**---------------------------------------------------------------------------
 
-  \brief vos_fatal_event_logs_req() - used to send flush command to FW
+  \brief __vos_fatal_event_logs_req() - used to send flush command to FW
 
   This API is wrapper to SME flush API.
 
@@ -1780,7 +1778,7 @@ v_BOOL_t vos_isFatalEventEnabled(void)
   \return VOS_STATUS_SUCCESS - if command is sent successfully.
           VOS_STATUS_E_FAILURE - if command is not sent successfully.
   --------------------------------------------------------------------------*/
-VOS_STATUS vos_fatal_event_logs_req( uint32_t is_fatal,
+VOS_STATUS __vos_fatal_event_logs_req( uint32_t is_fatal,
                         uint32_t indicator,
                         uint32_t reason_code,
                         bool wait_required,
@@ -1838,7 +1836,13 @@ VOS_STATUS vos_fatal_event_logs_req( uint32_t is_fatal,
         "%s: Triggering fatal Event: type:%d, indicator=%d reason_code=%d",
         __func__, is_fatal, indicator, reason_code);
 
-    vos_event_reset(&gpVosContext->fwLogsComplete);
+    status = vos_event_reset(&gpVosContext->fwLogsComplete);
+    if(!HAL_STATUS_SUCCESS(status))
+    {
+        VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+                    FL("fwLogsComplete reset failed:%d"),status);
+        return VOS_STATUS_E_FAILURE;
+    }
     status = sme_fatal_event_logs_req(vos_context->pMACContext,
                                       is_fatal, indicator,
                                       reason_code, dump_vos_trace);
@@ -1870,6 +1874,22 @@ VOS_STATUS vos_fatal_event_logs_req( uint32_t is_fatal,
         return VOS_STATUS_SUCCESS;
     else
         return VOS_STATUS_E_FAILURE;
+}
+
+VOS_STATUS vos_fatal_event_logs_req( uint32_t is_fatal,
+                        uint32_t indicator,
+                        uint32_t reason_code,
+                        bool wait_required,
+                        bool dump_vos_trace)
+{
+    VOS_STATUS status;
+
+    vos_ssr_protect(__func__);
+    status = __vos_fatal_event_logs_req(is_fatal, indicator, reason_code,
+                                        wait_required, dump_vos_trace);
+    vos_ssr_unprotect(__func__);
+
+    return status;
 }
 
 /**---------------------------------------------------------------------------
