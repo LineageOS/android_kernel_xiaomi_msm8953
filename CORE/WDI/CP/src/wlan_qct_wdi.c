@@ -35289,7 +35289,7 @@ WDI_Status
   /*-------------------------------------------------------------------------
     Extract response and send it to UMAC
   -------------------------------------------------------------------------*/
-  wpalMemoryCopy( &halRsp.tFwMemoryDumpResp, pEventData->pEventData, sizeof(halRsp));
+  wpalMemoryCopy( &halRsp.tFwMemoryDumpResp, pEventData->pEventData, sizeof(halRsp.tFwMemoryDumpResp));
 
   wdiFwrMemDumpRsp.dump_status = WDI_HAL_2_WDI_STATUS(halRsp.tFwMemoryDumpResp.status);
 
