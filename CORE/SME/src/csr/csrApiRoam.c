@@ -15473,6 +15473,7 @@ void csrRoamStatsRspProcessor(tpAniSirGlobal pMac, tSirSmeRsp *pSirMsg)
             smsLog( pMac, LOG2, FL("csrRoamStatsRspProcessor:PerSta stats"));
             if( CSR_MAX_STA > pSmeStatsRsp->staId )
             {
+               status = eHAL_STATUS_SUCCESS;
                vos_mem_copy((tANI_U8 *)&pMac->roam.perStaStatsInfo[pSmeStatsRsp->staId],
                             pStats, sizeof(tCsrPerStaStatsInfo));
             }
@@ -16084,12 +16085,15 @@ eHalStatus csrGetStatistics(tpAniSirGlobal pMac, eCsrStatsRequesterType requeste
             pMac->roam.tlStatsReqInfo.periodicity = 0;
             pMac->roam.tlStatsReqInfo.timerRunning = FALSE;
          }
-         vos_timer_stop( &pStaEntry->timer );
-         // Destroy the vos timer...      
-         vosStatus = vos_timer_destroy( &pStaEntry->timer );
-         if ( !VOS_IS_STATUS_SUCCESS( vosStatus ) )
+         if (periodicity)
          {
-            smsLog(pMac, LOGE, FL("csrGetStatistics:failed to destroy Client req timer"));
+            vos_timer_stop(&pStaEntry->timer);
+            // Destroy the vos timer
+            vosStatus = vos_timer_destroy(&pStaEntry->timer);
+            if (!VOS_IS_STATUS_SUCCESS(vosStatus))
+            {
+                smsLog(pMac, LOGE, FL("Failed to destroy Client req timer"));
+            }
          }
          csrRoamRemoveStatListEntry(pMac, pEntry);
          pStaEntry = NULL;
