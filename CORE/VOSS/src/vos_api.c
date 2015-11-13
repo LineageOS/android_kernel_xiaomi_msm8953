@@ -2117,6 +2117,151 @@ VOS_STATUS vos_mq_post_message( VOS_MQ_ID msgQueueId, vos_msg_t *pMsg )
 } /* vos_mq_post_message()*/
 
 
+/**--------------------------------------------------------------------------
+  \brief vos_mq_post_message_high_pri() - posts a high priority message to
+           a message queue
+
+  This API allows messages to be posted to the head of a specific message
+  queue. Messages  can be posted to the following message queues:
+
+  <ul>
+    <li> SME
+    <li> PE
+    <li> HAL
+    <li> TL
+  </ul>
+
+  \param msgQueueId - identifies the message queue upon which the message
+         will be posted.
+
+  \param message - a pointer to a message buffer.  Memory for this message
+         buffer is allocated by the caller and free'd by the vOSS after the
+         message is posted to the message queue.  If the consumer of the
+         message needs anything in this message, it needs to copy the contents
+         before returning from the message queue handler.
+
+  \return VOS_STATUS_SUCCESS - the message has been successfully posted
+          to the message queue.
+
+          VOS_STATUS_E_INVAL - The value specified by msgQueueId does not
+          refer to a valid Message Queue Id.
+
+          VOS_STATUS_E_FAULT  - message is an invalid pointer.
+
+          VOS_STATUS_E_FAILURE - the message queue handler has reported
+          an unknown failure.
+  --------------------------------------------------------------------------*/
+VOS_STATUS vos_mq_post_message_high_pri(VOS_MQ_ID msgQueueId, vos_msg_t *pMsg)
+{
+  pVosMqType      pTargetMq   = NULL;
+  pVosMsgWrapper  pMsgWrapper = NULL;
+
+  if ((gpVosContext == NULL) || (pMsg == NULL))
+  {
+    VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+        "%s: Null params or global vos context is null", __func__);
+    VOS_ASSERT(0);
+    return VOS_STATUS_E_FAILURE;
+  }
+
+  switch (msgQueueId)
+  {
+    /// Message Queue ID for messages bound for SME
+    case  VOS_MQ_ID_SME:
+    {
+       pTargetMq = &(gpVosContext->vosSched.smeMcMq);
+       break;
+    }
+
+    /// Message Queue ID for messages bound for PE
+    case VOS_MQ_ID_PE:
+    {
+       pTargetMq = &(gpVosContext->vosSched.peMcMq);
+       break;
+    }
+
+    /// Message Queue ID for messages bound for WDA
+    case VOS_MQ_ID_WDA:
+    {
+       pTargetMq = &(gpVosContext->vosSched.wdaMcMq);
+       break;
+    }
+
+    /// Message Queue ID for messages bound for WDI
+    case VOS_MQ_ID_WDI:
+    {
+       pTargetMq = &(gpVosContext->vosSched.wdiMcMq);
+       break;
+    }
+
+    /// Message Queue ID for messages bound for TL
+    case VOS_MQ_ID_TL:
+    {
+       pTargetMq = &(gpVosContext->vosSched.tlMcMq);
+       break;
+    }
+
+    /// Message Queue ID for messages bound for the SYS module
+    case VOS_MQ_ID_SYS:
+    {
+       pTargetMq = &(gpVosContext->vosSched.sysMcMq);
+       break;
+    }
+
+    default:
+
+    VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+              ("%s: Trying to queue msg into unknown MC Msg queue ID %d"),
+              __func__, msgQueueId);
+
+    return VOS_STATUS_E_FAILURE;
+  }
+
+  VOS_ASSERT(NULL !=pTargetMq);
+  if (pTargetMq == NULL)
+  {
+     VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+         "%s: pTargetMq == NULL", __func__);
+     return VOS_STATUS_E_FAILURE;
+  }
+
+  /*
+  ** Try and get a free Msg wrapper
+  */
+  pMsgWrapper = vos_mq_get(&gpVosContext->freeVosMq);
+
+  if (NULL == pMsgWrapper)
+  {
+    VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+              "%s: VOS Core run out of message wrapper", __func__);
+    if (!gpVosContext->vosWrapperFullReported)
+    {
+      gpVosContext->vosWrapperFullReported = 1;
+      vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
+                      WLAN_LOG_INDICATOR_HOST_ONLY,
+                      WLAN_LOG_REASON_VOS_MSG_UNDER_RUN,
+                      FALSE, TRUE);
+    }
+    return VOS_STATUS_E_RESOURCES;
+  }
+
+  /*
+  ** Copy the message now
+  */
+  vos_mem_copy( (v_VOID_t*)pMsgWrapper->pVosMsg,
+                (v_VOID_t*)pMsg, sizeof(vos_msg_t));
+
+  vos_mq_put_front(pTargetMq, pMsgWrapper);
+
+  set_bit(MC_POST_EVENT_MASK, &gpVosContext->vosSched.mcEventFlag);
+  wake_up_interruptible(&gpVosContext->vosSched.mcWaitQueue);
+
+  return VOS_STATUS_SUCCESS;
+
+} /* vos_mq_post_message_high_pri()*/
+
+
+
 /**---------------------------------------------------------------------------
   
   \brief vos_tx_mq_serialize() - serialize a message to the Tx execution flow
