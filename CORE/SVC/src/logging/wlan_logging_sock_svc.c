@@ -1378,6 +1378,7 @@ static int wlan_logging_proc_sock_rx_msg(struct sk_buff *skb)
 	int radio;
 	int type;
 	int ret;
+	unsigned long flags;
 
         if (TRUE == vos_isUnloadInProgress())
         {
@@ -1400,11 +1401,12 @@ static int wlan_logging_proc_sock_rx_msg(struct sk_buff *skb)
 			gapp_pid = wnl->nlh.nlmsg_pid;
 		}
 
-		spin_lock_bh(&gwlan_logging.spin_lock);
+		spin_lock_irqsave(&gwlan_logging.spin_lock, flags);
 		if (gwlan_logging.pcur_node->filled_length) {
 			wlan_queue_logmsg_for_app();
 		}
-		spin_unlock_bh(&gwlan_logging.spin_lock);
+		spin_unlock_irqrestore(&gwlan_logging.spin_lock, flags);
+
 		set_bit(HOST_LOG_POST_MASK, &gwlan_logging.event_flag);
 		wake_up_interruptible(&gwlan_logging.wait_queue);
 	} else {
@@ -1982,10 +1984,16 @@ void wlan_process_done_indication(uint8 type, uint32 reason_code)
  */
 void wlan_flush_host_logs_for_fatal()
 {
+	unsigned long flags;
+
 	if (wlan_is_log_report_in_progress()) {
 		pr_info("%s:flush all host logs Setting HOST_LOG_POST_MASK\n",
 				 __func__);
+
+		spin_lock_irqsave(&gwlan_logging.spin_lock, flags);
 		wlan_queue_logmsg_for_app();
+		spin_unlock_irqrestore(&gwlan_logging.spin_lock, flags);
+
 		set_bit(HOST_LOG_POST_MASK, &gwlan_logging.event_flag);
 		wake_up_interruptible(&gwlan_logging.wait_queue);
 	}
