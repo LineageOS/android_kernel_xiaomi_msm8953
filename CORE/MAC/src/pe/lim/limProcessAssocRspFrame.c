@@ -710,6 +710,10 @@ limProcessAssocRspFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tANI_U8 sub
     {
         // Log success
         limLog(pMac, LOG1, FL("Successfully Reassociated with BSS"));
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
+        limDiagEventReport(pMac, WLAN_PE_DIAG_ROAM_ASSOC_COMP_EVENT,
+            psessionEntry, eSIR_SUCCESS, eSIR_SUCCESS);
+#endif
 #ifdef FEATURE_WLAN_ESE
         {
             tANI_U8 cnt = 0;
@@ -886,7 +890,7 @@ limProcessAssocRspFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tANI_U8 sub
     }
 
 #ifdef FEATURE_WLAN_DIAG_SUPPORT
-    limDiagEventReport(pMac, WLAN_PE_DIAG_ASSOC_COMP_EVENT, psessionEntry,
+    limDiagEventReport(pMac, WLAN_PE_DIAG_CONNECTED, psessionEntry,
                        eSIR_SUCCESS, eSIR_SUCCESS);
 #endif
 

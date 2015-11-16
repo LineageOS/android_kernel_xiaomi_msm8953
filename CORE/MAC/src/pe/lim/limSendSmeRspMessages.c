@@ -823,6 +823,10 @@ limSendSmeScanRsp(tpAniSirGlobal pMac, tANI_U16 length,
     }
     else
     {
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
+        limDiagEventReport(pMac, WLAN_PE_DIAG_SCAN_RES_FOUND_EVENT, NULL,
+            eSIR_SUCCESS, eSIR_SUCCESS);
+#endif
         // send last message
         pSirSmeScanRsp->statusCode  = eSIR_SME_SUCCESS;
         pSirSmeScanRsp->messageType = eWNI_SME_SCAN_RSP;
