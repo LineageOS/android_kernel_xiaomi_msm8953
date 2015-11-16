@@ -1732,10 +1732,15 @@ void vos_send_fatal_event_done(void)
     /* Do ssr after reporting fatal event to recover from
      * below conditions
      */
-    if (WLAN_LOG_REASON_SME_COMMAND_STUCK == reason_code ||
+    if ((WLAN_LOG_INDICATOR_HOST_DRIVER == indicator) &&
+        (WLAN_LOG_REASON_SME_COMMAND_STUCK == reason_code ||
          WLAN_LOG_REASON_SME_OUT_OF_CMD_BUF == reason_code ||
-         WLAN_LOG_REASON_MGMT_FRAME_TIMEOUT == reason_code)
+         WLAN_LOG_REASON_MGMT_FRAME_TIMEOUT == reason_code))
+    {
+         VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+           "Do SSR for reason_code=%d", reason_code);
          vos_wlanRestart();
+    }
 }
 
 /**
