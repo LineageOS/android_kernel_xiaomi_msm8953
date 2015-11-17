@@ -180,6 +180,8 @@
 #define MAC_ADDR_SPOOFING_FW_HOST_DISABLE           0
 #define MAC_ADDR_SPOOFING_FW_HOST_ENABLE            1
 #define MAC_ADDR_SPOOFING_FW_ENABLE_HOST_DISABLE    2
+#define MAC_ADDR_SPOOFING_DEFER_INTERVAL            10 //in ms
+
 
 static const u32 hdd_cipher_suites[] =
 {
@@ -5075,10 +5077,8 @@ static int __wlan_hdd_cfg80211_set_spoofed_mac_oui(struct wiphy *wiphy,
             pHddCtx->spoofMacAddr.isEnabled = FALSE;
     }
 
-    if (VOS_STATUS_SUCCESS != hdd_processSpoofMacAddrRequest(pHddCtx))
-    {
-        hddLog(LOGE, FL("Failed to send Spoof Mac Addr to FW"));
-    }
+    schedule_delayed_work(&pHddCtx->spoof_mac_addr_work,
+                          msecs_to_jiffies(MAC_ADDR_SPOOFING_DEFER_INTERVAL));
 
     EXIT();
     return 0;
@@ -12645,7 +12645,9 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
          ||  pHddCtx->spoofMacAddr.isReqDeferred)) {
         /* Generate new random mac addr for next scan */
         hddLog(VOS_TRACE_LEVEL_INFO, "scan completed - generate new spoof mac addr");
-        hdd_processSpoofMacAddrRequest(pHddCtx);
+
+        schedule_delayed_work(&pHddCtx->spoof_mac_addr_work,
+                           msecs_to_jiffies(MAC_ADDR_SPOOFING_DEFER_INTERVAL));
     }
 
 allow_suspend:

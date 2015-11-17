@@ -1560,6 +1560,9 @@ struct hdd_context_s
 #ifdef WLAN_FEATURE_OFFLOAD_PACKETS
     struct hdd_offloaded_packets_ctx op_ctx;
 #endif
+
+   /* work queue to defer mac spoofing */
+   struct delayed_work spoof_mac_addr_work;
 };
 
 
@@ -1675,7 +1678,7 @@ v_BOOL_t hdd_is_suspend_notify_allowed(hdd_context_t* pHddCtx);
 tSirAbortScanStatus hdd_abort_mac_scan(hdd_context_t* pHddCtx,
                                        tANI_U8 sessionId,
                                        eCsrAbortReason reason);
-VOS_STATUS hdd_processSpoofMacAddrRequest(hdd_context_t *pHddCtx);
+void hdd_processSpoofMacAddrRequest(struct work_struct *work);
 void hdd_cleanup_actionframe( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter );
 
 void crda_regulatory_entry_default(v_U8_t *countryCode, int domain_id);
