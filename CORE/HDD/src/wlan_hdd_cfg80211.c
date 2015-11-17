@@ -14986,7 +14986,7 @@ static int __wlan_hdd_cfg80211_join_ibss( struct wiphy *wiphy,
 
     /* Issue connect start */
     status = wlan_hdd_cfg80211_connect_start(pAdapter, params->ssid,
-            params->ssid_len, params->bssid, NULL,
+            params->ssid_len, (const u8 *)&bssid, NULL,
             pHddStaCtx->conn_info.operationChannel);
 
     if (0 > status)
