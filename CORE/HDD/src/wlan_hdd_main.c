@@ -8917,6 +8917,8 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
 
    hdd_close_all_adapters( pHddCtx );
 
+   vos_flush_delayed_work(&pHddCtx->spoof_mac_addr_work);
+
 free_hdd_ctx:
    /* free the power on lock from platform driver */
    if (free_riva_power_on_lock("wlan"))
@@ -9755,6 +9757,9 @@ int hdd_wlan_startup(struct device *dev )
    spin_lock_init(&pHddCtx->schedScan_lock);
 
    hdd_list_init( &pHddCtx->hddAdapters, MAX_NUMBER_OF_ADAPTERS );
+
+   vos_init_delayed_work(&pHddCtx->spoof_mac_addr_work,
+                                hdd_processSpoofMacAddrRequest);
 
 #ifdef FEATURE_WLAN_TDLS
    /* tdls_lock is initialized before an hdd_open_adapter ( which is
