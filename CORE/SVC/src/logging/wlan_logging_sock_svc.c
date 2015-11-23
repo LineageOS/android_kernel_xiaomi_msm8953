@@ -42,7 +42,6 @@
 #include "vos_memory.h"
 #include <linux/ratelimit.h>
 #include <asm/arch_timer.h>
-#include <vos_sched.h>
 #include <vos_utils.h>
 
 
@@ -65,7 +64,6 @@
 #define LOGGER_FATAL_EVENT_POST_MASK  0x004
 #define LOGGER_FW_MEM_DUMP_PKT_POST_MASK   0x005
 #define LOGGER_FW_MEM_DUMP_PKT_POST_DONE_MASK 0x006
-#define DETECT_THREAD_STUCK_POST_MASK 0x007
 #define HOST_PKT_STATS_POST_MASK 0x008
 
 
@@ -86,9 +84,6 @@
 static DEFINE_RATELIMIT_STATE(errCnt,		\
 		NL_BDCAST_RATELIMIT_INTERVAL,	\
 		NL_BDCAST_RATELIMIT_BURST);
-/* Timer value for detecting thread stuck issues */
-#define THREAD_STUCK_TIMER_VAL 5000 // 5 seconds
-#define THREAD_STUCK_COUNT 3
 
 struct log_msg {
 	struct list_head node;
@@ -185,14 +180,6 @@ struct wlan_logging {
 	struct log_msg *pcur_node;
 	/* Event flag used for wakeup and post indication*/
 	unsigned long event_flag;
-	/* Timer to detect thread stuck issue */
-	vos_timer_t threadStuckTimer;
-	/* Count for each thread to determine thread stuck */
-	unsigned int mcThreadStuckCount;
-	unsigned int txThreadStuckCount;
-	unsigned int rxThreadStuckCount;
-	/* lock to synchronize access to the thread stuck counts */
-	spinlock_t thread_stuck_lock;
 	/* Indicates logger thread is activated */
 	bool is_active;
 	/* data structure for log complete event*/
@@ -1138,86 +1125,6 @@ err:
 }
 
 /**
- * wlan_logging_detect_thread_stuck()- Detect thread stuck
- * by probing the MC, TX, RX threads and take action if
- * Thread doesnt respond.
- *
- * This function is called to detect thread stuck
- * and probe threads.
- *
- * Return: void
- */
-static void wlan_logging_detect_thread_stuck(void)
-{
-	unsigned long flags;
-
-	spin_lock_irqsave(&gwlan_logging.thread_stuck_lock, flags);
-
-	if ((gwlan_logging.mcThreadStuckCount == THREAD_STUCK_COUNT) ||
-		(gwlan_logging.txThreadStuckCount == THREAD_STUCK_COUNT) ||
-		(gwlan_logging.rxThreadStuckCount == THREAD_STUCK_COUNT)) {
-		spin_unlock_irqrestore(&gwlan_logging.thread_stuck_lock, flags);
-		pr_err("%s: Thread Stuck !!! MC Count %d RX count %d TX count %d\n",
-			__func__, gwlan_logging.mcThreadStuckCount,
-			gwlan_logging.rxThreadStuckCount,
-			gwlan_logging.txThreadStuckCount);
-		vos_wlanRestart();
-		return;
-	}
-
-	if (gwlan_logging.mcThreadStuckCount ||
-		gwlan_logging.txThreadStuckCount ||
-		gwlan_logging.rxThreadStuckCount) {
-
-		spin_unlock_irqrestore(&gwlan_logging.thread_stuck_lock, flags);
-
-		pr_err("%s: MC Count %d RX count %d TX count %d\n",
-		  __func__, gwlan_logging.mcThreadStuckCount,
-		  gwlan_logging.rxThreadStuckCount,
-		  gwlan_logging.txThreadStuckCount);
-		vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
-				WLAN_LOG_INDICATOR_HOST_ONLY,
-				WLAN_LOG_REASON_THREAD_STUCK,
-				FALSE, TRUE);
-
-		spin_lock_irqsave(&gwlan_logging.thread_stuck_lock, flags);
-	}
-
-	/* Increment the thread stuck count for all threads */
-	gwlan_logging.mcThreadStuckCount++;
-	gwlan_logging.txThreadStuckCount++;
-	gwlan_logging.rxThreadStuckCount++;
-
-	spin_unlock_irqrestore(&gwlan_logging.thread_stuck_lock, flags);
-	vos_probe_threads();
-
-	/* Restart the timer */
-	if (VOS_STATUS_SUCCESS !=
-		vos_timer_start(&gwlan_logging.threadStuckTimer,
-				THREAD_STUCK_TIMER_VAL))
-		pr_err("%s: Unable to start thread stuck timer\n", __func__);
-}
-
-/**
- * wlan_logging_detect_thread_stuck_cb()- Call back of the
- * thread stuck timer.
- * @priv: timer data.
- * This function is called when the thread stuck timer
- * expire to detect thread stuck and probe threads.
- *
- * Return: void
- */
-static void wlan_logging_detect_thread_stuck_cb(void *priv)
-{
-	if (!gwlan_logging.exit)
-	{
-		set_bit(DETECT_THREAD_STUCK_POST_MASK,
-					  &gwlan_logging.event_flag);
-		wake_up_interruptible(&gwlan_logging.wait_queue);
-	}
-}
-
-/**
  * wlan_logging_thread() - The WLAN Logger thread
  * @Arg - pointer to the HDD context
  *
@@ -1233,23 +1140,6 @@ static int wlan_logging_thread(void *Arg)
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 8, 0))
 	daemonize("wlan_logging_thread");
 #endif
-
-	/* Initialize the timer to detect thread stuck issues */
-	if (vos_timer_init(&gwlan_logging.threadStuckTimer, VOS_TIMER_TYPE_SW,
-			   wlan_logging_detect_thread_stuck_cb, NULL)) {
-		pr_err("%s: Unable to initialize thread stuck timer\n", __func__);
-	} else {
-		if (VOS_STATUS_SUCCESS !=
-			vos_timer_start(&gwlan_logging.threadStuckTimer,
-					THREAD_STUCK_TIMER_VAL))
-			pr_err("%s: Unable to start thread stuck timer\n",
-				__func__);
-		else
-			pr_info("%s: Successfully started thread stuck timer\n",
-				__func__);
-	}
-
-
 	while (!gwlan_logging.exit) {
 		ret_wait_status = wait_event_interruptible(
 		  gwlan_logging.wait_queue,
@@ -1264,9 +1154,7 @@ static int wlan_logging_thread(void *Arg)
 		   test_bit(LOGGER_FW_MEM_DUMP_PKT_POST_MASK,&gwlan_logging.event_flag) ||
 		   test_bit(LOGGER_FW_MEM_DUMP_PKT_POST_DONE_MASK, &gwlan_logging.event_flag)||
 		   test_bit(HOST_PKT_STATS_POST_MASK,
-						 &gwlan_logging.event_flag) ||
-		   test_bit(DETECT_THREAD_STUCK_POST_MASK,
-						&gwlan_logging.event_flag)));
+						 &gwlan_logging.event_flag)));
 
 		if (ret_wait_status == -ERESTARTSYS) {
 			pr_err("%s: wait_event return -ERESTARTSYS", __func__);
@@ -1299,10 +1187,7 @@ static int wlan_logging_thread(void *Arg)
 			&gwlan_logging.event_flag)) {
 			send_data_mgmt_log_pkt_to_user();
 		}
-		if (test_and_clear_bit(DETECT_THREAD_STUCK_POST_MASK,
-			&gwlan_logging.event_flag)) {
-			wlan_logging_detect_thread_stuck();
-		}
+
 		if (test_and_clear_bit(LOGGER_FATAL_EVENT_POST_MASK,
 			&gwlan_logging.event_flag)) {
 			if (gwlan_logging.log_complete.is_flush_complete == true) {
@@ -1361,8 +1246,6 @@ static int wlan_logging_thread(void *Arg)
 			send_per_pkt_stats_to_user();
 		}
 	}
-
-	vos_timer_destroy(&gwlan_logging.threadStuckTimer);
 
 	complete_and_exit(&gwlan_logging.shutdown_comp, 0);
 
@@ -1702,7 +1585,6 @@ int wlan_logging_sock_init_svc(void)
 	spin_lock_init(&gwlan_logging.fw_log_pkt_lock);
 	spin_lock_init(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock);
 	spin_lock_init(&gwlan_logging.pkt_stats_lock);
-	spin_lock_init(&gwlan_logging.thread_stuck_lock);
 	gapp_pid = INVALID_PID;
 	gwlan_logging.pcur_node = NULL;
 	gwlan_logging.pkt_stats_pcur_node= NULL;
@@ -2015,32 +1897,6 @@ bool wlan_is_logger_thread(int threadId)
 {
 	return ((gwlan_logging.thread) &&
 		(threadId == gwlan_logging.thread->pid));
-}
-
-/**
- * wlan_logging_reset_thread_stuck_count()- Callback to
- * probe msg sent to Threads.
- *
- * @threadId: passed threadid
- *
- * This function is called to by the thread after
- * processing the probe msg, with their own thread id.
- *
- * Return: void.
- */
-void wlan_logging_reset_thread_stuck_count(int threadId)
-{
-	unsigned long flags;
-
-	spin_lock_irqsave(&gwlan_logging.thread_stuck_lock, flags);
-	if (vos_sched_is_mc_thread(threadId))
-		gwlan_logging.mcThreadStuckCount = 0;
-	else if (vos_sched_is_tx_thread(threadId))
-		gwlan_logging.txThreadStuckCount = 0;
-	else if (vos_sched_is_rx_thread(threadId))
-		gwlan_logging.rxThreadStuckCount = 0;
-
-	spin_unlock_irqrestore(&gwlan_logging.thread_stuck_lock, flags);
 }
 
 int wlan_fwr_mem_dump_buffer_allocation(void)

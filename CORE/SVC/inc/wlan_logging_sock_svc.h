@@ -85,7 +85,6 @@ void wlan_store_fwr_mem_dump_size(uint32 dump_size);
 void wlan_free_fwr_mem_dump_buffer(void);
 
 bool wlan_is_logger_thread(int threadId);
-void wlan_logging_reset_thread_stuck_count(int threadId);
 int wlan_pkt_stats_to_user(void *perPktStat);
 void wlan_disable_and_flush_pkt_stats(void);
  void wlan_fillTxStruct(void *pktStat);
