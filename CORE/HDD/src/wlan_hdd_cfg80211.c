@@ -17024,6 +17024,11 @@ static int __wlan_hdd_cfg80211_sched_scan_stop(struct wiphy *wiphy,
     MTRACE(vos_trace(VOS_MODULE_ID_HDD,
                      TRACE_CODE_HDD_CFG80211_SCHED_SCAN_STOP,
                      pAdapter->sessionId, pAdapter->device_mode));
+
+    INIT_COMPLETION(pAdapter->pno_comp_var);
+    pnoRequest.statusCallback = hdd_cfg80211_sched_scan_start_status_cb;
+    pnoRequest.callbackContext = pAdapter;
+    pAdapter->pno_req_status = 0;
     status = sme_SetPreferredNetworkList(hHal, &pnoRequest,
                                 pAdapter->sessionId,
                                 NULL, pAdapter);
@@ -17034,7 +17039,22 @@ static int __wlan_hdd_cfg80211_sched_scan_stop(struct wiphy *wiphy,
         ret = -EINVAL;
         goto error;
     }
-    pHddCtx->isPnoEnable = FALSE;
+    ret = wait_for_completion_timeout(
+                 &pAdapter->pno_comp_var,
+                  msecs_to_jiffies(WLAN_WAIT_TIME_PNO));
+    if (0 >= ret)
+    {
+        // Did not receive the response for PNO disable in time.
+        // Assuming the PNO disable was success.
+        // Returning error from here, because we timeout, results
+        // in side effect of Wifi (Wifi Setting) not to work.
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  FL("Timed out waiting for PNO to be disabled"));
+        ret = 0;
+    }
+
+    ret = pAdapter->pno_req_status;
+    pHddCtx->isPnoEnable = (ret == 0) ? FALSE : TRUE;
 
 error:
     VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
