@@ -6747,6 +6747,11 @@ eHalStatus csrRoamConnect(tpAniSirGlobal pMac, tANI_U32 sessionId, tCsrRoamProfi
         smsLog(pMac, LOGP, FL("No profile specified"));
         return eHAL_STATUS_FAILURE;
     }
+    if(!pSession)
+    {
+        smsLog(pMac, LOGE, FL(" session %d not found "), sessionId);
+        return eHAL_STATUS_FAILURE;
+    }
     smsLog(pMac, LOG1, FL("called  BSSType = %s (%d) authtype = %d "
                                                     "encryType = %d"),
                 lim_BssTypetoString(pProfile->BSSType),
@@ -6760,6 +6765,8 @@ eHalStatus csrRoamConnect(tpAniSirGlobal pMac, tANI_U32 sessionId, tCsrRoamProfi
                pProfile->operationChannel);
         return status;
     }
+    /* Reset abortConnection for the fresh connection */
+    pSession->abortConnection = FALSE;
     csrRoamCancelRoaming(pMac, sessionId);
     csrScanRemoveFreshScanCommand(pMac, sessionId);
     csrScanCancelIdleScan(pMac);

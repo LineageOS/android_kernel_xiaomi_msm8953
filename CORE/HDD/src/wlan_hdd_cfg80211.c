@@ -14506,12 +14506,11 @@ int wlan_hdd_disconnect( hdd_adapter_t *pAdapter, u16 reason )
     {
         return status;
     }
-
-    if (pHddStaCtx->conn_info.connState == eConnectionState_Connecting)
-    {
-        sme_abortConnection(WLAN_HDD_GET_HAL_CTX(pAdapter),
+    /* Indicate sme of disconnect so that in progress connection or preauth
+     * can be aborted
+     */
+    sme_abortConnection(WLAN_HDD_GET_HAL_CTX(pAdapter),
                             pAdapter->sessionId);
-    }
     pHddCtx->isAmpAllowed = VOS_TRUE;
 
     /* Need to apply spin lock before decreasing active sessions
