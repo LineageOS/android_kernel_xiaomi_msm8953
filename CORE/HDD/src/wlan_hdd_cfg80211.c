@@ -7293,7 +7293,7 @@ static int __wlan_hdd_cfg80211_wifi_configuration_set(struct wiphy *wiphy,
             tb[PARAM_MODULATED_DTIM]);
        hddLog(LOG1, FL("Modulated DTIM: pReq->paramValue:%d "),
                                         pReq->paramValue);
-       pHddCtx->cfg_ini->fMaxLIModulatedDTIM = pReq->paramValue;
+       pHddCtx->cfg_ini->enableDynamicDTIM = pReq->paramValue;
        hdd_set_pwrparams(pHddCtx);
     if (BMPS == pmcGetPmcState(pHddCtx->hHal)) {
        hddLog( LOG1, FL("WifiConfig: Requesting FullPower!"));
