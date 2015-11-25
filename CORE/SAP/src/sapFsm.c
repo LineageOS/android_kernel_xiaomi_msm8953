@@ -1117,20 +1117,8 @@ sapFsm
                                "In %s, Failed to Init HT20/40 timer", __func__);
 #endif
              }
-             else if (msg == eSAP_MAC_START_FAILS)
-             {
-                 /*Transition from STARTING to DISCONNECTED (both without substates)*/
-                 VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR, "In %s, from state %s => %s",
-                            __func__, "eSAP_STARTING", "eSAP_DISCONNECTED");
-
-                 /*Action code for transition */
-                 vosStatus = sapSignalHDDevent( sapContext, NULL, eSAP_START_BSS_EVENT,(v_PVOID_t) eSAP_STATUS_FAILURE);
-                 vosStatus =  sapGotoDisconnected(sapContext);
-
-                 /*Advance outer statevar */
-                 sapContext->sapsMachine = eSAP_DISCONNECTED;
-             }
-             else if (msg == eSAP_HDD_STOP_INFRA_BSS)
+             else if ((msg == eSAP_HDD_STOP_INFRA_BSS) ||
+                      (msg == eSAP_MAC_START_FAILS))
              {
                  /*Transition from eSAP_STARTING to eSAP_DISCONNECTING (both without substates)*/
                  VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH, "In %s, from state %s => %s",
