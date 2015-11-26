@@ -3012,28 +3012,17 @@ limProcessMlmDisassocReqNtf(tpAniSirGlobal pMac, eHalStatus suspendStatus, tANI_
     if (sendDisassocFrame && (pMlmDisassocReq->reasonCode != eSIR_MAC_DISASSOC_DUE_TO_FTHANDOFF_REASON))
     {
         pMac->lim.limDisassocDeauthCnfReq.pMlmDisassocReq = pMlmDisassocReq;
-
-
-        /* If the reason for disassociation is inactivity of STA, then
-           dont wait for acknowledgement. Also, if FW_IN_TX_PATH feature
-           is enabled do not wait for ACK */
-        if (((pMlmDisassocReq->reasonCode == eSIR_MAC_DISASSOC_DUE_TO_INACTIVITY_REASON) &&
-            (psessionEntry->limSystemRole == eLIM_AP_ROLE)) ||
-            IS_FW_IN_TX_PATH_FEATURE_ENABLE )
+        if (IS_FW_IN_TX_PATH_FEATURE_ENABLE)
         {
-
-             limSendDisassocMgmtFrame(pMac,
-                                 pMlmDisassocReq->reasonCode,
+            limSendDisassocMgmtFrame(pMac, pMlmDisassocReq->reasonCode,
                                  pMlmDisassocReq->peerMacAddr,
                                  psessionEntry, FALSE);
-
-             /* Send Disassoc CNF and receive path cleanup */
-             limSendDisassocCnf(pMac);
+            /* Send Disassoc CNF and receive path cleanup */
+            limSendDisassocCnf(pMac);
         }
         else
         {
-             limSendDisassocMgmtFrame(pMac,
-                                 pMlmDisassocReq->reasonCode,
+            limSendDisassocMgmtFrame(pMac, pMlmDisassocReq->reasonCode,
                                  pMlmDisassocReq->peerMacAddr,
                                  psessionEntry, TRUE);
         }
