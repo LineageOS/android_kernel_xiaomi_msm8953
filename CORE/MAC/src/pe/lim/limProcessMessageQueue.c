@@ -80,7 +80,7 @@
 #include "vos_memory.h"
 
 /* This value corresponds to 500 ms */
-#define MAX_PROBEREQ_TIME 5000
+#define MAX_PROBEREQ_TIME 50
 
 #ifdef WLAN_FEATURE_EXTSCAN
 #define  SIZE_OF_FIXED_PARAM 12
