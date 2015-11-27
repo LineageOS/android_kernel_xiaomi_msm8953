@@ -30159,6 +30159,21 @@ void WDI_TransportChannelDebug
    WDTS_ChannelDebug(displaySnapshot, debugFlags);
    return;
 }
+
+/**
+ @brief WDI_TransportKickDxe -
+    Request Kick DXE when HDD TX time out happen
+
+ @param  none
+ @see
+ @return none
+*/
+void WDI_TransportKickDxe()
+{
+   WDTS_ChannelKickDxe();
+   return;
+}
+
 /**
  @brief WDI_SsrTimerCB
     Callback function for SSR timer, if this is called then the graceful
