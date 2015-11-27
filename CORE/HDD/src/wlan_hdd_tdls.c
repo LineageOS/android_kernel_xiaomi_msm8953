@@ -1896,14 +1896,17 @@ int wlan_hdd_tdls_set_params(struct net_device *dev, tdls_config_params_t *confi
     tdlsCtx_t *pHddTdlsCtx = WLAN_HDD_GET_TDLS_CTX_PTR(pAdapter);
     eTDLSSupportMode req_tdls_mode;
 
+    mutex_lock(&pHddCtx->tdls_lock);
     if (NULL == pHddTdlsCtx)
     {
+        mutex_unlock(&pHddCtx->tdls_lock);
         hddLog(VOS_TRACE_LEVEL_ERROR, FL("TDLS not enabled!"));
         return -1;
     }
 
     if (wlan_hdd_tdls_check_config(config) != 0)
     {
+        mutex_unlock(&pHddCtx->tdls_lock);
         return -1;
     }
 
@@ -1911,6 +1914,7 @@ int wlan_hdd_tdls_set_params(struct net_device *dev, tdls_config_params_t *confi
     req_tdls_mode = config->tdls + 1;
     if (pHddCtx->tdls_mode == req_tdls_mode)
     {
+        mutex_unlock(&pHddCtx->tdls_lock);
         hddLog(VOS_TRACE_LEVEL_ERROR, "%s already in mode %d", __func__, config->tdls);
         return -1;
     }
@@ -1933,6 +1937,8 @@ int wlan_hdd_tdls_set_params(struct net_device *dev, tdls_config_params_t *confi
             config->rssi_hysteresis,
             config->rssi_trigger_threshold,
             config->rssi_teardown_threshold);
+
+    mutex_unlock(&pHddCtx->tdls_lock);
 
     wlan_hdd_tdls_set_mode(pHddCtx, req_tdls_mode, TRUE);
 
