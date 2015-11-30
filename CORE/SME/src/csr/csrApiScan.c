@@ -2784,74 +2784,121 @@ eHalStatus csrScanningStateMsgProcessor( tpAniSirGlobal pMac, void *pMsgBuf )
 {
     eHalStatus status = eHAL_STATUS_SUCCESS;
     tSirMbMsg *pMsg = (tSirMbMsg *)pMsgBuf;
+    tSirSmeDisConDoneInd *pDisConDoneInd;
+    tCsrRoamInfo roamInfo = {0};
 
-    if((eWNI_SME_SCAN_RSP == pMsg->type) || (eWNI_SME_GET_SCANNED_CHANNEL_RSP == pMsg->type))
+    if((eWNI_SME_SCAN_RSP == pMsg->type) ||
+       (eWNI_SME_GET_SCANNED_CHANNEL_RSP == pMsg->type))
     {
         status = csrScanSmeScanResponse( pMac, pMsgBuf );
     }
     else
     {
-        if(pMsg->type == eWNI_SME_UPPER_LAYER_ASSOC_CNF) 
+        switch (pMsg->type)
         {
-            tCsrRoamSession  *pSession;
-            tSirSmeAssocIndToUpperLayerCnf *pUpperLayerAssocCnf;
-            tCsrRoamInfo roamInfo;
-            tCsrRoamInfo *pRoamInfo = NULL;
-            tANI_U32 sessionId;
-            eHalStatus status;
-            smsLog( pMac, LOG1, FL("Scanning : ASSOCIATION confirmation can be given to upper layer "));
-            vos_mem_set(&roamInfo, sizeof(tCsrRoamInfo), 0);
-            pRoamInfo = &roamInfo;
-            pUpperLayerAssocCnf = (tSirSmeAssocIndToUpperLayerCnf *)pMsgBuf;
-            status = csrRoamGetSessionIdFromBSSID( pMac, (tCsrBssid *)pUpperLayerAssocCnf->bssId, &sessionId );
-            pSession = CSR_GET_SESSION(pMac, sessionId);
-
-            if(!pSession)
+            case eWNI_SME_UPPER_LAYER_ASSOC_CNF:
             {
-                smsLog(pMac, LOGE, FL("  session %d not found "), sessionId);
-                return eHAL_STATUS_FAILURE;
-            }
+                tCsrRoamSession  *pSession;
+                tSirSmeAssocIndToUpperLayerCnf *pUpperLayerAssocCnf;
+                tCsrRoamInfo *pRoamInfo = NULL;
+                tANI_U32 sessionId;
+                eHalStatus status;
 
-            pRoamInfo->statusCode = eSIR_SME_SUCCESS; //send the status code as Success 
-            pRoamInfo->u.pConnectedProfile = &pSession->connectedProfile;
-            pRoamInfo->staId = (tANI_U8)pUpperLayerAssocCnf->aid;
-            pRoamInfo->rsnIELen = (tANI_U8)pUpperLayerAssocCnf->rsnIE.length;
-            pRoamInfo->prsnIE = pUpperLayerAssocCnf->rsnIE.rsnIEdata;
-            pRoamInfo->addIELen = (tANI_U8)pUpperLayerAssocCnf->addIE.length;
-            pRoamInfo->paddIE = pUpperLayerAssocCnf->addIE.addIEdata;           
-            vos_mem_copy(pRoamInfo->peerMac, pUpperLayerAssocCnf->peerMacAddr, sizeof(tSirMacAddr));
-            vos_mem_copy(&pRoamInfo->bssid, pUpperLayerAssocCnf->bssId, sizeof(tCsrBssid));
-            pRoamInfo->wmmEnabledSta = pUpperLayerAssocCnf->wmmEnabledSta;
+                smsLog( pMac, LOG1,
+                        FL("Scanning : ASSOCIATION confirmation can be given to upper layer "));
+                pRoamInfo = &roamInfo;
+                pUpperLayerAssocCnf = (tSirSmeAssocIndToUpperLayerCnf *)pMsgBuf;
+                status = csrRoamGetSessionIdFromBSSID( pMac,
+                                      (tCsrBssid *)pUpperLayerAssocCnf->bssId,
+                                      &sessionId );
+                pSession = CSR_GET_SESSION(pMac, sessionId);
+
+                if(!pSession)
+                {
+                    smsLog(pMac, LOGE, FL("session %d not found "), sessionId);
+                    return eHAL_STATUS_FAILURE;
+                }
+
+                //send the status code as Success
+                pRoamInfo->statusCode = eSIR_SME_SUCCESS;
+                pRoamInfo->u.pConnectedProfile = &pSession->connectedProfile;
+                pRoamInfo->staId = (tANI_U8)pUpperLayerAssocCnf->aid;
+                pRoamInfo->rsnIELen =
+                            (tANI_U8)pUpperLayerAssocCnf->rsnIE.length;
+                pRoamInfo->prsnIE = pUpperLayerAssocCnf->rsnIE.rsnIEdata;
+                pRoamInfo->addIELen =
+                            (tANI_U8)pUpperLayerAssocCnf->addIE.length;
+                pRoamInfo->paddIE = pUpperLayerAssocCnf->addIE.addIEdata;
+                vos_mem_copy(pRoamInfo->peerMac,
+                             pUpperLayerAssocCnf->peerMacAddr,
+                             sizeof(tSirMacAddr));
+                vos_mem_copy(&pRoamInfo->bssid,
+                             pUpperLayerAssocCnf->bssId,
+                             sizeof(tCsrBssid));
+                pRoamInfo->wmmEnabledSta = pUpperLayerAssocCnf->wmmEnabledSta;
 #ifdef WLAN_FEATURE_AP_HT40_24G
-            pRoamInfo->HT40MHzIntoEnabledSta =
-                       pUpperLayerAssocCnf->HT40MHzIntoEnabledSta;
+                pRoamInfo->HT40MHzIntoEnabledSta =
+                           pUpperLayerAssocCnf->HT40MHzIntoEnabledSta;
 #endif
-            if(CSR_IS_INFRA_AP(pRoamInfo->u.pConnectedProfile) )
-            {
-                pMac->roam.roamSession[sessionId].connectState = eCSR_ASSOC_STATE_TYPE_INFRA_CONNECTED;
-                pRoamInfo->fReassocReq = pUpperLayerAssocCnf->reassocReq;
-                status = csrRoamCallCallback(pMac, sessionId, pRoamInfo, 0, eCSR_ROAM_INFRA_IND, eCSR_ROAM_RESULT_INFRA_ASSOCIATION_CNF);
-            }
-            if(CSR_IS_WDS_AP( pRoamInfo->u.pConnectedProfile))
-            {
-                vos_sleep( 100 );
-                pMac->roam.roamSession[sessionId].connectState = eCSR_ASSOC_STATE_TYPE_WDS_CONNECTED;//Sta
-                status = csrRoamCallCallback(pMac, sessionId, pRoamInfo, 0, eCSR_ROAM_WDS_IND, eCSR_ROAM_RESULT_WDS_ASSOCIATION_IND);//Sta
-            }
-
+                if(CSR_IS_INFRA_AP(pRoamInfo->u.pConnectedProfile) )
+                {
+                    pMac->roam.roamSession[sessionId].connectState =
+                                        eCSR_ASSOC_STATE_TYPE_INFRA_CONNECTED;
+                    pRoamInfo->fReassocReq = pUpperLayerAssocCnf->reassocReq;
+                    status = csrRoamCallCallback(pMac, sessionId, pRoamInfo,
+                                       0, eCSR_ROAM_INFRA_IND,
+                                       eCSR_ROAM_RESULT_INFRA_ASSOCIATION_CNF);
+                }
+                if(CSR_IS_WDS_AP( pRoamInfo->u.pConnectedProfile))
+                {
+                    vos_sleep( 100 );
+                    pMac->roam.roamSession[sessionId].connectState =
+                                    eCSR_ASSOC_STATE_TYPE_WDS_CONNECTED;//Sta
+                    status = csrRoamCallCallback(pMac, sessionId, pRoamInfo, 0,
+                                    eCSR_ROAM_WDS_IND,
+                                    eCSR_ROAM_RESULT_WDS_ASSOCIATION_IND);//Sta
+                }
+                break;
         }
-        else
-        {
+        case eWNI_SME_DISCONNECT_DONE_IND:
+            pDisConDoneInd = (tSirSmeDisConDoneInd *)(pMsg);
 
-            if( csrIsAnySessionInConnectState( pMac ) )
+            smsLog( pMac, LOG1,
+                FL("eWNI_SME_DISCONNECT_DONE_IND RC:%d"),
+                    pDisConDoneInd->reasonCode);
+            if( CSR_IS_SESSION_VALID(pMac, pDisConDoneInd->sessionId))
             {
-                //In case of we are connected, we need to check whether connect status changes
-                //because scan may also run while connected.
-                csrRoamCheckForLinkStatusChange( pMac, ( tSirSmeRsp * )pMsgBuf );
+                roamInfo.reasonCode = pDisConDoneInd->reasonCode;
+                roamInfo.statusCode = eSIR_SME_STA_DISASSOCIATED;
+                vos_mem_copy(roamInfo.peerMac, pDisConDoneInd->peerMacAddr,
+                             sizeof(tSirMacAddr));
+                status = csrRoamCallCallback(pMac,
+                                 pDisConDoneInd->sessionId,
+                                &roamInfo, 0,
+                                 eCSR_ROAM_LOSTLINK,
+                                 eCSR_ROAM_RESULT_DISASSOC_IND);
             }
             else
             {
-                smsLog( pMac, LOGW, "Message [0x%04x] received in state, when expecting Scan Response", pMsg->type );
+                smsLog(pMac, LOGE, FL("Inactive session %d"),
+                        pDisConDoneInd->sessionId);
+                status = eHAL_STATUS_FAILURE;
+            }
+            break;
+
+        default :
+            if( csrIsAnySessionInConnectState( pMac ) )
+            {
+                /*In case of we are connected, we need to check whether connect
+                 * status changes because scan may also run while connected.
+                 */
+                csrRoamCheckForLinkStatusChange( pMac, (tSirSmeRsp *)pMsgBuf );
+            }
+            else
+            {
+                smsLog( pMac, LOGW,
+                        "Message [0x%04x] received in state, when expecting Scan Response",
+                         pMsg->type );
             }
         }
     }
