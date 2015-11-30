@@ -1814,6 +1814,8 @@ void hdd_init_frame_logging(hdd_context_t *pHddCtx);
 
 int hdd_enable_disable_ca_event(hdd_context_t *pHddCtx,
                                 tANI_U8* command, tANI_U8 cmd_len);
+void hdd_indicate_mgmt_frame(tSirSmeMgmtFrameInd *frame_ind);
+
 #ifdef WLAN_FEATURE_LINK_LAYER_STATS
 /**
  * hdd_init_ll_stats_ctx() - initialize link layer stats context
