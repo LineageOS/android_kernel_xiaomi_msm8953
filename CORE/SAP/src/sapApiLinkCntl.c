@@ -1405,6 +1405,7 @@ WLANSAP_RoamCallback
 #endif
             break;
 
+        case eCSR_ROAM_RESULT_DEAUTH_IND:
         case eCSR_ROAM_RESULT_DISASSOC_IND:
             VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH,
                           FL("CSR roamResult = %s (%d)"),
@@ -1414,23 +1415,6 @@ WLANSAP_RoamCallback
             sapRemoveHT40IntolerantSta(sapContext, pCsrRoamInfo);
 #endif
             /* Fill in the event structure */
-            vosStatus = sapSignalHDDevent( sapContext, pCsrRoamInfo, eSAP_STA_DISASSOC_EVENT, (v_PVOID_t)eSAP_STATUS_SUCCESS);
-            if(!VOS_IS_STATUS_SUCCESS(vosStatus))
-            {
-                halStatus = eHAL_STATUS_FAILURE;
-            }
-            break;
-
-        case eCSR_ROAM_RESULT_DEAUTH_IND:
-            VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH,
-                          FL("CSR roamResult = %s (%d)"),
-                             "eCSR_ROAM_RESULT_DEAUTH_IND",
-                              roamResult);
-#ifdef WLAN_FEATURE_AP_HT40_24G
-            sapRemoveHT40IntolerantSta(sapContext, pCsrRoamInfo);
-#endif
-            /* Fill in the event structure */
-            //TODO: we will use the same event inorder to inform HDD to disassociate the station
             vosStatus = sapSignalHDDevent( sapContext, pCsrRoamInfo, eSAP_STA_DISASSOC_EVENT, (v_PVOID_t)eSAP_STATUS_SUCCESS);
             if(!VOS_IS_STATUS_SUCCESS(vosStatus))
             {
