@@ -512,6 +512,8 @@ typedef struct
 
    tWDA_AddSelfStaDebugParams wdaAddSelfStaParams;
    tWDA_RespFailureCounts  failureCounts;
+   wpt_uint8  mgmtTxfailureCnt;
+
 } tWDA_CbContext ; 
 
 typedef struct
