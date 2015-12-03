@@ -7407,6 +7407,12 @@ static int __iw_set_var_ints_getnone(struct net_device *dev,
     {
         case WE_LOG_DUMP_CMD:
             {
+               if(apps_args[0] == 26) {
+                if (!pHddCtx->cfg_ini->crash_inject_enabled) {
+                 hddLog(LOGE, "Crash Inject ini disabled, Ignore Crash Inject");
+                    return 0;
+                }
+             }
                 hddLog(LOG1, "%s: LOG_DUMP %d arg1 %d arg2 %d arg3 %d arg4 %d",
                         __func__, apps_args[0], apps_args[1], apps_args[2],
                         apps_args[3], apps_args[4]);
