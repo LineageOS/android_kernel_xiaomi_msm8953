@@ -2531,6 +2531,8 @@ void __hdd_indicate_mgmt_frame(hdd_adapter_t *pAdapter,
                  }
              }
              if (pRemainChanCtx != NULL &&
+                  vos_timer_is_initialized(
+                     &cfgState->remain_on_chan_ctx->hdd_remain_on_chan_timer) &&
                   VOS_TIMER_STATE_RUNNING != vos_timer_getCurrentState(
                       &cfgState->remain_on_chan_ctx->hdd_remain_on_chan_timer))
                  hddLog( LOG1, "%s:"
