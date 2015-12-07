@@ -74,6 +74,8 @@
 #include "i_vos_packet.h"
 #include <linux/wait.h>
 #include <linux/wakelock.h>
+#include <vos_timer.h>
+
 
 #define TX_POST_EVENT_MASK               0x001
 #define TX_SUSPEND_EVENT_MASK            0x002
@@ -89,6 +91,8 @@
 #define WD_CHIP_RESET_EVENT_MASK         0x004
 #define WD_WLAN_SHUTDOWN_EVENT_MASK      0x008
 #define WD_WLAN_REINIT_EVENT_MASK        0x010
+#define WD_WLAN_DETECT_THREAD_STUCK_MASK 0x020
+
 
  
  
@@ -260,6 +264,14 @@ typedef struct _VosWatchdogContext
 
    /* Lock for preventing multiple reset being triggered simultaneously */
    spinlock_t wdLock;
+   /* Timer to detect thread stuck issue */
+   vos_timer_t threadStuckTimer;
+   /* Count for each thread to determine thread stuck */
+   unsigned int mcThreadStuckCount;
+   unsigned int txThreadStuckCount;
+   unsigned int rxThreadStuckCount;
+   /* lock to synchronize access to the thread stuck counts */
+   spinlock_t thread_stuck_lock;
 
 } VosWatchdogContext, *pVosWatchdogContext;
 
@@ -510,5 +522,9 @@ VOS_STATUS vos_watchdog_wlan_re_init(void);
 v_BOOL_t isSsrPanicOnFailure(void);
 void vos_ssr_protect(const char *caller_func);
 void vos_ssr_unprotect(const char *caller_func);
+void vos_wd_reset_thread_stuck_count(int threadId);
+bool vos_is_wd_thread(int threadId);
+
+
 
 #endif // #if !defined __VOSS_SCHED_H

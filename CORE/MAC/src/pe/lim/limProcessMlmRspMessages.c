@@ -4321,7 +4321,7 @@ void limProcessFinishScanRsp(tpAniSirGlobal pMac,  void *body)
     {
         case eLIM_HAL_FINISH_SCAN_WAIT_STATE:
 #ifdef FEATURE_WLAN_DIAG_SUPPORT
-            limDiagEventReport(pMac, WLAN_PE_DIAG_DRIVER_SCAN_COMPLETE, NULL,
+            limDiagEventReport(pMac, WLAN_PE_DIAG_SCAN_COMP_EVENT, NULL,
                                status, eSIR_SUCCESS);
 #endif
             pMac->lim.gLimHalScanState = eLIM_HAL_IDLE_SCAN_STATE;

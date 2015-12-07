@@ -738,6 +738,8 @@ void __hdd_softap_tx_timeout(struct net_device *dev)
                 "%s: Cannot recover from Data stall Issue SSR",
                 __func__);
       WLANTL_FatalError();
+      // reset count after issuing the SSR
+      pAdapter->hdd_stats.hddTxRxStats.continuousTxTimeoutCount = 0;
       return;
    }
 

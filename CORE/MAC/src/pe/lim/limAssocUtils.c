@@ -823,15 +823,19 @@ limSendDelStaCnf(tpAniSirGlobal pMac, tSirMacAddr staDsAddr,
 
         psessionEntry->limAID = 0;
 
-
+    } else if (
+       (mlmStaContext.cleanupTrigger == eLIM_LINK_MONITORING_DISASSOC) ||
+       (mlmStaContext.cleanupTrigger == eLIM_LINK_MONITORING_DEAUTH)) {
+       /* only for non-STA cases PE/SME is serialized */
+       return;
     }
 
     if ((mlmStaContext.cleanupTrigger ==
                                       eLIM_HOST_DISASSOC) ||
         (mlmStaContext.cleanupTrigger ==
-                                      eLIM_LINK_MONITORING_DISASSOC) ||
+                                      eLIM_PROMISCUOUS_MODE_DISASSOC) ||
         (mlmStaContext.cleanupTrigger ==
-                                      eLIM_PROMISCUOUS_MODE_DISASSOC))
+                                      eLIM_LINK_MONITORING_DISASSOC))
     {
         /**
          * Host or LMM driven Disassociation.
@@ -855,10 +859,8 @@ limSendDelStaCnf(tpAniSirGlobal pMac, tSirMacAddr staDsAddr,
                           LIM_MLM_DISASSOC_CNF,
                           (tANI_U32 *) &mlmDisassocCnf);
     }
-    else if ((mlmStaContext.cleanupTrigger ==
-                                           eLIM_HOST_DEAUTH) ||
-             (mlmStaContext.cleanupTrigger ==
-                                           eLIM_LINK_MONITORING_DEAUTH))
+    else if ((mlmStaContext.cleanupTrigger == eLIM_HOST_DEAUTH) ||
+             (mlmStaContext.cleanupTrigger == eLIM_LINK_MONITORING_DEAUTH))
     {
         /**
          * Host or LMM driven Deauthentication.

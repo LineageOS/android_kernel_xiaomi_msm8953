@@ -541,8 +541,11 @@ static v_VOID_t wlan_hdd_tdls_update_peer_cb( v_PVOID_t userData )
                                                         pHddTdlsCtx->threshold_config.idle_timeout_t);
                         }
                     } else {
-                        if (VOS_TIMER_STATE_RUNNING ==
-                                vos_timer_getCurrentState(&curr_peer->peerIdleTimer)) {
+                        if (vos_timer_is_initialized(
+                                &curr_peer->peerIdleTimer) &&
+                            VOS_TIMER_STATE_RUNNING ==
+                                vos_timer_getCurrentState(
+                                             &curr_peer->peerIdleTimer)) {
                             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_WARN,
                                     "Tx/Rx Idle timer stop: " MAC_ADDRESS_STR "!",
                                        MAC_ADDR_ARRAY(curr_peer->peerMac));

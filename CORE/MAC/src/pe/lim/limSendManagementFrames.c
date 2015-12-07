@@ -2657,7 +2657,10 @@ limSendAssocReqMgmtFrame(tpAniSirGlobal   pMac,
     {
         txFlag |= HAL_USE_PEER_STA_REQUESTED_MASK;
     }
-
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
+    limDiagEventReport(pMac, WLAN_PE_DIAG_ASSOC_START_EVENT, psessionEntry,
+            eSIR_SUCCESS, eSIR_SUCCESS);
+#endif
     pMacHdr = ( tpSirMacMgmtHdr ) pFrame;
     limLog( pMac, LOG1, FL("Sending Assoc req over WQ5 to "MAC_ADDRESS_STR
               " From " MAC_ADDRESS_STR),MAC_ADDR_ARRAY(pMacHdr->da),
@@ -3134,7 +3137,10 @@ limSendReassocReqWithFTIEsMgmtFrame(tpAniSirGlobal     pMac,
                     (ft_ies_length));
        psessionEntry->assocReqLen = (ft_ies_length);
     }
-
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
+    limDiagEventReport(pMac, WLAN_PE_DIAG_REASSOC_START_EVENT, psessionEntry,
+            eSIR_SUCCESS, eSIR_SUCCESS);
+#endif
     MTRACE(macTrace(pMac, TRACE_CODE_TX_MGMT,
            psessionEntry->peSessionId,
            pMacHdr->fc.subType));
@@ -3559,6 +3565,10 @@ limSendReassocReqMgmtFrame(tpAniSirGlobal     pMac,
     {
         txFlag |= HAL_USE_PEER_STA_REQUESTED_MASK;
     }
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
+    limDiagEventReport(pMac, WLAN_PE_DIAG_REASSOC_START_EVENT, psessionEntry,
+             eSIR_SUCCESS, eSIR_SUCCESS);
+#endif
 
     MTRACE(macTrace(pMac, TRACE_CODE_TX_MGMT,
            psessionEntry->peSessionId,
@@ -3640,7 +3650,7 @@ eHalStatus limAuthTxCompleteCnf(tpAniSirGlobal pMac, void *pData)
     else
        pMac->authAckStatus = LIM_AUTH_ACK_RCD_FAILURE;
 #ifdef FEATURE_WLAN_DIAG_SUPPORT
-    limDiagEventReport(pMac, WLAN_PE_DIAG_FW_AUTH_STARTED_EVENT, NULL,
+    limDiagEventReport(pMac, WLAN_PE_DIAG_AUTH_START_EVENT, NULL,
                        pMac->authAckStatus, eSIR_SUCCESS);
 #endif
 

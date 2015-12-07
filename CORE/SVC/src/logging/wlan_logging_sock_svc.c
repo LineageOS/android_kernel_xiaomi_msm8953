@@ -42,7 +42,6 @@
 #include "vos_memory.h"
 #include <linux/ratelimit.h>
 #include <asm/arch_timer.h>
-#include <vos_sched.h>
 #include <vos_utils.h>
 
 
@@ -65,7 +64,6 @@
 #define LOGGER_FATAL_EVENT_POST_MASK  0x004
 #define LOGGER_FW_MEM_DUMP_PKT_POST_MASK   0x005
 #define LOGGER_FW_MEM_DUMP_PKT_POST_DONE_MASK 0x006
-#define DETECT_THREAD_STUCK_POST_MASK 0x007
 #define HOST_PKT_STATS_POST_MASK 0x008
 
 
@@ -86,9 +84,6 @@
 static DEFINE_RATELIMIT_STATE(errCnt,		\
 		NL_BDCAST_RATELIMIT_INTERVAL,	\
 		NL_BDCAST_RATELIMIT_BURST);
-/* Timer value for detecting thread stuck issues */
-#define THREAD_STUCK_TIMER_VAL 5000 // 5 seconds
-#define THREAD_STUCK_COUNT 3
 
 struct log_msg {
 	struct list_head node;
@@ -124,10 +119,12 @@ struct fw_mem_dump_logging{
 	unsigned int fw_mem_dump_pkt_drop_cnt;
 	/* Lock to synchronize of queue/dequeue of pkts in fw log pkt queue */
 	spinlock_t fw_mem_dump_lock;
-	/* Fw memory dump state */
+	/* Fw memory dump status */
 	enum FW_MEM_DUMP_STATE fw_mem_dump_status;
-	/* Completion variable for handling SSR/unload during copy_to_user */
-	struct completion fw_mem_copy_to_user_completion;
+	/* storage for HDD callback which completes fw mem dump request */
+	void * svc_fw_mem_dump_req_cb;
+	/* storage for HDD callback which completes fw mem dump request arg */
+	void * svc_fw_mem_dump_req_cb_arg;
 };
 
 struct pkt_stats_msg {
@@ -183,14 +180,6 @@ struct wlan_logging {
 	struct log_msg *pcur_node;
 	/* Event flag used for wakeup and post indication*/
 	unsigned long event_flag;
-	/* Timer to detect thread stuck issue */
-	vos_timer_t threadStuckTimer;
-	/* Count for each thread to determine thread stuck */
-	unsigned int mcThreadStuckCount;
-	unsigned int txThreadStuckCount;
-	unsigned int rxThreadStuckCount;
-	/* lock to synchronize access to the thread stuck counts */
-	spinlock_t thread_stuck_lock;
 	/* Indicates logger thread is activated */
 	bool is_active;
 	/* data structure for log complete event*/
@@ -870,7 +859,6 @@ static int fill_fw_mem_dump_buffer(void)
 	VOS_STATUS status = VOS_STATUS_E_FAILURE;
 	unsigned long flags;
 	int  byte_left = 0;
-
 	do {
 		spin_lock_irqsave(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
 
@@ -918,20 +906,18 @@ static int fill_fw_mem_dump_buffer(void)
 					(int)(gwlan_logging.fw_mem_dump_ctx.fw_dump_current_loc - gwlan_logging.fw_mem_dump_ctx.fw_dump_start_loc));
 			if(skb->len > byte_left)
 			{
-				vos_mem_copy(gwlan_logging.fw_mem_dump_ctx.fw_dump_current_loc, &skb->data, byte_left);
+				vos_mem_copy(gwlan_logging.fw_mem_dump_ctx.fw_dump_current_loc, skb->data, byte_left);
 				//Update the current location ptr
 				gwlan_logging.fw_mem_dump_ctx.fw_dump_current_loc +=  byte_left;
 			}
 			else
 			{
-				vos_mem_copy(gwlan_logging.fw_mem_dump_ctx.fw_dump_current_loc, &skb->data, skb->len);
+				vos_mem_copy(gwlan_logging.fw_mem_dump_ctx.fw_dump_current_loc, skb->data, skb->len);
 				//Update the current location ptr
 				gwlan_logging.fw_mem_dump_ctx.fw_dump_current_loc +=  skb->len;
 			}
 		}
 		spin_unlock_irqrestore(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
-		//if(skb)
-		//	pr_err("Mem dump buffer overflow byte_left %d skb->len %d", byte_left, skb->len);
 		/*return vos pkt since skb is already detached */
 		vos_pkt_return_packet(current_pkt);
 	} while (next_pkt);
@@ -1139,86 +1125,6 @@ err:
 }
 
 /**
- * wlan_logging_detect_thread_stuck()- Detect thread stuck
- * by probing the MC, TX, RX threads and take action if
- * Thread doesnt respond.
- *
- * This function is called to detect thread stuck
- * and probe threads.
- *
- * Return: void
- */
-static void wlan_logging_detect_thread_stuck(void)
-{
-	unsigned long flags;
-
-	spin_lock_irqsave(&gwlan_logging.thread_stuck_lock, flags);
-
-	if ((gwlan_logging.mcThreadStuckCount == THREAD_STUCK_COUNT) ||
-		(gwlan_logging.txThreadStuckCount == THREAD_STUCK_COUNT) ||
-		(gwlan_logging.rxThreadStuckCount == THREAD_STUCK_COUNT)) {
-		spin_unlock_irqrestore(&gwlan_logging.thread_stuck_lock, flags);
-		pr_err("%s: Thread Stuck !!! MC Count %d RX count %d TX count %d\n",
-			__func__, gwlan_logging.mcThreadStuckCount,
-			gwlan_logging.rxThreadStuckCount,
-			gwlan_logging.txThreadStuckCount);
-		vos_wlanRestart();
-		return;
-	}
-
-	if (gwlan_logging.mcThreadStuckCount ||
-		gwlan_logging.txThreadStuckCount ||
-		gwlan_logging.rxThreadStuckCount) {
-
-		spin_unlock_irqrestore(&gwlan_logging.thread_stuck_lock, flags);
-
-		pr_err("%s: MC Count %d RX count %d TX count %d\n",
-		  __func__, gwlan_logging.mcThreadStuckCount,
-		  gwlan_logging.rxThreadStuckCount,
-		  gwlan_logging.txThreadStuckCount);
-		vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
-				WLAN_LOG_INDICATOR_HOST_ONLY,
-				WLAN_LOG_REASON_THREAD_STUCK,
-				FALSE, TRUE);
-
-		spin_lock_irqsave(&gwlan_logging.thread_stuck_lock, flags);
-	}
-
-	/* Increment the thread stuck count for all threads */
-	gwlan_logging.mcThreadStuckCount++;
-	gwlan_logging.txThreadStuckCount++;
-	gwlan_logging.rxThreadStuckCount++;
-
-	spin_unlock_irqrestore(&gwlan_logging.thread_stuck_lock, flags);
-	vos_probe_threads();
-
-	/* Restart the timer */
-	if (VOS_STATUS_SUCCESS !=
-		vos_timer_start(&gwlan_logging.threadStuckTimer,
-				THREAD_STUCK_TIMER_VAL))
-		pr_err("%s: Unable to start thread stuck timer\n", __func__);
-}
-
-/**
- * wlan_logging_detect_thread_stuck_cb()- Call back of the
- * thread stuck timer.
- * @priv: timer data.
- * This function is called when the thread stuck timer
- * expire to detect thread stuck and probe threads.
- *
- * Return: void
- */
-static void wlan_logging_detect_thread_stuck_cb(void *priv)
-{
-	if (!gwlan_logging.exit)
-	{
-		set_bit(DETECT_THREAD_STUCK_POST_MASK,
-					  &gwlan_logging.event_flag);
-		wake_up_interruptible(&gwlan_logging.wait_queue);
-	}
-}
-
-/**
  * wlan_logging_thread() - The WLAN Logger thread
  * @Arg - pointer to the HDD context
  *
@@ -1229,29 +1135,11 @@ static int wlan_logging_thread(void *Arg)
 	int ret_wait_status = 0;
 	int ret = 0;
 	unsigned long flags;
-
 	set_user_nice(current, -2);
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 8, 0))
 	daemonize("wlan_logging_thread");
 #endif
-
-	/* Initialize the timer to detect thread stuck issues */
-	if (vos_timer_init(&gwlan_logging.threadStuckTimer, VOS_TIMER_TYPE_SW,
-			   wlan_logging_detect_thread_stuck_cb, NULL)) {
-		pr_err("%s: Unable to initialize thread stuck timer\n", __func__);
-	} else {
-		if (VOS_STATUS_SUCCESS !=
-			vos_timer_start(&gwlan_logging.threadStuckTimer,
-					THREAD_STUCK_TIMER_VAL))
-			pr_err("%s: Unable to start thread stuck timer\n",
-				__func__);
-		else
-			pr_info("%s: Successfully started thread stuck timer\n",
-				__func__);
-	}
-
-
 	while (!gwlan_logging.exit) {
 		ret_wait_status = wait_event_interruptible(
 		  gwlan_logging.wait_queue,
@@ -1266,9 +1154,7 @@ static int wlan_logging_thread(void *Arg)
 		   test_bit(LOGGER_FW_MEM_DUMP_PKT_POST_MASK,&gwlan_logging.event_flag) ||
 		   test_bit(LOGGER_FW_MEM_DUMP_PKT_POST_DONE_MASK, &gwlan_logging.event_flag)||
 		   test_bit(HOST_PKT_STATS_POST_MASK,
-						 &gwlan_logging.event_flag) ||
-		   test_bit(DETECT_THREAD_STUCK_POST_MASK,
-						&gwlan_logging.event_flag)));
+						 &gwlan_logging.event_flag)));
 
 		if (ret_wait_status == -ERESTARTSYS) {
 			pr_err("%s: wait_event return -ERESTARTSYS", __func__);
@@ -1301,10 +1187,7 @@ static int wlan_logging_thread(void *Arg)
 			&gwlan_logging.event_flag)) {
 			send_data_mgmt_log_pkt_to_user();
 		}
-		if (test_and_clear_bit(DETECT_THREAD_STUCK_POST_MASK,
-			&gwlan_logging.event_flag)) {
-			wlan_logging_detect_thread_stuck();
-		}
+
 		if (test_and_clear_bit(LOGGER_FATAL_EVENT_POST_MASK,
 			&gwlan_logging.event_flag)) {
 			if (gwlan_logging.log_complete.is_flush_complete == true) {
@@ -1331,9 +1214,31 @@ static int wlan_logging_thread(void *Arg)
 			fill_fw_mem_dump_buffer();
 		}
 		if(test_and_clear_bit(LOGGER_FW_MEM_DUMP_PKT_POST_DONE_MASK,&gwlan_logging.event_flag)){
-				/*indicate to user space that mem dump is complete */
+				spin_lock_irqsave(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock,flags);
+				/*Chnage fw memory dump to indicate write done*/
+				gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_status = FW_MEM_DUMP_WRITE_DONE;
+				/*reset dropped packet count upon completion of this request*/
+				gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_pkt_drop_cnt = 0;
+				spin_unlock_irqrestore(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock,flags);
 				fill_fw_mem_dump_buffer();
-				wlan_indicate_mem_dump_complete(true);
+				/*
+				 * Call the registered HDD callback for indicating
+				 * memdump complete. If it's null,then something is
+				 * not right.
+				 */
+				if (gwlan_logging.fw_mem_dump_ctx.svc_fw_mem_dump_req_cb &&
+				    gwlan_logging.fw_mem_dump_ctx.svc_fw_mem_dump_req_cb_arg) {
+					((hdd_fw_mem_dump_req_cb)
+					gwlan_logging.fw_mem_dump_ctx.svc_fw_mem_dump_req_cb)(
+					(struct hdd_fw_mem_dump_req_ctx*)
+					gwlan_logging.fw_mem_dump_ctx.svc_fw_mem_dump_req_cb_arg);
+
+					/*invalidate the callback pointers*/
+					spin_lock_irqsave(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock,flags);
+					gwlan_logging.fw_mem_dump_ctx.svc_fw_mem_dump_req_cb = NULL;
+					gwlan_logging.fw_mem_dump_ctx.svc_fw_mem_dump_req_cb_arg = NULL;
+					spin_unlock_irqrestore(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock,flags);
+				}
 		}
 
 		if (test_and_clear_bit(HOST_PKT_STATS_POST_MASK,
@@ -1341,8 +1246,6 @@ static int wlan_logging_thread(void *Arg)
 			send_per_pkt_stats_to_user();
 		}
 	}
-
-	vos_timer_destroy(&gwlan_logging.threadStuckTimer);
 
 	complete_and_exit(&gwlan_logging.shutdown_comp, 0);
 
@@ -1358,6 +1261,7 @@ static int wlan_logging_proc_sock_rx_msg(struct sk_buff *skb)
 	int radio;
 	int type;
 	int ret;
+	unsigned long flags;
 
         if (TRUE == vos_isUnloadInProgress())
         {
@@ -1380,11 +1284,12 @@ static int wlan_logging_proc_sock_rx_msg(struct sk_buff *skb)
 			gapp_pid = wnl->nlh.nlmsg_pid;
 		}
 
-		spin_lock_bh(&gwlan_logging.spin_lock);
+		spin_lock_irqsave(&gwlan_logging.spin_lock, flags);
 		if (gwlan_logging.pcur_node->filled_length) {
 			wlan_queue_logmsg_for_app();
 		}
-		spin_unlock_bh(&gwlan_logging.spin_lock);
+		spin_unlock_irqrestore(&gwlan_logging.spin_lock, flags);
+
 		set_bit(HOST_LOG_POST_MASK, &gwlan_logging.event_flag);
 		wake_up_interruptible(&gwlan_logging.wait_queue);
 	} else {
@@ -1680,7 +1585,6 @@ int wlan_logging_sock_init_svc(void)
 	spin_lock_init(&gwlan_logging.fw_log_pkt_lock);
 	spin_lock_init(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock);
 	spin_lock_init(&gwlan_logging.pkt_stats_lock);
-	spin_lock_init(&gwlan_logging.thread_stuck_lock);
 	gapp_pid = INVALID_PID;
 	gwlan_logging.pcur_node = NULL;
 	gwlan_logging.pkt_stats_pcur_node= NULL;
@@ -1962,10 +1866,16 @@ void wlan_process_done_indication(uint8 type, uint32 reason_code)
  */
 void wlan_flush_host_logs_for_fatal()
 {
+	unsigned long flags;
+
 	if (wlan_is_log_report_in_progress()) {
 		pr_info("%s:flush all host logs Setting HOST_LOG_POST_MASK\n",
 				 __func__);
+
+		spin_lock_irqsave(&gwlan_logging.spin_lock, flags);
 		wlan_queue_logmsg_for_app();
+		spin_unlock_irqrestore(&gwlan_logging.spin_lock, flags);
+
 		set_bit(HOST_LOG_POST_MASK, &gwlan_logging.event_flag);
 		wake_up_interruptible(&gwlan_logging.wait_queue);
 	}
@@ -1989,32 +1899,6 @@ bool wlan_is_logger_thread(int threadId)
 		(threadId == gwlan_logging.thread->pid));
 }
 
-/**
- * wlan_logging_reset_thread_stuck_count()- Callback to
- * probe msg sent to Threads.
- *
- * @threadId: passed threadid
- *
- * This function is called to by the thread after
- * processing the probe msg, with their own thread id.
- *
- * Return: void.
- */
-void wlan_logging_reset_thread_stuck_count(int threadId)
-{
-	unsigned long flags;
-
-	spin_lock_irqsave(&gwlan_logging.thread_stuck_lock, flags);
-	if (vos_sched_is_mc_thread(threadId))
-		gwlan_logging.mcThreadStuckCount = 0;
-	else if (vos_sched_is_tx_thread(threadId))
-		gwlan_logging.txThreadStuckCount = 0;
-	else if (vos_sched_is_rx_thread(threadId))
-		gwlan_logging.rxThreadStuckCount = 0;
-
-	spin_unlock_irqrestore(&gwlan_logging.thread_stuck_lock, flags);
-}
-
 int wlan_fwr_mem_dump_buffer_allocation(void)
 {
 	/*Allocate the dump memory as reported by fw.
@@ -2032,6 +1916,8 @@ int wlan_fwr_mem_dump_buffer_allocation(void)
 		pr_err("%s: fw_mem_dump_req alloc failed for size %d bytes", __func__,gwlan_logging.fw_mem_dump_ctx.fw_dump_max_size);
 		return -ENOMEM;
 	}
+	vos_mem_zero(gwlan_logging.fw_mem_dump_ctx.fw_dump_start_loc,gwlan_logging.fw_mem_dump_ctx.fw_dump_max_size);
+
 	return 0;
 }
 
@@ -2077,12 +1963,12 @@ bool wlan_fwr_mem_dump_test_and_set_read_allowed_bit(){
           gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_status = FW_MEM_DUMP_READ_IN_PROGRESS;
 	}
 	spin_unlock_irqrestore(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
-	pr_info("%s:fw mem dump state --> %d ", __func__,gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_status);
+	//pr_info("%s:fw mem dump state --> %d ", __func__,gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_status);
 
 	return ret;
 }
 size_t wlan_fwr_mem_dump_fsread_handler(char __user *buf,
-		size_t count, loff_t *pos)
+		size_t count, loff_t *pos,loff_t* bytes_left)
 {
 	if (buf == NULL || gwlan_logging.fw_mem_dump_ctx.fw_dump_start_loc == NULL)
 	{
@@ -2100,14 +1986,22 @@ size_t wlan_fwr_mem_dump_fsread_handler(char __user *buf,
 		count = gwlan_logging.fw_mem_dump_ctx.fw_dump_max_size - *pos;
 	}
 	if (copy_to_user(buf, gwlan_logging.fw_mem_dump_ctx.fw_dump_start_loc, count)) {
-		pr_err("copy to user space failed");
+		pr_err("%s copy to user space failed",__func__);
 		return 0;
 	}
-
 	/* offset(pos) should be updated here based on the copy done*/
 	*pos += count;
-
+	*bytes_left = gwlan_logging.fw_mem_dump_ctx.fw_dump_max_size - *pos;
 	return count;
+}
+
+void  wlan_set_svc_fw_mem_dump_req_cb (void * fw_mem_dump_req_cb, void * fw_mem_dump_req_cb_arg)
+{
+	unsigned long flags;
+	spin_lock_irqsave(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
+	gwlan_logging.fw_mem_dump_ctx.svc_fw_mem_dump_req_cb = fw_mem_dump_req_cb;
+	gwlan_logging.fw_mem_dump_ctx.svc_fw_mem_dump_req_cb_arg = fw_mem_dump_req_cb_arg;
+	spin_unlock_irqrestore(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
 }
 
 void wlan_free_fwr_mem_dump_buffer (void )
@@ -2147,8 +2041,6 @@ void wlan_indicate_mem_dump_complete(bool status )
 	void *vos_ctx;
 	int ret;
 	struct sk_buff *skb = NULL;
-	unsigned long flags;
-
 	vos_ctx = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
 	if (!vos_ctx) {
 		pr_err("Invalid VOS context");
@@ -2167,20 +2059,9 @@ void wlan_indicate_mem_dump_complete(bool status )
 		return;
 	}
 
-	spin_lock_irqsave(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
-	/*Chnage fw memory dump to indicate write done*/
-	gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_status = FW_MEM_DUMP_WRITE_DONE;
-        /*reset dropped packet count upon completion of this request*/
-        gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_pkt_drop_cnt = 0;
-	spin_unlock_irqrestore(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
 
-	skb = cfg80211_vendor_event_alloc(hdd_ctx->wiphy,
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0))
-		NULL,
-#endif
-		sizeof(uint32_t) + NLA_HDRLEN + NLMSG_HDRLEN,
-		QCA_NL80211_VENDOR_SUBCMD_WIFI_LOGGER_MEMORY_DUMP_INDEX,
-		GFP_KERNEL);
+	skb = cfg80211_vendor_cmd_alloc_reply_skb(hdd_ctx->wiphy,
+		sizeof(uint32_t) + NLA_HDRLEN + NLMSG_HDRLEN);
 
 	if (!skb) {
 		pr_err("cfg80211_vendor_event_alloc failed");
@@ -2203,8 +2084,8 @@ void wlan_indicate_mem_dump_complete(bool status )
 			goto nla_put_failure;
 		}
 	}
-
-	cfg80211_vendor_event(skb, GFP_KERNEL);
+	/*indicate mem dump complete*/
+	cfg80211_vendor_cmd_reply(skb);
 	pr_info("Memdump event sent successfully to user space : recvd size %d",(int)(gwlan_logging.fw_mem_dump_ctx.fw_dump_current_loc - gwlan_logging.fw_mem_dump_ctx.fw_dump_start_loc));
 	return;
 

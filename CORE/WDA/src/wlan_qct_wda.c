@@ -14113,13 +14113,14 @@ VOS_STATUS WDA_TxPacket(tWDA_CbContext *pWDA,
       {
          pCompFunc(VOS_GET_MAC_CTXT(pWDA->pVosContext), (vos_pkt_t *)pFrmBuf);
       } */
+
+      WLANTL_TLDebugMessage(WLANTL_DEBUG_FW_CLEANUP);
+
       if (vos_isFatalEventEnabled())
          vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
                      WLAN_LOG_INDICATOR_HOST_DRIVER,
                      WLAN_LOG_REASON_MGMT_FRAME_TIMEOUT,
                      FALSE, TRUE);
-      else
-         vos_wlanRestart();
 
       if( pAckTxComp )
       {

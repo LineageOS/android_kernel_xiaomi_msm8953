@@ -44,7 +44,6 @@
 #include <vos_api.h>
 #include "wlan_qct_sys.h"
 #include "vos_sched.h"
-#include <wlan_logging_sock_svc.h>
 
 /*-------------------------------------------------------------------------- 
   Preprocessor definitions and constants
@@ -217,10 +216,10 @@ static void vos_linux_timer_callback (unsigned long data)
          return;
    }
 #ifdef WLAN_LOGGING_SOCK_SVC_ENABLE
-   else if (wlan_is_logger_thread(threadId))
+   else if (vos_is_wd_thread(threadId))
    {
       VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_INFO,
-                "TIMER callback: running on Logger thread");
+                "TIMER callback: running on wd thread");
       callback(NULL);
       return;
    }
