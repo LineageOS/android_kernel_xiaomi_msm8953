@@ -868,7 +868,6 @@ void wlan_hdd_tdls_btCoex_cb(void *data, int indType)
             connectedTdlsPeers = wlan_hdd_tdlsConnectedPeers(pAdapter);
             /* disable implicit trigger logic & tdls operatoin */
             wlan_hdd_tdls_set_mode(pHddCtx, eTDLS_SUPPORT_DISABLED, FALSE);
-            pHddCtx->is_tdls_btc_enabled = FALSE;
 
             /* teardown the peers on the btcoex */
             if (connectedTdlsPeers)
@@ -915,7 +914,6 @@ void wlan_hdd_tdls_btCoex_cb(void *data, int indType)
             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                       ("%s: revert tdls mode %d"), __func__,
                       pHddCtx->tdls_mode_last);
-            pHddCtx->is_tdls_btc_enabled = TRUE;
             wlan_hdd_tdls_set_mode(pHddCtx, pHddCtx->tdls_mode_last, FALSE);
         }
 
@@ -951,7 +949,7 @@ void  wlan_hdd_tdls_init(hdd_context_t *pHddCtx )
          vos_mem_zero(&pHddCtx->tdlsConnInfo[staIdx].peerMac,
                                             sizeof(v_MACADDR_t)) ;
     }
-    pHddCtx->is_tdls_btc_enabled = TRUE;
+
     status = sme_RegisterBtCoexTDLSCallback(pHddCtx->hHal,
                                             wlan_hdd_tdls_btCoex_cb);
     if (status != eHAL_STATUS_SUCCESS) {
@@ -2916,9 +2914,9 @@ int wlan_hdd_tdls_scan_callback (hdd_adapter_t *pAdapter,
     }
 
     /* if tdls is not enabled, then continue scan */
-    if ((eTDLS_SUPPORT_NOT_ENABLED == pHddCtx->tdls_mode) ||
-        (pHddCtx->is_tdls_btc_enabled == FALSE))
+    if ((eTDLS_SUPPORT_NOT_ENABLED == pHddCtx->tdls_mode))
         return 1;
+
     mutex_lock(&pHddCtx->tdls_lock);
     curr_peer = wlan_hdd_tdls_is_progress(pHddCtx, NULL, 0, FALSE);
     if (NULL != curr_peer)
@@ -3119,11 +3117,10 @@ void wlan_hdd_tdls_scan_done_callback(hdd_adapter_t *pAdapter)
         return;
     }
 
-    /* if tdls is not enabled or BtCoex is on then don't revert tdls mode */
-    if ((eTDLS_SUPPORT_NOT_ENABLED == pHddCtx->tdls_mode) ||
-        (pHddCtx->is_tdls_btc_enabled == FALSE)) {
-            hddLog(VOS_TRACE_LEVEL_INFO, FL("Failed to revert: Mode=%d, BTC enabled=%d"),
-                   pHddCtx->tdls_mode, pHddCtx->is_tdls_btc_enabled);
+    /* if tdls is not enabled then don't revert tdls mode */
+    if ((eTDLS_SUPPORT_NOT_ENABLED == pHddCtx->tdls_mode)) {
+            hddLog(VOS_TRACE_LEVEL_INFO, FL("Failed to revert: Mode=%d"),
+                   pHddCtx->tdls_mode);
             return;
     }
 
@@ -3419,12 +3416,11 @@ void wlan_hdd_tdls_reenable(hdd_context_t *pHddCtx)
         return;
     }
 
-    /* if tdls is not enabled or BtCoex is on then don't revert tdls mode */
-    if ((eTDLS_SUPPORT_NOT_ENABLED == pHddCtx->tdls_mode) ||
-        (pHddCtx->is_tdls_btc_enabled == FALSE)) {
+    /* if tdls is not enabled then don't revert tdls mode */
+    if ((eTDLS_SUPPORT_NOT_ENABLED == pHddCtx->tdls_mode)) {
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  FL("btc disable tdls so no need to enable: Mode=%d, BTC enabled=%d"),
-                  pHddCtx->tdls_mode, pHddCtx->is_tdls_btc_enabled);
+                  FL("TDLS disabled so no need to enable: Mode=%d"),
+                  pHddCtx->tdls_mode);
             return;
     }
 
