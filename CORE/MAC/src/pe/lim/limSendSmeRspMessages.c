@@ -234,16 +234,16 @@ tANI_U32 limGetMaxRateFlags(tpDphHashNode pStaDs, tpPESession psessionEntry)
     }
     else
     {
-        if(IS_DOT11_MODE_HT(psessionEntry->dot11mode))
+        if (IS_DOT11_MODE_HT(psessionEntry->dot11mode)
+#ifdef WLAN_FEATURE_11AC
+        || IS_DOT11_MODE_VHT(psessionEntry->dot11mode)
+        )
+#endif
         {
-            if (pStaDs->htShortGI20Mhz || pStaDs->htShortGI40Mhz )
-                rate_flags |= eHAL_TX_RATE_SGI;
-
-            if (pStaDs->htSupportedChannelWidthSet)
-                rate_flags |=eHAL_TX_RATE_HT40;
-            else
-                rate_flags |=eHAL_TX_RATE_HT20;
+           if (pStaDs->htShortGI20Mhz || pStaDs->htShortGI40Mhz)
+               rate_flags |= eHAL_TX_RATE_SGI;
         }
+
 #ifdef WLAN_FEATURE_11AC
         if(IS_DOT11_MODE_VHT(psessionEntry->dot11mode))
         {
@@ -262,7 +262,15 @@ tANI_U32 limGetMaxRateFlags(tpDphHashNode pStaDs, tpPESession psessionEntry)
                     rate_flags |= eHAL_TX_RATE_VHT20;
            }
         }
+        else
 #endif
+        if(IS_DOT11_MODE_HT(psessionEntry->dot11mode))
+        {
+            if (pStaDs->htSupportedChannelWidthSet)
+                rate_flags |=eHAL_TX_RATE_HT40;
+            else
+                rate_flags |=eHAL_TX_RATE_HT20;
+        }
     }
 
      return rate_flags;
