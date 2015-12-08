@@ -2566,6 +2566,12 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_TOGGLE_ARP_BDRATES_MAX         2
 #define CFG_TOGGLE_ARP_BDRATES_DEFAULT     0
 
+#define CFG_DISABLE_BAR_WAKEUP_HOST_NAME       "gDisableBarWakeUp"
+#define CFG_DISABLE_BAR_WAKEUP_HOST_MIN         0
+#define CFG_DISABLE_BAR_WAKEUP_HOST_MAX         1
+#define CFG_DISABLE_BAR_WAKEUP_HOST_DEFAULT     0
+
+
 /*
  * gExtScanConcMode is used to manage EXT Scan during concurrency
  * This can be useful during WFD session. To avoid glitches during WFD
@@ -3142,6 +3148,7 @@ typedef struct
    v_BOOL_t                    fEnableWifiConfig;
    v_BOOL_t                    crash_inject_enabled;
    v_U32_t                     enable_delack;
+   v_BOOL_t                    disableBarWakeUp;
 } hdd_config_t;
 
 /*--------------------------------------------------------------------------- 
