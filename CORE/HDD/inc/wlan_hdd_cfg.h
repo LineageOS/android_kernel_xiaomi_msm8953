@@ -2583,7 +2583,7 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_EXT_SCAN_CONC_MODE                             "gExtScanConcMode"
 #define CFG_EXT_SCAN_CONC_MODE_MIN                          (0)
 #define CFG_EXT_SCAN_CONC_MODE_MAX                          (2)
-#define CFG_EXT_SCAN_CONC_MODE_DEFAULT                      (1)
+#define CFG_EXT_SCAN_CONC_MODE_DEFAULT                      (0)
 
 /*
  * If within gLinkFailTimeout period(values is mentioned in msec) if FW
