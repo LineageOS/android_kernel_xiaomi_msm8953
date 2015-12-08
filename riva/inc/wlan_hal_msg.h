@@ -6852,6 +6852,7 @@ typedef enum {
     WPS_PRBRSP_TMPL        = 48,
     BCN_IE_FLT_DELTA       = 49,
     TDLS_OFF_CHANNEL       = 51,
+    RTT3                   = 52,
     MGMT_FRAME_LOGGING     = 53,
     ENHANCED_TXBD_COMPLETION = 54,
     LOGGING_ENHANCEMENT    = 55,
