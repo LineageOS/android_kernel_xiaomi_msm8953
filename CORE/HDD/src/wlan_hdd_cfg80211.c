@@ -5543,6 +5543,11 @@ __wlan_hdd_cfg80211_get_supported_features(struct wiphy *wiphy,
         fset |= WIFI_FEATURE_D2AP_RTT;
     }
 
+   if (sme_IsFeatureSupportedByFW(RTT3)) {
+        hddLog(LOG1, FL("RTT3 is supported by firmware"));
+        fset |= WIFI_FEATURE_RTT3;
+    }
+
 #ifdef FEATURE_WLAN_BATCH_SCAN
     if (fset & WIFI_FEATURE_EXTSCAN) {
         hddLog(LOG1, FL("Batch scan is supported as extscan is supported"));

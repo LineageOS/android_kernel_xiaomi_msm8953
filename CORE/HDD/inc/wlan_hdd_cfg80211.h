@@ -1125,6 +1125,8 @@ enum qca_wlan_vendor_config {
                                                     Concurrency */
 #define WIFI_FEATURE_LINK_LAYER_STATS   0x10000  /* Link layer stats */
 
+#define WIFI_FEATURE_RTT3               0x20000  /* RTT3 */
+
 /* WIFI CONFIG Parameter defines */
 #define WIFI_CONFIG_SET_AVG_STATS_FACTOR 0x0001  /* Average stats factor */
 #define WIFI_CONFIG_SET_GUARD_TIME      0x0002  /* Guard Time */
