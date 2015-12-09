@@ -12738,7 +12738,7 @@ int wlan_hdd_fw_mem_dump_req(hdd_context_t * pHddCtx)
    tAniFwrDumpReq fw_mem_dump_req={0};
    struct hdd_fw_mem_dump_req_ctx fw_mem_dump_ctx;
    eHalStatus status = eHAL_STATUS_FAILURE;
-   int ret=0;
+   int ret=0, result;
    ENTER();
 
    /*Check whether a dump request is already going on
@@ -12774,19 +12774,24 @@ int wlan_hdd_fw_mem_dump_req(hdd_context_t * pHddCtx)
        goto cleanup;
    }
    /*wait for fw mem dump completion to send event to userspace*/
-   ret = wait_for_completion_timeout(&fw_mem_dump_ctx.req_completion,msecs_to_jiffies(FW_MEM_DUMP_TIMEOUT_MS));
-   if (0 >= ret )
+   result =
+     wait_for_completion_timeout(&fw_mem_dump_ctx.req_completion,
+                            msecs_to_jiffies(FW_MEM_DUMP_TIMEOUT_MS));
+   if (0 >= result )
    {
       hddLog(VOS_TRACE_LEVEL_ERROR,
-          "%s: fw_mem_dump_req timeout %d ", __func__,ret);
+          "%s: fw_mem_dump_req timeout %d ", __func__,result);
+      ret = -ETIMEDOUT;
    }
 cleanup:
    spin_lock(&hdd_context_lock);
    fw_mem_dump_ctx.magic = 0;
+   if(!ret && !fw_mem_dump_ctx.status)
+      ret = -EFAULT;
    spin_unlock(&hdd_context_lock);
 
    EXIT();
-   return fw_mem_dump_ctx.status;
+   return ret;
 }
 
 /**
