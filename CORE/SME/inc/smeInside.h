@@ -205,6 +205,7 @@ typedef struct tagSmeCmd
         tSirPNOScanReq pnoInfo;
         tSirSpoofMacAddrReq macAddrSpoofCmd;
         tAniGetFrameLogReq getFramelogCmd;
+        struct s_ani_set_tx_max_pwr set_tx_max_pwr;
         tpNanRequest pNanReq;
     }u;
 }tSmeCmd;
