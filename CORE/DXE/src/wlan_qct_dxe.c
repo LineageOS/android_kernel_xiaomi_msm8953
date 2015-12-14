@@ -4802,6 +4802,8 @@ void *WLANDXE_Open
    wpalTimerInit(&tempDxeCtrlBlk->dxeSSRTimer,
                  dxeSSRTimerExpHandler, tempDxeCtrlBlk);
 
+   spin_lock_init(&dtraceLock);
+
 #ifdef DXE_TRACE
    DXTRACE(dxeTraceInit());
 #endif
