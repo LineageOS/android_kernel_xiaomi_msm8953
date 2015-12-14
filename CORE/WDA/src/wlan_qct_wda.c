@@ -4776,6 +4776,7 @@ void WDA_DelSTASelfRespCallback(WDI_DelSTASelfRspParamsType *
    vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
    vos_mem_free(pWdaParams) ;
    if (WDI_STATUS_SUCCESS != delStaSelfParams->status)
+   {
       VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
                     "%s: Failure with status %d", __func__,
                     wdiDelStaSelfRspParams->wdiStatus);
@@ -4783,6 +4784,7 @@ void WDA_DelSTASelfRespCallback(WDI_DelSTASelfRspParamsType *
                WLAN_LOG_INDICATOR_HOST_DRIVER,
                WLAN_LOG_REASON_DEL_BSS_STA_FAIL,
                FALSE, TRUE);
+   }
    WDA_SendMsg(pWDA, WDA_DEL_STA_SELF_RSP, (void *)delStaSelfParams , 0) ;
    return ;
 }
