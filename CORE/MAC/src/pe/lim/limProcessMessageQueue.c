@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -85,6 +85,8 @@
 #ifdef WLAN_FEATURE_EXTSCAN
 #define  SIZE_OF_FIXED_PARAM 12
 #endif
+
+#define CHECK_BIT(value, mask)    ((value) & (1 << (mask)))
 
 void limLogSessionStates(tpAniSirGlobal pMac);
 
@@ -2178,6 +2180,8 @@ limProcessMessages(tpAniSirGlobal pMac, tpSirMsgQ  limMsg)
         {
             tpPESession     psessionEntry;
             tANI_U8         sessionId;
+            tDphHashNode   *pStaDs;
+            int i, aid;
             tTdlsLinkEstablishParams *pTdlsLinkEstablishParams;
             pTdlsLinkEstablishParams = (tTdlsLinkEstablishParams*) limMsg->bodyptr;
 
@@ -2197,10 +2201,26 @@ limProcessMessages(tpAniSirGlobal pMac, tpSirMsgQ  limMsg)
             }
             else
             {
+                for (i = 0;
+                     i < sizeof(psessionEntry->peerAIDBitmap)/sizeof(tANI_U32);
+                                                                i++) {
+                    for (aid = 0; aid < (sizeof(tANI_U32) << 3); aid++) {
+                        if (CHECK_BIT(psessionEntry->peerAIDBitmap[i], aid)) {
+                            pStaDs = dphGetHashEntry(pMac,
+                                           (aid + i*(sizeof(tANI_U32) << 3)),
+                                            &psessionEntry->dph.dphHashTable);
+                              if ((NULL != pStaDs) &&
+                                   (pTdlsLinkEstablishParams->staIdx ==
+                                                       pStaDs->staIndex))
+                                  goto send_link_resp;
+                        }
+                    }
+                }
+send_link_resp:
                 limSendSmeTdlsLinkEstablishReqRsp(pMac,
                                                   psessionEntry->smeSessionId,
-                                                  NULL,
-                                                  NULL,
+                                                  pStaDs->staAddr,
+                                                  pStaDs,
                                                   pTdlsLinkEstablishParams->status) ;
             }
             vos_mem_free((v_VOID_t *)(limMsg->bodyptr));

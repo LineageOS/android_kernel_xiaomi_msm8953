@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -945,6 +945,11 @@ eHalStatus tdlsMsgProcessor(tpAniSirGlobal pMac,  v_U16_t msgType,
             roamInfo.staId = delStaRsp->staId ;
             roamInfo.statusCode = delStaRsp->statusCode ;
 #endif
+            vos_mem_copy(&roamInfo.peerMac, linkEstablishReqRsp->peerMac,
+                                         sizeof(tSirMacAddr)) ;
+            roamInfo.staId  = (tANI_U8)linkEstablishReqRsp->sta_idx;
+            roamInfo.statusCode = linkEstablishReqRsp->statusCode;
+
             csrRoamCallCallback(pMac, linkEstablishReqRsp->sessionId, &roamInfo, 0,
                          eCSR_ROAM_TDLS_STATUS_UPDATE,
                                eCSR_ROAM_RESULT_LINK_ESTABLISH_REQ_RSP);
