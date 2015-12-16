@@ -576,6 +576,7 @@ CDEFINES +=	-DWLAN_DEBUG \
 		-DSME_TRACE_RECORD \
 		-DPE_DEBUG_LOGW \
 		-DPE_DEBUG_LOGE \
+                -DDXE_TRACE \
 		-DDEBUG
 endif
 

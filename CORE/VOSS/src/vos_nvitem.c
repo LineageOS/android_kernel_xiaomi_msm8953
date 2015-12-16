@@ -4017,6 +4017,27 @@ int __wlan_hdd_linux_reg_notifier(struct wiphy *wiphy,
     if (request->initiator == NL80211_REGDOM_SET_BY_DRIVER)
     {
 
+        if (vos_is_load_unload_in_progress(VOS_MODULE_ID_VOSS, NULL)) {
+            temp_reg_domain = REGDOMAIN_COUNT;
+            /* lookup the country in the local database */
+            for (i = 0; i < countryInfoTable.countryCount &&
+                         REGDOMAIN_COUNT == temp_reg_domain; i++)
+            {
+                if (memcmp(request->alpha2, countryInfoTable.countryInfo[i].countryCode,
+                           VOS_COUNTRY_CODE_LEN) == 0)
+                {
+                /* country code is found */
+                /* record the temporary regulatory_domain as well */
+                temp_reg_domain = countryInfoTable.countryInfo[i].regDomain;
+                break;
+                }
+            }
+            if (REGDOMAIN_COUNT == temp_reg_domain)
+                temp_reg_domain = REGDOMAIN_WORLD;
+
+            cur_reg_domain = temp_reg_domain;
+        }
+
         isVHT80Allowed = pHddCtx->isVHT80Allowed;
         if (create_linux_regulatory_entry(wiphy, request, nBandCapability) == 0)
         {
@@ -4045,6 +4066,7 @@ int __wlan_hdd_linux_reg_notifier(struct wiphy *wiphy,
 
         if (!(pnvEFSTable->halnv.tables.defaultCountryTable.countryCode[0] == '0' &&
              pnvEFSTable->halnv.tables.defaultCountryTable.countryCode[1] == '0') &&
+            (request->initiator ==  NL80211_REGDOM_SET_BY_CORE) &&
             (vos_is_load_unload_in_progress( VOS_MODULE_ID_VOSS, NULL)))
         {
            VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_INFO,
@@ -4092,16 +4114,18 @@ int __wlan_hdd_linux_reg_notifier(struct wiphy *wiphy,
 
         cur_reg_domain = temp_reg_domain;
 
-        /* now pass the new country information to sme */
-        if (request->alpha2[0] == '0' && request->alpha2[1] == '0')
-        {
-           sme_GenericChangeCountryCode(pHddCtx->hHal, country_code,
+        if(!vos_is_load_unload_in_progress( VOS_MODULE_ID_VOSS, NULL)) {
+            /* now pass the new country information to sme */
+            if (request->alpha2[0] == '0' && request->alpha2[1] == '0')
+            {
+               sme_GenericChangeCountryCode(pHddCtx->hHal, country_code,
                                            REGDOMAIN_COUNT);
-        }
-        else
-        {
-           sme_GenericChangeCountryCode(pHddCtx->hHal, country_code,
+            }
+            else
+            {
+               sme_GenericChangeCountryCode(pHddCtx->hHal, country_code,
                                         temp_reg_domain);
+            }
         }
 
     }

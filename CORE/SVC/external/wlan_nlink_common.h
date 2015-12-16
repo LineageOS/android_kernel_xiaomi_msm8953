@@ -89,6 +89,7 @@
 #define WLAN_SVC_IFACE_NUM_QUEUES      6
 
 #define WLAN_SVC_SAP_RESTART_IND 0x108
+#define WLAN_SVC_WLAN_TP_IND     0x109
 // Event data for WLAN_BTC_QUERY_STATE_RSP & WLAN_STA_ASSOC_DONE_IND
 typedef struct
 {

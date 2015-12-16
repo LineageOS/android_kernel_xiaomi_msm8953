@@ -3398,6 +3398,27 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                  CFG_BTC_STATIC_OPP_WLAN_IDLE_BT_LEN_MIN,
                  CFG_BTC_STATIC_OPP_WLAN_IDLE_BT_LEN_MAX ),
 
+   REG_VARIABLE( CFG_TCP_DELACK_COMPUTE_INTERVAL, WLAN_PARAM_Integer,
+                 hdd_config_t, tcpDelAckComputeInterval,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_TCP_DELACK_COMPUTE_INTERVAL_DEFAULT,
+                 CFG_TCP_DELACK_COMPUTE_INTERVAL_MIN,
+                 CFG_TCP_DELACK_COMPUTE_INTERVAL_MAX),
+
+   REG_VARIABLE( CFG_TCP_DELACK_THRESHOLD_HIGH, WLAN_PARAM_Integer,
+                hdd_config_t, tcpDelAckThresholdHigh,
+                VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                CFG_TCP_DELACK_THRESHOLD_HIGH_DEFAULT,
+                CFG_TCP_DELACK_THRESHOLD_HIGH_MIN,
+                CFG_TCP_DELACK_THRESHOLD_HIGH_MAX ),
+
+   REG_VARIABLE( CFG_TCP_DELACK_THRESHOLD_LOW, WLAN_PARAM_Integer,
+                hdd_config_t, tcpDelAckThresholdLow,
+                VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                CFG_TCP_DELACK_THRESHOLD_LOW_DEFAULT,
+                CFG_TCP_DELACK_THRESHOLD_LOW_MIN,
+                CFG_TCP_DELACK_THRESHOLD_LOW_MAX ),
+
    REG_VARIABLE( CFG_LINK_FAIL_TIMEOUT_NAME , WLAN_PARAM_Integer,
                  hdd_config_t, linkFailTimeout,
                  VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
@@ -3453,6 +3474,28 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                  CFG_WIFI_CONFIG_DEFAULT,
                  CFG_WIFI_CONFIG_MIN,
                  CFG_WIFI_CONFIG_MAX ),
+
+  REG_VARIABLE( CFG_ENABLE_CRASH_INJECT, WLAN_PARAM_Integer,
+                hdd_config_t, crash_inject_enabled,
+                VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                CFG_ENABLE_CRASH_INJECT_DEFAULT,
+                CFG_ENABLE_CRASH_INJECT_MIN,
+                CFG_ENABLE_CRASH_INJECT_MAX),
+
+  REG_VARIABLE( CFG_ENABLE_TCP_DELACK_NAME, WLAN_PARAM_Integer,
+                 hdd_config_t, enable_delack,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_ENABLE_TCP_DELACK_DEFAULT,
+                 CFG_ENABLE_TCP_DELACK_MIN,
+                 CFG_ENABLE_TCP_DELACK_MAX ),
+
+  REG_VARIABLE( CFG_DISABLE_BAR_WAKEUP_HOST_NAME, WLAN_PARAM_Integer,
+                 hdd_config_t, disableBarWakeUp,
+                 VAR_FLAGS_OPTIONAL |
+                 VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_DISABLE_BAR_WAKEUP_HOST_DEFAULT,
+                 CFG_DISABLE_BAR_WAKEUP_HOST_MIN,
+                 CFG_DISABLE_BAR_WAKEUP_HOST_MAX),
 };
 
 /*
@@ -3880,6 +3923,22 @@ static void print_hdd_cfg(hdd_context_t *pHddCtx)
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [gDxeSSREnable] Value = [%u] ", pHddCtx->cfg_ini->dxeSSREnable);
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [toggleArpBDRates] Value = [%u] ", pHddCtx->cfg_ini->toggleArpBDRates);
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [ExtScanConcMode] Value = [%u] ", pHddCtx->cfg_ini->cfgExtScanConcMode);
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [gEnableForceTargetAssert] Value = [%u] ", pHddCtx->cfg_ini->crash_inject_enabled);
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+          "Name = [gTcpDelAckComputeInterval] Value = [%u] ",
+          pHddCtx->cfg_ini->tcpDelAckComputeInterval);
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+          "Name = [gTcpDelAckThresholdHigh] Value = [%u] ",
+          pHddCtx->cfg_ini->tcpDelAckThresholdHigh);
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+          "Name = [gTcpDelAckThresholdLow] Value = [%u] ",
+          pHddCtx->cfg_ini->tcpDelAckThresholdLow);
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+          "Name = [gEnableDelAck] Value = [%u] ",
+          pHddCtx->cfg_ini->enable_delack);
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+          "Name = [disableBarWakeUp] Value = [%u] ",
+          pHddCtx->cfg_ini->disableBarWakeUp);
 }
 
 
@@ -5461,6 +5520,14 @@ v_BOOL_t hdd_update_config_dat( hdd_context_t *pHddCtx )
    {
       fStatus = FALSE;
       hddLog(LOGE, "Could not pass on WNI_CFG_ENABLE_MAC_ADDR_SPOOFING ");
+   }
+
+   if (ccmCfgSetInt(pHddCtx->hHal, WNI_CFG_DISABLE_BAR_WAKE_UP_HOST,
+               pConfig->disableBarWakeUp,
+               NULL, eANI_BOOLEAN_FALSE) == eHAL_STATUS_FAILURE)
+   {
+       fStatus = FALSE;
+       hddLog(LOGE, "Could not pass on WNI_CFG_DISABLE_BAR_WAKE_UP_HOST to CCM");
    }
 
    return fStatus;

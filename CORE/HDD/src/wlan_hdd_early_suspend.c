@@ -1919,7 +1919,12 @@ VOS_STATUS hdd_wlan_shutdown(void)
         vos_timer_stop(&pHddCtx->tx_rx_trafficTmr);
    }
 
+   vos_flush_delayed_work(&pHddCtx->spoof_mac_addr_work);
    hdd_reset_all_adapters(pHddCtx);
+
+   /* set default value of Tcp delack and stop timer */
+   hdd_set_default_stop_delack_timer(pHddCtx);
+
    /* DeRegister with platform driver as client for Suspend/Resume */
    vosStatus = hddDeregisterPmOps(pHddCtx);
    if ( !VOS_IS_STATUS_SUCCESS( vosStatus ) )

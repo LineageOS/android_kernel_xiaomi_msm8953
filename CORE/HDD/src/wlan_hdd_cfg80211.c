@@ -180,6 +180,8 @@
 #define MAC_ADDR_SPOOFING_FW_HOST_DISABLE           0
 #define MAC_ADDR_SPOOFING_FW_HOST_ENABLE            1
 #define MAC_ADDR_SPOOFING_FW_ENABLE_HOST_DISABLE    2
+#define MAC_ADDR_SPOOFING_DEFER_INTERVAL            10 //in ms
+
 
 static const u32 hdd_cipher_suites[] =
 {
@@ -5075,10 +5077,8 @@ static int __wlan_hdd_cfg80211_set_spoofed_mac_oui(struct wiphy *wiphy,
             pHddCtx->spoofMacAddr.isEnabled = FALSE;
     }
 
-    if (VOS_STATUS_SUCCESS != hdd_processSpoofMacAddrRequest(pHddCtx))
-    {
-        hddLog(LOGE, FL("Failed to send Spoof Mac Addr to FW"));
-    }
+    schedule_delayed_work(&pHddCtx->spoof_mac_addr_work,
+                          msecs_to_jiffies(MAC_ADDR_SPOOFING_DEFER_INTERVAL));
 
     EXIT();
     return 0;
@@ -5826,7 +5826,7 @@ __wlan_hdd_cfg80211_get_fw_mem_dump(struct wiphy *wiphy,
     /*call common API for FW mem dump req*/
     ret = wlan_hdd_fw_mem_dump_req(pHddCtx);
 
-    if (true == ret)
+    if (!ret)
     {
         /*indicate to userspace the status of fw mem dump */
         wlan_indicate_mem_dump_complete(true);
@@ -7293,7 +7293,7 @@ static int __wlan_hdd_cfg80211_wifi_configuration_set(struct wiphy *wiphy,
             tb[PARAM_MODULATED_DTIM]);
        hddLog(LOG1, FL("Modulated DTIM: pReq->paramValue:%d "),
                                         pReq->paramValue);
-       pHddCtx->cfg_ini->fMaxLIModulatedDTIM = pReq->paramValue;
+       pHddCtx->cfg_ini->enableDynamicDTIM = pReq->paramValue;
        hdd_set_pwrparams(pHddCtx);
     if (BMPS == pmcGetPmcState(pHddCtx->hHal)) {
        hddLog( LOG1, FL("WifiConfig: Requesting FullPower!"));
@@ -8115,16 +8115,15 @@ void wlan_hdd_cfg80211_update_reg_info(struct wiphy *wiphy)
        }
     }
 }
-
 /* This function registers for all frame which supplicant is interested in */
 void wlan_hdd_cfg80211_register_frames(hdd_adapter_t* pAdapter)
 {
     tHalHandle hHal = WLAN_HDD_GET_HAL_CTX(pAdapter);
     /* Register for all P2P action, public action etc frames */
     v_U16_t type = (SIR_MAC_MGMT_FRAME << 2) | ( SIR_MAC_MGMT_ACTION << 4);
-
     ENTER();
-
+    /* Register frame indication call back */
+    sme_register_mgmt_frame_ind_callback(hHal, hdd_indicate_mgmt_frame);
    /* Right now we are registering these frame when driver is getting
       initialized. Once we will move to 2.6.37 kernel, in which we have
       frame register ops, we will move this code as a part of that */
@@ -12596,11 +12595,13 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
 
     /* Get the Scan Req */
     req = pAdapter->request;
+    pAdapter->request = NULL;
 
-    if (!req)
+    if (!req || req->wiphy == NULL)
     {
         hddLog(VOS_TRACE_LEVEL_ERROR, "request is became NULL");
         pScanInfo->mScanPending = VOS_FALSE;
+        complete(&pScanInfo->abortscan_event_var);
         goto allow_suspend;
     }
 
@@ -12637,7 +12638,12 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
     {
          aborted = true;
     }
-    cfg80211_scan_done(req, aborted);
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
+    if (pAdapter->dev->flags & IFF_UP)
+#endif
+        cfg80211_scan_done(req, aborted);
+
     complete(&pScanInfo->abortscan_event_var);
 
     if ((pHddCtx->cfg_ini->enableMacSpoofing == MAC_ADDR_SPOOFING_FW_HOST_ENABLE
@@ -12645,7 +12651,9 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
          ||  pHddCtx->spoofMacAddr.isReqDeferred)) {
         /* Generate new random mac addr for next scan */
         hddLog(VOS_TRACE_LEVEL_INFO, "scan completed - generate new spoof mac addr");
-        hdd_processSpoofMacAddrRequest(pHddCtx);
+
+        schedule_delayed_work(&pHddCtx->spoof_mac_addr_work,
+                           msecs_to_jiffies(MAC_ADDR_SPOOFING_DEFER_INTERVAL));
     }
 
 allow_suspend:
@@ -14405,10 +14413,6 @@ static int __wlan_hdd_cfg80211_connect( struct wiphy *wiphy,
         return status;
     }
 
-    if (vos_max_concurrent_connections_reached()) {
-        hddLog(VOS_TRACE_LEVEL_INFO, FL("Reached max concurrent connections"));
-        return -ECONNREFUSED;
-    }
 
 #ifdef WLAN_BTAMP_FEATURE
     //Infra connect not supported when AMP traffic is on.
@@ -14435,6 +14439,11 @@ static int __wlan_hdd_cfg80211_connect( struct wiphy *wiphy,
         hddLog(VOS_TRACE_LEVEL_ERROR, FL("Failed to disconnect the existing"
                 " connection"));
         return -EALREADY;
+    }
+    /* Check for max concurrent connections after doing disconnect if any*/
+    if (vos_max_concurrent_connections_reached()) {
+        hddLog(VOS_TRACE_LEVEL_INFO, FL("Reached max concurrent connections"));
+        return -ECONNREFUSED;
     }
 
     /*initialise security parameters*/
@@ -18024,6 +18033,9 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                         }
                     }
                 }
+                /* stop TCP delack timer if TDLS is enable  */
+                set_bit(WLAN_TDLS_MODE, &pHddCtx->mode);
+                hdd_manage_delack_timer(pHddCtx);
             }
             break;
         case NL80211_TDLS_DISABLE_LINK:
@@ -18164,6 +18176,11 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                     mutex_unlock(&pHddCtx->tdls_lock);
                     VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                               "%s: TDLS Peer Station doesn't exist.", __func__);
+                }
+                if (numCurrTdlsPeers == 0) {
+                   /* start TCP delack timer if TDLS is disable  */
+                    clear_bit(WLAN_TDLS_MODE, &pHddCtx->mode);
+                    hdd_manage_delack_timer(pHddCtx);
                 }
             }
             break;

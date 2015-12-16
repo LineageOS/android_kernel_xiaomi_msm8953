@@ -73,6 +73,12 @@ when           who        what, where, why
  * -------------------------------------------------------------------------*/
 #define WLANDXE_CTXT_COOKIE              0xC00CC111
 
+#ifdef DXE_TRACE
+#define DXTRACE(p) p
+#else
+#define DXTRACE(p) {  }
+#endif
+
 #define foreach_valid_channel(idx)                \
     for (idx = 0; idx < WDTS_CHANNEL_MAX; idx++)  \
         if (!(dxeGetEnabledChannels() & 1<<idx))  \
@@ -509,6 +515,15 @@ typedef enum
    WLANDXE_DMA_CHANNEL_MAX
 } WLANDXE_DMAChannelType;
 
+enum
+{
+   TRACE_CH_ENABLE,
+   TRACE_POWER_STATE,
+   TRACE_RXINT_STATE,
+   TRACE_TXINT_STATE,
+   TRACE_SMSM_NOTIFY
+};
+
 /** DXE HW Long Descriptor format */
 typedef struct
 {
@@ -720,6 +735,26 @@ typedef struct
    wpt_uint8                       rxIntChanlSrc;
    wpt_uint8                       txCmpIntChanlSrc;
 } WLANDXE_EnvInformation;
+
+typedef struct
+{
+    /* Records are stored in ring buffer */
+    v_U32_t head;
+    v_U32_t tail;
+    v_U32_t num;
+
+    /* Config for controlling the trace */
+    v_U8_t enable;
+}dxeTraceData;
+
+typedef struct
+{
+    v_U32_t time;
+    v_U8_t chan;
+    v_U8_t code;
+    v_U32_t data;
+}dxeTraceRecord, *pdxeTraceRecord;
+
 /*==========================================================================
   @  Function Name 
       dxeCommonDefaultConfig

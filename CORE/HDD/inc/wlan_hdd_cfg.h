@@ -583,12 +583,12 @@ typedef enum
 #define CFG_ACTIVE_MAX_CHANNEL_TIME_NAME       "gActiveMaxChannelTime"
 #define CFG_ACTIVE_MAX_CHANNEL_TIME_MIN        ( 0 )
 #define CFG_ACTIVE_MAX_CHANNEL_TIME_MAX        ( 10000 )
-#define CFG_ACTIVE_MAX_CHANNEL_TIME_DEFAULT    ( 40 )
+#define CFG_ACTIVE_MAX_CHANNEL_TIME_DEFAULT    ( 50 )
 
 #define CFG_ACTIVE_MIN_CHANNEL_TIME_NAME       "gActiveMinChannelTime"
 #define CFG_ACTIVE_MIN_CHANNEL_TIME_MIN        ( 0 )
 #define CFG_ACTIVE_MIN_CHANNEL_TIME_MAX        ( 10000 )
-#define CFG_ACTIVE_MIN_CHANNEL_TIME_DEFAULT    ( 20 )
+#define CFG_ACTIVE_MIN_CHANNEL_TIME_DEFAULT    ( 30 )
 
 #define CFG_ACTIVE_MAX_CHANNEL_TIME_BTC_NAME       "gActiveMaxChannelTimeBtc"
 #define CFG_ACTIVE_MAX_CHANNEL_TIME_BTC_MIN        ( 0 )
@@ -1531,6 +1531,10 @@ typedef enum
 #define CFG_MULTICAST_HOST_FW_MSGS_MAX      (1)
 #define CFG_MULTICAST_HOST_FW_MSGS_DEFAULT  (1)
 
+#define CFG_ENABLE_TCP_DELACK_NAME           "gEnableDelAck"
+#define CFG_ENABLE_TCP_DELACK_MIN            (0)
+#define CFG_ENABLE_TCP_DELACK_MAX            (1)
+#define CFG_ENABLE_TCP_DELACK_DEFAULT        (1)
 
 /* In cfg.dat 1=1MBPS, 2=2MBPS, 3=5_5MBPS, 4=11MBPS, 5=6MBPS, 6=9MBPS,
  * 7=12MBPS, 8=18MBPS, 9=24MBPS. But 6=9MBPS and 8=18MBPS are not basic
@@ -1548,6 +1552,16 @@ typedef enum
 #define CFG_DEFAULT_RATE_INDEX_24GH_MIN           ( 1 )
 #define CFG_DEFAULT_RATE_INDEX_24GH_MAX           ( 7 )
 #define CFG_DEFAULT_RATE_INDEX_24GH_DEFAULT       ( 1 )
+
+/*
+ * This INI item is used to control subsystem restart(SSR) test framework
+ * Set its value to 1 to enable APPS trigerred SSR testing
+ */
+
+#define CFG_ENABLE_CRASH_INJECT         "gEnableForceTargetAssert"
+#define CFG_ENABLE_CRASH_INJECT_MIN     (0)
+#define CFG_ENABLE_CRASH_INJECT_MAX     (1)
+#define CFG_ENABLE_CRASH_INJECT_DEFAULT (0)
 
 static __inline tANI_U32 defHddRateToDefCfgRate( tANI_U32 defRateIndex )
 {
@@ -2260,6 +2274,21 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_ROAMING_DFS_CHANNEL_MAX                 (1)
 #define CFG_ROAMING_DFS_CHANNEL_DEFAULT             (1)
 
+#define CFG_TCP_DELACK_COMPUTE_INTERVAL         "gTcpDelAckComputeInterval"
+#define CFG_TCP_DELACK_COMPUTE_INTERVAL_DEFAULT ( 2000 )
+#define CFG_TCP_DELACK_COMPUTE_INTERVAL_MIN     ( 1000 )
+#define CFG_TCP_DELACK_COMPUTE_INTERVAL_MAX     ( 10000 )
+
+#define CFG_TCP_DELACK_THRESHOLD_HIGH              "gTcpDelAckThresholdHigh"
+#define CFG_TCP_DELACK_THRESHOLD_HIGH_DEFAULT      ( 17000 )
+#define CFG_TCP_DELACK_THRESHOLD_HIGH_MIN          ( 1000 )
+#define CFG_TCP_DELACK_THRESHOLD_HIGH_MAX          ( 25000 )
+
+#define CFG_TCP_DELACK_THRESHOLD_LOW               "gTcpDelAckThresholdLow"
+#define CFG_TCP_DELACK_THRESHOLD_LOW_DEFAULT       ( 12000 )
+#define CFG_TCP_DELACK_THRESHOLD_LOW_MIN           ( 0 )
+#define CFG_TCP_DELACK_THRESHOLD_LOW_MAX           ( 25000 )
+
 
 #ifdef WLAN_LOGGING_SOCK_SVC_ENABLE
 //Enable WLAN Logging to app space
@@ -2537,6 +2566,12 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_TOGGLE_ARP_BDRATES_MAX         2
 #define CFG_TOGGLE_ARP_BDRATES_DEFAULT     0
 
+#define CFG_DISABLE_BAR_WAKEUP_HOST_NAME       "gDisableBarWakeUp"
+#define CFG_DISABLE_BAR_WAKEUP_HOST_MIN         0
+#define CFG_DISABLE_BAR_WAKEUP_HOST_MAX         1
+#define CFG_DISABLE_BAR_WAKEUP_HOST_DEFAULT     0
+
+
 /*
  * gExtScanConcMode is used to manage EXT Scan during concurrency
  * This can be useful during WFD session. To avoid glitches during WFD
@@ -2548,7 +2583,7 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_EXT_SCAN_CONC_MODE                             "gExtScanConcMode"
 #define CFG_EXT_SCAN_CONC_MODE_MIN                          (0)
 #define CFG_EXT_SCAN_CONC_MODE_MAX                          (2)
-#define CFG_EXT_SCAN_CONC_MODE_DEFAULT                      (1)
+#define CFG_EXT_SCAN_CONC_MODE_DEFAULT                      (0)
 
 /*
  * If within gLinkFailTimeout period(values is mentioned in msec) if FW
@@ -3055,6 +3090,9 @@ typedef struct
    v_U32_t                     cfgBtcCriticalHidnSniffBlkGuidance;
    v_U32_t                     cfgBtcA2dpTxQueueThold;
    v_U32_t                     cfgBtcOppTxQueueThold;
+   v_U32_t                     tcpDelAckComputeInterval;
+   v_U32_t                     tcpDelAckThresholdHigh;
+   v_U32_t                     tcpDelAckThresholdLow;
 
 #ifdef WLAN_FEATURE_11W
    v_U32_t                     pmfSaQueryMaxRetries;
@@ -3108,6 +3146,9 @@ typedef struct
    v_U32_t                     cfgExtScanConcMode;
    v_U16_t                     rps_mask;
    v_BOOL_t                    fEnableWifiConfig;
+   v_BOOL_t                    crash_inject_enabled;
+   v_U32_t                     enable_delack;
+   v_BOOL_t                    disableBarWakeUp;
 } hdd_config_t;
 
 /*--------------------------------------------------------------------------- 

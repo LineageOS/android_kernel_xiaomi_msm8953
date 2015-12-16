@@ -85,6 +85,13 @@
 #define  CONVERT_WDI2SIR_STATUS(x) \
    ((WDI_STATUS_SUCCESS != (x)) ? eSIR_FAILURE : eSIR_SUCCESS)
 
+/* Threshold to print tx time taken in ms*/
+#define WDA_TX_TIME_THRESHOLD 1000
+/* Recover with ssr if tx timeouts continuously
+ * for threshold number of times.
+ */
+#define WDA_TX_FAILURE_RECOVERY_THRESHOLD 3
+
 #define  IS_WDI_STATUS_FAILURE(status) \
    ((WDI_STATUS_SUCCESS != (status)) && (WDI_STATUS_PENDING != (status)))
 #define  CONVERT_WDI2VOS_STATUS(x) \
@@ -2340,6 +2347,20 @@ VOS_STATUS WDA_prepareConfigTLV(v_PVOID_t pVosContext,
    tlvStruct = (tHalCfg *)( (tANI_U8 *) tlvStruct
                            + sizeof(tHalCfg) + tlvStruct->length) ;
 
+   /* QWLAN_HAL_CFG_BAR_WAKEUP_HOST_DISABLE */
+   tlvStruct->type = QWLAN_HAL_CFG_BAR_WAKEUP_HOST_DISABLE;
+   tlvStruct->length = sizeof(tANI_U32);
+   configDataValue = (tANI_U32 *)(tlvStruct + 1);
+
+   if (wlan_cfgGetInt(pMac, WNI_CFG_DISABLE_BAR_WAKE_UP_HOST,
+                         configDataValue ) != eSIR_SUCCESS)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               "Failed to get value for WNI_CFG_DISABLE_BAR_WAKE_UP_HOST");
+      goto handle_failure;
+   }
+   tlvStruct = (tHalCfg *)( (tANI_U8 *) tlvStruct
+                           + sizeof(tHalCfg) + tlvStruct->length) ;
    wdiStartParams->usConfigBufferLen = (tANI_U8 *)tlvStruct - tlvStructStart ;
 #ifdef WLAN_DEBUG
    {
@@ -13926,6 +13947,7 @@ VOS_STATUS WDA_TxPacket(tWDA_CbContext *pWDA,
    tBssSystemRole systemRole = eSYSTEM_UNKNOWN_ROLE;
    tpAniSirGlobal pMac;
    tpSirTxBdStatus txBdStatus = {0};
+   v_TIME_t time_snapshot;
 
    if((NULL == pWDA)||(NULL == pFrmBuf)) 
    {
@@ -14084,6 +14106,7 @@ VOS_STATUS WDA_TxPacket(tWDA_CbContext *pWDA,
       } 
       return VOS_STATUS_E_FAILURE;
    }
+   time_snapshot = vos_timer_get_system_time();
    /* 
     * Wait for the event to be set by the TL, to get the response of TX 
     * complete, this event should be set by the Callback function called by TL 
@@ -14132,8 +14155,19 @@ VOS_STATUS WDA_TxPacket(tWDA_CbContext *pWDA,
                                 "Tx Complete timeout Timer Stop Failed ");
          }
       }
+      pWDA->mgmtTxfailureCnt++;
+
+      /* SSR if timeout continously for
+       * WDA_TX_FAILURE_RECOVERY_THRESHOLD times.
+       */
+      if (WDA_TX_FAILURE_RECOVERY_THRESHOLD ==
+                                pWDA->mgmtTxfailureCnt)
+      {
+         vos_wlanRestart();
+      }
       status = VOS_STATUS_E_FAILURE;
    }
+
 #ifdef WLAN_DUMP_MGMTFRAMES
    if (VOS_IS_STATUS_SUCCESS(status))
    {
@@ -14146,6 +14180,15 @@ VOS_STATUS WDA_TxPacket(tWDA_CbContext *pWDA,
 
    if (VOS_IS_STATUS_SUCCESS(status))
    {
+      pWDA->mgmtTxfailureCnt = 0;
+      if ((vos_timer_get_system_time() - time_snapshot) >=
+                                        WDA_TX_TIME_THRESHOLD)
+      {
+          VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                     "Tx Complete took %lu ms",
+                     vos_timer_get_system_time() - time_snapshot);
+      }
+
       if (pMac->fEnableDebugLog & 0x1)
       {
          if ((pFc->type == SIR_MAC_MGMT_FRAME) &&
