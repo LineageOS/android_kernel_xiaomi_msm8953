@@ -1645,9 +1645,8 @@ eHalStatus csrScanHandleSearchForSSID(tpAniSirGlobal pMac, tSmeCmd *pCommand)
     tCsrScanResultFilter *pScanFilter = NULL;
     tCsrRoamProfile *pProfile = pCommand->u.scanCmd.pToRoamProfile;
     tANI_U32 sessionId = pCommand->sessionId;
-#ifdef FEATURE_WLAN_BTAMP_UT_RF
-    tCsrRoamSession *pSession = CSR_GET_SESSION( pMac, sessionId );
-#endif
+    tCsrRoamSession *pSession = CSR_GET_SESSION(pMac, sessionId);
+
     do
     {
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
@@ -1663,6 +1662,18 @@ eHalStatus csrScanHandleSearchForSSID(tpAniSirGlobal pMac, tSmeCmd *pCommand)
             break;
         }
 #endif
+        if (!pSession)
+        {
+            smsLog(pMac, LOGE, FL("session %d not found"), sessionId);
+            break;
+        }
+        /* If Disconnect is already issued from HDD no need to issue connect */
+        if (pSession->abortConnection)
+        {
+           smsLog(pMac, LOGE,
+              FL("Disconnect in progress, no need to issue connect"));
+           break;
+        }
         //If there is roam command waiting, ignore this roam because the newer roam command is the one to execute
         if(csrIsRoamCommandWaitingForSession(pMac, sessionId))
         {
