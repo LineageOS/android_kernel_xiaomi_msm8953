@@ -225,8 +225,10 @@ v_VOID_t * vos_mem_malloc_debug( v_SIZE_t size, char* fileName, v_U32_t lineNum)
       if (vos_timer_get_system_time() - time_before_kmalloc >=
                                     VOS_GET_MEMORY_TIME_THRESHOLD)
          VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
-               "%s: kmalloc took %lu msec", __func__,
-               vos_timer_get_system_time() - time_before_kmalloc);
+               "%s: kmalloc took %lu msec for size %d called from %pS at line %d",
+               __func__,
+               vos_timer_get_system_time() - time_before_kmalloc,
+               size, (void *)_RET_IP_, lineNum);
       if ((flags != GFP_ATOMIC) && (NULL == memPtr))
       {
          WARN_ON(1);
@@ -247,8 +249,10 @@ v_VOID_t * vos_mem_malloc_debug( v_SIZE_t size, char* fileName, v_U32_t lineNum)
    if (vos_timer_get_system_time() - time_before_kmalloc >=
                               VOS_GET_MEMORY_TIME_THRESHOLD)
       VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
-          "%s: kmalloc took %lu msec", __func__,
-          vos_timer_get_system_time() - time_before_kmalloc);
+           "%s: kmalloc took %lu msec for size %d called from %pS at line %d",
+            __func__,
+            vos_timer_get_system_time() - time_before_kmalloc,
+            size, (void *)_RET_IP_, lineNum);
 
    if(memStruct != NULL)
    {
@@ -366,8 +370,10 @@ v_VOID_t * vos_mem_malloc( v_SIZE_t size )
    if (vos_timer_get_system_time() - time_before_kmalloc >=
                               VOS_GET_MEMORY_TIME_THRESHOLD)
       VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
-          "%s: kmalloc took %lu msec", __func__,
-          vos_timer_get_system_time() - time_before_kmalloc);
+          "%s: kmalloc took %lu msec for size %d from %pS",
+          __func__,
+          vos_timer_get_system_time() - time_before_kmalloc,
+          size, (void *)_RET_IP_);
 
    if ((flags != GFP_ATOMIC) && (NULL == memPtr))
    {

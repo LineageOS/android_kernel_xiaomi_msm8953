@@ -127,6 +127,7 @@ typedef enum {
 #ifdef FEATURE_WLAN_TDLS
    TDLS_OFF_CHANNEL      = 51,
 #endif
+   RTT3                  = 52,
    MGMT_FRAME_LOGGING    = 53,
    ENHANCED_TXBD_COMPLETION = 54,
    LOGGING_ENHANCEMENT   = 55,

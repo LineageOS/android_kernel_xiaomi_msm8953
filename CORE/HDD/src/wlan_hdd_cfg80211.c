@@ -5543,6 +5543,11 @@ __wlan_hdd_cfg80211_get_supported_features(struct wiphy *wiphy,
         fset |= WIFI_FEATURE_D2AP_RTT;
     }
 
+   if (sme_IsFeatureSupportedByFW(RTT3)) {
+        hddLog(LOG1, FL("RTT3 is supported by firmware"));
+        fset |= WIFI_FEATURE_RTT3;
+    }
+
 #ifdef FEATURE_WLAN_BATCH_SCAN
     if (fset & WIFI_FEATURE_EXTSCAN) {
         hddLog(LOG1, FL("Batch scan is supported as extscan is supported"));
@@ -7746,6 +7751,10 @@ struct nl80211_vendor_cmd_info wlan_hdd_cfg80211_vendor_events[] =
     [QCA_NL80211_VENDOR_SUBCMD_MONITOR_RSSI_INDEX] = {
         .vendor_id = QCA_NL80211_VENDOR_ID,
         .subcmd = QCA_NL80211_VENDOR_SUBCMD_MONITOR_RSSI
+    },
+    [QCA_NL80211_VENDOR_SUBCMD_EXTSCAN_HOTLIST_AP_LOST_INDEX] = {
+        .vendor_id = QCA_NL80211_VENDOR_ID,
+        .subcmd = QCA_NL80211_VENDOR_SUBCMD_EXTSCAN_HOTLIST_AP_LOST
     },
 
 };

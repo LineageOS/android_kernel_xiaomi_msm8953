@@ -200,7 +200,7 @@ static placeHolderInCapBitmap supportEnabledFeatures[] =
 #else
     ,FEATURE_NOT_SUPPORTED         //51
 #endif
-   ,FEATURE_NOT_SUPPORTED          //52
+   ,RTT3                           //52
    ,MGMT_FRAME_LOGGING             //53
    ,ENHANCED_TXBD_COMPLETION       //54
    ,LOGGING_ENHANCEMENT            //55
@@ -1550,6 +1550,9 @@ void WDI_TraceHostFWCapabilities(tANI_U32 *capabilityBitmap)
                           break;
                      case EXT_LL_STAT: snprintf(pCapStr, sizeof("EXT_LL_STAT"), "%s", "EXT_LL_STAT");
                           pCapStr += strlen("EXT_LL_STAT");
+                          break;
+                     case RTT3: snprintf(pCapStr, sizeof("RTT3"), "%s", "RTT3");
+                          pCapStr += strlen("RTT3");
                           break;
 
                  }

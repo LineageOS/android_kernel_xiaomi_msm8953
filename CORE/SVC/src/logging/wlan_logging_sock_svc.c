@@ -1311,8 +1311,8 @@ static int wlan_logging_proc_sock_rx_msg(struct sk_buff *skb)
 
 void wlan_init_log_completion(void)
 {
-	gwlan_logging.log_complete.indicator = WLAN_LOG_TYPE_NON_FATAL;
-	gwlan_logging.log_complete.is_fatal = WLAN_LOG_INDICATOR_UNUSED;
+	gwlan_logging.log_complete.indicator = WLAN_LOG_INDICATOR_UNUSED;
+	gwlan_logging.log_complete.is_fatal = WLAN_LOG_TYPE_NON_FATAL;
 	gwlan_logging.log_complete.is_report_in_progress = false;
 	gwlan_logging.log_complete.reason_code = WLAN_LOG_REASON_CODE_UNUSED;
 
@@ -1345,8 +1345,9 @@ void wlan_get_log_and_reset_completion(uint32 *is_fatal,
 	*is_fatal = gwlan_logging.log_complete.is_fatal;
 	*reason_code = gwlan_logging.log_complete.reason_code;
 	if (reset) {
-		gwlan_logging.log_complete.indicator = WLAN_LOG_TYPE_NON_FATAL;
-		gwlan_logging.log_complete.is_fatal = WLAN_LOG_INDICATOR_UNUSED;
+		gwlan_logging.log_complete.indicator =
+						WLAN_LOG_INDICATOR_UNUSED;
+		gwlan_logging.log_complete.is_fatal = WLAN_LOG_TYPE_NON_FATAL;
 		gwlan_logging.log_complete.is_report_in_progress = false;
 		gwlan_logging.log_complete.reason_code =
 					 WLAN_LOG_REASON_CODE_UNUSED;
