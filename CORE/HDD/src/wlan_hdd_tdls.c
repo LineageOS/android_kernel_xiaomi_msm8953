@@ -179,7 +179,8 @@ void wlan_hdd_tdls_disable_offchan_and_teardown_links(hdd_context_t *hddctx)
     }
 
 done:
-    wlan_hdd_tdls_set_mode(hddctx, eTDLS_SUPPORT_DISABLED, FALSE);
+    wlan_hdd_tdls_set_mode(hddctx, eTDLS_SUPPORT_DISABLED, FALSE,
+                           HDD_SET_TDLS_MODE_SOURCE_P2P);
     hddLog(LOG1, FL("TDLS Support Disabled"));
 }
 
@@ -867,7 +868,8 @@ void wlan_hdd_tdls_btCoex_cb(void *data, int indType)
         {
             connectedTdlsPeers = wlan_hdd_tdlsConnectedPeers(pAdapter);
             /* disable implicit trigger logic & tdls operatoin */
-            wlan_hdd_tdls_set_mode(pHddCtx, eTDLS_SUPPORT_DISABLED, FALSE);
+            wlan_hdd_tdls_set_mode(pHddCtx, eTDLS_SUPPORT_DISABLED, FALSE,
+                                   HDD_SET_TDLS_MODE_SOURCE_BTC);
 
             /* teardown the peers on the btcoex */
             if (connectedTdlsPeers)
@@ -914,7 +916,8 @@ void wlan_hdd_tdls_btCoex_cb(void *data, int indType)
             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                       ("%s: revert tdls mode %d"), __func__,
                       pHddCtx->tdls_mode_last);
-            wlan_hdd_tdls_set_mode(pHddCtx, pHddCtx->tdls_mode_last, FALSE);
+            wlan_hdd_tdls_set_mode(pHddCtx, pHddCtx->tdls_mode_last, FALSE,
+                                   HDD_SET_TDLS_MODE_SOURCE_BTC);
         }
 
         clear_bit(WLAN_BTCOEX_MODE, &pHddCtx->mode);
@@ -1938,7 +1941,8 @@ int wlan_hdd_tdls_set_params(struct net_device *dev, tdls_config_params_t *confi
 
     mutex_unlock(&pHddCtx->tdls_lock);
 
-    wlan_hdd_tdls_set_mode(pHddCtx, req_tdls_mode, TRUE);
+    wlan_hdd_tdls_set_mode(pHddCtx, req_tdls_mode, TRUE,
+                           HDD_SET_TDLS_MODE_SOURCE_USER);
 
     return 0;
 }
@@ -2632,7 +2636,8 @@ static void wlan_hdd_tdls_implicit_enable(tdlsCtx_t *pHddTdlsCtx)
 
 void wlan_hdd_tdls_set_mode(hdd_context_t *pHddCtx,
                             eTDLSSupportMode tdls_mode,
-                            v_BOOL_t bUpdateLast)
+                            v_BOOL_t bUpdateLast,
+                            enum tdls_disable_source source)
 {
     hdd_adapter_list_node_t *pAdapterNode = NULL, *pNext = NULL;
     VOS_STATUS status;
@@ -2654,6 +2659,23 @@ void wlan_hdd_tdls_set_mode(hdd_context_t *pHddCtx,
         mutex_unlock(&pHddCtx->tdls_lock);
         hddLog(VOS_TRACE_LEVEL_INFO, "%s already in mode %d", __func__,
                                      (int)tdls_mode);
+
+        if (tdls_mode == eTDLS_SUPPORT_DISABLED)
+        {
+            /*
+             * TDLS is already disabled hence set source mask and return
+             */
+            set_bit((unsigned long)source, &pHddCtx->tdls_source_bitmap);
+            return;
+        }
+        if (tdls_mode == eTDLS_SUPPORT_ENABLED)
+        {
+            /*
+             * TDLS is already disabled hence set source mask and return
+             */
+            clear_bit((unsigned long)source, &pHddCtx->tdls_source_bitmap);
+            return;
+        }
         return;
     }
 
@@ -2666,10 +2688,40 @@ void wlan_hdd_tdls_set_mode(hdd_context_t *pHddCtx,
        if (NULL != pHddTdlsCtx)
        {
            if(eTDLS_SUPPORT_ENABLED == tdls_mode)
+           {
+               clear_bit((unsigned long)source, &pHddCtx->tdls_source_bitmap);
+
+               /*
+                * Check if any TDLS source bit is set and if bitmap is
+                * not zero then we should not enable TDLS
+                */
+               if (pHddCtx->tdls_source_bitmap)
+               {
+                   mutex_unlock(&pHddCtx->tdls_lock);
+                   return;
+               }
                wlan_hdd_tdls_implicit_enable(pHddTdlsCtx);
-           else if((eTDLS_SUPPORT_DISABLED == tdls_mode) ||
-                   (eTDLS_SUPPORT_EXPLICIT_TRIGGER_ONLY == tdls_mode))
+           }
+           else if((eTDLS_SUPPORT_DISABLED == tdls_mode))
+           {
+               set_bit((unsigned long)source, &pHddCtx->tdls_source_bitmap);
                wlan_hdd_tdls_implicit_disable(pHddTdlsCtx);
+           }
+           else if ((eTDLS_SUPPORT_EXPLICIT_TRIGGER_ONLY == tdls_mode))
+           {
+               clear_bit((unsigned long)source, &pHddCtx->tdls_source_bitmap);
+
+               /*
+                * Check if any TDLS source bit is set and if bitmap is
+                * not zero then we should not enable TDLS
+                */
+               if (pHddCtx->tdls_source_bitmap)
+               {
+                   mutex_unlock(&pHddCtx->tdls_lock);
+                   return;
+               }
+               wlan_hdd_tdls_implicit_disable(pHddTdlsCtx);
+           }
        }
        status = hdd_get_next_adapter ( pHddCtx, pAdapterNode, &pNext );
        pAdapterNode = pNext;
@@ -3048,7 +3100,8 @@ int wlan_hdd_tdls_scan_callback (hdd_adapter_t *pAdapter,
                     sme_IsFeatureSupportedByFW(TDLS_SCAN_COEXISTENCE));
 
         /* disable implicit trigger logic & tdls operatoin */
-        wlan_hdd_tdls_set_mode(pHddCtx, eTDLS_SUPPORT_DISABLED, FALSE);
+        wlan_hdd_tdls_set_mode(pHddCtx, eTDLS_SUPPORT_DISABLED, FALSE,
+                               HDD_SET_TDLS_MODE_SOURCE_SCAN);
         /* fall back to the implementation of teardown the peers on the scan
          * when the number of connected peers are more than one. TDLS Scan
          * coexistance feature is exercised only when a single peer is
@@ -3134,7 +3187,8 @@ void wlan_hdd_tdls_scan_done_callback(hdd_adapter_t *pAdapter)
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                        ("%s: revert tdls mode %d"), __func__, pHddCtx->tdls_mode_last);
 
-        wlan_hdd_tdls_set_mode(pHddCtx, pHddCtx->tdls_mode_last, FALSE);
+        wlan_hdd_tdls_set_mode(pHddCtx, pHddCtx->tdls_mode_last, FALSE,
+                               HDD_SET_TDLS_MODE_SOURCE_SCAN);
     }
     wlan_hdd_tdls_check_bmps(pAdapter);
 
@@ -3432,7 +3486,7 @@ void wlan_hdd_tdls_reenable(hdd_context_t *pHddCtx)
              */
              hddLog(LOG1, FL("TDLS mode set to %d"), pHddCtx->tdls_mode_last);
              wlan_hdd_tdls_set_mode(pHddCtx, pHddCtx->tdls_mode_last,
-                                    FALSE);
+                                    FALSE, HDD_SET_TDLS_MODE_SOURCE_P2P);
     }
 }
 

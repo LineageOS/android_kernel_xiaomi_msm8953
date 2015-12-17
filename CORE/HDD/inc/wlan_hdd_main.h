@@ -1569,6 +1569,9 @@ struct hdd_context_s
     v_U32_t        cur_rx_level;
     v_U64_t        prev_rx;
     v_ULONG_t      mode;
+
+    /* bit map to set/reset TDLS by different sources */
+    unsigned long tdls_source_bitmap;
 };
 
 typedef enum  {
