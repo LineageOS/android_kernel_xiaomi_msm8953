@@ -1221,14 +1221,14 @@ typedef struct
    struct mutex macSpoofingLock;
 }macAddrSpoof_t;
 
-#define WLAN_WAIT_TIME_LL_STATS 5000
+#define WLAN_WAIT_TIME_LL_STATS 800
 
 /* FW memory dump feature
 @TODO : Move this code to a separate file later */
 #define PROCFS_MEMDUMP_DIR  "debug"
 #define PROCFS_MEMDUMP_NAME "fwdump"
 #define FW_MEM_DUMP_REQ_ID 1
-#define FW_MEM_DUMP_TIMEOUT_MS 3000
+#define FW_MEM_DUMP_TIMEOUT_MS 800
 #define FW_MEM_DUMP_MAGIC 0x3C3A2D44
 
 /**
