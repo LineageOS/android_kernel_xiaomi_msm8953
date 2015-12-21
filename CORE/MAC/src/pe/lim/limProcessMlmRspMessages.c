@@ -2070,8 +2070,14 @@ void limProcessStaMlmAddStaRsp( tpAniSirGlobal pMac, tpSirMsgQ limMsgQ ,tpPESess
     {
         limLog( pMac, LOGE, FL( "ADD_STA failed!"));
         if(psessionEntry->limSmeState == eLIM_SME_WT_REASSOC_STATE)
+        {
            mesgType = LIM_MLM_REASSOC_CNF;
-        mlmAssocCnf.resultCode = (tSirResultCodes) eSIR_SME_REFUSED;
+           mlmAssocCnf.resultCode = (tSirResultCodes)eSIR_SME_FT_REASSOC_FAILURE;
+        }
+        else
+        {
+           mlmAssocCnf.resultCode = (tSirResultCodes) eSIR_SME_REFUSED;
+        }
         mlmAssocCnf.protStatusCode = eSIR_MAC_UNSPEC_FAILURE_STATUS;
     }
 end:
