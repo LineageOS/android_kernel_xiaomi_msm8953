@@ -41,16 +41,9 @@
 #include "macTrace.h"
 
 #define NO_SESSION 0xFF
+
 enum {
-     TRACE_CODE_SME_COMMAND,
-     TRACE_CODE_SME_TX_WDA_MSG,
-     TRACE_CODE_SME_RX_WDA_MSG,
-};
-enum {
-    /* Starts enums from 3 onwards, because unknown code captures for first
-     * three enums in smeTraceDump()
-     */
-    TRACE_CODE_SME_RX_HDD_MSG_SCAN_REQ = 3,
+    TRACE_CODE_SME_RX_HDD_MSG_SCAN_REQ,
     TRACE_CODE_SME_RX_HDD_MSG_SCAN_GET_RESULTS,
     TRACE_CODE_SME_RX_HDD_MSG_CONNECT,
     TRACE_CODE_SME_RX_HDD_MSG_SET_11DINFO,
@@ -69,7 +62,6 @@ enum {
     TRACE_CODE_SME_RX_HDD_ROAM_GET_CONNECTPROFILE,
     TRACE_CODE_SME_RX_HDD_ROAM_FREE_CONNECTPROFILE,
     TRACE_CODE_SME_RX_HDD_ROAM_SET_PMKIDCACHE,
-    TRACE_CODE_SME_RX_HDD_ROAM_DEL_PMKIDCACHE,
     TRACE_CODE_SME_RX_HDD_GET_CONFIGPARAM,
     TRACE_CODE_SME_RX_HDD_GET_MODPROFFIELDS,
     TRACE_CODE_SME_RX_HDD_SET_CONFIG_PWRSAVE,
@@ -153,6 +145,12 @@ enum {
 #ifdef FEATURE_WLAN_LPHB
     TRACE_CODE_SME_RX_HDD_LPHB_CONFIG_REQ,
 #endif /* FEATURE_WLAN_LPHB */
+    TRACE_CODE_SME_RX_HDD_ROAM_DEL_PMKIDCACHE,
+    /* New trace commands to be added before this comment not at the end */
+    /* Trace codes for SME commands */
+    TRACE_CODE_SME_COMMAND = 250,
+    TRACE_CODE_SME_TX_WDA_MSG,
+    TRACE_CODE_SME_RX_WDA_MSG,
 };
 
 void smeTraceInit(tpAniSirGlobal pMac);
