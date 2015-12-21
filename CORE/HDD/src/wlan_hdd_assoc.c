@@ -3086,7 +3086,9 @@ eHalStatus hdd_RoamTdlsStatusUpdateHandler(hdd_adapter_t *pAdapter,
                     else
                         mutex_unlock(&pHddCtx->tdls_lock);
 
+                    mutex_lock(&pHddCtx->tdls_lock);
                     wlan_hdd_tdls_reset_peer(pAdapter, pRoamInfo->peerMac);
+                    mutex_unlock(&pHddCtx->tdls_lock);
 
                     pHddCtx->tdlsConnInfo[staIdx].staId = 0 ;
                     pHddCtx->tdlsConnInfo[staIdx].sessionId = 255;
@@ -3129,7 +3131,11 @@ eHalStatus hdd_RoamTdlsStatusUpdateHandler(hdd_adapter_t *pAdapter,
                               ("hdd_tdlsStatusUpdate: staIdx %d " MAC_ADDRESS_STR),
                                 pHddCtx->tdlsConnInfo[staIdx].staId,
                                 MAC_ADDR_ARRAY(pHddCtx->tdlsConnInfo[staIdx].peerMac.bytes));
+
+                    mutex_lock(&pHddCtx->tdls_lock);
                     wlan_hdd_tdls_reset_peer(pAdapter, pHddCtx->tdlsConnInfo[staIdx].peerMac.bytes);
+                    mutex_unlock(&pHddCtx->tdls_lock);
+
                     hdd_roamDeregisterTDLSSTA ( pAdapter,  pHddCtx->tdlsConnInfo[staIdx].staId );
                     wlan_hdd_tdls_decrement_peer_count(pAdapter);
 
