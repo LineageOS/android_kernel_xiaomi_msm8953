@@ -4788,6 +4788,7 @@ typedef void (*tSirFWStatsCallback)(VOS_STATUS status,
                     tSirFwStatsResult *fwStatsRsp, void *pContext);
 typedef void (*sir_mgmt_frame_ind_callback)(tSirSmeMgmtFrameInd *frame_ind);
 
+typedef void (*tAntennaDivSelCB)(int antennaId, void *pContext);
 
 /**
  * struct sir_sme_mgmt_frame_cb_req - Register a
@@ -4854,6 +4855,26 @@ typedef PACKED_PRE struct PACKED_POST
   tSirFWStatsCallback callback;
   void *data;
 }tSirFWStatsInfo;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+  tANI_U16 status;
+  tANI_U32 selectedAntennaId;
+  tANI_U32 reserved;
+} tSirAntennaDivSelRsp, *tpSirntennaDivSelRsp;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tAntennaDivSelCB callback;
+   void *data;
+   tANI_U32 reserved;
+}tSirAntennaDiversitySelectionReq;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tAntennaDivSelCB callback;
+   void *data;
+}tSirAntennaDiversitySelectionInfo;
 
 /*---------------------------------------------------------------------------
   WLAN_HAL_LL_NOTIFY_STATS

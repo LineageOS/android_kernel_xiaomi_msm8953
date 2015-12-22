@@ -8196,6 +8196,9 @@ typedef void  (*WDI_FwrMemDumpRspCb)(WDI_FwrMemDumpRsp *wdiRsp, void *pUserData)
 
 typedef void  (*WDI_WifiConfigSetRspCb) (WDI_WifconfigSetRsp *wdiRsp, void *pUserData);
 
+typedef void (*WDI_AntennaDivSelRspCb)(WDI_Status status,
+              void *resp, void *pUserData);
+
 /*========================================================================
  *     Function Declarations and Documentation
  ==========================================================================*/
@@ -11865,5 +11868,24 @@ WDI_WifiConfigSetReq
    (WDI_WifiConfigSetReqType* pwdiWifConfigSetReqParams,
     WDI_WifiConfigSetRspCb wdiWifiConfigSetRspCb,
     void*                 pUserData);
+
+/**
+ @brief WDI_GetCurrentAntennaIndex
+    This API is called to send getCurretAntennaIndex request to FW
+
+ @param pUserData: pointer to request params
+        wdiLLStatsSetRspCb     : set wificonfig response callback
+        reserved: request parameter
+ @see
+ @return SUCCESS or FAIL
+*/
+WDI_Status
+WDI_GetCurrentAntennaIndex
+(
+  void *pUserData,
+  WDI_AntennaDivSelRspCb wdiAntennaDivSelRspCb,
+  wpt_uint32 reserved
+);
+
 
 #endif /* #ifndef WLAN_QCT_WDI_H */

@@ -186,6 +186,7 @@ static const hdd_freq_chan_map_t freq_chan_map[] = { {2412, 1}, {2417, 2},
 #define WE_GET_SAP_AUTO_CHANNEL_SELECTION 8
 #define WE_GET_CONCURRENCY_MODE 9
 #define WE_GET_SCAN_BAND_PREFERENCE     10
+#define WE_GET_ANTENA_DIVERSITY_SELECTION 11
 /* Private ioctls and their sub-ioctls */
 #define WLAN_PRIV_SET_INT_GET_INT     (SIOCIWFIRSTPRIV + 2)
 
@@ -6319,6 +6320,113 @@ static int iw_setchar_getnone(struct net_device *dev,
     return ret;
 }
 
+static void hdd_GetCurrentAntennaIndex(int antennaId, void *pContext)
+{
+   struct statsContext *context;
+   hdd_adapter_t *pAdapter;
+
+   if (NULL == pContext)
+   {
+      hddLog(VOS_TRACE_LEVEL_ERROR,
+             "%s: Bad param, pContext [%p]",
+             __func__, pContext);
+      return;
+   }
+
+   context = pContext;
+   pAdapter      = context->pAdapter;
+
+   spin_lock(&hdd_context_lock);
+
+   if ((NULL == pAdapter) || (ANTENNA_CONTEXT_MAGIC != context->magic))
+   {
+      /* the caller presumably timed out so there is nothing we can do */
+      spin_unlock(&hdd_context_lock);
+      hddLog(VOS_TRACE_LEVEL_WARN,
+             "%s: Invalid context, pAdapter [%p] magic [%08x]",
+              __func__, pAdapter, context->magic);
+      return;
+   }
+
+   context->magic = 0;
+   pAdapter->antennaIndex = antennaId;
+
+   complete(&context->completion);
+   spin_unlock(&hdd_context_lock);
+}
+
+static VOS_STATUS wlan_hdd_get_current_antenna_index(hdd_adapter_t *pAdapter,
+                                                     int *antennaIndex)
+{
+   hdd_context_t *pHddCtx;
+   eHalStatus halStatus;
+   struct statsContext context;
+   long lrc;
+
+   ENTER();
+   if (NULL == pAdapter)
+   {
+       hddLog(VOS_TRACE_LEVEL_WARN,
+              "%s: Invalid context, pAdapter", __func__);
+       return VOS_STATUS_E_FAULT;
+   }
+   pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+   if (0 != (wlan_hdd_validate_context(pHddCtx)))
+   {
+       return VOS_STATUS_E_FAULT;
+   }
+   if (TRUE != sme_IsFeatureSupportedByFW(ANTENNA_DIVERSITY_SELECTION))
+   {
+       hddLog(VOS_TRACE_LEVEL_ERROR,
+              "%s: ANTENNA_DIVERSITY_SELECTION is not supported by Firwmare",
+               __func__);
+       return VOS_STATUS_E_NOSUPPORT;
+   }
+   init_completion(&context.completion);
+   context.pAdapter = pAdapter;
+   context.magic = ANTENNA_CONTEXT_MAGIC;
+
+   halStatus = sme_GetCurrentAntennaIndex(pHddCtx->hHal,
+                                         hdd_GetCurrentAntennaIndex,
+                                         &context, pAdapter->sessionId);
+   if (eHAL_STATUS_SUCCESS != halStatus)
+   {
+       spin_lock(&hdd_context_lock);
+       context.magic = 0;
+       spin_unlock(&hdd_context_lock);
+       hddLog(VOS_TRACE_LEVEL_ERROR,"%s: Unable to retrieve Antenna Index",
+              __func__);
+       /* we'll returned a cached value below */
+       *antennaIndex = -1;
+       return VOS_STATUS_E_FAILURE;
+   }
+   else
+   {
+       /* request was sent -- wait for the response */
+       lrc = wait_for_completion_interruptible_timeout(&context.completion,
+                                    msecs_to_jiffies(WLAN_WAIT_TIME_STATS));
+       if (lrc <= 0)
+       {
+           spin_lock(&hdd_context_lock);
+           context.magic = 0;
+           spin_unlock(&hdd_context_lock);
+           hddLog(VOS_TRACE_LEVEL_ERROR, "%s:SME %s while retrieving Antenna"
+                                         " Index",
+                  __func__, (0 == lrc) ? "timeout" : "interrupt");
+           *antennaIndex = -1;
+           return VOS_STATUS_E_FAILURE;
+       }
+   }
+   spin_lock(&hdd_context_lock);
+   context.magic = 0;
+   spin_unlock(&hdd_context_lock);
+
+   *antennaIndex = pAdapter->antennaIndex;
+
+   EXIT();
+   return VOS_STATUS_SUCCESS;
+}
+
 /* get param sub-ioctls */
 static int __iw_setnone_getint(struct net_device *dev,
                                struct iw_request_info *info,
@@ -6454,7 +6562,11 @@ static int __iw_setnone_getint(struct net_device *dev,
                       "scanBandPreference = %d\n", *value);
             break;
         }
-
+        case WE_GET_ANTENA_DIVERSITY_SELECTION:
+        {
+             wlan_hdd_get_current_antenna_index(pAdapter, value);
+             break;
+        }
         default:
         {
             hddLog(LOGE, "Invalid IOCTL get_value command %d ",value[0]);
@@ -10676,6 +10788,11 @@ static const struct iw_priv_args we_private_args[] = {
         0,
         IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
         "get_scan_pref"},
+
+    {   WE_GET_ANTENA_DIVERSITY_SELECTION,
+        0,
+        IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
+        "getCurAnt"},
 
     /* handlers for main ioctl */
     {   WLAN_PRIV_SET_CHAR_GET_NONE,
