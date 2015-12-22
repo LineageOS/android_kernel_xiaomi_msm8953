@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1575,6 +1575,9 @@ struct hdd_context_s
 
     /* bit map to set/reset TDLS by different sources */
     unsigned long tdls_source_bitmap;
+
+    /* tdls source timer to enable/disable TDLS on p2p listen */
+    vos_timer_t tdls_source_timer;
 };
 
 typedef enum  {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -8795,6 +8795,13 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
             "%s: Cannot deallocate Bus bandwidth timer", __func__);
    }
 
+   if (VOS_TIMER_STATE_RUNNING ==
+                 vos_timer_getCurrentState(&pHddCtx->tdls_source_timer)) {
+       vos_timer_stop(&pHddCtx->tdls_source_timer);
+   }
+
+   vos_timer_destroy(&pHddCtx->tdls_source_timer);
+
    //Disable IMPS/BMPS as we do not want the device to enter any power
    //save mode during shutdown
    sme_DisablePowerSave(pHddCtx->hHal, ePMC_IDLE_MODE_POWER_SAVE);
@@ -10603,6 +10610,8 @@ int hdd_wlan_startup(struct device *dev )
    mutex_init(&pHddCtx->cur_rx_level_lock);
    vos_timer_init(&pHddCtx->delack_timer, VOS_TIMER_TYPE_SW,
                              hdd_tcp_delack_compute_function,(void *)pHddCtx);
+   vos_timer_init(&pHddCtx->tdls_source_timer, VOS_TIMER_TYPE_SW,
+                  wlan_hdd_change_tdls_mode, (void *)pHddCtx);
 
 #ifdef WLAN_FEATURE_EXTSCAN
     sme_EXTScanRegisterCallback(pHddCtx->hHal,
