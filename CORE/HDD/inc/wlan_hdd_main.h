@@ -295,7 +295,7 @@ extern spinlock_t hdd_context_lock;
 #define FW_STATS_CONTEXT_MAGIC  0x5022474E //FW STATS
 #define GET_FRAME_LOG_MAGIC   0x464c4f47   //FLOG
 #define MON_MODE_MSG_MAGIC 0x51436B3A //MON_MODE
-
+#define ANTENNA_CONTEXT_MAGIC 0x414E544E //ANTN
 #define MON_MODE_MSG_TIMEOUT 5000
 #define MON_MODE_START 1
 #define MON_MODE_STOP  0
@@ -1166,6 +1166,9 @@ struct hdd_adapter_s
 
    /* Wireless statistics */
    struct iw_statistics iwStats;
+
+   /* Currently used antenna Index*/
+   int antennaIndex;
 };
 
 #define WLAN_HDD_GET_STATION_CTX_PTR(pAdapter) (&(pAdapter)->sessionCtx.station)

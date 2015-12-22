@@ -282,6 +282,10 @@ VOS_STATUS  WDA_ProcessWifiConfigReq(tWDA_CbContext *pWDA,
 VOS_STATUS WDA_ProcessStartOemDataReqIndNew(tWDA_CbContext *pWDA,
                                    tOemDataReqNewConfig *pOemDataReqNewConfig);
 
+
+v_VOID_t WDA_ProcessAntennaDiversitySelectionReq(tWDA_CbContext *pWDA,
+                                   tSirAntennaDiversitySelectionReq *pData);
+
 /*
  * FUNCTION: WDA_ProcessNanRequest
  * Process NAN request
@@ -15371,6 +15375,12 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
          break;
       }
 #endif
+      case WDA_ANTENNA_DIVERSITY_SELECTION_REQ:
+      {
+         WDA_ProcessAntennaDiversitySelectionReq(pWDA,
+                             (tSirAntennaDiversitySelectionReq *)pMsg->bodyptr);
+         break;
+      }
       default:
       {
          VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
@@ -20781,5 +20791,94 @@ VOS_STATUS WDA_ProcessStartOemDataReqIndNew(tWDA_CbContext *pWDA,
 
    return status;
 }
-#endif
 
+void WDA_GetCurrentAntennaIndexCallback(WDI_Status status, void *params,
+                                        void *pUserData)
+{
+   tSirAntennaDiversitySelectionInfo *pAntennaDivSelInfo =
+                           (tSirAntennaDiversitySelectionInfo *)pUserData;
+
+   tSirAntennaDivSelRsp *resParams = (tSirAntennaDivSelRsp *)params;
+   VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                                 "<------ %s " ,__func__);
+   if (NULL == pAntennaDivSelInfo)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                "%s: pWdaParams received NULL", __func__);
+      VOS_ASSERT(0) ;
+      return ;
+   }
+   if (NULL == resParams)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                "%s: resParams received NULL", __func__);
+      VOS_ASSERT(0) ;
+      return ;
+   }
+
+   if (pAntennaDivSelInfo->callback)
+   {
+       if (WDI_STATUS_SUCCESS == status)
+       {
+           pAntennaDivSelInfo->callback(resParams->selectedAntennaId,
+                                        pAntennaDivSelInfo->data);
+       }
+       else
+       {
+           pAntennaDivSelInfo->callback(-1,
+                                        pAntennaDivSelInfo->data);
+       }
+   }
+
+   vos_mem_free(pUserData);
+   return;
+}
+
+/*
+ * FUNCTION: WDA_ProcessAntennaDiversitySelectionReq
+ * Request to WDI.
+ */
+v_VOID_t WDA_ProcessAntennaDiversitySelectionReq(tWDA_CbContext *pWDA,
+                                  tSirAntennaDiversitySelectionReq *pData)
+{
+   WDI_Status wdiStatus;
+   tSirAntennaDiversitySelectionInfo *pAntennaDivSelInfo;
+
+   VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+             "------> %s " , __func__);
+
+   pAntennaDivSelInfo = (tSirAntennaDiversitySelectionInfo *)
+             vos_mem_malloc(sizeof(tSirAntennaDiversitySelectionInfo));
+   if (NULL == pAntennaDivSelInfo)
+   {
+      VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                "%s: VOS MEM Alloc Failure", __func__);
+      VOS_ASSERT(0);
+      vos_mem_free(pData);
+      return;
+   }
+
+   pAntennaDivSelInfo->callback = (tAntennaDivSelCB)(pData->callback);
+   pAntennaDivSelInfo->data = pData->data;
+
+   wdiStatus = WDI_GetCurrentAntennaIndex(pAntennaDivSelInfo,
+               WDA_GetCurrentAntennaIndexCallback, pData->reserved);
+
+   if (WDI_STATUS_PENDING == wdiStatus)
+   {
+      VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+              "Pending received for %s:%d ", __func__, __LINE__);
+   }
+   else if (WDI_STATUS_SUCCESS != wdiStatus)
+   {
+       if (pAntennaDivSelInfo->callback)
+       {
+           pAntennaDivSelInfo->callback(-1, pAntennaDivSelInfo->data);
+       }
+   }
+
+   vos_mem_free(pData);
+   return;
+}
+
+#endif
