@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -464,7 +464,13 @@ hddTdlsPeer_t *wlan_hdd_tdls_get_connected_peer(hdd_adapter_t *pAdapter);
 int wlan_hdd_validate_tdls_context(hdd_context_t *pHddCtx, tdlsCtx_t *pTdlsCtx);
 
 void wlan_hdd_tdls_reenable(hdd_context_t *pHddCtx);
+
 void wlan_hdd_tdls_notify_packet(hdd_adapter_t *adapter, struct sk_buff *skb);
+
+void wlan_hdd_change_tdls_mode(void *hdd_ctx);
+
+void wlan_hdd_start_stop_tdls_source_timer(hdd_context_t *pHddCtx,
+                                           eTDLSSupportMode tdls_mode);
 #else
 static inline void hdd_tdls_notify_mode_change(hdd_adapter_t *pAdapter,
                                                hdd_context_t *pHddCtx)
@@ -480,6 +486,16 @@ wlan_hdd_tdls_reenable(hdd_context_t *pHddCtx)
 }
 static inline void
 wlan_hdd_tdls_notify_packet(hdd_adapter_t *adapter, struct sk_buff *skb)
+{
+}
+static inline void
+wlan_hdd_change_tdls_mode(void *hdd_ctx)
+{
+}
+
+static inline void
+wlan_hdd_start_stop_tdls_source_timer(hdd_context_t *pHddCtx,
+                                      eTDLSSupportMode tdls_mode)
 {
 }
 #endif

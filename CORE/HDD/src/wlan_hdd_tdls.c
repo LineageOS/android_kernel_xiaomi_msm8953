@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -3508,4 +3508,31 @@ tdlsConnInfo_t *wlan_hdd_get_conn_info(hdd_context_t *pHddCtx,
     hddLog(LOGE, FL("tdls peer with staIdx %u not exists"), idx );
     return NULL;
 }
+
+void wlan_hdd_change_tdls_mode(void *data)
+{
+    hdd_context_t *hdd_ctx = (hdd_context_t *)data;
+
+    wlan_hdd_tdls_set_mode(hdd_ctx, eTDLS_SUPPORT_ENABLED, FALSE,
+                           HDD_SET_TDLS_MODE_SOURCE_OFFCHANNEL);
+}
+
+void wlan_hdd_start_stop_tdls_source_timer(hdd_context_t *pHddCtx,
+                                           eTDLSSupportMode tdls_mode)
+{
+    if (VOS_TIMER_STATE_RUNNING ==
+            vos_timer_getCurrentState(&pHddCtx->tdls_source_timer))
+        vos_timer_stop(&pHddCtx->tdls_source_timer);
+
+    if (tdls_mode == eTDLS_SUPPORT_DISABLED) {
+        wlan_hdd_tdls_set_mode(pHddCtx, tdls_mode, FALSE,
+                               HDD_SET_TDLS_MODE_SOURCE_OFFCHANNEL);
+    }
+
+    vos_timer_start(&pHddCtx->tdls_source_timer,
+                    pHddCtx->cfg_ini->tdls_enable_defer_time);
+
+    return;
+}
+
 /*EXT TDLS*/

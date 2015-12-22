@@ -1955,6 +1955,12 @@ static __inline tANI_U32 defHddRateToDefCfgRate( tANI_U32 defRateIndex )
 #define CFG_TDLS_SCAN_ENABLE_MIN        (0)
 #define CFG_TDLS_SCAN_ENABLE_MAX        (2)
 #define CFG_TDLS_SCAN_ENABLE_DEFAULT    (0)
+
+#define CFG_TDLS_ENABLE_DEFER_TIMER           "gTDLSEnableDeferTime"
+#define CFG_TDLS_ENABLE_DEFER_TIMER_MIN       (2000)
+#define CFG_TDLS_ENABLE_DEFER_TIMER_MAX       (6000)
+#define CFG_TDLS_ENABLE_DEFER_TIMER_DEFAULT   (5000)
+
 #endif
 
 #ifdef WLAN_FEATURE_LINK_LAYER_STATS
@@ -3169,6 +3175,7 @@ typedef struct
    v_U32_t                     enable_delack;
    v_BOOL_t                    disableBarWakeUp;
    v_U8_t                      max_chan_for_dwell_time_cfg;
+   v_U16_t                     tdls_enable_defer_time;
 } hdd_config_t;
 
 /*--------------------------------------------------------------------------- 
