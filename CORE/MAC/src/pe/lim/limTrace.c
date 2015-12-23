@@ -316,14 +316,12 @@ static void lim_state_info_dump(void)
     vos_ctx_ptr = vos_get_global_context(VOS_MODULE_ID_VOSS, NULL);
 
     if (NULL == vos_ctx_ptr) {
-        limLog( mac, LOGE, FL("Invalid Global VOSS Context"));
         VOS_ASSERT(0);
         return;
     }
 
     hal = vos_get_context(VOS_MODULE_ID_PE, vos_ctx_ptr);
     if (NULL == hal) {
-        limLog( mac, LOGE, FL("Invalid smeContext"));
         VOS_ASSERT(0);
         return;
     }
