@@ -73,7 +73,6 @@
 #define MAX_SSR_WAIT_ITERATIONS 200
 /* Timer value for detecting thread stuck issues */
 #define THREAD_STUCK_TIMER_VAL 5000 // 5 seconds
-#define THREAD_STUCK_COUNT 3
 
 #define MC_Thread 0
 #define TX_Thread 1
@@ -666,19 +665,6 @@ static void vos_wd_detect_thread_stuck(void)
   unsigned long flags;
 
   spin_lock_irqsave(&gpVosWatchdogContext->thread_stuck_lock, flags);
-
-  if ((gpVosWatchdogContext->mcThreadStuckCount == THREAD_STUCK_COUNT) ||
-      (gpVosWatchdogContext->txThreadStuckCount == THREAD_STUCK_COUNT) ||
-      (gpVosWatchdogContext->rxThreadStuckCount == THREAD_STUCK_COUNT))
-  {
-     spin_unlock_irqrestore(&gpVosWatchdogContext->thread_stuck_lock, flags);
-     hddLog(LOGE, FL("Thread Stuck !!! MC Count %d RX count %d TX count %d"),
-         gpVosWatchdogContext->mcThreadStuckCount,
-         gpVosWatchdogContext->rxThreadStuckCount,
-         gpVosWatchdogContext->txThreadStuckCount);
-     vos_wlanRestart();
-     return;
-  }
 
   if (gpVosWatchdogContext->mcThreadStuckCount ||
       gpVosWatchdogContext->txThreadStuckCount ||
