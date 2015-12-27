@@ -73,6 +73,14 @@ should not be more than 2000 */
 #define TDLS_CHANNEL_SWITCH_ENABLE  1
 #define TDLS_CHANNEL_SWITCH_DISABLE 2
 
+enum tdls_disable_source {
+    HDD_SET_TDLS_MODE_SOURCE_USER = 1,
+    HDD_SET_TDLS_MODE_SOURCE_SCAN = 2,
+    HDD_SET_TDLS_MODE_SOURCE_OFFCHANNEL = 4,
+    HDD_SET_TDLS_MODE_SOURCE_BTC = 8,
+    HDD_SET_TDLS_MODE_SOURCE_P2P = 16
+};
+
 typedef struct
 {
     tANI_U32    tdls;
@@ -375,7 +383,8 @@ hddTdlsPeer_t *wlan_hdd_tdls_is_progress(hdd_context_t *pHddCtx,
 
 void wlan_hdd_tdls_set_mode(hdd_context_t *pHddCtx,
                             eTDLSSupportMode tdls_mode,
-                            v_BOOL_t bUpdateLast);
+                            v_BOOL_t bUpdateLast,
+                            enum tdls_disable_source source);
 
 tANI_U32 wlan_hdd_tdls_discovery_sent_cnt(hdd_context_t *pHddCtx);
 

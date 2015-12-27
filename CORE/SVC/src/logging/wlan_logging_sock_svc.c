@@ -1027,6 +1027,7 @@ static int send_per_pkt_stats_to_user(void)
 	static int nlmsg_seq;
 	static int rate_limit;
 	int diag_type;
+	bool free_old_skb = false;
 
 	while (!list_empty(&gwlan_logging.pkt_stat_filled_list)
 		&& !gwlan_logging.exit) {
@@ -1063,6 +1064,7 @@ static int send_per_pkt_stats_to_user(void)
 				" data[%p], req[%zu]", __LINE__, plog_msg->skb->head,
 				plog_msg->skb->data, sizeof(msg_header));
 			ret = -EIO;
+			free_old_skb = true;
 			goto err;
 		}
 		vos_mem_copy(skb_push(plog_msg->skb, sizeof(vos_log_pktlog_info)), &pktlog,
@@ -1073,6 +1075,7 @@ static int send_per_pkt_stats_to_user(void)
 				" data[%p], req[%zu]", __LINE__, plog_msg->skb->head,
 				plog_msg->skb->data, sizeof(int));
 			ret = -EIO;
+			free_old_skb = true;
 			goto err;
 		}
 
@@ -1099,6 +1102,7 @@ static int send_per_pkt_stats_to_user(void)
 				" data[%p], req[%zu]", __LINE__, plog_msg->skb->head,
 				plog_msg->skb->data, sizeof(msg_header));
 			ret = -EIO;
+			free_old_skb = true;
 			goto err;
 		}
 
@@ -1113,6 +1117,12 @@ static int send_per_pkt_stats_to_user(void)
 			ret = 0;
 		}
 err:
+		/*
+		 * Free old skb in case or error before assigning new skb
+		 * to the free list.
+		 */
+		if (free_old_skb)
+			dev_kfree_skb(plog_msg->skb);
 		spin_lock_irqsave(&gwlan_logging.pkt_stats_lock, flags);
 		plog_msg->skb = skb_new;
 		list_add_tail(&plog_msg->node,

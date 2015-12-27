@@ -295,7 +295,7 @@ extern spinlock_t hdd_context_lock;
 #define FW_STATS_CONTEXT_MAGIC  0x5022474E //FW STATS
 #define GET_FRAME_LOG_MAGIC   0x464c4f47   //FLOG
 #define MON_MODE_MSG_MAGIC 0x51436B3A //MON_MODE
-
+#define ANTENNA_CONTEXT_MAGIC 0x414E544E //ANTN
 #define MON_MODE_MSG_TIMEOUT 5000
 #define MON_MODE_START 1
 #define MON_MODE_STOP  0
@@ -1166,6 +1166,9 @@ struct hdd_adapter_s
 
    /* Wireless statistics */
    struct iw_statistics iwStats;
+
+   /* Currently used antenna Index*/
+   int antennaIndex;
 };
 
 #define WLAN_HDD_GET_STATION_CTX_PTR(pAdapter) (&(pAdapter)->sessionCtx.station)
@@ -1221,14 +1224,14 @@ typedef struct
    struct mutex macSpoofingLock;
 }macAddrSpoof_t;
 
-#define WLAN_WAIT_TIME_LL_STATS 5000
+#define WLAN_WAIT_TIME_LL_STATS 800
 
 /* FW memory dump feature
 @TODO : Move this code to a separate file later */
 #define PROCFS_MEMDUMP_DIR  "debug"
 #define PROCFS_MEMDUMP_NAME "fwdump"
 #define FW_MEM_DUMP_REQ_ID 1
-#define FW_MEM_DUMP_TIMEOUT_MS 3000
+#define FW_MEM_DUMP_TIMEOUT_MS 800
 #define FW_MEM_DUMP_MAGIC 0x3C3A2D44
 
 /**
@@ -1478,7 +1481,6 @@ struct hdd_context_s
     tdls_scan_context_t tdls_scan_ctxt;
     /* Lock to avoid race condition during TDLS operations*/
     struct mutex tdls_lock;
-    v_BOOL_t is_tdls_btc_enabled;
 #endif
 
     hdd_traffic_monitor_t traffic_monitor;
@@ -1570,6 +1572,9 @@ struct hdd_context_s
     v_U32_t        cur_rx_level;
     v_U64_t        prev_rx;
     v_ULONG_t      mode;
+
+    /* bit map to set/reset TDLS by different sources */
+    unsigned long tdls_source_bitmap;
 };
 
 typedef enum  {

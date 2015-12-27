@@ -3842,5 +3842,8 @@ eHalStatus sme_enableDisableChanAvoidIndEvent(tHalHandle hHal,
 eHalStatus sme_set_wificonfig_params(tHalHandle hHal, tSetWifiConfigParams *req);
 eHalStatus sme_getRegInfo(tHalHandle hHal, tANI_U8 chanId,
                           tANI_U32 *regInfo1, tANI_U32 *regInfo2);
+eHalStatus sme_GetCurrentAntennaIndex(tHalHandle hHal,
+                                      tCsrAntennaIndexCallback callback,
+                                      void *pContext, tANI_U8 sessionId);
 
 #endif //#if !defined( __SME_API_H )

@@ -13692,3 +13692,54 @@ eHalStatus sme_getRegInfo(tHalHandle hHal, tANI_U8 chanId,
     }
     return status;
 }
+
+eHalStatus sme_GetCurrentAntennaIndex(tHalHandle hHal,
+                                     tCsrAntennaIndexCallback callback,
+                                     void *pContext, tANI_U8 sessionId)
+{
+    tpAniSirGlobal pMac = PMAC_STRUCT(hHal);
+    eHalStatus status = eHAL_STATUS_SUCCESS;
+    tSirAntennaDiversitySelectionReq *pMsg;
+    tCsrRoamSession *pSession;
+    VOS_STATUS vosStatus = VOS_STATUS_E_FAILURE;
+    vos_msg_t vosMessage;
+
+    status = sme_AcquireGlobalLock(&pMac->sme);
+    if (HAL_STATUS_SUCCESS(status))
+    {
+        pSession = CSR_GET_SESSION( pMac, sessionId );
+        if (!pSession)
+        {
+            smsLog(pMac, LOGE, FL("session %d not found"), sessionId);
+            sme_ReleaseGlobalLock( &pMac->sme );
+            return eHAL_STATUS_FAILURE;
+        }
+
+        pMsg = (tSirAntennaDiversitySelectionReq*)vos_mem_malloc(sizeof(*pMsg));
+        if (NULL == pMsg)
+        {
+            smsLog(pMac, LOGE, FL("failed to allocated memory"));
+            sme_ReleaseGlobalLock( &pMac->sme );
+            return eHAL_STATUS_FAILURE;
+        }
+        pMsg->callback = callback;
+        pMsg->data = pContext;
+
+        vosMessage.type = WDA_ANTENNA_DIVERSITY_SELECTION_REQ;
+        vosMessage.bodyptr = pMsg;
+        vosMessage.reserved = 0;
+
+        vosStatus = vos_mq_post_message( VOS_MQ_ID_WDA, &vosMessage );
+        if ( !VOS_IS_STATUS_SUCCESS(vosStatus) )
+        {
+           VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+                     "%s: Failed to post message to WDA", __func__);
+           vos_mem_free(pMsg);
+           sme_ReleaseGlobalLock( &pMac->sme );
+           return eHAL_STATUS_FAILURE;
+        }
+        sme_ReleaseGlobalLock( &pMac->sme);
+        return eHAL_STATUS_SUCCESS;
+    }
+    return eHAL_STATUS_FAILURE;
+}

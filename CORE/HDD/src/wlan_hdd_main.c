@@ -8663,7 +8663,8 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
        * to be disabled so that hdd_rx_packet_cbk won't call
        * wlan_hdd_tdls_find_peer.
        */
-      wlan_hdd_tdls_set_mode(pHddCtx, eTDLS_SUPPORT_DISABLED, FALSE);
+      wlan_hdd_tdls_set_mode(pHddCtx, eTDLS_SUPPORT_DISABLED, FALSE,
+                             HDD_SET_TDLS_MODE_SOURCE_USER);
 #endif
 
       vosStatus = hdd_get_front_adapter ( pHddCtx, &pAdapterNode );

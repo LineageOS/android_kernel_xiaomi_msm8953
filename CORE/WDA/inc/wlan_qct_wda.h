@@ -1314,6 +1314,7 @@ eHalStatus WDA_SetRegDomain(void * clientCtxt, v_REGDOMAIN_t regId,
 
 #define WDA_WIFI_CONFIG_REQ                    SIR_HAL_WIFI_CONFIG_PARAMS
 
+#define WDA_ANTENNA_DIVERSITY_SELECTION_REQ    SIR_HAL_ANTENNA_DIVERSITY_SELECTION_REQ
 #ifdef FEATURE_OEM_DATA_SUPPORT
 #define WDA_START_OEM_DATA_REQ_IND_NEW         SIR_HAL_START_OEM_DATA_REQ_IND_NEW
 #define WDA_START_OEM_DATA_RSP_IND_NEW         SIR_HAL_START_OEM_DATA_RSP_IND_NEW
@@ -2087,6 +2088,22 @@ void WDA_TransportChannelDebug
   v_BOOL_t       displaySnapshot,
   v_U8_t         debugFlags
 );
+
+/*==========================================================================
+  FUNCTION   WDA_TransportKickDxe
+
+  DESCRIPTION
+    Request Kick DXE when first hdd TX time out
+    happens
+
+  PARAMETERS
+    NONE
+
+  RETURN VALUE
+    NONE
+
+===========================================================================*/
+void WDA_TransportKickDxe(void);
 
 /*==========================================================================
   FUNCTION   WDA_TrafficStatsTimerActivate
