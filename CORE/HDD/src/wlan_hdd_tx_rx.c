@@ -2354,13 +2354,18 @@ VOS_STATUS hdd_tx_low_resource_cbk( vos_pkt_t *pVosPacket,
 static void hdd_mon_add_rx_radiotap_hdr (struct sk_buff *skb,
              int rtap_len,  v_PVOID_t  pRxPacket, hdd_mon_ctx_t *pMonCtx)
 {
-    u8 rtap_temp[20] = {0};
+    u8 rtap_temp[28] = {0};
     struct ieee80211_radiotap_header *rthdr;
     unsigned char *pos;
+    u32 mac_time;
     u16 rx_flags = 0;
     u16 rateIdx;
-    s8        currentRSSI, currentRSSI0, currentRSSI1;
+    u16 channel_flags = 0;
+    u8 rfBand;
+    s8 currentRSSI, currentRSSI0, currentRSSI1;
+    s8 noise;
 
+    mac_time = WDA_GET_RX_TIMESTAMP(pRxPacket);
     rateIdx = WDA_GET_RX_MAC_RATE_IDX(pRxPacket);
     if( rateIdx >= 210 && rateIdx <= 217)
        rateIdx-=202;
@@ -2372,37 +2377,54 @@ static void hdd_mon_add_rx_radiotap_hdr (struct sk_buff *skb,
                   "%s: invalid rateIdx %d make it 0", __func__, rateIdx);
        rateIdx = 0;
     }
+    rfBand = WDA_GET_RX_RFBAND(pRxPacket);
+    if (IS_5G_BAND(rfBand))
+        channel_flags |= IEEE80211_CHAN_5GHZ;
+    else
+        channel_flags |= IEEE80211_CHAN_2GHZ;
     currentRSSI0 = WDA_GETRSSI0(pRxPacket) - 100;
     currentRSSI1 = WDA_GETRSSI1(pRxPacket) - 100;
     currentRSSI  = (currentRSSI0 > currentRSSI1) ? currentRSSI0 : currentRSSI1;
+    noise = WDA_GET_RX_SNR(pRxPacket);
 
     rthdr = (struct ieee80211_radiotap_header *)(&rtap_temp[0]);
 
     /* radiotap header, set always present flags */
-    rthdr->it_present = cpu_to_le32((1 << IEEE80211_RADIOTAP_FLAGS)   |
+    rthdr->it_present = cpu_to_le32((1 << IEEE80211_RADIOTAP_TSFT) |
+                                    (1 << IEEE80211_RADIOTAP_FLAGS) |
                                     (1 << IEEE80211_RADIOTAP_CHANNEL) |
+                                    (1 << IEEE80211_RADIOTAP_RATE) |
+                                    (1 << IEEE80211_RADIOTAP_DBM_ANTSIGNAL) |
+                                    (1 << IEEE80211_RADIOTAP_DBM_ANTNOISE) |
                                     (1 << IEEE80211_RADIOTAP_RX_FLAGS));
     rthdr->it_len = cpu_to_le16(rtap_len);
 
     pos = (unsigned char *) (rthdr + 1);
+
+    /* IEEE80211_RADIOTAP_TSFT */
+    put_unaligned_le64(mac_time, pos);
+    pos += 8;
 
     /* IEEE80211_RADIOTAP_FLAGS */
     *pos = 0;
     pos++;
 
     /* IEEE80211_RADIOTAP_RATE */
-    rthdr->it_present |= cpu_to_le32(1 << IEEE80211_RADIOTAP_RATE);
     *pos = gRatefromIdx[rateIdx]/5;
-
     pos++;
 
     /* IEEE80211_RADIOTAP_CHANNEL */
     put_unaligned_le16(pMonCtx->ChannelNo, pos);
-    pos += 4;
+    pos += 2;
+    put_unaligned_le16(channel_flags, pos);
+    pos += 2;
 
     /* IEEE80211_RADIOTAP_DBM_ANTSIGNAL */
     *pos = currentRSSI;
-    rthdr->it_present |=cpu_to_le32(1 << IEEE80211_RADIOTAP_DBM_ANTSIGNAL);
+    pos++;
+
+    /* IEEE80211_RADIOTAP_DBM_ANTNOISE */
+    *pos = noise;
     pos++;
 
     if ((pos - (u8 *)rthdr) & 1)
@@ -2478,7 +2500,7 @@ VOS_STATUS  hdd_rx_packet_monitor_cbk(v_VOID_t *vosContext,vos_pkt_t *pVosPacket
     if(!conversion)
     {
          pMonCtx = WLAN_HDD_GET_MONITOR_CTX_PTR(pAdapter);
-         needed_headroom = sizeof(struct ieee80211_radiotap_header) + 10;
+         needed_headroom = sizeof(struct ieee80211_radiotap_header) + 18;
          hdd_mon_add_rx_radiotap_hdr( skb, needed_headroom, pvBDHeader, pMonCtx );
     }
 
