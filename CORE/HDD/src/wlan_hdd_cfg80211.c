@@ -15879,6 +15879,19 @@ static int __wlan_hdd_cfg80211_get_station(struct wiphy *wiphy, struct net_devic
        STATION_INFO_TX_RETRIES |
        STATION_INFO_TX_FAILED;
 
+    sinfo->rx_packets = pAdapter->hdd_stats.summary_stat.rx_frm_cnt;
+    sinfo->filled |= STATION_INFO_RX_PACKETS;
+
+    if (rate_flags & eHAL_TX_RATE_LEGACY)
+        hddLog(LOG1, FL("Reporting RSSI:%d legacy rate %d pkt cnt tx %d rx %d"),
+               sinfo->signal, sinfo->txrate.legacy, sinfo->tx_packets,
+               sinfo->rx_packets);
+    else
+        hddLog(LOG1,
+               FL("Reporting RSSI:%d MCS rate %d flags 0x%x pkt cnt tx %d rx %d"),
+               sinfo->signal, sinfo->txrate.mcs, sinfo->txrate.flags,
+               sinfo->tx_packets, sinfo->rx_packets);
+
     MTRACE(vos_trace(VOS_MODULE_ID_HDD,
                      TRACE_CODE_HDD_CFG80211_GET_STA,
                       pAdapter->sessionId, maxRate));
