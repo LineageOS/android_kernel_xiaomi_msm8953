@@ -10903,6 +10903,7 @@ static int __wlan_hdd_change_station(struct wiphy *wiphy,
     tCsrStaParams StaParams = {0};
     tANI_U8 isBufSta = 0;
     tANI_U8 isOffChannelSupported = 0;
+    tANI_U8 isQosWmmSta = FALSE;
 #endif
 
     ENTER();
@@ -11040,9 +11041,22 @@ static int __wlan_hdd_change_station(struct wiphy *wiphy,
                     isOffChannelSupported = 1;
                 }
             }
+
+            if (pHddCtx->cfg_ini->fEnableTDLSWmmMode &&
+                   (params->sta_flags_set & BIT(NL80211_STA_FLAG_WME))) {
+
+                /* TDLS Peer is WME/QoS capable */
+                isQosWmmSta = TRUE;
+            }
+
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                      "%s: TDLS Peer is QOS capable isQosWmmSta= %d HTcapPresent= %d",
+                      __func__, isQosWmmSta, StaParams.htcap_present);
+
             status = wlan_hdd_tdls_set_peer_caps( pAdapter, mac,
                                                   &StaParams, isBufSta,
-                                                  isOffChannelSupported);
+                                                  isOffChannelSupported,
+                                                  isQosWmmSta);
 
             if (VOS_STATUS_SUCCESS != status) {
                 VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -17792,14 +17806,19 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                 tANI_U16 numCurrTdlsPeers = 0;
                 hddTdlsPeer_t *connPeer = NULL;
                 tANI_U8 suppChannelLen = 0;
+                tSirMacAddr peerMac;
+                int channel;
+                tTDLSLinkStatus peer_status = eTDLS_LINK_IDLE;
 
                 VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                         " %s : NL80211_TDLS_ENABLE_LINK for " MAC_ADDRESS_STR,
                                 __func__, MAC_ADDR_ARRAY(peer));
 
-                pTdlsPeer = wlan_hdd_tdls_find_peer(pAdapter, peer, TRUE);
+                mutex_lock(&pHddCtx->tdls_lock);
+                pTdlsPeer = wlan_hdd_tdls_find_peer(pAdapter, peer, FALSE);
                 memset(&staDesc, 0, sizeof(staDesc));
                 if ( NULL == pTdlsPeer ) {
+                    mutex_unlock(&pHddCtx->tdls_lock);
                     hddLog(VOS_TRACE_LEVEL_ERROR, "%s: " MAC_ADDRESS_STR
                            " (oper %d) not exsting. ignored",
                            __func__, MAC_ADDR_ARRAY(peer), (int)oper);
@@ -17816,17 +17835,22 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                     hddLog(VOS_TRACE_LEVEL_ERROR, "%s: Invalid Staion Index %u "
                            MAC_ADDRESS_STR " failed",
                            __func__, pTdlsPeer->staId, MAC_ADDR_ARRAY(peer));
+                    mutex_unlock(&pHddCtx->tdls_lock);
                     return -EINVAL;
                 }
 
                 /* before starting tdls connection, set tdls
                  * off channel established status to default value */
                 pTdlsPeer->isOffChannelEstablished = FALSE;
+
+                mutex_unlock(&pHddCtx->tdls_lock);
+
                 /* TDLS Off Channel, Disable tdls channel switch,
                    when there are more than one tdls link */
                 numCurrTdlsPeers = wlan_hdd_tdlsConnectedPeers(pAdapter);
                 if (numCurrTdlsPeers == 2)
                 {
+                    mutex_lock(&pHddCtx->tdls_lock);
                     /* get connected peer and send disable tdls off chan */
                     connPeer = wlan_hdd_tdls_get_connected_peer(pAdapter);
                     if ((connPeer) &&
@@ -17838,12 +17862,16 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                                   "TDLS channel switch", __func__);
 
                         connPeer->isOffChannelEstablished = FALSE;
+                        vos_mem_copy(peerMac, connPeer->peerMac, sizeof (tSirMacAddr));
+                        channel = connPeer->peerParams.channel;
+
+                        mutex_unlock(&pHddCtx->tdls_lock);
 
                         ret = sme_SendTdlsChanSwitchReq(
                                            WLAN_HDD_GET_HAL_CTX(pAdapter),
                                            pAdapter->sessionId,
-                                           connPeer->peerMac,
-                                           connPeer->peerParams.channel,
+                                           peerMac,
+                                           channel,
                                            TDLS_OFF_CHANNEL_BW_OFFSET,
                                            TDLS_CHANNEL_SWITCH_DISABLE);
                         if (ret != VOS_STATUS_SUCCESS) {
@@ -17862,10 +17890,24 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                                     : -1),
                                   (connPeer ? (connPeer->isOffChannelConfigured)
                                     : -1));
+                        mutex_unlock(&pHddCtx->tdls_lock);
                     }
                 }
 
-                if (eTDLS_LINK_CONNECTED != pTdlsPeer->link_status)
+                mutex_lock(&pHddCtx->tdls_lock);
+                pTdlsPeer = wlan_hdd_tdls_find_peer(pAdapter, peer, FALSE);
+                if ( NULL == pTdlsPeer ) {
+                    mutex_unlock(&pHddCtx->tdls_lock);
+                    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                              "%s: " MAC_ADDRESS_STR
+                              " (oper %d) peer got freed in other context. ignored",
+                              __func__, MAC_ADDR_ARRAY(peer), (int)oper);
+                    return -EINVAL;
+                }
+                peer_status = pTdlsPeer->link_status;
+                mutex_unlock(&pHddCtx->tdls_lock);
+
+                if (eTDLS_LINK_CONNECTED != peer_status)
                 {
                     if (IS_ADVANCE_TDLS_ENABLE) {
 
@@ -17899,11 +17941,44 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                         }
                     }
 
+                    mutex_lock(&pHddCtx->tdls_lock);
+                    pTdlsPeer = wlan_hdd_tdls_find_peer(pAdapter, peer, FALSE);
+                    if ( NULL == pTdlsPeer ) {
+                        mutex_unlock(&pHddCtx->tdls_lock);
+                        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                                  "%s: " MAC_ADDRESS_STR
+                                  " (oper %d) peer got freed in other context. ignored",
+                                  __func__, MAC_ADDR_ARRAY(peer), (int)oper);
+                        return -EINVAL;
+                    }
+
                     wlan_hdd_tdls_set_peer_link_status(pTdlsPeer,
                                                        eTDLS_LINK_CONNECTED,
                                                        eTDLS_LINK_SUCCESS);
                     staDesc.ucSTAId = pTdlsPeer->staId;
                     staDesc.ucQosEnabled = tdlsLinkEstablishParams.qos;
+
+                    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                              "%s: tdlsLinkEstablishParams of peer "
+                              MAC_ADDRESS_STR "uapsdQueues: %d"
+                              "qos: %d maxSp: %d isBufSta: %d isOffChannelSupported: %d"
+                              "isResponder: %d  peerstaId: %d",
+                              __func__,
+                              MAC_ADDR_ARRAY(tdlsLinkEstablishParams.peerMac),
+                              tdlsLinkEstablishParams.uapsdQueues,
+                              tdlsLinkEstablishParams.qos,
+                              tdlsLinkEstablishParams.maxSp,
+                              tdlsLinkEstablishParams.isBufSta,
+                              tdlsLinkEstablishParams.isOffChannelSupported,
+                              tdlsLinkEstablishParams.isResponder,
+                              pTdlsPeer->staId);
+
+                    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                              "%s: StaDesc ucSTAId: %d ucQosEnabled: %d",
+                              __func__,
+                              staDesc.ucSTAId,
+                              staDesc.ucQosEnabled);
+
                     ret = WLANTL_UpdateTdlsSTAClient(
                                                 pHddCtx->pvosContext,
                                                 &staDesc);
@@ -17995,10 +18070,15 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                                   __func__, pTdlsPeer->peerParams.channel);
 
                             pTdlsPeer->isOffChannelEstablished = TRUE;
+                            vos_mem_copy(peerMac, pTdlsPeer->peerMac, sizeof (tSirMacAddr));
+                            channel = pTdlsPeer->peerParams.channel;
+
+                            mutex_unlock(&pHddCtx->tdls_lock);
+
                             ret = sme_SendTdlsChanSwitchReq(WLAN_HDD_GET_HAL_CTX(pAdapter),
                                                            pAdapter->sessionId,
-                                                           pTdlsPeer->peerMac,
-                                                           pTdlsPeer->peerParams.channel,
+                                                           peerMac,
+                                                           channel,
                                                            TDLS_OFF_CHANNEL_BW_OFFSET,
                                                            TDLS_CHANNEL_SWITCH_ENABLE);
                             if (ret != VOS_STATUS_SUCCESS) {
@@ -18015,9 +18095,13 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                                       __func__, numCurrTdlsPeers,
                                       pTdlsPeer->isOffChannelSupported,
                                       pTdlsPeer->isOffChannelConfigured);
+                            mutex_unlock(&pHddCtx->tdls_lock);
                         }
 
                     }
+                    else
+                        mutex_unlock(&pHddCtx->tdls_lock);
+
                     wlan_hdd_tdls_check_bmps(pAdapter);
 
                     /* Update TL about the UAPSD masks , to route the packets to firmware */
@@ -18042,6 +18126,7 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                         }
                     }
                 }
+
                 /* stop TCP delack timer if TDLS is enable  */
                 set_bit(WLAN_TDLS_MODE, &pHddCtx->mode);
                 hdd_manage_delack_timer(pHddCtx);
