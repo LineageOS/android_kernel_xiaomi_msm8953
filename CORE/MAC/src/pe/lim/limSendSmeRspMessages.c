@@ -1800,8 +1800,11 @@ limSendSmeDeauthNtf(tpAniSirGlobal pMac, tSirMacAddr peerMacAddr, tSirResultCode
             limLog(pMac, LOG1,
                    FL("send  eWNI_SME_DISCONNECT_DONE_IND withretCode: %d"),
                        reasonCode);
+
             pSirSmeDisConDoneInd->messageType = eWNI_SME_DISCONNECT_DONE_IND;
             pSirSmeDisConDoneInd->length      = sizeof(tSirSmeDisConDoneInd);
+            vos_mem_copy(pSirSmeDisConDoneInd->peerMacAddr, peerMacAddr,
+                    sizeof(tSirMacAddr));
             pSirSmeDisConDoneInd->sessionId   = smesessionId;
             pSirSmeDisConDoneInd->reasonCode  = reasonCode;
             pMsg = (tANI_U32 *)pSirSmeDisConDoneInd;
