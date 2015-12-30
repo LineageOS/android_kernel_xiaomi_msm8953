@@ -1195,6 +1195,7 @@ typedef struct tagCsrConfigParam
     tANI_BOOLEAN ignorePeerHTopMode;
     tANI_BOOLEAN disableP2PMacSpoofing;
     tANI_BOOLEAN enableFatalEvent;
+    tANI_U8 max_chan_for_dwell_time_cfg;
 }tCsrConfigParam;
 
 //Tush
