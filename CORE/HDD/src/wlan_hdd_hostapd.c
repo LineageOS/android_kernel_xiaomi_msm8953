@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1416,35 +1416,6 @@ int hdd_softap_unpackIE(
 }
 
 #ifdef FEATURE_WLAN_CH_AVOID
-/**---------------------------------------------------------------------------
-
-  \brief hdd_hostapd_freq_to_chn() -
-
-  Input frequency translated into channel number
-
-  \param  - freq input frequency with order of kHz
-
-  \return - corresponding channel number.
-            incannot find correct channel number, return 0
-
-  --------------------------------------------------------------------------*/
-v_U16_t hdd_hostapd_freq_to_chn
-(
-   v_U16_t   freq
-)
-{
-   int   loop;
-
-   for (loop = 0; loop < NUM_20MHZ_RF_CHANNELS; loop++)
-   {
-      if (rfChannels[loop].targetFreq == freq)
-      {
-         return rfChannels[loop].channelNum;
-      }
-   }
-
-   return (0);
-}
 
 /*==========================================================================
   FUNCTION    sapUpdateUnsafeChannelList
@@ -1576,9 +1547,13 @@ void hdd_hostapd_ch_avoid_cb
                 NUM_20MHZ_RF_CHANNELS * sizeof(v_U16_t));
    for (rangeLoop = 0; rangeLoop < chAvoidInd->avoidRangeCount; rangeLoop++)
    {
-      startChannel = hdd_hostapd_freq_to_chn(
+      if (unsafeChannelCount >= NUM_20MHZ_RF_CHANNELS) {
+         hddLog(LOGW, FL("LTE Coex unsafe channel list full"));
+         break;
+      }
+      startChannel = ieee80211_frequency_to_channel(
                       chAvoidInd->avoidFreqRange[rangeLoop].startFreq);
-      endChannel   = hdd_hostapd_freq_to_chn(
+      endChannel   = ieee80211_frequency_to_channel(
                       chAvoidInd->avoidFreqRange[rangeLoop].endFreq);
       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                 "%s : start %d : %d, end %d : %d",
@@ -1616,6 +1591,10 @@ void hdd_hostapd_ch_avoid_cb
                            "%s : unsafe channel %d, count %d",
                            __func__,
                            channelLoop, unsafeChannelCount);
+                     if (unsafeChannelCount >= NUM_20MHZ_RF_CHANNELS) {
+                        hddLog(LOGW, FL("LTE Coex unsafe channel list full"));
+                        break;
+                     }
                  }
              }
          }
