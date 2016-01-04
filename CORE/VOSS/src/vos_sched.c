@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -2005,8 +2005,6 @@ VOS_STATUS vos_watchdog_wlan_shutdown(void)
        return VOS_STATUS_E_FAILURE;
     }
 
-    VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
-        "%s: WLAN driver is shutting down ", __func__);
 
     pVosContext = vos_get_global_context(VOS_MODULE_ID_HDD, NULL);
     pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD, pVosContext );
@@ -2062,6 +2060,9 @@ VOS_STATUS vos_watchdog_wlan_shutdown(void)
 
     /* Release the lock here */
     spin_unlock(&gpVosWatchdogContext->wdLock);
+
+    VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+        "%s: WLAN driver is shutting down ", __func__);
 
     /* Update Riva Reset Statistics */
     pHddCtx->hddRivaResetStats++;
