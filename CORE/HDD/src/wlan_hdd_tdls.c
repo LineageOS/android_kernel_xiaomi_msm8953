@@ -463,6 +463,23 @@ static v_VOID_t wlan_hdd_tdls_update_peer_cb( v_PVOID_t userData )
                        " tdls_support %d", __func__, MAC_ADDR_ARRAY(curr_peer->peerMac),
                        curr_peer->link_status, curr_peer->tdls_support);
 
+            if ((pHddCtx->tdls_mode == eTDLS_SUPPORT_DISABLED) &&
+                    (eTDLS_LINK_DISCOVERING == curr_peer->link_status)) {
+                curr_peer->tdls_support = eTDLS_CAP_UNKNOWN;
+                wlan_hdd_tdls_set_peer_link_status(
+                        curr_peer,
+                        eTDLS_LINK_IDLE,
+                        eTDLS_LINK_UNSPECIFIED);
+
+                VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                        "%s: TDLS is disabled. Resetting link_status of peer "
+                        MAC_ADDRESS_STR " to %d, tdls_support %d", __func__,
+                        MAC_ADDR_ARRAY(curr_peer->peerMac),
+                        curr_peer->link_status, curr_peer->tdls_support);
+
+                goto next_peer;
+            }
+
             if (eTDLS_CAP_SUPPORTED == curr_peer->tdls_support) {
                 VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                     "tx %d, rx %d (thr.pkt %d/idle %d), rssi %d (thr.trig %d/hys %d/tear %d)",
@@ -1454,11 +1471,36 @@ int wlan_hdd_tdls_recv_discovery_resp(hdd_adapter_t *pAdapter, u8 *mac)
             wlan_hdd_tdls_set_peer_link_status(curr_peer,
                                                eTDLS_LINK_DISCOVERED,
                                                eTDLS_LINK_SUCCESS);
+
             VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
             "Rssi Threshold met: "MAC_ADDRESS_STR" rssi = %d threshold= %d" ,
              MAC_ADDR_ARRAY(curr_peer->peerMac), curr_peer->rssi,
              pHddTdlsCtx->threshold_config.rssi_trigger_threshold);
-            cfg80211_tdls_oper_request(pAdapter->dev, curr_peer->peerMac, NL80211_TDLS_SETUP, FALSE, GFP_KERNEL);
+
+            if (pHddCtx->tdls_mode != eTDLS_SUPPORT_DISABLED)
+            {
+                /* TDLS can be disabled from multiple sources like
+                 * scan, p2p-listen, p2p, btc etc ...
+                 * Dont initiate tdls setup if tdls is disabled
+                 */
+                cfg80211_tdls_oper_request(pAdapter->dev, curr_peer->peerMac,
+                                           NL80211_TDLS_SETUP, FALSE,
+                                           GFP_KERNEL);
+            }
+            else
+            {
+                curr_peer->tdls_support = eTDLS_CAP_UNKNOWN;
+                wlan_hdd_tdls_set_peer_link_status(
+                        curr_peer,
+                        eTDLS_LINK_IDLE,
+                        eTDLS_LINK_UNSPECIFIED);
+
+                VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                        "%s: TDLS is disabled. Resetting link_status of peer "
+                        MAC_ADDRESS_STR " to %d, tdls_support %d", __func__,
+                        MAC_ADDR_ARRAY(curr_peer->peerMac),
+                        curr_peer->link_status, curr_peer->tdls_support);
+            }
         }
         else
         {
