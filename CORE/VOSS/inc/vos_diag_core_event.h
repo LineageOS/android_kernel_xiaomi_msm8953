@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -282,6 +282,18 @@ struct vos_event_wlan_wake_lock
        char     name[WAKE_LOCK_NAME_LEN];
 };
 
+/**
+ * struct vos_event_tdls_teardown - tdls teardown diag event
+ * @reason: reason for tear down
+ * @peer_mac: peer mac
+ *
+ * This structure contain tdls teardown diag event info
+ */
+
+struct vos_event_tdls_teardown {
+   uint32_t reason;
+   uint8_t peer_mac[6];
+};
 
 /*-------------------------------------------------------------------------
   Event ID: EVENT_WLAN_LOG_COMPLETE
