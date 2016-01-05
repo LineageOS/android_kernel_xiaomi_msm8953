@@ -1374,10 +1374,20 @@ void wlan_hdd_tdls_set_link_status(hdd_adapter_t *pAdapter,
     tANI_S32 res = 0;
     /*EXT TDLS*/
     hddTdlsPeer_t *curr_peer;
+    hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
 
-    curr_peer = wlan_hdd_tdls_find_peer(pAdapter, mac, TRUE);
+    if (pHddCtx == NULL)
+    {
+       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                 FL("pHddCtx is NULL"));
+        return;
+    }
+
+    mutex_lock(&pHddCtx->tdls_lock);
+    curr_peer = wlan_hdd_tdls_find_peer(pAdapter, mac, FALSE);
     if (curr_peer == NULL)
     {
+       mutex_unlock(&pHddCtx->tdls_lock);
        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                  "%s: curr_peer is NULL", __func__);
         return;
@@ -1392,13 +1402,15 @@ void wlan_hdd_tdls_set_link_status(hdd_adapter_t *pAdapter,
         /*save the reason for any further query*/
         curr_peer->reason = reason;
         wlan_hdd_tdls_get_wifi_hal_state(curr_peer, &state, &res);
-
+        mutex_unlock(&pHddCtx->tdls_lock);
         (*curr_peer->state_change_notification)(mac,
                                              state,
                                              res,
-                                             curr_peer->pHddTdlsCtx->pAdapter);
-
+                                             pAdapter);
     }
+    else
+        mutex_unlock(&pHddCtx->tdls_lock);
+
     /*EXT TDLS*/
     return;
 }
@@ -3334,7 +3346,9 @@ int wlan_hdd_tdls_get_status(hdd_adapter_t *pAdapter,
 
     hddTdlsPeer_t *curr_peer;
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
-    curr_peer = wlan_hdd_tdls_find_peer(pAdapter, mac, TRUE);
+
+    mutex_lock(&pHddCtx->tdls_lock);
+    curr_peer = wlan_hdd_tdls_find_peer(pAdapter, mac, FALSE);
     if (curr_peer == NULL)
     {
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -3358,6 +3372,7 @@ int wlan_hdd_tdls_get_status(hdd_adapter_t *pAdapter,
             wlan_hdd_tdls_get_wifi_hal_state(curr_peer, state, reason);
         }
     }
+    mutex_unlock(&pHddCtx->tdls_lock);
     return (0);
 }
 
