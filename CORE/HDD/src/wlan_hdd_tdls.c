@@ -781,30 +781,6 @@ static void wlan_hdd_tdls_free_list(tdlsCtx_t *pHddTdlsCtx)
     }
 }
 
-static void wlan_hdd_tdls_schedule_scan(struct work_struct *work)
-{
-    tdls_scan_context_t *scan_ctx =
-          container_of(work, tdls_scan_context_t, tdls_scan_work.work);
-
-    if (NULL == scan_ctx)
-    {
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 FL("scan_ctx is NULL"));
-        return;
-    }
-
-    if (unlikely(TDLS_CTX_MAGIC != scan_ctx->magic))
-        return;
-
-    scan_ctx->attempt++;
-
-    wlan_hdd_cfg80211_scan(scan_ctx->wiphy,
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
-                           scan_ctx->dev,
-#endif
-                           scan_ctx->scan_request);
-}
-
 void wlan_hdd_tdls_btCoex_cb(void *data, int indType)
 {
     hdd_adapter_t *pAdapter;
@@ -940,10 +916,7 @@ void  wlan_hdd_tdls_init(hdd_context_t *pHddCtx )
 
     pHddCtx->connected_peer_count = 0;
 
-    pHddCtx->tdls_scan_ctxt.magic = 0;
-    pHddCtx->tdls_scan_ctxt.attempt = 0;
-    pHddCtx->tdls_scan_ctxt.reject = 0;
-    pHddCtx->tdls_scan_ctxt.scan_request = NULL;
+    wlan_hdd_init_deinit_defer_scan_context(&pHddCtx->scan_ctxt);
 
     for (staIdx = 0; staIdx < HDD_MAX_NUM_TDLS_STA; staIdx++)
     {
@@ -1067,9 +1040,7 @@ int wlan_hdd_sta_tdls_init(hdd_adapter_t *pAdapter)
     pHddTdlsCtx->threshold_config.rssi_trigger_threshold = pHddCtx->cfg_ini->fTDLSRSSITriggerThreshold;
     pHddTdlsCtx->threshold_config.rssi_teardown_threshold = pHddCtx->cfg_ini->fTDLSRSSITeardownThreshold;
 
-    vos_init_delayed_work(&pHddCtx->tdls_scan_ctxt.tdls_scan_work,
-                          wlan_hdd_tdls_schedule_scan);
-     set_bit(TDLS_INIT_DONE, &pAdapter->event_flags);
+    set_bit(TDLS_INIT_DONE, &pAdapter->event_flags);
 
     return 0;
 }
@@ -1114,14 +1085,13 @@ void wlan_hdd_tdls_exit(hdd_adapter_t *pAdapter, tANI_BOOLEAN mutexLock)
         return;
     }
 
-    vos_flush_delayed_work(&pHddCtx->tdls_scan_ctxt.tdls_scan_work);
-
     /* must stop timer here before freeing peer list, because peerIdleTimer is
     part of peer list structure. */
     wlan_hdd_tdls_timers_destroy(pHddTdlsCtx);
     wlan_hdd_tdls_free_list(pHddTdlsCtx);
 
-    wlan_hdd_tdls_free_scan_request(&pHddCtx->tdls_scan_ctxt);
+    wlan_hdd_init_deinit_defer_scan_context(&pHddCtx->scan_ctxt);
+
     pHddTdlsCtx->magic = 0;
     pHddTdlsCtx->pAdapter = NULL;
     vos_mem_free(pHddTdlsCtx);
@@ -2513,7 +2483,7 @@ void wlan_hdd_tdls_check_bmps(hdd_adapter_t *pAdapter)
                 FL("pHddTdlsCtx points to NULL"));
         return;
     }
-    if ((TDLS_CTX_MAGIC != pHddCtx->tdls_scan_ctxt.magic) &&
+    if ((TDLS_CTX_MAGIC != pHddCtx->scan_ctxt.magic) &&
         (0 == pHddCtx->connected_peer_count) &&
         (0 == pHddTdlsCtx->discovery_sent_cnt))
     {
@@ -2890,71 +2860,6 @@ void wlan_hdd_tdls_check_power_save_prohibited(hdd_adapter_t *pAdapter)
     return;
 }
 
-void wlan_hdd_tdls_free_scan_request (tdls_scan_context_t *tdls_scan_ctx)
-{
-    if (NULL == tdls_scan_ctx)
-    {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 FL("tdls_scan_ctx is NULL"));
-        return;
-    }
-
-    tdls_scan_ctx->attempt = 0;
-    tdls_scan_ctx->reject = 0;
-    tdls_scan_ctx->magic = 0;
-    tdls_scan_ctx->scan_request = NULL;
-        return;
-}
-
-int wlan_hdd_tdls_copy_scan_context(hdd_context_t *pHddCtx,
-                            struct wiphy *wiphy,
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
-                            struct net_device *dev,
-#endif
-                            struct cfg80211_scan_request *request)
-{
-    tdls_scan_context_t *scan_ctx;
-
-    ENTER();
-    if(0 != (wlan_hdd_validate_context(pHddCtx)))
-    {
-        return 0;
-    }
-
-    scan_ctx = &pHddCtx->tdls_scan_ctxt;
-
-    scan_ctx->wiphy = wiphy;
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
-    scan_ctx->dev = dev;
-#endif
-
-    scan_ctx->scan_request = request;
-
-    EXIT();
-    return 0;
-}
-
-static void wlan_hdd_tdls_scan_init_work(hdd_context_t *pHddCtx,
-                                struct wiphy *wiphy,
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
-                                struct net_device *dev,
-#endif
-                                struct cfg80211_scan_request *request,
-                                unsigned long delay)
-{
-    if (TDLS_CTX_MAGIC != pHddCtx->tdls_scan_ctxt.magic)
-    {
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
-        wlan_hdd_tdls_copy_scan_context(pHddCtx, wiphy, dev, request);
-#else
-        wlan_hdd_tdls_copy_scan_context(pHddCtx, wiphy, request);
-#endif
-        pHddCtx->tdls_scan_ctxt.attempt = 0;
-        pHddCtx->tdls_scan_ctxt.magic = TDLS_CTX_MAGIC;
-    }
-    schedule_delayed_work(&pHddCtx->tdls_scan_ctxt.tdls_scan_work, delay);
-}
-
 /* return negative = caller should stop and return error code immediately
    return 0 = caller should stop and return success immediately
    return 1 = caller can continue to scan
@@ -2986,12 +2891,12 @@ int wlan_hdd_tdls_scan_callback (hdd_adapter_t *pAdapter,
     curr_peer = wlan_hdd_tdls_is_progress(pHddCtx, NULL, 0, FALSE);
     if (NULL != curr_peer)
     {
-        if (pHddCtx->tdls_scan_ctxt.reject++ >= TDLS_MAX_SCAN_REJECT)
+        if (pHddCtx->scan_ctxt.reject++ >= TDLS_MAX_SCAN_REJECT)
         {
-            pHddCtx->tdls_scan_ctxt.reject = 0;
+            pHddCtx->scan_ctxt.reject = 0;
             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                     "%s: " MAC_ADDRESS_STR ". scan rejected %d. force it to idle",
-                    __func__, MAC_ADDR_ARRAY (curr_peer->peerMac), pHddCtx->tdls_scan_ctxt.reject);
+                    __func__, MAC_ADDR_ARRAY (curr_peer->peerMac), pHddCtx->scan_ctxt.reject);
 
             wlan_hdd_tdls_set_peer_link_status (curr_peer,
                                                 eTDLS_LINK_IDLE,
@@ -3002,7 +2907,7 @@ int wlan_hdd_tdls_scan_callback (hdd_adapter_t *pAdapter,
         mutex_unlock(&pHddCtx->tdls_lock);
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                 "%s: tdls in progress. scan rejected %d",
-                __func__, pHddCtx->tdls_scan_ctxt.reject);
+                __func__, pHddCtx->scan_ctxt.reject);
         return -EBUSY;
     }
     else
@@ -3012,14 +2917,14 @@ int wlan_hdd_tdls_scan_callback (hdd_adapter_t *pAdapter,
     if (eTDLS_SUPPORT_DISABLED == pHddCtx->tdls_mode)
     {
         connectedTdlsPeers = wlan_hdd_tdlsConnectedPeers(pAdapter);
-        if (connectedTdlsPeers && (pHddCtx->tdls_scan_ctxt.attempt < TDLS_MAX_SCAN_SCHEDULE))
+        if (connectedTdlsPeers && (pHddCtx->scan_ctxt.attempt < TDLS_MAX_SCAN_SCHEDULE))
         {
             delay = (unsigned long)(TDLS_DELAY_SCAN_PER_CONNECTION*connectedTdlsPeers);
             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                     "%s: tdls disabled, but still connected_peers %d attempt %d. schedule scan %lu msec",
-                    __func__, connectedTdlsPeers, pHddCtx->tdls_scan_ctxt.attempt, delay);
+                    __func__, connectedTdlsPeers, pHddCtx->scan_ctxt.attempt, delay);
 
-            wlan_hdd_tdls_scan_init_work (pHddCtx, wiphy,
+            wlan_hdd_defer_scan_init_work (pHddCtx, wiphy,
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
                                           dev,
 #endif
@@ -3031,7 +2936,7 @@ int wlan_hdd_tdls_scan_callback (hdd_adapter_t *pAdapter,
         /* no connected peer or max retry reached, scan continue */
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                 "%s: tdls disabled. connected_peers %d attempt %d. scan allowed",
-                __func__, connectedTdlsPeers, pHddCtx->tdls_scan_ctxt.attempt);
+                __func__, connectedTdlsPeers, pHddCtx->scan_ctxt.attempt);
         return 1;
     }
 
@@ -3155,7 +3060,7 @@ int wlan_hdd_tdls_scan_callback (hdd_adapter_t *pAdapter,
                     __func__, pHddCtx->tdls_mode, wlan_hdd_tdlsConnectedPeers(pAdapter),
                     delay);
 
-            wlan_hdd_tdls_scan_init_work (pHddCtx, wiphy,
+            wlan_hdd_defer_scan_init_work (pHddCtx, wiphy,
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
                                           dev,
 #endif
@@ -3191,7 +3096,7 @@ void wlan_hdd_tdls_scan_done_callback(hdd_adapter_t *pAdapter)
     }
 
     /* free allocated memory at scan time */
-    wlan_hdd_tdls_free_scan_request (&pHddCtx->tdls_scan_ctxt);
+    wlan_hdd_init_deinit_defer_scan_context(&pHddCtx->scan_ctxt);
 
     /* if tdls was enabled before scan, re-enable tdls mode */
     if(eTDLS_SUPPORT_ENABLED == pHddCtx->tdls_mode_last ||

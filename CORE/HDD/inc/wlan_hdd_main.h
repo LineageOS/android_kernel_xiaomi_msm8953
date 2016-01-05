@@ -876,6 +876,19 @@ typedef struct hdd_scaninfo_s
 
 }hdd_scaninfo_t;
 
+typedef struct
+{
+    struct wiphy *wiphy;
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
+    struct net_device *dev;
+#endif
+    struct cfg80211_scan_request *scan_request;
+    int magic;
+    int attempt;
+    int reject;
+    struct delayed_work scan_work;
+}scan_context_t;
+
 /* Changing value from 10 to 240, as later is
    supported by wcnss */
 #define WLAN_HDD_MAX_MC_ADDR_LIST 240
@@ -1478,7 +1491,7 @@ struct hdd_context_s
     tdlsConnInfo_t tdlsConnInfo[HDD_MAX_NUM_TDLS_STA];
     /* TDLS peer connected count */
     tANI_U16 connected_peer_count;
-    tdls_scan_context_t tdls_scan_ctxt;
+    scan_context_t scan_ctxt;
     /* Lock to avoid race condition during TDLS operations*/
     struct mutex tdls_lock;
 #endif
@@ -1884,4 +1897,19 @@ static inline void hdd_init_ll_stat_ctx(void)
 #endif /* WLAN_FEATURE_LINK_LAYER_STATS */
 void hdd_initialize_adapter_common(hdd_adapter_t *pAdapter);
 void hdd_wlan_free_wiphy_channels(struct wiphy *wiphy);
+void wlan_hdd_init_deinit_defer_scan_context(scan_context_t *scan_ctx);
+int wlan_hdd_copy_defer_scan_context(hdd_context_t *pHddCtx,
+                            struct wiphy *wiphy,
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
+                            struct net_device *dev,
+#endif
+                            struct cfg80211_scan_request *request);
+void wlan_hdd_schedule_defer_scan(struct work_struct *work);
+void wlan_hdd_defer_scan_init_work(hdd_context_t *pHddCtx,
+                                struct wiphy *wiphy,
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
+                                struct net_device *dev,
+#endif
+                                struct cfg80211_scan_request *request,
+                                unsigned long delay);
 #endif    // end #if !defined( WLAN_HDD_MAIN_H )
