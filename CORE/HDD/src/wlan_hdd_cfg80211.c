@@ -18178,6 +18178,10 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                 /* stop TCP delack timer if TDLS is enable  */
                 set_bit(WLAN_TDLS_MODE, &pHddCtx->mode);
                 hdd_manage_delack_timer(pHddCtx);
+                hdd_wlan_tdls_enable_link_event(peer,
+                           pTdlsPeer->isOffChannelSupported,
+                           pTdlsPeer->isOffChannelConfigured,
+                           pTdlsPeer->isOffChannelEstablished);
             }
             break;
         case NL80211_TDLS_DISABLE_LINK:

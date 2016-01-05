@@ -418,10 +418,22 @@ void wlan_hdd_tdls_indicate_teardown(hdd_adapter_t *pAdapter,
 #ifdef FEATURE_WLAN_DIAG_SUPPORT
 void hdd_send_wlan_tdls_teardown_event(uint32_t reason,
                                       uint8_t *peer_mac);
+void hdd_wlan_tdls_enable_link_event(const uint8_t *peer_mac,
+                           uint8_t is_off_chan_supported,
+                           uint8_t is_off_chan_configured,
+                           uint8_t is_off_chan_established);
 #else
 static inline
 void hdd_send_wlan_tdls_teardown_event(uint32_t reason,
                                       uint8_t *peer_mac)
+{
+    return;
+}
+static inline
+void hdd_wlan_tdls_enable_link_event(const uint8_t *peer_mac,
+                           uint8_t is_off_chan_supported,
+                           uint8_t is_off_chan_configured,
+                           uint8_t is_off_chan_established)
 {
     return;
 }
