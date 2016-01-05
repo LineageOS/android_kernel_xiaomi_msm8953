@@ -117,6 +117,28 @@ typedef enum eTDLSLinkStatus {
     eTDLS_LINK_TEARING,
 } tTDLSLinkStatus;
 
+/**
+ * enum tdls_teardown_reason - Reason for TDLS teardown
+ * @eTDLS_TEARDOWN_EXT_CTRL: Reason ext ctrl.
+ * @eTDLS_TEARDOWN_CONCURRENCY: Reason concurrency.
+ * @eTDLS_TEARDOWN_RSSI_THRESHOLD: Reason rssi threashold.
+ * @eTDLS_TEARDOWN_TXRX_THRESHOLD: Reason txrx threashold.
+ * @eTDLS_TEARDOWN_BTCOEX: Reason BTCOEX.
+ * @eTDLS_TEARDOWN_SCAN: Reason scan.
+ * @eTDLS_TEARDOWN_BSS_DISCONNECT: Reason bss disconnected.
+ *
+ * Reason to indicate in diag event of tdls teardown.
+ */
+
+enum tdls_teardown_reason {
+    eTDLS_TEARDOWN_EXT_CTRL,
+    eTDLS_TEARDOWN_CONCURRENCY,
+    eTDLS_TEARDOWN_RSSI_THRESHOLD,
+    eTDLS_TEARDOWN_TXRX_THRESHOLD,
+    eTDLS_TEARDOWN_BTCOEX,
+    eTDLS_TEARDOWN_SCAN,
+    eTDLS_TEARDOWN_BSS_DISCONNECT,
+};
 
 typedef enum {
     eTDLS_LINK_SUCCESS,                              /* Success */
@@ -393,6 +415,17 @@ void wlan_hdd_tdls_timer_restart(hdd_adapter_t *pAdapter,
 void wlan_hdd_tdls_indicate_teardown(hdd_adapter_t *pAdapter,
                                      hddTdlsPeer_t *curr_peer,
                                      tANI_U16 reason);
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
+void hdd_send_wlan_tdls_teardown_event(uint32_t reason,
+                                      uint8_t *peer_mac);
+#else
+static inline
+void hdd_send_wlan_tdls_teardown_event(uint32_t reason,
+                                      uint8_t *peer_mac)
+{
+    return;
+}
+#endif /* FEATURE_WLAN_DIAG_SUPPORT */
 
 int wlan_hdd_tdls_set_force_peer(hdd_adapter_t *pAdapter,
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))

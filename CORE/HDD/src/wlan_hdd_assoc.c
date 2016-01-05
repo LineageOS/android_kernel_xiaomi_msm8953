@@ -3141,6 +3141,8 @@ eHalStatus hdd_RoamTdlsStatusUpdateHandler(hdd_adapter_t *pAdapter,
             curr_peer = wlan_hdd_tdls_find_peer(pAdapter, pRoamInfo->peerMac,
                                                 FALSE);
             wlan_hdd_tdls_indicate_teardown(pAdapter, curr_peer, pRoamInfo->reasonCode);
+            hdd_send_wlan_tdls_teardown_event(eTDLS_TEARDOWN_BSS_DISCONNECT,
+                                                          curr_peer->peerMac);
             mutex_unlock(&pHddCtx->tdls_lock);
 #endif
             status = eHAL_STATUS_SUCCESS ;

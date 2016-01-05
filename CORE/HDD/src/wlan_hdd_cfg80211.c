@@ -17717,6 +17717,7 @@ int wlan_hdd_tdls_extctrl_deconfig_peer(hdd_adapter_t *pAdapter,
 
     hddTdlsPeer_t *pTdlsPeer;
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+
     VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
               " %s : NL80211_TDLS_TEARDOWN for " MAC_ADDRESS_STR,
               __func__, MAC_ADDR_ARRAY(peer));
@@ -17749,6 +17750,8 @@ int wlan_hdd_tdls_extctrl_deconfig_peer(hdd_adapter_t *pAdapter,
     else {
         wlan_hdd_tdls_indicate_teardown(pAdapter, pTdlsPeer,
                            eSIR_MAC_TDLS_TEARDOWN_UNSPEC_REASON);
+        hdd_send_wlan_tdls_teardown_event(eTDLS_TEARDOWN_EXT_CTRL,
+                                                 pTdlsPeer->peerMac);
         /* if channel switch is configured, reset
            the channel for this peer */
         if (TRUE == pTdlsPeer->isOffChannelConfigured)

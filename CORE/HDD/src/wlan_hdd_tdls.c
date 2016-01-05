@@ -67,6 +67,33 @@ static u8 wlan_hdd_tdls_hash_key (const u8 *mac)
     return key;
 }
 
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
+/**
+ * hdd_send_wlan_tdls_teardown_event()- send TDLS teardown event
+ *
+ * @reason: reason for tear down.
+ * @peer_mac: peer mac
+ *
+ * This Function send TDLS teardown diag event
+ *
+ * Return: void.
+ */
+void hdd_send_wlan_tdls_teardown_event(uint32_t reason,
+                                      uint8_t *peer_mac)
+{
+   WLAN_VOS_DIAG_EVENT_DEF(tdls_tear_down,
+                      struct vos_event_tdls_teardown);
+   vos_mem_zero(&tdls_tear_down,
+                    sizeof(tdls_tear_down));
+
+   tdls_tear_down.reason = reason;
+   vos_mem_copy(tdls_tear_down.peer_mac,
+        peer_mac, HDD_MAC_ADDR_LEN);
+   WLAN_VOS_DIAG_EVENT_REPORT(&tdls_tear_down,
+       EVENT_WLAN_TDLS_TEARDOWN);
+}
+#endif
+
 /**
  * wlan_hdd_tdls_disable_offchan_and_teardown_links - Disable offchannel
  * and teardown TDLS links
@@ -160,7 +187,8 @@ void wlan_hdd_tdls_disable_offchan_and_teardown_links(hdd_context_t *hddctx)
                 curr_peer->pHddTdlsCtx->pAdapter,
                 curr_peer,
                 eSIR_MAC_TDLS_TEARDOWN_UNSPEC_REASON);
-
+        hdd_send_wlan_tdls_teardown_event(eTDLS_TEARDOWN_CONCURRENCY,
+                                            curr_peer->peerMac);
         mutex_unlock(&hddctx->tdls_lock);
 
         /* Del Sta happened already as part of sme_DeleteAllTDLSPeers
@@ -175,7 +203,6 @@ void wlan_hdd_tdls_disable_offchan_and_teardown_links(hdd_context_t *hddctx)
         vos_mem_zero(&hddctx->tdlsConnInfo[staIdx].peerMac,
                  sizeof(v_MACADDR_t)) ;
         wlan_hdd_tdls_check_bmps(adapter);
-
     }
 
 done:
@@ -414,6 +441,9 @@ static v_VOID_t wlan_hdd_tdls_idle_cb( v_PVOID_t userData )
       wlan_hdd_tdls_indicate_teardown(curr_peer->pHddTdlsCtx->pAdapter,
                                       curr_peer,
                                       eSIR_MAC_TDLS_TEARDOWN_UNSPEC_REASON);
+      hdd_send_wlan_tdls_teardown_event(eTDLS_TEARDOWN_TXRX_THRESHOLD,
+                                           curr_peer->peerMac);
+
     }
     mutex_unlock(&pHddCtx->tdls_lock);
     EXIT();
@@ -533,6 +563,10 @@ static v_VOID_t wlan_hdd_tdls_update_peer_cb( v_PVOID_t userData )
                         wlan_hdd_tdls_indicate_teardown(pHddTdlsCtx->pAdapter,
                                                         curr_peer,
                                                         eSIR_MAC_TDLS_TEARDOWN_UNSPEC_REASON);
+                        hdd_send_wlan_tdls_teardown_event(
+                               eTDLS_TEARDOWN_RSSI_THRESHOLD,
+                               curr_peer->peerMac);
+
 #endif
                         goto next_peer;
                     }
@@ -879,15 +913,18 @@ void wlan_hdd_tdls_btCoex_cb(void *data, int indType)
                                   ("%s: indicate TDLS teardown (staId %d)"),
                                   __func__,pHddCtx->tdlsConnInfo[staIdx].staId);
 
-                        #ifdef CONFIG_TDLS_IMPLICIT
+#ifdef CONFIG_TDLS_IMPLICIT
                         curr_peer = wlan_hdd_tdls_find_all_peer(pHddCtx,
                                    pHddCtx->tdlsConnInfo[staIdx].peerMac.bytes);
                         if(curr_peer) {
                            wlan_hdd_tdls_indicate_teardown(
                                    curr_peer->pHddTdlsCtx->pAdapter, curr_peer,
                                    eSIR_MAC_TDLS_TEARDOWN_UNSPEC_REASON);
+                           hdd_send_wlan_tdls_teardown_event(
+                                                eTDLS_TEARDOWN_BTCOEX,
+                                                curr_peer->peerMac);
                         }
-                        #endif
+#endif
                     }
                }
                mutex_unlock(&pHddCtx->tdls_lock);
@@ -3086,10 +3123,14 @@ int wlan_hdd_tdls_scan_callback (hdd_adapter_t *pAdapter,
 #ifdef CONFIG_TDLS_IMPLICIT
                     curr_peer = wlan_hdd_tdls_find_all_peer(pHddCtx,
                             pHddCtx->tdlsConnInfo[staIdx].peerMac.bytes);
-                    if(curr_peer)
+                    if(curr_peer) {
                         wlan_hdd_tdls_indicate_teardown(
                                 curr_peer->pHddTdlsCtx->pAdapter, curr_peer,
                                 eSIR_MAC_TDLS_TEARDOWN_UNSPEC_REASON);
+                        hdd_send_wlan_tdls_teardown_event(
+                                               eTDLS_TEARDOWN_SCAN,
+                                               curr_peer->peerMac);
+                    }
 #endif
                 }
             }
