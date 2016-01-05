@@ -95,19 +95,6 @@ typedef struct
     tANI_S32    rssi_teardown_threshold;
 } tdls_config_params_t;
 
-typedef struct
-{
-    struct wiphy *wiphy;
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
-    struct net_device *dev;
-#endif
-    struct cfg80211_scan_request *scan_request;
-    int magic;
-    int attempt;
-    int reject;
-    struct delayed_work tdls_scan_work;
-} tdls_scan_context_t;
-
 typedef enum {
     eTDLS_SUPPORT_NOT_ENABLED = 0,
     eTDLS_SUPPORT_DISABLED, /* suppress implicit trigger and not respond to the peer */
@@ -390,15 +377,6 @@ void wlan_hdd_tdls_set_mode(hdd_context_t *pHddCtx,
 tANI_U32 wlan_hdd_tdls_discovery_sent_cnt(hdd_context_t *pHddCtx);
 
 void wlan_hdd_tdls_check_power_save_prohibited(hdd_adapter_t *pAdapter);
-
-void wlan_hdd_tdls_free_scan_request (tdls_scan_context_t *tdls_scan_ctx);
-
-int wlan_hdd_tdls_copy_scan_context(hdd_context_t *pHddCtx,
-                            struct wiphy *wiphy,
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
-                            struct net_device *dev,
-#endif
-                            struct cfg80211_scan_request *request);
 
 int wlan_hdd_tdls_scan_callback (hdd_adapter_t *pAdapter,
                                 struct wiphy *wiphy,
