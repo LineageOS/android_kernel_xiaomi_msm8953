@@ -2591,6 +2591,9 @@ void __hdd_indicate_mgmt_frame(hdd_adapter_t *pAdapter,
                 hddLog(VOS_TRACE_LEVEL_INFO,"[TDLS] %s <--- OTA",
                     tdls_action_frame_type[actionFrmType]);
             }
+            vos_tdls_tx_rx_mgmt_event(SIR_MAC_ACTION_TDLS,
+              SIR_MAC_ACTION_RX, SIR_MAC_MGMT_ACTION,
+              actionFrmType, &pbFrames[WLAN_HDD_80211_FRM_DA_OFFSET+6]);
         }
 
         if((pbFrames[WLAN_HDD_PUBLIC_ACTION_FRAME_OFFSET] == WLAN_HDD_QOS_ACTION_FRAME)&&
