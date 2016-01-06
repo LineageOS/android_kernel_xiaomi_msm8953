@@ -2232,6 +2232,8 @@ send_link_resp:
         {
             tpPESession     psessionEntry;
             tANI_U8         sessionId;
+            tDphHashNode   *pStaDs;
+            int i, aid;
             tTdlsChanSwitchParams *pTdlsChanSwitchParams;
             pTdlsChanSwitchParams = (tTdlsChanSwitchParams*) limMsg->bodyptr;
 
@@ -2251,10 +2253,26 @@ send_link_resp:
             }
             else
             {
+                for (i = 0;
+                     i < sizeof(psessionEntry->peerAIDBitmap)/sizeof(tANI_U32);
+                                                                i++) {
+                    for (aid = 0; aid < (sizeof(tANI_U32) << 3); aid++) {
+                        if (CHECK_BIT(psessionEntry->peerAIDBitmap[i], aid)) {
+                            pStaDs = dphGetHashEntry(pMac,
+                                           (aid + i*(sizeof(tANI_U32) << 3)),
+                                            &psessionEntry->dph.dphHashTable);
+                              if ((NULL != pStaDs) &&
+                                   (pTdlsChanSwitchParams->staIdx ==
+                                                       pStaDs->staIndex))
+                                  goto send_chan_switch_resp;
+                        }
+                    }
+                }
+send_chan_switch_resp:
                 limSendSmeTdlsChanSwitchReqRsp(pMac,
                                                   psessionEntry->smeSessionId,
-                                                  NULL,
-                                                  NULL,
+                                                  pStaDs->staAddr,
+                                                  pStaDs,
                                                   pTdlsChanSwitchParams->status) ;
             }
             vos_mem_free((v_VOID_t *)(limMsg->bodyptr));

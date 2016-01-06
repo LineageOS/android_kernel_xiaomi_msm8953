@@ -3094,12 +3094,18 @@ void limSendSmeTdlsChanSwitchReqRsp(tpAniSirGlobal pMac,
         PELOGE(limLog(pMac, LOGE, FL("Failed to allocate memory"));)
         return ;
     }
+
+    vos_mem_zero(pTdlsChanSwitchReqRsp, sizeof(tSirTdlsChanSwitchReqRsp));
+
     pTdlsChanSwitchReqRsp->statusCode = status ;
-    if ( peerMac )
+    if (pStaDs && peerMac )
     {
         vos_mem_copy(pTdlsChanSwitchReqRsp->peerMac, peerMac, sizeof(tSirMacAddr));
+        pTdlsChanSwitchReqRsp->sta_idx = pStaDs->staIndex;;
     }
+
     pTdlsChanSwitchReqRsp->sessionId = sessionId;
+
     mmhMsg.type = eWNI_SME_TDLS_CHANNEL_SWITCH_RSP ;
     mmhMsg.bodyptr = pTdlsChanSwitchReqRsp;
     mmhMsg.bodyval = 0;

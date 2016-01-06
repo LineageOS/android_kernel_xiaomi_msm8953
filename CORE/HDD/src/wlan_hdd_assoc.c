@@ -2966,7 +2966,9 @@ eHalStatus hdd_RoamTdlsStatusUpdateHandler(hdd_adapter_t *pAdapter,
               roamResult == eCSR_ROAM_RESULT_UPDATE_TDLS_PEER ?
               "UPDATE_TDLS_PEER" :
               roamResult == eCSR_ROAM_RESULT_LINK_ESTABLISH_REQ_RSP ?
-              "LINK_ESTABLISH_REQ_RSP" : "UNKNOWN",
+              "LINK_ESTABLISH_REQ_RSP" :
+              roamResult == eCSR_ROAM_RESULT_CHANNEL_SWITCH_REQ_RSP ?
+              "CHANNEL_SWITCH_REQ_RSP" : "UNKNOWN",
               pRoamInfo->staId, MAC_ADDR_ARRAY(pRoamInfo->peerMac));
     switch( roamResult )
     {
@@ -3065,6 +3067,17 @@ eHalStatus hdd_RoamTdlsStatusUpdateHandler(hdd_adapter_t *pAdapter,
                 mutex_unlock(&pHddCtx->tdls_lock);
             }
             complete(&pAdapter->tdls_link_establish_req_comp);
+            break;
+        }
+        case eCSR_ROAM_RESULT_CHANNEL_SWITCH_REQ_RSP:
+        {
+            if (eSIR_SME_SUCCESS != pRoamInfo->statusCode)
+                VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                          "%s: Channel switch request failed. %d", __func__,
+                          pRoamInfo->statusCode);
+            else
+                VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                          "%s: Channel switch request Success", __func__);
             break;
         }
         case eCSR_ROAM_RESULT_DELETE_TDLS_PEER:
