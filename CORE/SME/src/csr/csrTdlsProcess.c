@@ -971,6 +971,19 @@ eHalStatus tdlsMsgProcessor(tpAniSirGlobal pMac,  v_U16_t msgType,
                                 eCSR_ROAM_TDLS_STATUS_UPDATE,
                                 eCSR_ROAM_RESULT_LINK_ESTABLISH_REQ_RSP);
 #endif
+            tSirTdlsChanSwitchReqRsp *ChanSwitchReqRsp =
+                            (tSirTdlsChanSwitchReqRsp *) pMsgBuf ;
+            tCsrRoamInfo roamInfo = {0} ;
+
+            vos_mem_copy(&roamInfo.peerMac, ChanSwitchReqRsp->peerMac,
+                         sizeof(tSirMacAddr));
+            roamInfo.staId  = (tANI_U8)ChanSwitchReqRsp->sta_idx;
+            roamInfo.statusCode = ChanSwitchReqRsp->statusCode;
+
+            csrRoamCallCallback(pMac, ChanSwitchReqRsp->sessionId, &roamInfo, 0,
+                                eCSR_ROAM_TDLS_STATUS_UPDATE,
+                                eCSR_ROAM_RESULT_CHANNEL_SWITCH_REQ_RSP);
+
             /* remove pending eSmeCommandTdlsChanSwitch command */
             csrTdlsRemoveSmeCmd(pMac, eSmeCommandTdlsChannelSwitch);
             break;
