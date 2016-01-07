@@ -1169,7 +1169,6 @@ enum qca_wlan_vendor_attr_wifi_logger_get_ring_data {
  */
 #define QCA_NL80211_VENDOR_ID                0x001374
 
-
 #ifdef FEATURE_WLAN_CH_AVOID
 #define HDD_MAX_AVOID_FREQ_RANGES   15
 typedef struct sHddAvoidFreqRange

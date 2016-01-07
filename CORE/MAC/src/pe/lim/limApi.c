@@ -762,6 +762,10 @@ limInitialize(tpAniSirGlobal pMac)
     limFTOpen(pMac);
 #endif
 
+#ifdef WLAN_FEATURE_RMC
+    limRmcInit(pMac);
+#endif /* WLAN_FEATURE_RMC */
+
     vos_list_init(&pMac->lim.gLimMgmtFrameRegistratinQueue);
 
 #if 0
@@ -856,6 +860,10 @@ limCleanup(tpAniSirGlobal pMac)
 
     limCleanupMlm(pMac);
     limCleanupLmm(pMac);
+
+#ifdef WLAN_FEATURE_RMC
+    limRmcCleanup(pMac);
+#endif /* WLAN_FEATURE_RMC */
 
     // free up preAuth table
     if (pMac->lim.gLimPreAuthTimerTable.pTable != NULL)

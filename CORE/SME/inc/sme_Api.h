@@ -57,7 +57,9 @@
 #include "btcApi.h"
 #include "vos_nvitem.h"
 #include "p2p_Api.h"
+#ifdef WLAN_FEATURE_RMC
 #include "smeInternal.h"
+#endif
 
 #ifdef FEATURE_OEM_DATA_SUPPORT
 #include "oemDataApi.h"
@@ -1847,6 +1849,30 @@ eHalStatus sme_GenericChangeCountryCode( tHalHandle hHal,
                                          tANI_U8 *pCountry,
                                          v_REGDOMAIN_t reg_domain);
 
+#ifdef WLAN_FEATURE_RMC
+/* ---------------------------------------------------------------------------
+
+    \fn sme_TXFailMonitorStartStopInd
+
+    \brief Indicate FW about TX Fail Monitor Indication`
+
+    \param hHal - The handle returned by macOpen.
+
+    \param tx_fail_count number of failures after which the firmware sends
+                         an indication to host
+
+    \param txFailIndCallback function to be called after receiving TX Fail
+                             indication
+    \return eHalStatus  SUCCESS.
+
+                         FAILURE or RESOURCES  The API finished and failed.
+
+  -------------------------------------------------------------------------------*/
+eHalStatus sme_TXFailMonitorStartStopInd(tHalHandle hHal,
+                                         tANI_U8 tx_fail_count,
+                                         void * txFailIndCallback);
+#endif /* WLAN_FEATURE_RMC */
+
 /* ---------------------------------------------------------------------------
 
     \fn sme_DHCPStartInd
@@ -3589,6 +3615,28 @@ eHalStatus sme_DelPeriodicTxPtrn(tHalHandle hHal, tSirDelPeriodicTxPtrn
 void sme_enable_disable_split_scan (tHalHandle hHal, tANI_U8 nNumStaChan,
                                     tANI_U8 nNumP2PChan);
 
+#ifdef WLAN_FEATURE_RMC
+/* ---------------------------------------------------------------------------
+    \fn sme_EnableRMC
+    \brief  Used to enable RMC
+    setting will not persist over reboots
+    \param  hHal
+    \param  sessionId
+    \- return eHalStatus
+    -------------------------------------------------------------------------*/
+eHalStatus sme_EnableRMC(tHalHandle hHal, tANI_U32 sessionId);
+
+/* ---------------------------------------------------------------------------
+    \fn sme_DisableRMC
+    \brief  Used to disable RMC
+    setting will not persist over reboots
+    \param  hHal
+    \param  sessionId
+    \- return eHalStatus
+    -------------------------------------------------------------------------*/
+eHalStatus sme_DisableRMC(tHalHandle hHal, tANI_U32 sessionId);
+#endif /* WLAN_FEATURE_RMC */
+
 /* ---------------------------------------------------------------------------
     \fn sme_SendRateUpdateInd
     \brief  API to Update rate
@@ -3597,6 +3645,21 @@ void sme_enable_disable_split_scan (tHalHandle hHal, tANI_U8 nNumStaChan,
     \return eHalStatus
   ---------------------------------------------------------------------------*/
 eHalStatus sme_SendRateUpdateInd(tHalHandle hHal, tSirRateUpdateInd *rateUpdateParams);
+
+#ifdef WLAN_FEATURE_RMC
+/* ---------------------------------------------------------------------------
+    \fn sme_GetIBSSPeerInfo
+    \brief  Used to disable RMC
+    setting will not persist over reboots
+    \param  hHal
+    \param  ibssPeerInfoReq  multicast Group IP address
+    \- return eHalStatus
+    -------------------------------------------------------------------------*/
+eHalStatus sme_RequestIBSSPeerInfo(tHalHandle hHal, void *pUserData,
+                                            pIbssPeerInfoCb peerInfoCbk,
+                                            tANI_BOOLEAN allPeerInfoReqd,
+                                            tANI_U8 staIdx);
+#endif /* WLAN_FEATURE_RMC */
 
 /*
  * sme API to trigger fast BSS roam to a given BSSID independent of RSSI

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2014, 2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -91,6 +91,8 @@ typedef struct sAniSirGlobal *tpAniSirGlobal;
 #include "eseGlobal.h"
 #endif
 #include "p2p_Api.h"
+
+#include "limRMC.h"
 
 #if defined WLAN_FEATURE_VOWIFI_11R
 #include <limFTDefs.h>
@@ -1049,6 +1051,9 @@ typedef struct sAniSirGlobal
     v_BOOL_t isTdlsPowerSaveProhibited;
 #endif
     tANI_U8 fScanOffload;
+#ifdef WLAN_FEATURE_RMC
+    tLimRmcContext  rmcContext;
+#endif /* WLAN_FEATURE_RMC */
     tANI_U8 isCoalesingInIBSSAllowed;
     tANI_U32 fEnableDebugLog;
     tANI_U32 fDeferIMPSTime;

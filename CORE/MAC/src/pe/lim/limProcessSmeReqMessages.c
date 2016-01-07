@@ -59,6 +59,10 @@
 #include "limApi.h"
 #include "wmmApsd.h"
 
+#ifdef WLAN_FEATURE_RMC
+#include "limRMC.h"
+#endif
+
 #include "sapApi.h"
 
 #if defined WLAN_FEATURE_VOWIFI
@@ -5842,6 +5846,16 @@ limProcessSmeReqMessages(tpAniSirGlobal pMac, tpSirMsgQ pMsg)
         case eWNI_SME_SET_TX_POWER_REQ:
             limSendSetTxPowerReq(pMac,  pMsgBuf);
             break ;
+
+#ifdef WLAN_FEATURE_RMC
+        case eWNI_SME_ENABLE_RMC_REQ:
+            limProcessRMCMessages(pMac, eLIM_RMC_ENABLE_REQ, pMsgBuf);
+            break ;
+
+        case eWNI_SME_DISABLE_RMC_REQ:
+            limProcessRMCMessages(pMac, eLIM_RMC_DISABLE_REQ, pMsgBuf);
+            break ;
+#endif /* WLAN_FEATURE_RMC */
 
         case eWNI_SME_MAC_SPOOF_ADDR_IND:
             __limProcessSmeSpoofMacAddrRequest(pMac,  pMsgBuf);

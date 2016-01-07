@@ -96,8 +96,10 @@ when        who    what, where, why
  
 #ifdef WLAN_SOFTAP_VSTA_FEATURE
 #define WDI_MAX_SUPPORTED_STAS   41
+#define WDI_MAX_IBSS_PEER_SUPPORED_STAS 32
 #else
 #define WDI_MAX_SUPPORTED_STAS   12
+#define WDI_MAX_IBSS_PEER_SUPPORED_STAS 11
 #endif
 #define WDI_MAX_SUPPORTED_BSS     5 
 
@@ -435,112 +437,121 @@ typedef enum
 
   /* WLAN FW LPHB config request */
   WDI_LPHB_CFG_REQ                              = 85,
+#ifdef WLAN_FEATURE_RMC
+  WDI_RMC_RULER_REQ                            = 86,
+  WDI_HAL_IBSS_PEER_INFO_REQ                    = 87,
+#endif /* WLAN_FEATURE_RMC */
 
   /* WLAN FW set batch scan request */
-  WDI_SET_BATCH_SCAN_REQ                        = 86,
+  WDI_SET_BATCH_SCAN_REQ                        = 88,
 
   /*WLAN DAL Set Max Tx Power Per band Request*/
-  WDI_SET_MAX_TX_POWER_PER_BAND_REQ             = 87,
+  WDI_SET_MAX_TX_POWER_PER_BAND_REQ             = 89,
 
-  WDI_UPDATE_CHAN_REQ                           = 88,
+  WDI_UPDATE_CHAN_REQ                           = 90,
 
-  WDI_GET_BCN_MISS_RATE_REQ                     = 89,
+  WDI_GET_BCN_MISS_RATE_REQ                     = 91,
 
 #ifdef WLAN_FEATURE_LINK_LAYER_STATS
-  WDI_LL_STATS_SET_REQ                          = 90,
-  WDI_LL_STATS_GET_REQ                          = 91,
-  WDI_LL_STATS_CLEAR_REQ                        = 92,
+  WDI_LL_STATS_SET_REQ                          = 92,
+  WDI_LL_STATS_GET_REQ                          = 93,
+  WDI_LL_STATS_CLEAR_REQ                        = 94,
 #endif
 
 #ifdef WLAN_FEATURE_EXTSCAN
-  WDI_EXTSCAN_START_REQ                          = 93,
-  WDI_EXTSCAN_STOP_REQ                           = 94,
-  WDI_EXTSCAN_GET_CACHED_RESULTS_REQ             = 95,
-  WDI_EXTSCAN_GET_CAPABILITIES_REQ               = 96,
-  WDI_EXTSCAN_SET_BSSID_HOTLIST_REQ              = 97,
-  WDI_EXTSCAN_RESET_BSSID_HOTLIST_REQ            = 98,
-  WDI_EXTSCAN_SET_SSID_HOTLIST_REQ               = 99,
-  WDI_EXTSCAN_RESET_SSID_HOTLIST_REQ             = 100,
+  WDI_EXTSCAN_START_REQ                          = 95,
+  WDI_EXTSCAN_STOP_REQ                           = 96,
+  WDI_EXTSCAN_GET_CACHED_RESULTS_REQ             = 97,
+  WDI_EXTSCAN_GET_CAPABILITIES_REQ               = 98,
+  WDI_EXTSCAN_SET_BSSID_HOTLIST_REQ              = 99,
+  WDI_EXTSCAN_RESET_BSSID_HOTLIST_REQ            = 100,
+  WDI_EXTSCAN_SET_SSID_HOTLIST_REQ               = 101,
+  WDI_EXTSCAN_RESET_SSID_HOTLIST_REQ             = 102,
 #endif
 
-  WDI_SPOOF_MAC_ADDR_REQ                         = 101,
+  WDI_SPOOF_MAC_ADDR_REQ                         = 103,
 
-  WDI_GET_FW_STATS_REQ                           = 102,
+  WDI_GET_FW_STATS_REQ                           = 104,
 
   /* Send command to encrypt the given message */
-  WDI_ENCRYPT_MSG_REQ                            = 103,
+  WDI_ENCRYPT_MSG_REQ                            = 105,
 
-  WDI_FW_LOGGING_INIT_REQ                        = 104,
-  WDI_GET_FRAME_LOG_REQ                          = 105,
-
+  WDI_FW_LOGGING_INIT_REQ                        = 106,
+  WDI_GET_FRAME_LOG_REQ                          = 107,
   /* NAN Request */
-  WDI_NAN_REQUEST                                = 106,
+  WDI_NAN_REQUEST                                = 108,
 
-  WDI_MON_START_REQ                              = 107,
-  WDI_MON_STOP_REQ                               = 108,
-  WDI_FATAL_EVENT_LOGGING_REQ                    = 109,
-  WDI_FWR_MEM_DUMP_REQ                           = 110,
-  WDI_START_RSSI_MONITOR_REQ                     = 111,
-  WDI_STOP_RSSI_MONITOR_REQ                      = 112,
-
-  WDI_WIFI_CONFIG_SET_REQ                        = 113,
+  WDI_MON_START_REQ                              = 109,
+  WDI_MON_STOP_REQ                               = 110,
+  WDI_FATAL_EVENT_LOGGING_REQ                    = 111,
+  WDI_FWR_MEM_DUMP_REQ                           = 112,
+  WDI_START_RSSI_MONITOR_REQ                     = 113,
+  WDI_STOP_RSSI_MONITOR_REQ                      = 114,
+  WDI_WIFI_CONFIG_SET_REQ                        = 115,
 
   WDI_MAX_REQ,
 
   /*Send a suspend Indication down to HAL*/
-  WDI_HOST_SUSPEND_IND          = WDI_MAX_REQ ,
+  WDI_HOST_SUSPEND_IND =  WDI_MAX_REQ,
 
   /* Send a traffic stats indication to HAL */
-  WDI_TRAFFIC_STATS_IND,
+  WDI_TRAFFIC_STATS_IND = WDI_MAX_REQ + 1,
 
   /* DHCP Start Indication */
-  WDI_DHCP_START_IND,
+  WDI_DHCP_START_IND = WDI_MAX_REQ + 2,
 
   /* DHCP Stop Indication */
-  WDI_DHCP_STOP_IND,
+  WDI_DHCP_STOP_IND = WDI_MAX_REQ + 3,
 
   /* Drop/Receive unencrypted frames indication to HAL */
-  WDI_EXCLUDE_UNENCRYPTED_IND,
+  WDI_EXCLUDE_UNENCRYPTED_IND = WDI_MAX_REQ + 4,
 
   /* Send an add periodic Tx pattern indication to HAL */
-  WDI_ADD_PERIODIC_TX_PATTERN_IND,
+  WDI_ADD_PERIODIC_TX_PATTERN_IND = WDI_MAX_REQ + 5,
 
   /* Send a delete periodic Tx pattern indicationto HAL */
-  WDI_DEL_PERIODIC_TX_PATTERN_IND,
+  WDI_DEL_PERIODIC_TX_PATTERN_IND = WDI_MAX_REQ + 6,
 
-  /*Send stop batch scan indication to FW*/
-  WDI_STOP_BATCH_SCAN_IND,
-
-  /*Send stop batch scan indication to FW*/
-  WDI_TRIGGER_BATCH_SCAN_RESULT_IND,
-
+#ifdef WLAN_FEATURE_RMC
+  /* Send RMC Update Indication */
+  WDI_RMC_UPDATE_IND = WDI_MAX_REQ + 7,
+#endif
   /* Send Rate Update Indication */
-  WDI_RATE_UPDATE_IND,
+  WDI_RATE_UPDATE_IND = WDI_MAX_REQ + 8,
 
-  WDI_START_HT40_OBSS_SCAN_IND,
-  WDI_STOP_HT40_OBSS_SCAN_IND,
+  /*Send stop batch scan indication to FW*/
+  WDI_STOP_BATCH_SCAN_IND = WDI_MAX_REQ + 9,
+
+  /*Send stop batch scan indication to FW*/
+  WDI_TRIGGER_BATCH_SCAN_RESULT_IND = WDI_MAX_REQ + 10,
+
+#ifdef WLAN_FEATURE_RMC
+  /* TX Monitor start/stop indication */
+  WDI_TX_FAIL_MONITOR_IND = WDI_MAX_REQ + 11,
+#endif
+  WDI_START_HT40_OBSS_SCAN_IND = WDI_MAX_REQ +12,
+  WDI_STOP_HT40_OBSS_SCAN_IND = WDI_MAX_REQ +13,
 
   /* csa channel switch req*/
-  WDI_CH_SWITCH_REQ_V1,
-  WDI_TDLS_CHAN_SWITCH_REQ,
-  WDI_SET_RTS_CTS_HTVHT_IND,
-  WDI_FW_LOGGING_DXE_DONE_IND,
-  WDI_SEND_FREQ_RANGE_CONTROL_IND,
+  WDI_CH_SWITCH_REQ_V1 = WDI_MAX_REQ + 14,
+  WDI_TDLS_CHAN_SWITCH_REQ = WDI_MAX_REQ + 15,
+  WDI_SET_RTS_CTS_HTVHT_IND = WDI_MAX_REQ + 16,
+  WDI_FW_LOGGING_DXE_DONE_IND = WDI_MAX_REQ + 17,
+  WDI_SEND_FREQ_RANGE_CONTROL_IND = WDI_MAX_REQ + 18,
 
 #ifdef WLAN_FEATURE_EXTSCAN
-  WDI_HIGH_PRIORITY_DATA_INFO_IND,
+  WDI_HIGH_PRIORITY_DATA_INFO_IND = WDI_MAX_REQ + 19,
 #endif
 
 #ifdef FEATURE_OEM_DATA_SUPPORT
-  WDI_START_OEM_DATA_REQ_IND_NEW,
+  WDI_START_OEM_DATA_REQ_IND_NEW = WDI_MAX_REQ + 20,
 #endif
 
   /*Keep adding the indications to the max request
     such that we keep them separate */
-  WDI_ANTENNA_DIVERSITY_SELECTION_REQ,
-  WDI_MODIFY_ROAM_PARAMS_IND,
-  WDI_MAX_UMAC_IND
-
+  WDI_ANTENNA_DIVERSITY_SELECTION_REQ = WDI_MAX_REQ + 21,
+  WDI_MODIFY_ROAM_PARAMS_IND = WDI_MAX_REQ + 22,
+  WDI_MAX_UMAC_IND = WDI_MAX_REQ + 23,
 }WDI_RequestEnumType;
 
 /*--------------------------------------------------------------------------- 
@@ -798,50 +809,55 @@ typedef enum
   /* WLAN FW LPHB Config response */
   WDI_LPHB_CFG_RESP                             = 84,
 
-  WDI_SET_BATCH_SCAN_RESP                       = 85,
+#ifdef WLAN_FEATURE_RMC
+  WDI_RMC_RULER_RESP                           = 85,
+  WDI_HAL_IBSS_PEER_INFO_RSP                    = 86,
+#endif /* WLAN_FEATURE_RMC */
 
-  WDI_SET_MAX_TX_POWER_PER_BAND_RSP             = 86,
+  WDI_SET_BATCH_SCAN_RESP                        = 87,
 
-  WDI_UPDATE_CHAN_RESP                          = 87,
+  WDI_SET_MAX_TX_POWER_PER_BAND_RSP             = 88,
+
+  WDI_UPDATE_CHAN_RESP                          = 89,
   /* channel switch resp v1*/
-  WDI_CH_SWITCH_RESP_V1                         = 88,
+  WDI_CH_SWITCH_RESP_V1                         = 90,
 
-  WDI_GET_BCN_MISS_RATE_RSP                     = 89,
+  WDI_GET_BCN_MISS_RATE_RSP                     = 91,
 #ifdef WLAN_FEATURE_LINK_LAYER_STATS
-  WDI_LL_STATS_SET_RSP                          = 90,
-  WDI_LL_STATS_GET_RSP                          = 91,
-  WDI_LL_STATS_CLEAR_RSP                        = 92,
+  WDI_LL_STATS_SET_RSP                          = 92,
+  WDI_LL_STATS_GET_RSP                          = 93,
+  WDI_LL_STATS_CLEAR_RSP                        = 94,
 #endif
 
 #ifdef WLAN_FEATURE_EXTSCAN
-  WDI_EXTSCAN_START_RSP                          = 93,
-  WDI_EXTSCAN_STOP_RSP                           = 94,
-  WDI_EXTSCAN_GET_CACHED_RESULTS_RSP             = 95,
-  WDI_EXTSCAN_GET_CAPABILITIES_RSP               = 96,
-  WDI_EXTSCAN_SET_HOTLIST_BSSID_RSP              = 97,
-  WDI_EXTSCAN_RESET_HOTLIST_BSSID_RSP            = 98,
-  WDI_EXTSCAN_SET_HOTLIST_SSID_RSP               = 99,
-  WDI_EXTSCAN_RESET_HOTLIST_SSID_RSP             = 100,
+  WDI_EXTSCAN_START_RSP                          = 95,
+  WDI_EXTSCAN_STOP_RSP                           = 96,
+  WDI_EXTSCAN_GET_CACHED_RESULTS_RSP             = 97,
+  WDI_EXTSCAN_GET_CAPABILITIES_RSP               = 98,
+  WDI_EXTSCAN_SET_HOTLIST_BSSID_RSP              = 99,
+  WDI_EXTSCAN_RESET_HOTLIST_BSSID_RSP            = 100,
+  WDI_EXTSCAN_SET_HOTLIST_SSID_RSP               = 101,
+  WDI_EXTSCAN_RESET_HOTLIST_SSID_RSP             = 102,
 #endif
-  WDI_SPOOF_MAC_ADDR_RSP                         = 101,
-  WDI_GET_FW_STATS_RSP                           = 102,
+  WDI_SPOOF_MAC_ADDR_RSP                         = 103,
+  WDI_GET_FW_STATS_RSP                           = 104,
 
   /* Send command to encrypt the given message */
-  WDI_ENCRYPT_MSG_RSP                            = 103,
+  WDI_ENCRYPT_MSG_RSP                            = 105,
 
-  WDI_FW_LOGGING_INIT_RSP                        = 104,
-  WDI_GET_FRAME_LOG_RSP                          = 105,
+  WDI_FW_LOGGING_INIT_RSP                        = 106,
+  WDI_GET_FRAME_LOG_RSP                          = 107,
 
-  WDI_NAN_RESPONSE                               = 106,
+  WDI_NAN_RESPONSE                               = 108,
 
-  WDI_MON_START_RSP                              = 107,
-  WDI_MON_STOP_RSP                               = 108,
-  WDI_FATAL_EVENT_LOGGING_RSP                    = 109,
-  WDI_FWR_MEM_DUMP_RSP                           = 110,
-  WDI_START_RSSI_MONITOR_RSP                     = 111,
-  WDI_STOP_RSSI_MONITOR_RSP                      = 112,
+  WDI_MON_START_RSP                              = 109,
+  WDI_MON_STOP_RSP                               = 110,
+  WDI_FATAL_EVENT_LOGGING_RSP                    = 111,
+  WDI_FWR_MEM_DUMP_RSP                           = 112,
+  WDI_START_RSSI_MONITOR_RSP                     = 113,
+  WDI_STOP_RSSI_MONITOR_RSP                      = 114,
 
-  WDI_WIFI_CONFIG_SET_RSP                        = 113,
+  WDI_WIFI_CONFIG_SET_RSP                        = 115,
 
   /*-------------------------------------------------------------------------
     Indications
@@ -902,30 +918,38 @@ typedef enum
   /* Periodic Tx Pattern Indication from FW to Host */
   WDI_HAL_PERIODIC_TX_PTRN_FW_IND     = WDI_HAL_IND_MIN + 16,
 
+#ifdef WLAN_FEATURE_RMC
+  /* Update Indication from FW to Host */
+  WDI_RMC_UPDATE_IND_TO_HOST           = WDI_HAL_IND_MIN + 17,
+#endif
 
-  WDI_BATCHSCAN_RESULT_IND           =  WDI_HAL_IND_MIN + 17,
+  WDI_BATCHSCAN_RESULT_IND           =  WDI_HAL_IND_MIN + 18,
 
-  WDI_HAL_CH_AVOID_IND                 = WDI_HAL_IND_MIN + 18,
+#ifdef WLAN_FEATURE_RMC
+  WDI_HAL_TX_FAIL_IND                  = WDI_HAL_IND_MIN + 19,
+#endif
+
+  WDI_HAL_CH_AVOID_IND                 = WDI_HAL_IND_MIN + 20,
 
   /* print register values indication from FW to Host */
-  WDI_PRINT_REG_INFO_IND               = WDI_HAL_IND_MIN + 19,
+  WDI_PRINT_REG_INFO_IND               = WDI_HAL_IND_MIN + 21,
 #ifdef WLAN_FEATURE_LINK_LAYER_STATS
-  WDI_HAL_LL_STATS_RESULTS_IND         = WDI_HAL_IND_MIN + 20,
+  WDI_HAL_LL_STATS_RESULTS_IND         = WDI_HAL_IND_MIN + 22,
 #endif
 #ifdef WLAN_FEATURE_EXTSCAN
-  WDI_HAL_EXTSCAN_PROGRESS_IND       = WDI_HAL_IND_MIN + 21,
-  WDI_HAL_EXTSCAN_SCAN_AVAILABLE_IND = WDI_HAL_IND_MIN + 22,
-  WDI_HAL_EXTSCAN_RESULT_IND         = WDI_HAL_IND_MIN + 23,
-  WDI_HAL_EXTSCAN_BSSID_HOTLIST_RESULT_IND    = WDI_HAL_IND_MIN + 24,
-  WDI_HAL_EXTSCAN_SSID_HOTLIST_RESULT_IND    = WDI_HAL_IND_MIN + 25,
+  WDI_HAL_EXTSCAN_PROGRESS_IND       = WDI_HAL_IND_MIN + 23,
+  WDI_HAL_EXTSCAN_SCAN_AVAILABLE_IND = WDI_HAL_IND_MIN + 24,
+  WDI_HAL_EXTSCAN_RESULT_IND         = WDI_HAL_IND_MIN + 25,
+  WDI_HAL_EXTSCAN_BSSID_HOTLIST_RESULT_IND    = WDI_HAL_IND_MIN + 26,
+  WDI_HAL_EXTSCAN_SSID_HOTLIST_RESULT_IND    = WDI_HAL_IND_MIN + 27,
 #endif
-  WDI_TDLS_CHAN_SWITCH_REQ_RESP      = WDI_HAL_IND_MIN + 26,
-  WDI_HAL_DEL_BA_IND                 = WDI_HAL_IND_MIN + 27,
-  WDI_HAL_NAN_EVENT                  = WDI_HAL_IND_MIN + 28,
-  WDI_HAL_LOST_LINK_PARAMS_IND       = WDI_HAL_IND_MIN + 29,
-  WDI_HAL_RSSI_BREACHED_IND          = WDI_HAL_IND_MIN + 30,
-  WDI_HAL_START_OEM_DATA_RSP_IND_NEW = WDI_HAL_IND_MIN + 31,
-  WDI_ANTENNA_DIVERSITY_SELECTION_RSP = WDI_HAL_IND_MIN + 32,
+  WDI_TDLS_CHAN_SWITCH_REQ_RESP      = WDI_HAL_IND_MIN + 28,
+  WDI_HAL_DEL_BA_IND                 = WDI_HAL_IND_MIN + 29,
+  WDI_HAL_NAN_EVENT                  = WDI_HAL_IND_MIN + 30,
+  WDI_HAL_LOST_LINK_PARAMS_IND       = WDI_HAL_IND_MIN + 31,
+  WDI_HAL_RSSI_BREACHED_IND          = WDI_HAL_IND_MIN + 32,
+  WDI_HAL_START_OEM_DATA_RSP_IND_NEW = WDI_HAL_IND_MIN + 33,
+  WDI_ANTENNA_DIVERSITY_SELECTION_RSP = WDI_HAL_IND_MIN + 34,
   WDI_MAX_RESP
 }WDI_ResponseEnumType; 
 
@@ -3190,6 +3214,23 @@ WDI_ProcessDelPeriodicTxPtrnInd
  );
 
 #endif
+#ifdef WLAN_FEATURE_RMC
+/**
+ @brief Process TX Fail monitor indication
+
+ @param  pWDICtx:    pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+WDI_Status
+WDI_ProcessTXFailMonitor
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+#endif /* WLAN_FEATURE_RMC */
 /**
  @brief Process start OBSS scan request from Host
 
@@ -4636,6 +4677,24 @@ WDI_ProcessTdlsInd
   WDI_EventInfoType*     pEventData
 );
 
+#ifdef WLAN_FEATURE_RMC
+/**
+*@brief Process Tx Fail Indication
+
+ @param  pWDICtx:         pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+WDI_Status
+WDI_ProcessTXFailInd
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+#endif /* WLAN_FEATURE_RMC */
+
 /**
 *@brief Process Noa Start Indication function (called when
         an indication of this kind is being received over the
@@ -5498,7 +5557,6 @@ WDI_ProcessUpdateScanParamsRsp
 );
 #endif // FEATURE_WLAN_SCAN_PNO
 
-
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
 /**
  @brief Process Start Roam Candidate Lookup Request function
@@ -5532,7 +5590,6 @@ WDI_ProcessRoamScanOffloadRsp
   WDI_EventInfoType*     pEventData
 );
 #endif
-
 
 #ifdef WLAN_FEATURE_PACKET_FILTERING
 /**
@@ -5787,7 +5844,6 @@ WDI_ProcessUpdateVHTOpModeRsp
   WDI_EventInfoType*     pEventData
 );
 #endif
-
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
 /**
  *  @brief WDI_wdiEdTypeEncToEdTypeEnc -
@@ -5839,6 +5895,82 @@ WDI_ProcessRateUpdateInd
     WDI_ControlBlockType*  pWDICtx,
     WDI_EventInfoType*     pEventData
 );
+
+#ifdef WLAN_FEATURE_RMC
+WDI_Status
+WDI_ProcessRMCRulerReq
+(
+    WDI_ControlBlockType*  pWDICtx,
+    WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessRMCRulerResp
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessRMCUpdateInd
+(
+    WDI_ControlBlockType*  pWDICtx,
+    WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_RmcUpdateInd
+(
+    WDI_RmcUpdateIndParams  *wdiRmcUpdateIndParams
+);
+
+WDI_Status
+WDI_ProcessRMCRulerResp
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessRMCUpdateIndToHost
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+/**
+ @brief Process peer info req
+
+ @param  pWDICtx:    pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+WDI_Status
+WDI_ProcessIbssPeerInfoReq
+(
+    WDI_ControlBlockType*  pWDICtx,
+    WDI_EventInfoType*     pEventData
+);
+
+/**
+ @brief Process peer info resp
+
+ @param  pWDICtx:    pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+WDI_Status
+WDI_ProcessIbssPeerInfoRsp
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+#endif /* WLAN_FEATURE_RMC */
 
 #ifdef FEATURE_WLAN_BATCH_SCAN
 /**

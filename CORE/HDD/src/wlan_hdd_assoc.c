@@ -2127,6 +2127,11 @@ static void hdd_RoamIbssIndicationHandler( hdd_adapter_t *pAdapter,
                       __func__, pAdapter->dev->name);
                return;
             }
+#ifdef WLAN_FEATURE_RMC
+            netif_carrier_on(pAdapter->dev);
+            hddLog(VOS_TRACE_LEVEL_INFO, FL("Enabling queues"));
+            netif_tx_start_all_queues(pAdapter->dev);
+#endif
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,15,0))
             chan_no = pRoamInfo->pBssDesc->channelId;
 
