@@ -2621,6 +2621,11 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_WIFI_CONFIG_MAX                          (1)
 #define CFG_WIFI_CONFIG_DEFAULT                      (1)
 
+#define CFG_MAXCHAN_FOR_CHANTIME_CORR_NAME       "gMaxChannelForMoreDwellTime"
+#define CFG_MAXCHAN_FOR_CHANTIME_CORR_MIN        (0)
+#define CFG_MAXCHAN_FOR_CHANTIME_CORR_MAX        (35)
+#define CFG_MAXCHAN_FOR_CHANTIME_CORR_DEFAULT    (10)
+
 
 /*--------------------------------------------------------------------------- 
   Type declarations
@@ -3149,6 +3154,7 @@ typedef struct
    v_BOOL_t                    crash_inject_enabled;
    v_U32_t                     enable_delack;
    v_BOOL_t                    disableBarWakeUp;
+   v_U8_t                      max_chan_for_dwell_time_cfg;
 } hdd_config_t;
 
 /*--------------------------------------------------------------------------- 
