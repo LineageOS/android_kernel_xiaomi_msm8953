@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -153,7 +153,7 @@ static void ptt_sock_proc_reg_req(tAniHdr *wmsg, int radio)
    pAdapterHandle->ptt_pid = reg_req->pid;
    rspmsg.regReq.pid= reg_req->pid;
    rspmsg.wniHdr.type = cpu_to_be16(ANI_MSG_APP_REG_RSP);
-   rspmsg.wniHdr.length = cpu_to_be16(sizeof(rspmsg));
+   rspmsg.wniHdr.length = cpu_to_be16(sizeof(rspmsg.wniHdr));
    if (ptt_sock_send_msg_to_app((tAniHdr *)&rspmsg.wniHdr, radio,
       ANI_NL_MSG_PUMAC, reg_req->pid, MSG_DONTWAIT) < 0)
    {
