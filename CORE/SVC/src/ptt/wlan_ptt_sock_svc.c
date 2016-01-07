@@ -290,6 +290,10 @@ static int ptt_sock_rx_nlink_msg (struct sk_buff * skb)
    tAniNlHdr *wnl;
    int radio;
    int type;
+
+   if (0 != wlan_hdd_validate_context(pAdapterHandle))
+       return -EINVAL;
+
    wnl = (tAniNlHdr *) skb->data;
    radio = wnl->radio;
    type = wnl->nlh.nlmsg_type;
