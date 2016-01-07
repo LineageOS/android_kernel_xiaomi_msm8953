@@ -2312,6 +2312,16 @@ typedef struct sAniDHCPStopInd
 
 } tAniDHCPInd, *tpAniDHCPInd;
 
+#ifdef WLAN_FEATURE_RMC
+typedef struct sAniTXFailMonitorInd
+{
+    tANI_U16                msgType; // message type is same as the request type
+    tANI_U16                msgLen;  // length of the entire request
+    tANI_U8                 tx_fail_count;
+    void                    *txFailIndCallback;
+} tAniTXFailMonitorInd, *tpAniTXFailMonitorInd;
+#endif /* WLAN_FEATURE_RMC */
+
 typedef struct sAniSummaryStatsInfo
 {
     tANI_U32 retry_cnt[4];         //Total number of packets(per AC) that were successfully transmitted with retries
@@ -4674,10 +4684,10 @@ typedef struct sSirRateUpdateInd
      * 0 implies MCAST RA, positive value implies fixed rate,
      * -1 implies ignore this param
      */
-    tANI_S32 reliableMcastDataRate;//unit Mbpsx10
+    tANI_S32 rmcDataRate;//unit Mbpsx10
 
     /* TX flag to differentiate between HT20, HT40 etc */
-    tTxrateinfoflags reliableMcastDataRateTxFlag;
+    tTxrateinfoflags rmcDataRateTxFlag;
 
     /*
      * MCAST(or BCAST) fixed data rate in 2.4 GHz, unit Mbpsx10,
@@ -4698,6 +4708,102 @@ typedef struct sSirRateUpdateInd
     tTxrateinfoflags mcastDataRate5GHzTxFlag;
 
 } tSirRateUpdateInd, *tpSirRateUpdateInd;
+
+#ifdef WLAN_FEATURE_RMC
+
+#define SIR_RMC_NUM_MAX_RULERS  8  /* HAL_NUM_MAX_RULERS */
+typedef struct sSirSetRMCReq
+{
+    tANI_U16       msgType;
+    tANI_U16       msgLen;
+    tSirMacAddr    mcastTransmitter;
+} tSirSetRMCReq, *tpSirSetRMCReq;
+
+typedef struct sSirRMCInfo
+{
+    tANI_U32      dialogToken;
+    tANI_U8       action;
+    tSirMacAddr   mcastRuler;
+} tSirRMCInfo, *tpSirRMCInfo;
+
+typedef struct sSirRmcRulerSelectInd
+{
+    tANI_U16      status;
+    tSirMacAddr   mcastTransmitter;
+    tSirMacAddr   mcastGroup;
+    tSirMacAddr   ruler[SIR_RMC_NUM_MAX_RULERS];
+} tSirRmcRulerSelectInd, *tpSirRmcRulerSelectInd;
+
+typedef struct sSirRmcBecomeRulerInd
+{
+    tANI_U16      status;
+    tSirMacAddr   mcastTransmitter;
+    tSirMacAddr   mcastGroup;
+} tSirRmcBecomeRulerInd, *tpSirRmcBecomeRulerInd;
+
+typedef struct sSirRmcRulerReq
+{
+    // Common for all types are requests
+    tANI_U16      msgType; // message type is same as the request type
+    tANI_U16      msgLen;  // length of the entire request
+    tANI_U8       cmd;     // tRulerReqCmdType
+    tSirMacAddr   mcastTransmitter;
+    tSirMacAddr   mcastGroup;
+    tSirMacAddr   blacklist[SIR_RMC_NUM_MAX_RULERS];
+} tSirRmcRulerReq, *tpSirRmcRulerReq;
+
+typedef struct sSirRmcUpdateInd
+{
+    // Common for all types are requests
+    tANI_U16      msgType;    // message type is same as the request type
+    tANI_U16      msgLen;     // length of the entire request
+    tANI_U8       indication; // trulerUpdateIndType
+    tANI_U8       role;       // tRoleType
+    tSirMacAddr   mcastTransmitter;
+    tSirMacAddr   mcastGroup;
+    tSirMacAddr   mcastRuler;
+    tSirMacAddr   ruler[SIR_RMC_NUM_MAX_RULERS];
+} tSirRmcUpdateInd, *tpSirRmcUpdateInd;
+
+/*---------------------------------------------------------------------------
+* tSirIbssGetPeerInfoReqParams
+*--------------------------------------------------------------------------*/
+typedef struct
+{
+    tANI_BOOLEAN    allPeerInfoReqd; // If set, all IBSS peers stats are reported
+    tANI_U8         staIdx;          // If allPeerInfoReqd is not set, only stats
+                                     // of peer with staIdx is reported
+}tSirIbssGetPeerInfoReqParams, *tpSirIbssGetPeerInfoReqParams;
+
+/*---------------------------------------------------------------------------
+* tSirIbssGetPeerInfoParams
+*--------------------------------------------------------------------------*/
+typedef struct
+{
+   tANI_U8  staIdx;      //StaIdx
+   tANI_U32 txRate;       //Tx Rate
+   tANI_U32 mcsIndex;    //MCS Index
+   tANI_U32 txRateFlags; //TxRate Flags
+   tANI_S8  rssi;        //RSSI
+}tSirIbssPeerInfoParams;
+
+typedef struct
+{
+   tANI_U32   status;
+   tANI_U8    numPeers;
+   tSirIbssPeerInfoParams  peerInfoParams[32];
+}tSirPeerInfoRspParams, *tpSirIbssPeerInfoRspParams;
+
+/*---------------------------------------------------------------------------
+* tSirIbssGetPeerInfoRspParams
+*--------------------------------------------------------------------------*/
+typedef struct
+{
+   tANI_U16   mesgType;
+   tANI_U16   mesgLen;
+   tSirPeerInfoRspParams ibssPeerInfoRspParams;
+} tSirIbssGetPeerInfoRspParams, *tpSirIbssGetPeerInfoRspParams;
+#endif /* WLAN_FEATURE_RMC */
 
 #ifdef FEATURE_WLAN_BATCH_SCAN
 // Set batch scan resposne from FW

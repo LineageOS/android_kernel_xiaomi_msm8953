@@ -119,6 +119,19 @@ typedef enum eSmeState
 #define SME_IS_START(pMac)  (SME_STATE_STOP != (pMac)->sme.state)
 #define SME_IS_READY(pMac)  (SME_STATE_READY == (pMac)->sme.state)
 
+#ifdef WLAN_FEATURE_RMC
+
+/* HDD Callback function */
+typedef void(*pIbssPeerInfoCb)(void *pUserData, void *infoParam);
+
+/* Peer info */
+typedef struct tagSmePeerInfoHddCbkInfo
+{
+   void *pUserData;
+   pIbssPeerInfoCb peerInfoCbk;
+}tSmePeerInfoHddCbkInfo;
+#endif /* WLAN_FEATURE_RMC */
+
 /* HDD Callback function */
 typedef void(*pEncryptMsgRSPCb)(void *pUserData, void *infoParam);
 
@@ -147,6 +160,9 @@ typedef struct tagSmeStruct
     tDblLinkList smeScanCmdPendingList;
     //active scan command list
     tDblLinkList smeScanCmdActiveList;
+#ifdef WLAN_FEATURE_RMC
+    tSmePeerInfoHddCbkInfo peerInfoParams;
+#endif /* WLAN_FEATURE_RMC */
 #ifdef FEATURE_WLAN_CH_AVOID
     void (*pChAvoidNotificationCb) (void *pAdapter, void *indParam);
 #endif /* FEATURE_WLAN_CH_AVOID */

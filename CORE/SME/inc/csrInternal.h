@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1452,3 +1452,8 @@ tANI_BOOLEAN csrRoamIsStaMode(tpAniSirGlobal pMac, tANI_U32 sessionId);
 #endif
 
 void csrDisableDfsChannel(tpAniSirGlobal pMac);
+
+#ifdef WLAN_FEATURE_RMC
+eHalStatus csrEnableRMC(tpAniSirGlobal pMac, tANI_U32 sessionId);
+eHalStatus csrDisableRMC(tpAniSirGlobal pMac, tANI_U32 sessionId);
+#endif /* WLAN_FEATURE_RMC */

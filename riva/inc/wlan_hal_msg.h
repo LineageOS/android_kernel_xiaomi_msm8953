@@ -1,29 +1,30 @@
 
-/* Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
-* Previously licensed under the ISC license by Qualcomm Atheros, Inc.
-
-*
-*
-* Permission to use, copy, modify, and/or distribute this software for
-* any purpose with or without fee is hereby granted, provided that the
-* above copyright notice and this permission notice appear in all
-* copies.
-*
-* THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
-* WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
-* WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
-* AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
-* DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
-* PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
-* TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-* PERFORMANCE OF THIS SOFTWARE.
-*/
+/*
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
+ * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
+ *
+ *
+ *
+ * Permission to use, copy, modify, and/or distribute this software for
+ * any purpose with or without fee is hereby granted, provided that the
+ * above copyright notice and this permission notice appear in all
+ * copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
+ * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+ * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+ * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+ * PERFORMANCE OF THIS SOFTWARE.
+ */
 
 /*
-* This file was originally distributed by Qualcomm Atheros, Inc.
-* under proprietary terms before Copyright ownership was assigned
-* to the Linux Foundation.
-*/
+ * This file was originally distributed by Qualcomm Atheros, Inc.
+ * under proprietary terms before Copyright ownership was assigned
+ * to the Linux Foundation.
+ */
 
 /*==========================================================================
  *
@@ -450,10 +451,9 @@ typedef enum
    WLAN_HAL_SET_MAX_TX_POWER_PER_BAND_REQ   = 217,
    WLAN_HAL_SET_MAX_TX_POWER_PER_BAND_RSP   = 218,
 
-   /* Reliable Multicast using Leader Based Protocol */
-   WLAN_HAL_LBP_LEADER_REQ                  = 219,
-   WLAN_HAL_LBP_LEADER_RSP                  = 220,
-   WLAN_HAL_LBP_UPDATE_IND                  = 221,
+   WLAN_HAL_RMC_RULER_REQ                  = 219,
+   WLAN_HAL_RMC_RULER_RSP                  = 220,
+   WLAN_HAL_RMC_UPDATE_IND                  = 221,
 
    /* Batchscan */
    WLAN_HAL_BATCHSCAN_SET_REQ               = 222,
@@ -7657,61 +7657,152 @@ typedef PACKED_PRE struct PACKED_POST
 
 
 /*---------------------------------------------------------------------------
-* WLAN_HAL_TX_FAIL_IND
-*--------------------------------------------------------------------------*/
-// Northbound indication from FW to host on weak link detection
+ * WLAN_HAL_RMC_RULER_REQ
+ *-------------------------------------------------------------------------*/
+
+#define HAL_MAX_RMC_SESSIONS 2
+
+#define HAL_NUM_MAX_RULERS 8
+
+typedef enum
+{
+   WLAN_HAL_SUGGEST_RULER,
+   WLAN_HAL_BECOME_RULER,
+   WLAN_HAL_RULER_CMD_MAX = WLAN_HAL_MAX_ENUM_SIZE
+}tRulerReqCmdType, tRulerRspCmdType;
+
 typedef PACKED_PRE struct PACKED_POST
 {
-   // Sequence number increases by 1 whenever the device driver
-   // sends a notification event. This is cleared as 0 when the
-   // JOIN IBSS commamd is issued
-    tANI_U16 seqNo;
-    tANI_U16 staId;
-    tANI_U8 macAddr[HAL_MAC_ADDR_LEN];
-} tHalTXFailIndParams, *tpHalTXFailIndParams;
+   tRulerReqCmdType cmd;
+
+   /* MAC address of MCAST Transmitter (source) */
+   tSirMacAddr mcastTransmitter;
+
+   /* MAC Address of Multicast Group (01-00-5E-xx-xx-xx) */
+   tSirMacAddr mcastGroup;
+
+   /* Optional black list for cmd = WLAN_HAL_SUGGEST_RULER */
+   tSirMacAddr blacklist[HAL_NUM_MAX_RULERS];
+}  tHalRmcRulerReqParams, *tpHalRmcRulerReqParams;
 
 typedef PACKED_PRE struct PACKED_POST
 {
     tHalMsgHeader header;
-    tHalTXFailIndParams txFailIndParams;
-}  tHalTXFailIndMsg, *tpHalTXFailIndMsg;
+   tHalRmcRulerReqParams rulerReqParams;
+}  tHalRmcRulerReqMsg, *tpHalRmcRulerReqMsg;
 
 /*---------------------------------------------------------------------------
-* WLAN_HAL_TX_FAIL_MONITOR_IND
-*--------------------------------------------------------------------------*/
-// Southbound message from Host to monitor the Tx failures
+ * WLAN_HAL_RMC_RULER_RSP
+ *-------------------------------------------------------------------------*/
 typedef PACKED_PRE struct PACKED_POST
 {
-    // tx_fail_count = 0 should disable the TX Fail monitor, non-zero value should enable it.
-    tANI_U8 tx_fail_count;
-} tTXFailMonitorInfo, *tpTXFailMonitorInfo;
+   /* success or failure */
+   tANI_U32 status;
+
+   /*  Command Type */
+   tRulerRspCmdType cmd;
+
+   /* MAC address of MCAST Transmitter (source) */
+   tSirMacAddr mcastTransmitter;
+
+   /* MAC Address of Multicast Group (01-00-5E-xx-xx-xx) */
+   tSirMacAddr mcastGroup;
+
+   /* List of candidates for cmd = WLAN_HAL_SUGGEST_RULER*/
+   tSirMacAddr ruler[HAL_NUM_MAX_RULERS];
+
+}  tHalRmcRulerRspParams, *tpHalRmcRulerRspParams;
 
 typedef PACKED_PRE struct PACKED_POST
 {
     tHalMsgHeader  header;
-    tTXFailMonitorInfo txFailMonitor;
-} tTXFailMonitorInd, *tpTXFailMonitorInd;
+   tHalRmcRulerRspParams rulerRspParams;
+}  tHalRmcRulerRspMsg, *tpHalRmcRulerRspMsg;
 
 /*---------------------------------------------------------------------------
-* WLAN_HAL_IP_FORWARD_TABLE_UPDATE_IND
-*--------------------------------------------------------------------------*/
-typedef PACKED_PRE struct PACKED_POST
+ * WLAN_HAL_RMC_UPDATE_IND
+ *-------------------------------------------------------------------------*/
+typedef enum
 {
-   tANI_U8 destIpv4Addr[HAL_IPV4_ADDR_LEN];
-   tANI_U8 nextHopMacAddr[HAL_MAC_ADDR_LEN];
-} tDestIpNextHopMacPair;
+   WLAN_HAL_RULER_ACCEPTED,    //Host-->FW
+   WLAN_HAL_RULER_CANCELED,    //Host-->FW
+   WLAN_HAL_RULER_PICK_NEW,    //FW-->Host
+   WLAN_HAL_RULER_IND_MAX = WLAN_HAL_MAX_ENUM_SIZE
+}tRmcUpdateIndType;
+
+typedef enum
+{
+   WLAN_HAL_RMC_RULER_ROLE,
+   WLAN_HAL_RMC_TRANSMITTER_ROLE,
+   WLAN_HAL_RMC_ROLE_MAX = WLAN_HAL_MAX_ENUM_SIZE
+}tRmcRoleType;
 
 typedef PACKED_PRE struct PACKED_POST
 {
-   tANI_U8 numEntries;
-   tDestIpNextHopMacPair destIpMacPair[1];
-} tWlanIpForwardTableUpdateIndParam;
+   tRmcUpdateIndType indication;
+
+   /* Role of the entity generating this indication */
+   tRmcRoleType role;
+
+   /* MAC address of MCAST Transmitter (source) */
+   tSirMacAddr mcastTransmitter;
+
+   /* MAC Address of Multicast Group (01-00-5E-xx-xx-xx) */
+   tSirMacAddr mcastGroup;
+
+   tSirMacAddr mcastRuler;
+
+   /* Candidate list for indication = WLAN_HAL_RULER_PICK_NEW */
+   tSirMacAddr ruler[HAL_NUM_MAX_RULERS];
+}  tHalRmcUpdateIndParams, *tpHalRmcUpdateIndParams;
 
 typedef PACKED_PRE struct PACKED_POST
 {
    tHalMsgHeader header;
-   tWlanIpForwardTableUpdateIndParam ipForwardTableParams;
-} tWlanIpForwardTableUpdateInd;
+   tHalRmcUpdateIndParams rulerIndParams;
+}  tHalRmcUpdateInd, *tpHalRmcUpdateInd;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U8  staIdx;       // Station Idx;
+   tANI_U32 txRate;       // Legacy transmit rate, in units of 500 kbit/sec,
+                          // for the most recently transmitted frame
+   tANI_U32 mcsIndex;     // mcs index for HT20 and HT40 rates
+   tANI_U32 txRateFlags;  // to differentiate between HT20 and
+                          // HT40 rates; short and long guard interval
+   tANI_S8  rssi;         // RSSI of the last received beacon
+}tHalIbssPeerParams, *tpHalIbssPeerParams;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U32           status;             // success or failure
+   tANI_U8            numOfPeers;         // Number of Peers for
+                                          // which stats are being reported
+   tHalIbssPeerParams ibssPeerParams[1];  // Stats of peer in IBSS
+}tHalIbssPeerInfoRspParams, *tpHalIbssPeerInfoRspParams;
+
+// WLAN_HAL_GET_IBSS_PEER_INFO_RSP
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   tHalIbssPeerInfoRspParams ibssPeerInfoRspParams;
+}tHalIbssPeerInfoRsp, *tpHalIbssPeerInfoRsp;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U8         bssIdx;           // Bss Index
+   tANI_BOOLEAN    allPeerInfoReqd;  // If set, all IBSS peers stats are reported
+   tANI_U8         staIdx;           // If allPeerInfoReqd is not set,
+                                     // only stats of peer with
+                                     // staIdx is reported
+}tHalIbssPeerInfoReqParams, *tpHalIbssPeerInfoReqParams;
+
+// WLAN_HAL_GET_IBSS_PEER_INFO_REQ
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   tHalIbssPeerInfoReqParams ibssPeerInfoReqParams;
+}tHalIbssPeerInfoReq, *tpHalIbssPeerInfoReq;
 
 /*---------------------------------------------------------------------------
  * WLAN_HAL_ROAM_OFFLOAD_SYNCH_IND
@@ -7839,8 +7930,7 @@ typedef PACKED_PRE struct PACKED_POST
 /*---------------------------------------------------------------------------
  WLAN_HAL_RATE_UPDATE_IND
  *-------------------------------------------------------------------------*/
-
-typedef PACKED_PRE struct PACKED_POST
+ typedef PACKED_PRE struct PACKED_POST
 {
     /* 0 implies UCAST RA, positive value implies fixed rate, -1 implies ignore this param */
     tANI_S32 ucastDataRate; //unit Mbpsx10
@@ -7852,18 +7942,18 @@ typedef PACKED_PRE struct PACKED_POST
     tSirMacAddr bssid;
 
     /* 0 implies MCAST RA, positive value implies fixed rate, -1 implies ignore */
-    tANI_S32 reliableMcastDataRate; //unit Mbpsx10
+    tANI_S32 rmcDataRate; //unit Mbpsx10
 
     /* TX flag to differentiate between HT20, HT40 etc */
-    tTxRateInfoFlags reliableMcastDataRateTxFlag;
+    tTxRateInfoFlags rmcDataRateTxFlag;
 
-    /* Default (non-reliable) MCAST(or BCAST)  fixed rate in 2.4 GHz, 0 implies ignore */
+    /* Default (non-RMC) MCAST(or BCAST)  fixed rate in 2.4 GHz, 0 implies ignore */
     tANI_U32 mcastDataRate24GHz; //unit Mbpsx10
 
     /* TX flag to differentiate between HT20, HT40 etc */
     tTxRateInfoFlags mcastDataRate24GHzTxFlag;
 
-    /*  Default (non-reliable) MCAST(or BCAST) fixed rate in 5 GHz, 0 implies ignore */
+    /*  Default (non-RMC) MCAST(or BCAST) fixed rate in 5 GHz, 0 implies ignore */
     tANI_U32 mcastDataRate5GHz; //unit Mbpsx10
 
     /* TX flag to differentiate between HT20, HT40 etc */
@@ -7876,6 +7966,42 @@ typedef PACKED_PRE struct PACKED_POST
     tHalMsgHeader header;
     tHalRateUpdateParams halRateUpdateParams;
 }  tHalRateUpdateInd, * tpHalRateUpdateInd;
+
+/*---------------------------------------------------------------------------
+* WLAN_HAL_TX_FAIL_IND
+*--------------------------------------------------------------------------*/
+// Northbound indication from FW to host on weak link detection
+typedef PACKED_PRE struct PACKED_POST
+{
+   // Sequence number increases by 1 whenever the device driver
+   // sends a notification event. This is cleared as 0 when the
+   // JOIN IBSS commamd is issued
+    tANI_U16 seqNo;
+    tANI_U16 staId;
+    tANI_U8 macAddr[HAL_MAC_ADDR_LEN];
+} tHalTXFailIndParams, *tpHalTXFailIndParams;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tHalMsgHeader header;
+    tHalTXFailIndParams txFailIndParams;
+}  tHalTXFailIndMsg, *tpHalTXFailIndMsg;
+
+/*---------------------------------------------------------------------------
+* WLAN_HAL_TX_FAIL_MONITOR_IND
+*--------------------------------------------------------------------------*/
+// Southbound message from Host to monitor the Tx failures
+typedef PACKED_PRE struct PACKED_POST
+{
+    // tx_fail_count = 0 should disable the TX Fail monitor, non-zero value should enable it.
+    tANI_U8 tx_fail_count;
+} tTXFailMonitorInfo, *tpTXFailMonitorInfo;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tHalMsgHeader  header;
+    tTXFailMonitorInfo txFailMonitor;
+} tTXFailMonitorInd, *tpTXFailMonitorInd;
 
 /*---------------------------------------------------------------------------
  * WLAN_HAL_AVOID_FREQ_RANGE_IND

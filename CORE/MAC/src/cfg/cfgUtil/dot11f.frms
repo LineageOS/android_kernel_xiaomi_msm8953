@@ -419,6 +419,31 @@ FF P2POUISubType (1)
     ouiSubtype, 1;
 }
 
+FF RMCOUI (3)
+{
+     oui[3];
+}
+
+FF MagicCode (6)
+{
+     magic[6];
+}
+
+FF RMCVersion (1)
+{
+     version, 1;
+}
+
+FF RMCDialogToken (4)
+{
+     token, 4;
+}
+
+FF Ruler (6)
+{
+     mac[6];
+}
+
 FF VhtMembershipStatusArray(8)                    // 8.4.1.51
 {
     membershipStatusArray[8];
@@ -4240,6 +4265,17 @@ FRAME QosMapConfigure
     FF     Category;
     FF     Action;
     MANDIE  QosMapSet;
+}
+
+FRAME RMC
+{
+    FF     Category;
+    FF     RMCOUI;
+    FF     MagicCode;
+    FF     RMCVersion;
+    FF     Action;
+    FF     RMCDialogToken;
+    FF     Ruler;
 }
 
 FRAME VHTGidManagementActionFrame

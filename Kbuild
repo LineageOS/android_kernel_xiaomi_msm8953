@@ -199,6 +199,7 @@ MAC_LIM_OBJS := $(MAC_SRC_DIR)/pe/lim/limAIDmgmt.o \
 		$(MAC_SRC_DIR)/pe/lim/limProcessProbeRspFrame.o \
 		$(MAC_SRC_DIR)/pe/lim/limProcessSmeReqMessages.o \
 		$(MAC_SRC_DIR)/pe/lim/limPropExtsUtils.o \
+		$(MAC_SRC_DIR)/pe/lim/limRMC.o \
 		$(MAC_SRC_DIR)/pe/lim/limRoamingAlgo.o \
 		$(MAC_SRC_DIR)/pe/lim/limScanResultUtils.o \
 		$(MAC_SRC_DIR)/pe/lim/limSecurityUtils.o \
@@ -550,6 +551,7 @@ CDEFINES :=	-DANI_BUS_TYPE_PLATFORM=1 \
 		-DWLAN_FEATURE_GTK_OFFLOAD \
 		-DWLAN_WAKEUP_EVENTS \
 	        -DWLAN_KD_READY_NOTIFIER \
+		-DWLAN_FEATURE_RMC \
 		-DWLAN_NL80211_TESTMODE \
 		-DFEATURE_WLAN_BATCH_SCAN \
 		-DFEATURE_WLAN_LPHB \

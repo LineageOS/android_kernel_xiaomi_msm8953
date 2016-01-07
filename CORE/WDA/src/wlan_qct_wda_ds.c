@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2014, 2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -444,6 +444,10 @@ WDA_DS_BuildTxPacketInfo
   WDI_DS_TxMetaInfoType* pTxMetaInfo = NULL;
   v_SIZE_t               usMacAddrSize;
   wpt_FrameCtrl          *pFrameControl;
+#ifdef WLAN_FEATURE_RMC
+  WLANTL_CbType*         pTLCb;
+  WLANTL_RMC_SESSION*    pRMCSession;
+#endif
   /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
   /*------------------------------------------------------------------------
@@ -456,6 +460,20 @@ WDA_DS_BuildTxPacketInfo
                "WDA:Invalid parameter sent on WDA_DS_BuildTxPacketInfo" );
     return VOS_STATUS_E_FAULT;
   }
+
+#ifdef WLAN_FEATURE_RMC
+/*----------------------------------------------------------------
+    Extract TL control block
+   --------------------------------------------------------------*/
+  pTLCb = VOS_GET_TL_CB(pvosGCtx);
+  if ( NULL == pTLCb )
+  {
+    TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
+      "WLAN TL %s: pTLCb is NULL", __func__));
+
+    return VOS_STATUS_E_FAILURE;
+  }
+#endif
 
   /*------------------------------------------------------------------------
     Extract TX Meta Info pointer from PAL packet
@@ -530,6 +548,42 @@ WDA_DS_BuildTxPacketInfo
 
   // ADDR2
   vos_copy_macaddr( (v_MACADDR_t*)pTxMetaInfo->addr2MACAddress, pAddr2 );
+
+#ifdef WLAN_FEATURE_RMC
+  if (pTLCb->rmcDataPathEnabled)
+  {
+    /*look up for mcast transmitter MAC address in TL's active rmc list*/
+    if (((WDA_TLI_DATA_FRAME_TYPE >> 4) == pTxMetaInfo->frmType) &&
+        (vos_is_macaddr_group(pvDestMacAddr)))
+    {
+        pRMCSession =
+           WLANTL_RmcLookUpRmcSession(pTLCb->rmcSession,
+           (v_MACADDR_t*)pTxMetaInfo->addr2MACAddress);
+
+        if (pRMCSession)
+        {
+            if (0xFF == pvDestMacAddr->bytes[0])
+            {
+               pTxMetaInfo->txFlags |= (HAL_USE_BD_RATE_1_MASK);
+            }
+            else
+            {
+                pTxMetaInfo->txFlags |= (HAL_RMC_REQUESTED_MASK);
+
+                VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO,
+                    "RMC active for " MAC_ADDRESS_STR " RMC session",
+                    MAC_ADDR_ARRAY(pRMCSession->rmcAddr.bytes));
+            }
+        }
+        else
+        {
+            VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO,
+               "RMC disabled for " MAC_ADDRESS_STR " RMC session",
+               MAC_ADDR_ARRAY(pTxMetaInfo->addr2MACAddress));
+        }
+    }
+  }
+#endif /*WLAN_FEATURE_RMC*/
 
   /* Dump TX meta infro for debugging */
   VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO_LOW,

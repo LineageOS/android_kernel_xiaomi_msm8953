@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2014, 2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -499,6 +499,10 @@ typedef enum
     eCSR_ROAM_UNPROT_MGMT_FRAME_IND,
 #endif
 
+#ifdef WLAN_FEATURE_RMC
+    eCSR_ROAM_IBSS_PEER_INFO_COMPLETE,
+#endif
+
 #ifdef WLAN_FEATURE_AP_HT40_24G
     eCSR_ROAM_2040_COEX_INFO_IND,
 #endif
@@ -601,6 +605,10 @@ typedef enum
     eCSR_ROAM_RESULT_CHANNEL_SWITCH_REQ_RSP,
 #endif
 
+#ifdef WLAN_FEATURE_RMC
+    eCSR_ROAM_RESULT_IBSS_PEER_INFO_SUCCESS,
+    eCSR_ROAM_RESULT_IBSS_PEER_INFO_FAILED,
+#endif
 }eCsrRoamResult;
 
 

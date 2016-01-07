@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -3288,5 +3288,57 @@ WLANTL_FatalError
 (
  v_VOID_t
 );
+#ifdef WLAN_FEATURE_RMC
+VOS_STATUS
+WLANTL_EnableRMC
+(
+    v_PVOID_t     pvosGCtx,
+    v_MACADDR_t   *pMcastAddr
+);
+
+
+VOS_STATUS
+WLANTL_DisableRMC
+(
+    v_PVOID_t     pvosGCtx,
+    v_MACADDR_t   *pMcastAddr
+);
+
+/*=============================================================================
+  FUNCTION    WLANTL_SetMcastDuplicateDetection
+
+  DESCRIPTION
+    This function sets multicate duplicate detection operation.
+    If enable is 1, the detection is enabled, else it is disabled.
+
+  DEPENDENCIES
+
+  PARAMETERS
+
+   IN
+
+   pvosGCtx   : Pointer to VOS global context
+   enable : Boolean to enable or disable
+
+  RETURN VALUE
+    The result code associated with performing the operation
+
+    VOS_STATUS_E_FAULT:   Sanity check on input failed
+
+    VOS_STATUS_SUCCESS:   Everything is good :)
+
+   Other return values are possible coming from the called functions.
+   Please check API for additional info.
+
+  SIDE EFFECTS
+
+==============================================================================*/
+VOS_STATUS
+WLANTL_SetMcastDuplicateDetection
+(
+    v_PVOID_t     pvosGCtx,
+    v_U8_t        enable
+);
+#endif /* WLAN_FEATURE_RMC */
 
 #endif /* #ifndef WLAN_QCT_WLANTL_H */

@@ -395,10 +395,18 @@ typedef enum
 
   /* Periodic Tx Pattern FW Indication */
   WDI_PERIODIC_TX_PTRN_FW_IND,
+#ifdef WLAN_FEATURE_RMC
+  /* RMC_Ruler_Pick_New Indication */
+  WDI_RMC_RULER_PICK_NEW,
+#endif
 
 #ifdef FEATURE_WLAN_BATCH_SCAN
   /*Batch scan result indication from FW*/
   WDI_BATCH_SCAN_RESULT_IND,
+#endif
+
+#ifdef WLAN_FEATURE_RMC
+  WDI_TX_FAIL_IND,
 #endif
 
 #ifdef FEATURE_WLAN_CH_AVOID
@@ -536,6 +544,22 @@ typedef struct
   wpt_uint8       device_mode;
   wpt_uint8       macAddr[WDI_MAC_ADDR_LEN];
 }WDI_DHCPInd;
+
+#ifdef WLAN_FEATURE_RMC
+typedef struct
+{
+   /*Request status callback offered by UMAC - it is called if the current
+    req has returned PENDING as status; it delivers the status of sending
+    the message over the BUS */
+  WDI_ReqStatusCb   wdiReqStatusCB;
+
+  /*The user data passed in by UMAC, it will be sent back when the above
+    function pointer will be called */
+  void*             pUserData;
+
+  wpt_uint8         tx_fail_count;
+}WDI_TXFailMonitorInd;
+#endif /* WLAN_FEATURE_RMC */
 
 /*---------------------------------------------------------------------------
 
@@ -739,6 +763,13 @@ typedef struct
 
 #endif
 
+#ifdef WLAN_FEATURE_RMC
+typedef struct
+{
+  wpt_uint8 seqNo;
+  wpt_uint8 macAddr[WDI_MAC_ADDR_LEN];
+} WDI_TXFailIndType;
+#endif /* WLAN_FEATURE_RMC */
 
 typedef struct
 {
@@ -769,6 +800,112 @@ typedef struct
    wpt_uint8   staIdx;
    wpt_macAddr staMacAddr;
 }WDI_IbssPeerInactivityIndType;
+
+#ifdef WLAN_FEATURE_RMC
+/*---------------------------------------------------------------------------
+ WDI_RmcRulerReqParams
+-----------------------------------------------------------------------------*/
+typedef struct
+{
+    wpt_uint8       cmd;
+
+    /* MAC address of MCAST Transmitter (source) */
+    wpt_macAddr mcastTransmitter;
+
+    /* MAC Address of Multicast Group (01-00-5E-xx-xx-xx) */
+    wpt_macAddr mcastGroup;
+
+    /* List of candidates for cmd = WLAN_HAL_SUGGEST_RULER*/
+    wpt_macAddr blacklist[8]; /* HAL_NUM_MAX_RULERS */
+
+    /*
+     * Request status callback offered by UMAC - it is called if the current
+     * req has returned PENDING as status; it delivers the status of sending
+     * the message over the BUS
+     */
+    WDI_ReqStatusCb    wdiReqStatusCB;
+
+} WDI_RmcRulerReqParams;
+
+/*---------------------------------------------------------------------------
+ WDI_RmcUpdateIndParams
+-----------------------------------------------------------------------------*/
+typedef struct
+{
+    wpt_uint8       indication;  /* tRmcUpdateIndType */
+
+    wpt_uint8       role;
+
+    /* MAC address of MCAST Transmitter (source) */
+    wpt_macAddr mcastTransmitter;
+
+    /* MAC Address of Multicast Group (01-00-5E-xx-xx-xx) */
+    wpt_macAddr mcastGroup;
+
+    wpt_macAddr mcastRuler;
+
+    wpt_macAddr ruler[16];
+
+    /*
+     * Request status callback offered by UMAC - it is called if the current
+     * req has returned PENDING as status; it delivers the status of sending
+     * the message over the BUS
+     */
+    WDI_ReqStatusCb   wdiReqStatusCB;
+
+    /*
+     * The user data passed in by UMAC, it will be sent back when the above
+     * function pointer will be called
+     */
+    void   *pUserData;
+
+} WDI_RmcUpdateIndParams;
+
+typedef enum
+{
+  eWDI_SUGGEST_RULER_CMD = 0,
+  eWDI_BECOME_RULER_CMD  = 1,
+} eWDI_RulerRspCmdType;
+
+/*---------------------------------------------------------------------------
+ WDI_RmcRspParamsType
+-----------------------------------------------------------------------------*/
+typedef struct
+{
+    wpt_uint8       status;  /* success or failure */
+
+    /*  Command Type */
+    eWDI_RulerRspCmdType cmd;
+
+    /* MAC address of MCAST Transmitter (source) */
+    wpt_macAddr mcastTransmitter;
+
+    /* MAC Address of Multicast Group (01-00-5E-xx-xx-xx) */
+    wpt_macAddr mcastGroup;
+
+    wpt_macAddr ruler[8];
+} WDI_RmcRspParamsType;
+
+/*---------------------------------------------------------------------------
+ WDI_RmcPickNewRuler
+-----------------------------------------------------------------------------*/
+typedef struct
+{
+    wpt_uint8       indication;  /* pick_new */
+
+    wpt_uint8       role;
+
+    /* MAC address of MCAST Transmitter (source) */
+    wpt_macAddr mcastTransmitter;
+
+    /* MAC Address of Multicast Group (01-00-5E-xx-xx-xx) */
+    wpt_macAddr mcastGroup;
+
+    wpt_macAddr mcastRuler;
+
+    wpt_macAddr ruler[16];
+} WDI_RmcPickNewRuler;
+#endif
 
 /*---------------------------------------------------------------------------
  WDI_TxRateFlags
@@ -806,10 +943,10 @@ typedef struct
      * 0 implies MCAST RA, positive value implies fixed rate,
      * -1 implies ignore this param
      */
-    wpt_int32 reliableMcastDataRate; //unit Mbpsx10
+    wpt_int32 rmcDataRate; //unit Mbpsx10
 
     /* TX flag to differentiate between HT20, HT40 etc */
-    WDI_TxRateFlags reliableMcastDataRateTxFlag;
+    WDI_TxRateFlags rmcDataRateTxFlag;
 
     /*
      * MCAST(or BCAST) fixed data rate in 2.4 GHz, unit Mbpsx10,
@@ -981,10 +1118,18 @@ typedef struct
     /* Periodic TX Pattern FW Indication */
     WDI_PeriodicTxPtrnFwIndType  wdiPeriodicTxPtrnFwInd;
 
+#ifdef WLAN_FEATURE_RMC
+    WDI_RmcPickNewRuler        wdiRmcPickNewRulerInd;
+#endif /* WLAN_FEATURE_RMC */
+
 #ifdef FEATURE_WLAN_BATCH_SCAN
     /*batch scan result indication from FW*/
     void *pBatchScanResult;
 #endif
+
+#ifdef WLAN_FEATURE_RMC
+    WDI_TXFailIndType            wdiTXFailInd;
+#endif /* WLAN_FEATURE_RMC */
 
 #ifdef FEATURE_WLAN_CH_AVOID
     WDI_ChAvoidIndType          wdiChAvoidInd;
@@ -5907,6 +6052,58 @@ typedef struct
   void*             pUserData;
 } WDI_DelPeriodicTxPtrnParamsType;
 
+#ifdef WLAN_FEATURE_RMC
+/*---------------------------------------------------------------------------
+  WDI_IbssPeerInfoParams
+---------------------------------------------------------------------------*/
+typedef struct
+{
+    wpt_uint8  wdiStaIdx;       //StaIdx
+    wpt_uint32 wdiTxRate;       //Tx Rate
+    wpt_uint32 wdiMcsIndex;     //MCS Index
+    wpt_uint32 wdiTxRateFlags;  //TxRate Flags
+    wpt_int8   wdiRssi;         //RSSI
+}WDI_IbssPeerInfoParams;
+
+/*---------------------------------------------------------------------------
+  WDI_IbssPeerInfoRspParams
+---------------------------------------------------------------------------*/
+typedef struct
+{
+    wpt_uint32        wdiStatus;                  // Return status
+    wpt_uint8         wdiNumPeers;                // Number of peers
+    WDI_IbssPeerInfoParams *wdiPeerInfoParams; // Peer Info parameters
+}WDI_IbssPeerInfoRspParams;
+
+/*---------------------------------------------------------------------------
+  WDI_GetIbssPeerInfoRspType
+---------------------------------------------------------------------------*/
+typedef struct
+{
+    WDI_IbssPeerInfoRspParams  wdiPeerInfoRspParams;
+
+    /*Request status callback offered by UMAC - it is called if the current
+      req has returned PENDING as status; it delivers the status of sending
+      the message over the BUS */
+    WDI_ReqStatusCb   wdiReqStatusCB;
+
+    /*The user data passed in by UMAC, it will be sent back when the above
+      function pointer will be called */
+    void*             pUserData;
+}WDI_GetIbssPeerInfoRspType;
+
+/*---------------------------------------------------------------------------
+  WDI_IbssPeerInfoReqType
+---------------------------------------------------------------------------*/
+typedef struct
+{
+    wpt_boolean wdiAllPeerInfoReqd; // Request info for all peers
+    wpt_uint8   wdiStaIdx;          // STA Index
+    wpt_uint8   wdiBssIdx;          // BSS Index
+}WDI_IbssPeerInfoReqType;
+
+#endif /* WLAN_FEATURE_RMC */
+
 #ifdef WLAN_FEATURE_EXTSCAN
 
 #define WDI_WLAN_EXTSCAN_MAX_CHANNELS                 16
@@ -8135,6 +8332,15 @@ typedef void  (*WDI_UpdateVHTOpModeCb)(WDI_Status   wdiStatus,
 typedef void  (*WDI_LphbCfgCb)(WDI_Status   wdiStatus,
                                 void*        pUserData);
 #endif /* FEATURE_WLAN_LPHB */
+
+#ifdef WLAN_FEATURE_RMC
+typedef void  (*WDI_RmcRulerRspCb)(WDI_RmcRspParamsType *wdiRmcResponse,
+                                    void*        pUserData);
+
+typedef void  (*WDI_IbssPeerInfoReqCb)(WDI_IbssPeerInfoRspParams *pInfoRspParams,
+                                            void*        pUserData);
+
+#endif /* WLAN_FEATURE_RMC */
 
 #ifdef FEATURE_WLAN_BATCH_SCAN
 /*---------------------------------------------------------------------------
@@ -11209,6 +11415,22 @@ WDI_dhcpStopInd
   WDI_DHCPInd *wdiDHCPInd
 );
 
+#ifdef WLAN_FEATURE_RMC
+WDI_Status
+WDI_RmcRulerReq
+(
+  WDI_RmcRulerReqParams  *wdiRmcRulerReqParams,
+  WDI_RmcRulerRspCb rmcRulerRspCb,
+  void *usrData
+);
+
+WDI_Status
+WDI_RmcUpdateInd
+(
+  WDI_RmcUpdateIndParams  *wdiRmcUpdateIndParams
+);
+#endif /* WLAN_FEATURE_RMC */
+
 /**
  @brief WDI_RateUpdateInd will be called when the upper MAC
         requests the device to update rates.
@@ -11228,6 +11450,26 @@ WDI_RateUpdateInd
 (
   WDI_RateUpdateIndParams  *wdiRateUpdateIndParams
 );
+
+#ifdef WLAN_FEATURE_RMC
+/**
+ @brief WDI_TXFailMonitorStartStopInd
+       Forward TX monitor start/stop event
+
+ @param
+
+     WDI_TXFailMonitorInd
+
+ @see
+ @return Result of the function call
+*/
+
+WDI_Status
+WDI_TXFailMonitorStartStopInd
+(
+  WDI_TXFailMonitorInd *wdiTXFailMonitorInd
+);
+#endif /* WLAN_FEATURE_RMC */
 
 #ifdef WLAN_FEATURE_GTK_OFFLOAD
 /**
@@ -11743,6 +11985,26 @@ WDI_TriggerBatchScanResultInd(WDI_TriggerBatchScanResultIndType *pWdiReq);
 
 
 #endif /*FEATURE_WLAN_BATCH_SCAN*/
+
+#ifdef WLAN_FEATURE_RMC
+/**
+ @brief Process peer info req
+
+ @param  pWDICtx:    pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+
+WDI_Status
+WDI_IbssPeerInfoReq
+(
+   WDI_IbssPeerInfoReqType*   wdiPeerInfoReqParams,
+   WDI_IbssPeerInfoReqCb      wdiIbssPeerInfoReqCb,
+  void*                         pUserData
+);
+#endif /* WLAN_FEATURE_RMC */
 
 /**
  @brief wdi_HT40OBSSScanInd

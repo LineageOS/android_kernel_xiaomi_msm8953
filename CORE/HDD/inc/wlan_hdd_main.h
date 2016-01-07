@@ -663,6 +663,7 @@ typedef enum{
     HDD_SSR_DISABLED,
 }e_hdd_ssr_required;
 
+#ifdef WLAN_FEATURE_RMC
 /*---------------------------------------------------------------------------
   hdd_ibss_peer_info_params_t
 ---------------------------------------------------------------------------*/
@@ -721,6 +722,7 @@ typedef struct
     /** Peer Info parameters */
     hdd_ibss_peer_info_params_t  ibssPeerList[HDD_MAX_NUM_IBSS_STA];
 }hdd_ibss_peer_info_t;
+#endif
 
 struct hdd_station_ctx
 {
@@ -749,8 +751,9 @@ struct hdd_station_ctx
 
    /*Save the wep/wpa-none keys*/
    tCsrRoamSetKey ibss_enc_key;
-
+#ifdef WLAN_FEATURE_RMC
    hdd_ibss_peer_info_t ibss_peer_info;
+#endif
 
    v_BOOL_t hdd_ReassocScenario;
 
@@ -1043,6 +1046,11 @@ struct hdd_adapter_s
    struct completion tdls_link_establish_req_comp;
    eHalStatus tdlsAddStaStatus;
 #endif
+
+#ifdef WLAN_FEATURE_RMC
+   struct completion ibss_peer_info_comp;
+#endif /* WLAN_FEATURE_RMC */
+
    /* Track whether the linkup handling is needed  */
    v_BOOL_t isLinkUpSvcNeeded;
 
@@ -1760,6 +1768,10 @@ int wlan_hdd_setIPv6Filter(hdd_context_t *pHddCtx, tANI_U8 filterType, tANI_U8 s
 #ifdef WLAN_NS_OFFLOAD
 void hdd_ipv6_notifier_work_queue(struct work_struct *work);
 #endif
+
+#ifdef WLAN_FEATURE_RMC
+v_MACADDR_t* hdd_wlan_get_ibss_mac_addr_from_staid(hdd_adapter_t *pAdapter, v_U8_t staIdx);
+#endif /* WLAN_FEATURE_RMC */
 
 #ifdef CONFIG_ENABLE_LINUX_REG
 void hdd_checkandupdate_phymode( hdd_context_t *pHddCtx);

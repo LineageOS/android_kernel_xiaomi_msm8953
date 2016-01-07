@@ -892,6 +892,13 @@ WDI_FillTxBd
    
             WDI_STATableGetStaType(pWDICtx, ucStaId, &ucSTAType);
             if(!ucUnicastDst)
+#ifdef WLAN_FEATURE_RMC
+              /*Check for RMC enabled bit if set then
+                queue frames in QID 5 else 0*/
+              if ( ucTxFlag & WDI_RMC_REQUESTED_MASK )
+                pBd->queueId = BTQM_QID5;
+              else
+#endif
                 pBd->queueId = BTQM_QID0;
 #ifndef HAL_SELF_STA_PER_BSS
             else if( ucUnicastDst && (ucStaId == pWDICtx->ucSelfStaId))

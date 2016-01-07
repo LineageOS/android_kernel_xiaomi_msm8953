@@ -15131,6 +15131,9 @@ static int __wlan_hdd_cfg80211_leave_ibss( struct wiphy *wiphy,
     tCsrRoamProfile *pRoamProfile;
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
     int status;
+#ifdef WLAN_FEATURE_RMC
+    tANI_U8 addIE[WNI_CFG_PROBE_RSP_BCN_ADDNIE_DATA_LEN] = {0};
+#endif
 
     ENTER();
 
@@ -15162,6 +15165,41 @@ static int __wlan_hdd_cfg80211_leave_ibss( struct wiphy *wiphy,
                 __func__);
         return -EINVAL;
     }
+
+#ifdef WLAN_FEATURE_RMC
+    /* Clearing add IE of beacon */
+    if (ccmCfgSetStr(pHddCtx->hHal,
+        WNI_CFG_PROBE_RSP_BCN_ADDNIE_DATA, &addIE[0],
+        WNI_CFG_PROBE_RSP_BCN_ADDNIE_DATA_LEN,
+        NULL, eANI_BOOLEAN_FALSE) != eHAL_STATUS_SUCCESS)
+    {
+        hddLog (VOS_TRACE_LEVEL_ERROR,
+                "%s: unable to clear PROBE_RSP_BCN_ADDNIE_DATA", __func__);
+        return -EINVAL;
+    }
+    if (ccmCfgSetInt(pHddCtx->hHal,
+        WNI_CFG_PROBE_RSP_BCN_ADDNIE_FLAG, 0, NULL,
+        eANI_BOOLEAN_FALSE) != eHAL_STATUS_SUCCESS)
+    {
+        hddLog (VOS_TRACE_LEVEL_ERROR,
+                "%s: unable to clear WNI_CFG_PROBE_RSP_BCN_ADDNIE_FLAG",
+                __func__);
+        return -EINVAL;
+    }
+
+    // Reset WNI_CFG_PROBE_RSP Flags
+    wlan_hdd_reset_prob_rspies(pAdapter);
+
+    if (ccmCfgSetInt(WLAN_HDD_GET_HAL_CTX(pAdapter),
+                     WNI_CFG_PROBE_RSP_ADDNIE_FLAG, 0,NULL,
+                     eANI_BOOLEAN_FALSE) == eHAL_STATUS_FAILURE)
+    {
+        hddLog (VOS_TRACE_LEVEL_ERROR,
+                "%s: unable to clear WNI_CFG_PROBE_RSP_ADDNIE_FLAG",
+                __func__);
+        return -EINVAL;
+    }
+#endif
 
     /* Issue Disconnect request */
     INIT_COMPLETION(pAdapter->disconnect_comp_var);
@@ -18441,7 +18479,6 @@ int wlan_hdd_cfg80211_send_tdls_discover_req(struct wiphy *wiphy,
     hddLog(VOS_TRACE_LEVEL_INFO,
            "tdls send discover req: "MAC_ADDRESS_STR,
            MAC_ADDR_ARRAY(peer));
-
 #if TDLS_MGMT_VERSION2
     return wlan_hdd_cfg80211_tdls_mgmt(wiphy, dev, peer,
                             WLAN_TDLS_DISCOVERY_REQUEST, 1, 0, 0, NULL, 0);

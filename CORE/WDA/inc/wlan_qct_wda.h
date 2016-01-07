@@ -381,6 +381,10 @@ typedef void (*pWDATxRxCompFunc)( v_PVOID_t pContext, void *pData );
 //parameter 2 - txComplete status : 1- success, 0 - failure.
 typedef eHalStatus (*pWDAAckFnTxComp)(tpAniSirGlobal, void *pData);
 
+#ifdef WLAN_FEATURE_RMC
+typedef void (*WDA_txFailIndCallback)(tANI_U8 *, tANI_U8);
+#endif /* WLAN_FEATURE_RMC */
+
 typedef struct
 {
    tANI_U16 ucValidStaIndex ;
@@ -511,6 +515,10 @@ typedef struct
    vos_event_t          ftmStopDoneEvent;
 
    tWDA_AddSelfStaDebugParams wdaAddSelfStaParams;
+
+#ifdef WLAN_FEATURE_RMC
+   WDA_txFailIndCallback txFailIndCallback;
+#endif /* WLAN_FEATURE_RMC */
    tWDA_RespFailureCounts  failureCounts;
    wpt_uint8  mgmtTxfailureCnt;
 
@@ -1189,6 +1197,10 @@ tSirRetStatus uMacPostCtrlMsg(void* pSirGlobal, tSirMbMsg* pMb);
 #define WDA_DHCP_START_IND              SIR_HAL_DHCP_START_IND
 #define WDA_DHCP_STOP_IND               SIR_HAL_DHCP_STOP_IND
 
+#ifdef WLAN_FEATURE_RMC
+#define WDA_TX_FAIL_MONITOR_IND         SIR_HAL_TX_FAIL_MONITOR_IND
+#endif /* WLAN_FEATURE_RMC */
+
 
 #ifdef WLAN_FEATURE_GTK_OFFLOAD
 #define WDA_GTK_OFFLOAD_REQ             SIR_HAL_GTK_OFFLOAD_REQ
@@ -1224,14 +1236,24 @@ tSirRetStatus uMacPostCtrlMsg(void* pSirGlobal, tSirMbMsg* pMb);
 #define WDA_ADD_PERIODIC_TX_PTRN_IND    SIR_HAL_ADD_PERIODIC_TX_PTRN_IND
 #define WDA_DEL_PERIODIC_TX_PTRN_IND    SIR_HAL_DEL_PERIODIC_TX_PTRN_IND
 
+#define WDA_RATE_UPDATE_IND         SIR_HAL_RATE_UPDATE_IND
+
+#ifdef WLAN_FEATURE_RMC
+#define WDA_RMC_BECOME_RULER       SIR_HAL_RMC_BECOME_RULER
+#define WDA_RMC_RULER_SELECT_RESP  SIR_HAL_RMC_RULER_SELECT_RESP
+#define WDA_RMC_RULER_REQ          SIR_HAL_RMC_RULER_REQ
+#define WDA_RMC_UPDATE_IND          SIR_HAL_RMC_UPDATE_IND
+/* IBSS peer info related message */
+#define WDA_GET_IBSS_PEER_INFO_REQ  SIR_HAL_IBSS_PEER_INFO_REQ
+#define WDA_GET_IBSS_PEER_INFO_RSP  SIR_HAL_IBSS_PEER_INFO_RSP
+#endif /* WLAN_FEATURE_RMC */
+
 #ifdef FEATURE_WLAN_BATCH_SCAN
 #define WDA_SET_BATCH_SCAN_REQ            SIR_HAL_SET_BATCH_SCAN_REQ
 #define WDA_SET_BATCH_SCAN_RSP            SIR_HAL_SET_BATCH_SCAN_RSP
 #define WDA_STOP_BATCH_SCAN_IND           SIR_HAL_STOP_BATCH_SCAN_IND
 #define WDA_TRIGGER_BATCH_SCAN_RESULT_IND SIR_HAL_TRIGGER_BATCH_SCAN_RESULT_IND
 #endif
-#define WDA_RATE_UPDATE_IND         SIR_HAL_RATE_UPDATE_IND
-
 
 #define WDA_HT40_OBSS_SCAN_IND   SIR_HAL_HT40_OBSS_SCAN_IND
 #define WDA_HT40_OBSS_STOP_SCAN_IND SIR_HAL_HT40_OBSS_STOP_SCAN_IND
