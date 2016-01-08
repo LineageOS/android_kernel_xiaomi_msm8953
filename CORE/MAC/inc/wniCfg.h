@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1853,7 +1853,7 @@ enum {
 #define WNI_CFG_BURST_MODE_BE_TXOP_VALUE_STADEF    0
 
 #define WNI_CFG_ENABLE_DYNAMIC_RA_START_RATE_STAMIN 0
-#define WNI_CFG_ENABLE_DYNAMIC_RA_START_RATE_STAMAX 1
+#define WNI_CFG_ENABLE_DYNAMIC_RA_START_RATE_STAMAX 300
 #define WNI_CFG_ENABLE_DYNAMIC_RA_START_RATE_STADEF 0
 
 #define WNI_CFG_BTC_FAST_WLAN_CONN_PREF_STAMIN 0

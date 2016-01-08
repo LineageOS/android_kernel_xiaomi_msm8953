@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -263,10 +263,24 @@
 #define CFG_ENABLE_AUTO_BMPS_TIMER_MIN         ( 0 )
 #define CFG_ENABLE_AUTO_BMPS_TIMER_MAX         ( 1 )
 #define CFG_ENABLE_AUTO_BMPS_TIMER_DEFAULT     ( 1 )
-
+/*
+ * gEnableDynamicRAstartRate usage:
+ *
+ * 11B and 11A/G rates can be specified in multiples of 0.5
+ * So for 5.5 mbps, gEnableDynamicRAstartRate=11
+ * and for 12 mbps, gEnableDynamicRAstartRate=24 etc.
+ *
+ * for MCS 0 - 7 rates, Bit 7 should set to 1 and Bit 0-6
+ * represent the MCS index.
+ * So for MCS0, gEnableDynamicRAstartRate=128
+ * and for MCS2, gEnableDynamicRAstartRate=130 etc.
+ *
+ * Any invalid non-zero value will set the start rate
+ * to 6 mbps (value 1 will also set it to 6 mbps)
+ */
 #define CFG_ENABLE_DYNAMIC_RA_START_RATE_NAME    "gEnableDynamicRAstartRate"
 #define CFG_ENABLE_DYNAMIC_RA_START_RATE_MIN     ( 0 )
-#define CFG_ENABLE_DYNAMIC_RA_START_RATE_MAX     ( 1 )
+#define CFG_ENABLE_DYNAMIC_RA_START_RATE_MAX     ( 300 )
 #define CFG_ENABLE_DYNAMIC_RA_START_RATE_DEFAULT ( 0 )
 
 /* Bit mask value to enable RTS/CTS for different modes
