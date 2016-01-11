@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -148,6 +148,8 @@ eHalStatus oemData_IsOemDataReqAllowed(tHalHandle hHal);
 /* Structure for defining req sent to the PE */
 typedef struct tagOemDataReqNew
 {
+    tSirMacAddr selfMacAddr;
+    tANI_U8 reserved[2];
     tANI_U8   oemDataReqNew[NEW_OEM_DATA_REQ_SIZE];
 } tOemDataReqNew, tOemDataReqNewConfig;
 

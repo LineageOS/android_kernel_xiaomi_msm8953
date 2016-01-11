@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -4725,6 +4725,8 @@ typedef struct
 /* Structure for defining req sent to the PE */
 typedef struct
 {
+    wpt_macAddr selfMacAddr;
+    wpt_uint8 reserved[2];
     wpt_uint8  oemDataReqNew[NEW_OEM_DATA_REQ_SIZE];
 } WDI_OemDataReqNew, WDI_OemDataReqNewConfig;
 

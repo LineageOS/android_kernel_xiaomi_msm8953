@@ -777,6 +777,16 @@ static int oem_process_channel_info_req_msg(int numOfChannels, char *chanList)
 void oem_process_data_req_msg(int oemDataLen, char *oemData)
 {
    tOemDataReqNewConfig oemDataReqNewConfig;
+   hdd_adapter_t *pAdapter = NULL;
+
+   /* for now, STA interface only */
+   pAdapter = hdd_get_adapter(pHddCtx, WLAN_HDD_INFRA_STATION);
+   if (!pAdapter)
+   {
+      VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "%s: No adapter for STA mode", __func__);
+      return;
+   }
 
    if (!oemData)
    {
@@ -786,10 +796,13 @@ void oem_process_data_req_msg(int oemDataLen, char *oemData)
    }
 
    vos_mem_zero(&oemDataReqNewConfig, sizeof(tOemDataReqNewConfig));
-   vos_mem_copy(&oemDataReqNewConfig, oemData, oemDataLen);
+   vos_mem_copy(&oemDataReqNewConfig.selfMacAddr,
+                pAdapter->macAddressCurrent.bytes, sizeof(tSirMacAddr));
+   vos_mem_copy(&oemDataReqNewConfig.oemDataReqNew, oemData, oemDataLen);
 
    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-             "%s: calling sme_OemDataReq", __func__);
+             "selfMacAddr: " MAC_ADDRESS_STR" ",
+              MAC_ADDR_ARRAY(oemDataReqNewConfig.selfMacAddr));
 
    sme_OemDataReqNew(pHddCtx->hHal,
                            &oemDataReqNewConfig);
