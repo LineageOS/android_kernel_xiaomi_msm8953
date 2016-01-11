@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -3056,12 +3056,18 @@ void limSendSmeTdlsLinkEstablishReqRsp(tpAniSirGlobal pMac,
         limLog(pMac, LOGE, FL("Failed to allocate memory"));
         return ;
     }
+
+    vos_mem_zero(pTdlsLinkEstablishReqRsp, sizeof(tSirTdlsLinkEstablishReqRsp));
+
     pTdlsLinkEstablishReqRsp->statusCode = status ;
-    if ( peerMac )
+    if (pStaDs && peerMac)
     {
         vos_mem_copy(pTdlsLinkEstablishReqRsp->peerMac, peerMac, sizeof(tSirMacAddr));
+        pTdlsLinkEstablishReqRsp->sta_idx = pStaDs->staIndex;
     }
+
     pTdlsLinkEstablishReqRsp->sessionId = sessionId;
+
     mmhMsg.type = eWNI_SME_TDLS_LINK_ESTABLISH_RSP ;
     mmhMsg.bodyptr = pTdlsLinkEstablishReqRsp;
     mmhMsg.bodyval = 0;
@@ -3088,12 +3094,18 @@ void limSendSmeTdlsChanSwitchReqRsp(tpAniSirGlobal pMac,
         PELOGE(limLog(pMac, LOGE, FL("Failed to allocate memory"));)
         return ;
     }
+
+    vos_mem_zero(pTdlsChanSwitchReqRsp, sizeof(tSirTdlsChanSwitchReqRsp));
+
     pTdlsChanSwitchReqRsp->statusCode = status ;
-    if ( peerMac )
+    if (pStaDs && peerMac )
     {
         vos_mem_copy(pTdlsChanSwitchReqRsp->peerMac, peerMac, sizeof(tSirMacAddr));
+        pTdlsChanSwitchReqRsp->sta_idx = pStaDs->staIndex;;
     }
+
     pTdlsChanSwitchReqRsp->sessionId = sessionId;
+
     mmhMsg.type = eWNI_SME_TDLS_CHANNEL_SWITCH_RSP ;
     mmhMsg.bodyptr = pTdlsChanSwitchReqRsp;
     mmhMsg.bodyval = 0;

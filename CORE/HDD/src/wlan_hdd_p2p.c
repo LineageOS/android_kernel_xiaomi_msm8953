@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016, The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -502,6 +502,9 @@ void wlan_hdd_remain_on_chan_timeout(void *data)
         WLANSAP_CancelRemainOnChannel(
                 (WLAN_HDD_GET_CTX(pAdapter))->pvosContext);
     }
+
+    wlan_hdd_start_stop_tdls_source_timer(pHddCtx, eTDLS_SUPPORT_ENABLED);
+
     hdd_allow_suspend(WIFI_POWER_EVENT_WAKELOCK_ROC);
 }
 
@@ -656,6 +659,8 @@ static int wlan_hdd_p2p_start_remain_on_channel(
         }
 
     }
+
+    wlan_hdd_start_stop_tdls_source_timer(pHddCtx, eTDLS_SUPPORT_DISABLED);
 
     pAdapter->is_roc_inprogress = TRUE;
     EXIT();

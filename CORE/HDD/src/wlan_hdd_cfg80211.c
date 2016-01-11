@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -12547,6 +12547,13 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
         goto allow_suspend;
     }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
+    if (!(pAdapter->dev->flags & IFF_UP))
+    {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("Interface is down"));
+        goto allow_suspend;
+    }
+#endif
     pScanInfo = &pHddCtx->scan_info;
 
     hddLog(VOS_TRACE_LEVEL_INFO,
@@ -12662,10 +12669,7 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
          aborted = true;
     }
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
-    if (pAdapter->dev->flags & IFF_UP)
-#endif
-        cfg80211_scan_done(req, aborted);
+    cfg80211_scan_done(req, aborted);
 
     complete(&pScanInfo->abortscan_event_var);
 
@@ -17957,7 +17961,22 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                         ret = wait_for_completion_interruptible_timeout(
                                 &pAdapter->tdls_link_establish_req_comp,
                                 msecs_to_jiffies(WAIT_TIME_TDLS_LINK_ESTABLISH_REQ));
-                        if (ret <= 0)
+
+                        mutex_lock(&pHddCtx->tdls_lock);
+                        pTdlsPeer = wlan_hdd_tdls_find_peer(pAdapter, peer, FALSE);
+                        if ( NULL == pTdlsPeer ) {
+                            mutex_unlock(&pHddCtx->tdls_lock);
+                            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                                      "%s %d: " MAC_ADDRESS_STR
+                                      " (oper %d) peer got freed in other context. ignored",
+                                      __func__, __LINE__, MAC_ADDR_ARRAY(peer),
+                                      (int)oper);
+                            return -EINVAL;
+                        }
+                        peer_status = pTdlsPeer->link_status;
+                        mutex_unlock(&pHddCtx->tdls_lock);
+
+                        if (ret <= 0 || (peer_status == eTDLS_LINK_TEARING))
                         {
                             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                                       FL("Link Establish Request Failed Status %ld"),
