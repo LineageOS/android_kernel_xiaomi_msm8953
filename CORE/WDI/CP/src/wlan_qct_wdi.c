@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -36589,10 +36589,10 @@ WDI_ProcessStartOemDataReqIndNew
   if (( WDI_STATUS_SUCCESS != WDI_GetMessageBuffer(
                                         pWDICtx,
                                         WDI_START_OEM_DATA_REQ_IND_NEW,
-                                        sizeof(tStartOemDataReqParamsNew),
+                                        sizeof(*pHalStartOemDataReqParamsNew),
                                         &pSendBuffer, &usDataOffset,
                                         &usSendSize))||
-     ( usSendSize < (usDataOffset + sizeof(tStartOemDataReqParamsNew) )))
+     ( usSendSize < (usDataOffset + sizeof(*pHalStartOemDataReqParamsNew) )))
   {
      WPAL_TRACE( eWLAN_MODULE_DAL_CTRL,  eWLAN_PAL_TRACE_LEVEL_WARN,
               "Unable to get send buffer in %s %p %p", __func__,
@@ -36600,11 +36600,17 @@ WDI_ProcessStartOemDataReqIndNew
      WDI_ASSERT(0);
      return WDI_STATUS_E_FAILURE;
   }
+
   pHalStartOemDataReqParamsNew =
-      (tpStartOemDataReqParamsNew) (pSendBuffer+usDataOffset);
+      (tpStartOemDataReqParamsNew) (pSendBuffer + usDataOffset);
 
-  wpalMemoryCopy(pHalStartOemDataReqParamsNew, wdiOemDataReqNewConfig, NEW_OEM_DATA_REQ_SIZE);
+  wpalMemoryCopy(pHalStartOemDataReqParamsNew,
+                 wdiOemDataReqNewConfig,
+                 sizeof(*pHalStartOemDataReqParamsNew));
 
+  VOS_TRACE(VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
+          "%s: selfMacAddr: " MAC_ADDRESS_STR" ", __func__,
+           MAC_ADDR_ARRAY(pHalStartOemDataReqParamsNew->selfMacAddr));
 
   pWDICtx->pReqStatusUserData = NULL;
   pWDICtx->pfncRspCB = NULL;
