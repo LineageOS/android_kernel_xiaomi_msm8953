@@ -1,5 +1,5 @@
 
-/* Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
 * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
 
 *
@@ -2902,6 +2902,8 @@ WLAN_HAL_START_OEM_DATA_REQ_IND_NEW------------------------------------
 --------------------------------------------------------------------------*/
 typedef PACKED_PRE struct PACKED_POST
 {
+   tSirMacAddr selfMacAddr;
+   tANI_U8 reserved[2];
    tANI_U8   oemDataReq[NEW_OEM_DATA_REQ_SIZE];
 } tStartOemDataReqParamsNew, *tpStartOemDataReqParamsNew;
 
