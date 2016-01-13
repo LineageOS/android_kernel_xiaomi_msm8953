@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -604,7 +604,7 @@ void send_oem_data_rsp_msg(int length, tANI_U8 *oemDataRsp)
       return;
    }
 
-   skb = alloc_skb(NLMSG_SPACE(sizeof(tAniMsgHdr) + OEM_DATA_RSP_SIZE),
+   skb = alloc_skb(NLMSG_SPACE(sizeof(tAniMsgHdr) + NEW_OEM_DATA_RSP_SIZE),
                    GFP_KERNEL);
    if (skb == NULL)
    {
