@@ -14363,6 +14363,7 @@ int wlan_hdd_cfg80211_set_privacy(hdd_adapter_t *pAdapter,
 static int wlan_hdd_try_disconnect( hdd_adapter_t *pAdapter )
 {
     long ret = 0;
+    int status, result = 0;
     hdd_station_ctx_t *pHddStaCtx;
     eMib_dot11DesiredBssType connectedBssType;
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
@@ -14391,34 +14392,44 @@ static int wlan_hdd_try_disconnect( hdd_adapter_t *pAdapter )
                      eConnectionState_Disconnecting);
         /* Issue disconnect to CSR */
         INIT_COMPLETION(pAdapter->disconnect_comp_var);
-        if( eHAL_STATUS_SUCCESS ==
-              sme_RoamDisconnect( WLAN_HDD_GET_HAL_CTX(pAdapter),
+        status = sme_RoamDisconnect(WLAN_HDD_GET_HAL_CTX(pAdapter),
                         pAdapter->sessionId,
-                        eCSR_DISCONNECT_REASON_UNSPECIFIED ) )
-        {
-            ret = wait_for_completion_interruptible_timeout(
+                        eCSR_DISCONNECT_REASON_UNSPECIFIED);
+        if(eHAL_STATUS_CMD_NOT_QUEUED == status) {
+            hddLog(LOG1,
+             FL("Already disconnected or connect was in sme/roam pending list and removed by disconnect"));
+        } else if ( 0 != status ) {
+            hddLog(LOGE,
+               FL("csrRoamDisconnect failure, returned %d"),
+               (int)status );
+            result = -EINVAL;
+            goto disconnected;
+        }
+        ret = wait_for_completion_timeout(
                          &pAdapter->disconnect_comp_var,
                          msecs_to_jiffies(WLAN_WAIT_TIME_DISCONNECT));
-            if (0 >=  ret)
-            {
-                hddLog(LOGE, FL("Failed to receive disconnect event"));
-                return -EALREADY;
-            }
+        if (!ret && ( eHAL_STATUS_CMD_NOT_QUEUED != status)) {
+            hddLog(LOGE,
+              "%s: Failed to disconnect, timed out", __func__);
+            result = -ETIMEDOUT;
         }
     }
     else if(eConnectionState_Disconnecting == pHddStaCtx->conn_info.connState)
     {
-        ret = wait_for_completion_interruptible_timeout(
+        ret = wait_for_completion_timeout(
                      &pAdapter->disconnect_comp_var,
                      msecs_to_jiffies(WLAN_WAIT_TIME_DISCONNECT));
-        if (0 >= ret)
+        if (!ret)
         {
             hddLog(LOGE, FL("Failed to receive disconnect event"));
-            return -EALREADY;
+            result = -ETIMEDOUT;
         }
     }
-
-    return 0;
+disconnected:
+    hddLog(LOG1,
+          FL("Set HDD connState to eConnectionState_NotConnected"));
+    pHddStaCtx->conn_info.connState = eConnectionState_NotConnected;
+    return result;
 }
 
 /*
@@ -14604,38 +14615,30 @@ int wlan_hdd_disconnect( hdd_adapter_t *pAdapter, u16 reason )
     /*issue disconnect*/
     status = sme_RoamDisconnect( WLAN_HDD_GET_HAL_CTX(pAdapter),
                                  pAdapter->sessionId, reason);
-     if(eHAL_STATUS_CMD_NOT_QUEUED == status)
-     {
-        hddLog(VOS_TRACE_LEVEL_INFO,
-             FL("status = %d, already disconnected"),
-                     (int)status );
-
+    if(eHAL_STATUS_CMD_NOT_QUEUED == status)
+    {
+        hddLog(LOG1,
+            FL("Already disconnected or connect was in sme/roam pending list and removed by disconnect"));
     }
     else if ( 0 != status )
     {
-        hddLog(VOS_TRACE_LEVEL_ERROR,
-               "%s csrRoamDisconnect failure, returned %d",
-               __func__, (int)status );
+        hddLog(LOGE,
+               FL("csrRoamDisconnect failure, returned %d"),
+               (int)status);
         result = -EINVAL;
         goto disconnected;
     }
-    ret = wait_for_completion_interruptible_timeout(
+    ret = wait_for_completion_timeout(
                 &pAdapter->disconnect_comp_var,
                 msecs_to_jiffies(WLAN_WAIT_TIME_DISCONNECT));
-    if (!ret && ( eHAL_STATUS_CMD_NOT_QUEUED != status ))
+    if (!ret && (eHAL_STATUS_CMD_NOT_QUEUED != status))
     {
-        hddLog(VOS_TRACE_LEVEL_ERROR,
+        hddLog(LOGE,
               "%s: Failed to disconnect, timed out", __func__);
         result = -ETIMEDOUT;
     }
-    else if (ret == -ERESTARTSYS)
-    {
-        hddLog(VOS_TRACE_LEVEL_ERROR,
-               "%s: Failed to disconnect, wait interrupted", __func__);
-        result = -ERESTARTSYS;
-    }
 disconnected:
-    VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+     hddLog(LOG1,
               FL("Set HDD connState to eConnectionState_NotConnected"));
     pHddStaCtx->conn_info.connState = eConnectionState_NotConnected;
 
