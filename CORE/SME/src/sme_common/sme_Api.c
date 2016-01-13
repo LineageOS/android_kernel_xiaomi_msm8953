@@ -13513,7 +13513,7 @@ tANI_BOOLEAN sme_handleSetFccChannel(tHalHandle hHal, tANI_U8 fcc_constraint)
     {
            pMac->scan.fcc_constraint = !fcc_constraint;
            /* update the channel list to the firmware */
-           csrUpdateFCCChannelList(pMac);
+           csrUpdateChannelList(pMac);
 
     }
 
