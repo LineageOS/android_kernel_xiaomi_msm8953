@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -327,4 +327,18 @@ void    vos_record_roam_event(enum e_roaming_event, void *pBuff, v_ULONG_t buff_
 v_U32_t vos_copy_80211_data(void *pBuff, v_U8_t *dst, v_U8_t frametype);
 extern  v_U8_t vos_get_ring_log_level(v_U32_t ring_id);
 bool vos_isPktStatsEnabled(void);
+
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
+void vos_tdls_tx_rx_mgmt_event(uint8_t event_id, uint8_t tx_rx,
+              uint8_t type, uint8_t sub_type, uint8_t *peer_mac);
+#else
+static inline
+void vos_tdls_tx_rx_mgmt_event(uint8_t event_id, uint8_t tx_rx,
+              uint8_t type, uint8_t sub_type, uint8_t *peer_mac)
+
+{
+    return;
+}
+#endif /* FEATURE_WLAN_DIAG_SUPPORT */
+
 #endif // #if !defined __VOSS_UTILS_H

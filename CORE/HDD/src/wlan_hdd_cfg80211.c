@@ -13213,15 +13213,15 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
                                           dev,
 #endif
                                           request);
-    if(status <= 0)
+    if (status <= 0)
     {
-       if(!status)
+       if (!status)
            hddLog(VOS_TRACE_LEVEL_ERROR, "%s: TDLS in progress."
                   "scan rejected  %d", __func__, status);
        else
            hddLog(VOS_TRACE_LEVEL_ERROR, "%s: TDLS teardown is ongoing %d",
                                           __func__, status);
-
+       hdd_wlan_block_scan_by_tdls();
        return status;
     }
 #endif
@@ -17717,6 +17717,7 @@ int wlan_hdd_tdls_extctrl_deconfig_peer(hdd_adapter_t *pAdapter,
 
     hddTdlsPeer_t *pTdlsPeer;
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+
     VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
               " %s : NL80211_TDLS_TEARDOWN for " MAC_ADDRESS_STR,
               __func__, MAC_ADDR_ARRAY(peer));
@@ -17749,6 +17750,8 @@ int wlan_hdd_tdls_extctrl_deconfig_peer(hdd_adapter_t *pAdapter,
     else {
         wlan_hdd_tdls_indicate_teardown(pAdapter, pTdlsPeer,
                            eSIR_MAC_TDLS_TEARDOWN_UNSPEC_REASON);
+        hdd_send_wlan_tdls_teardown_event(eTDLS_TEARDOWN_EXT_CTRL,
+                                                 pTdlsPeer->peerMac);
         /* if channel switch is configured, reset
            the channel for this peer */
         if (TRUE == pTdlsPeer->isOffChannelConfigured)
@@ -18175,6 +18178,10 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                 /* stop TCP delack timer if TDLS is enable  */
                 set_bit(WLAN_TDLS_MODE, &pHddCtx->mode);
                 hdd_manage_delack_timer(pHddCtx);
+                hdd_wlan_tdls_enable_link_event(peer,
+                           pTdlsPeer->isOffChannelSupported,
+                           pTdlsPeer->isOffChannelConfigured,
+                           pTdlsPeer->isOffChannelEstablished);
             }
             break;
         case NL80211_TDLS_DISABLE_LINK:

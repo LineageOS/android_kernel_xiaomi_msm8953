@@ -95,19 +95,6 @@ typedef struct
     tANI_S32    rssi_teardown_threshold;
 } tdls_config_params_t;
 
-typedef struct
-{
-    struct wiphy *wiphy;
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
-    struct net_device *dev;
-#endif
-    struct cfg80211_scan_request *scan_request;
-    int magic;
-    int attempt;
-    int reject;
-    struct delayed_work tdls_scan_work;
-} tdls_scan_context_t;
-
 typedef enum {
     eTDLS_SUPPORT_NOT_ENABLED = 0,
     eTDLS_SUPPORT_DISABLED, /* suppress implicit trigger and not respond to the peer */
@@ -130,6 +117,28 @@ typedef enum eTDLSLinkStatus {
     eTDLS_LINK_TEARING,
 } tTDLSLinkStatus;
 
+/**
+ * enum tdls_teardown_reason - Reason for TDLS teardown
+ * @eTDLS_TEARDOWN_EXT_CTRL: Reason ext ctrl.
+ * @eTDLS_TEARDOWN_CONCURRENCY: Reason concurrency.
+ * @eTDLS_TEARDOWN_RSSI_THRESHOLD: Reason rssi threashold.
+ * @eTDLS_TEARDOWN_TXRX_THRESHOLD: Reason txrx threashold.
+ * @eTDLS_TEARDOWN_BTCOEX: Reason BTCOEX.
+ * @eTDLS_TEARDOWN_SCAN: Reason scan.
+ * @eTDLS_TEARDOWN_BSS_DISCONNECT: Reason bss disconnected.
+ *
+ * Reason to indicate in diag event of tdls teardown.
+ */
+
+enum tdls_teardown_reason {
+    eTDLS_TEARDOWN_EXT_CTRL,
+    eTDLS_TEARDOWN_CONCURRENCY,
+    eTDLS_TEARDOWN_RSSI_THRESHOLD,
+    eTDLS_TEARDOWN_TXRX_THRESHOLD,
+    eTDLS_TEARDOWN_BTCOEX,
+    eTDLS_TEARDOWN_SCAN,
+    eTDLS_TEARDOWN_BSS_DISCONNECT,
+};
 
 typedef enum {
     eTDLS_LINK_SUCCESS,                              /* Success */
@@ -391,15 +400,6 @@ tANI_U32 wlan_hdd_tdls_discovery_sent_cnt(hdd_context_t *pHddCtx);
 
 void wlan_hdd_tdls_check_power_save_prohibited(hdd_adapter_t *pAdapter);
 
-void wlan_hdd_tdls_free_scan_request (tdls_scan_context_t *tdls_scan_ctx);
-
-int wlan_hdd_tdls_copy_scan_context(hdd_context_t *pHddCtx,
-                            struct wiphy *wiphy,
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
-                            struct net_device *dev,
-#endif
-                            struct cfg80211_scan_request *request);
-
 int wlan_hdd_tdls_scan_callback (hdd_adapter_t *pAdapter,
                                 struct wiphy *wiphy,
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
@@ -415,6 +415,36 @@ void wlan_hdd_tdls_timer_restart(hdd_adapter_t *pAdapter,
 void wlan_hdd_tdls_indicate_teardown(hdd_adapter_t *pAdapter,
                                      hddTdlsPeer_t *curr_peer,
                                      tANI_U16 reason);
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
+void hdd_send_wlan_tdls_teardown_event(uint32_t reason,
+                                      uint8_t *peer_mac);
+void hdd_wlan_tdls_enable_link_event(const uint8_t *peer_mac,
+                           uint8_t is_off_chan_supported,
+                           uint8_t is_off_chan_configured,
+                           uint8_t is_off_chan_established);
+void hdd_wlan_block_scan_by_tdls(void);
+
+#else
+static inline
+void hdd_send_wlan_tdls_teardown_event(uint32_t reason,
+                                      uint8_t *peer_mac)
+{
+    return;
+}
+static inline
+void hdd_wlan_tdls_enable_link_event(const uint8_t *peer_mac,
+                           uint8_t is_off_chan_supported,
+                           uint8_t is_off_chan_configured,
+                           uint8_t is_off_chan_established)
+{
+    return;
+}
+static inline
+void hdd_wlan_block_scan_by_tdls(void)
+{
+    return;
+}
+#endif /* FEATURE_WLAN_DIAG_SUPPORT */
 
 int wlan_hdd_tdls_set_force_peer(hdd_adapter_t *pAdapter,
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))

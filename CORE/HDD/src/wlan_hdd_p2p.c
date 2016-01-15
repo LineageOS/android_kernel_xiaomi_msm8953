@@ -75,7 +75,7 @@ tANI_U8* hdd_getActionString( tANI_U16 MsgType )
        CASE_RETURN_STRING(SIR_MAC_ACTION_UNPROT_WNM);
        CASE_RETURN_STRING(SIR_MAC_ACTION_TDLS);
        CASE_RETURN_STRING(SIR_MAC_ACITON_MESH);
-       CASE_RETURN_STRING(SIR_MAC_ACTION_MULTIHOP);
+       CASE_RETURN_STRING(SIR_MAC_ACTION_MHF);
        CASE_RETURN_STRING(SIR_MAC_SELF_PROTECTED);
        CASE_RETURN_STRING(SIR_MAC_ACTION_WME);
        CASE_RETURN_STRING(SIR_MAC_ACTION_VHT);
@@ -2591,6 +2591,9 @@ void __hdd_indicate_mgmt_frame(hdd_adapter_t *pAdapter,
                 hddLog(VOS_TRACE_LEVEL_INFO,"[TDLS] %s <--- OTA",
                     tdls_action_frame_type[actionFrmType]);
             }
+            vos_tdls_tx_rx_mgmt_event(SIR_MAC_ACTION_TDLS,
+              SIR_MAC_ACTION_RX, SIR_MAC_MGMT_ACTION,
+              actionFrmType, &pbFrames[WLAN_HDD_80211_FRM_DA_OFFSET+6]);
         }
 
         if((pbFrames[WLAN_HDD_PUBLIC_ACTION_FRAME_OFFSET] == WLAN_HDD_QOS_ACTION_FRAME)&&

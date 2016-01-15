@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -67,6 +67,8 @@
 #include <linux/completion.h>
 #include <linux/vmalloc.h>
 #include <crypto/hash.h>
+#include "vos_diag_core_event.h"
+
 
 /*----------------------------------------------------------------------------
  * Preprocessor Definitions and Constants
@@ -1540,3 +1542,35 @@ v_U32_t vos_copy_80211_data(void *pBuff, v_U8_t *dst, v_U8_t frametype)
     vos_mem_copy(dst, skb->data, length_to_copy);
     return length_to_copy;
 }
+
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
+/**
+ * vos_tdls_tx_rx_mgmt_event()- send tdls mgmt rx tx event
+ *
+ * @event_id: event id
+ * @tx_rx: tx or rx
+ * @type: type of frame
+ * @action_sub_type: action frame type
+ * @peer_mac: peer mac
+ *
+ * This Function sendsend tdls mgmt rx tx diag event
+ *
+ * Return: void.
+ */
+void vos_tdls_tx_rx_mgmt_event(uint8_t event_id, uint8_t tx_rx,
+              uint8_t type, uint8_t action_sub_type, uint8_t *peer_mac)
+{
+    WLAN_VOS_DIAG_EVENT_DEF(tdls_tx_rx_mgmt,
+                    struct vos_event_tx_rx_mgmt);
+    vos_mem_zero(&tdls_tx_rx_mgmt, sizeof(tdls_tx_rx_mgmt));
+
+    tdls_tx_rx_mgmt.event_id = event_id;
+    tdls_tx_rx_mgmt.tx_rx = tx_rx;
+    tdls_tx_rx_mgmt.type = type;
+    tdls_tx_rx_mgmt.action_sub_type = action_sub_type;
+    vos_mem_copy(tdls_tx_rx_mgmt.peer_mac,
+                     peer_mac, VOS_MAC_ADDR_SIZE);
+    WLAN_VOS_DIAG_EVENT_REPORT(&tdls_tx_rx_mgmt,
+                             EVENT_WLAN_TX_RX_MGMT);
+}
+#endif

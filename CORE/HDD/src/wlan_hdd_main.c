@@ -8692,6 +8692,9 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
 #ifdef FEATURE_WLAN_TDLS
             mutex_unlock(&pHddCtx->tdls_lock);
 #endif
+            vos_flush_delayed_work(&pHddCtx->scan_ctxt.scan_work);
+
+            wlan_hdd_init_deinit_defer_scan_context(&pHddCtx->scan_ctxt);
 
             if (WLAN_HDD_INFRA_STATION ==  pAdapter->device_mode ||
                 WLAN_HDD_P2P_CLIENT == pAdapter->device_mode)
@@ -9762,6 +9765,89 @@ static void hdd_dp_util_send_rps_ind(hdd_context_t  *hdd_ctxt)
    }
 }
 
+void wlan_hdd_schedule_defer_scan(struct work_struct *work)
+{
+    scan_context_t *scan_ctx =
+          container_of(work, scan_context_t, scan_work.work);
+
+    if (NULL == scan_ctx)
+    {
+       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                 FL("scan_ctx is NULL"));
+        return;
+    }
+
+    if (unlikely(TDLS_CTX_MAGIC != scan_ctx->magic))
+        return;
+
+    scan_ctx->attempt++;
+
+    wlan_hdd_cfg80211_scan(scan_ctx->wiphy,
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
+                           scan_ctx->dev,
+#endif
+                           scan_ctx->scan_request);
+}
+
+int wlan_hdd_copy_defer_scan_context(hdd_context_t *pHddCtx,
+                            struct wiphy *wiphy,
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
+                            struct net_device *dev,
+#endif
+                            struct cfg80211_scan_request *request)
+{
+    scan_context_t *scan_ctx;
+
+    ENTER();
+    if (0 != (wlan_hdd_validate_context(pHddCtx)))
+    {
+        return -1;
+    }
+
+    scan_ctx = &pHddCtx->scan_ctxt;
+
+    scan_ctx->wiphy = wiphy;
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
+    scan_ctx->dev = dev;
+#endif
+
+    scan_ctx->scan_request = request;
+
+    EXIT();
+    return 0;
+}
+
+void wlan_hdd_defer_scan_init_work(hdd_context_t *pHddCtx,
+                                struct wiphy *wiphy,
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
+                                struct net_device *dev,
+#endif
+                                struct cfg80211_scan_request *request,
+                                unsigned long delay)
+{
+    if (TDLS_CTX_MAGIC != pHddCtx->scan_ctxt.magic)
+    {
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
+        wlan_hdd_copy_defer_scan_context(pHddCtx, wiphy, dev, request);
+#else
+        wlan_hdd_copy_defer_scan_context(pHddCtx, wiphy, request);
+#endif
+        pHddCtx->scan_ctxt.attempt = 0;
+        pHddCtx->scan_ctxt.magic = TDLS_CTX_MAGIC;
+    }
+    schedule_delayed_work(&pHddCtx->scan_ctxt.scan_work, delay);
+}
+
+void wlan_hdd_init_deinit_defer_scan_context(scan_context_t *scan_ctx)
+{
+    scan_ctx->magic = 0;
+    scan_ctx->attempt = 0;
+    scan_ctx->reject = 0;
+    scan_ctx->scan_request = NULL;
+
+    return;
+}
+
 /**---------------------------------------------------------------------------
 
   \brief hdd_wlan_startup() - HDD init function
@@ -10430,6 +10516,11 @@ int hdd_wlan_startup(struct device *dev )
 #endif
 
    wlan_hdd_tdls_init(pHddCtx);
+
+   wlan_hdd_init_deinit_defer_scan_context(&pHddCtx->scan_ctxt);
+
+   vos_init_delayed_work(&pHddCtx->scan_ctxt.scan_work,
+                         wlan_hdd_schedule_defer_scan);
 
    sme_Register11dScanDoneCallback(pHddCtx->hHal, hdd_11d_scan_done);
 

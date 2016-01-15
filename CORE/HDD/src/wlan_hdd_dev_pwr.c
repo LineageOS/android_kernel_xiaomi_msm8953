@@ -94,6 +94,31 @@ static bool suspend_notify_sent;
 #endif
 
 
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
+/**
+ * hdd_wlan_suspend_resume_event()- send suspend/resume state
+ *
+ * @state: suspend/resume state
+ *
+ * This Function send send suspend resume state diag event
+ *
+ * Return: void.
+ */
+void hdd_wlan_suspend_resume_event(uint8_t state)
+{
+   WLAN_VOS_DIAG_EVENT_DEF(suspend_state,
+                     struct vos_event_suspend);
+   vos_mem_zero( &suspend_state,
+                        sizeof(suspend_state));
+
+   suspend_state.state= state;
+   WLAN_VOS_DIAG_EVENT_REPORT(&suspend_state,
+                      EVENT_WLAN_SUSPEND_RESUME);
+
+}
+#endif
+
+
 /*----------------------------------------------------------------------------
 
    @brief Function to suspend the wlan driver.
@@ -315,6 +340,7 @@ mc_suspend:
    /* Set the Station state as Suspended */
    pHddCtx->isWlanSuspended = TRUE;
    pHddCtx->last_suspend_success = 0;
+   hdd_wlan_suspend_resume_event(HDD_WLAN_SUSPEND);
    return 0;
 }
 
@@ -366,6 +392,7 @@ static void wlan_resume(hdd_context_t* pHddCtx)
 
    /* Set the Station state as Suspended */
    pHddCtx->isWlanSuspended = FALSE;
+   hdd_wlan_suspend_resume_event(HDD_WLAN_RESUME);
 }
 
 /*----------------------------------------------------------------------------
