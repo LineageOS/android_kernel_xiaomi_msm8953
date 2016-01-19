@@ -10860,16 +10860,23 @@ static int wlan_hdd_tdls_add_station(struct wiphy *wiphy,
     mutex_lock(&pHddCtx->tdls_lock);
     pTdlsPeer = wlan_hdd_tdls_find_peer(pAdapter, mac, FALSE);
 
-    if (ret <= 0 || ((pTdlsPeer != NULL) &&
-                     (pTdlsPeer->link_status == eTDLS_LINK_TEARING)))
+    if ((pTdlsPeer != NULL) &&
+         (pTdlsPeer->link_status == eTDLS_LINK_TEARING))
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                "%s: timeout waiting for tdls add station indication %ld peer link status %u",
-                __func__, ret, pTdlsPeer->link_status);
-        mutex_unlock(&pHddCtx->tdls_lock);
-        goto error;
+         hddLog(VOS_TRACE_LEVEL_ERROR,
+                FL("peer link status %u"), pTdlsPeer->link_status);
+         mutex_unlock(&pHddCtx->tdls_lock);
+         goto error;
     }
     mutex_unlock(&pHddCtx->tdls_lock);
+
+    if (ret <= 0)
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "%s: timeout waiting for tdls add station indication %ld",
+                __func__, ret);
+        goto error;
+    }
 
     if ( eHAL_STATUS_SUCCESS != pAdapter->tdlsAddStaStatus)
     {
