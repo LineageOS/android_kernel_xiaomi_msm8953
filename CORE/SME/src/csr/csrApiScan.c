@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -6351,10 +6351,15 @@ eHalStatus csrScanCopyRequest(tpAniSirGlobal pMac, tCsrScanRequest *pDstReq, tCs
                      /* Since in CsrScanRequest,value of pMac->scan.nextScanID
                       * is incremented before calling CsrScanCopyRequest, as a
                       * result pMac->scan.nextScanID is equal to ONE for the
-                      * first scan.
+                      * first scan. If number of channels is less than
+                      * max chan for dwell time no need to skip dfs
+                      * in first scan as anyway few channels will be scanned and
+                      * it will not take much time to display results on GUI.
                       */
-                     if ((pMac->roam.configParam.initialScanSkipDFSCh &&
-                              1 == pMac->scan.nextScanID) ||(pMac->miracast_mode))
+                     if (((pSrcReq->ChannelInfo.numOfChannels >=
+                          pMac->roam.configParam.max_chan_for_dwell_time_cfg) &&
+                         (pMac->roam.configParam.initialScanSkipDFSCh &&
+                           1 == pMac->scan.nextScanID)) ||(pMac->miracast_mode))
                      {
                        smsLog(pMac, LOG1,
                               FL("Initial scan, scan only non-DFS channels"));
