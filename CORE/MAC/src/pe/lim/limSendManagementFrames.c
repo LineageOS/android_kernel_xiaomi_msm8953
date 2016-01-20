@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -2310,14 +2310,15 @@ limSendAssocReqMgmtFrame(tpAniSirGlobal   pMac,
      */
     else
     {
-        if(extractedExtCap.interworkingService)
+        if (extractedExtCap.interworkingService ||
+                         extractedExtCap.bssTransition)
         {
             extractedExtCap.qosMap = 1;
         }
         /* No need to merge the EXT Cap from Supplicant
-         * if interworkingService is not set, as currently
-         * driver is only interested in interworkingService
-         * capability from supplicant. if in
+         * if interworkingService or bsstransition is not set,
+         * as currently driver is only interested in interworkingService
+         * and bsstransition capability from supplicant. if in
          * future any other EXT Cap info is required from
          * supplicant it needs to be handled here.
          */
