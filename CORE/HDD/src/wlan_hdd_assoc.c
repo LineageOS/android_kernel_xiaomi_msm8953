@@ -2976,9 +2976,21 @@ eHalStatus hdd_RoamTdlsStatusUpdateHandler(hdd_adapter_t *pAdapter,
         {
             if(eSIR_SME_SUCCESS != pRoamInfo->statusCode)
             {
+                hddTdlsPeer_t *curr_peer;
+
                 VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                      ("%s: Add Sta is failed. %d"),__func__, pRoamInfo->statusCode);
                 wlan_hdd_tdls_check_bmps(pAdapter);
+
+                mutex_lock(&pHddCtx->tdls_lock);
+                curr_peer = wlan_hdd_tdls_find_peer(pAdapter,
+                                      pRoamInfo->peerMac, FALSE);
+                if (NULL != curr_peer)
+                    curr_peer->link_status = eTDLS_LINK_TEARING;
+                else
+                    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                              "%s %d curr_peer is Null", __func__,__LINE__);
+                mutex_unlock(&pHddCtx->tdls_lock);
             }
             else
             {

@@ -1479,6 +1479,10 @@ void wlan_hdd_tdls_set_link_status(hdd_adapter_t *pAdapter,
         return;
     }
 
+    hddLog(VOS_TRACE_LEVEL_INFO,
+           "tdls set peer " MAC_ADDRESS_STR " link status to %u",
+           MAC_ADDR_ARRAY(curr_peer->peerMac), linkStatus);
+
     curr_peer->link_status= linkStatus;
 
     /*EXT TDLS*/
