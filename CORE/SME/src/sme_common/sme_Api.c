@@ -13465,14 +13465,16 @@ eHalStatus sme_fatal_event_logs_req(tHalHandle hHal, tANI_U32 is_fatal,
 
     if ( eHAL_STATUS_SUCCESS ==  sme_AcquireGlobalLock( &pMac->sme ))
     {
-        pFatalEventLogsReqParams = vos_mem_malloc(sizeof(tSirFatalEventLogsReqParam));
+        pFatalEventLogsReqParams =
+                            vos_mem_malloc(sizeof(*pFatalEventLogsReqParams));
         if(NULL == pFatalEventLogsReqParams)
         {
             smsLog(pMac, LOGE,
                  FL("vos_mem_alloc failed "));
             return eHAL_STATUS_FAILED_ALLOC;
         }
-        vos_mem_set(pFatalEventLogsReqParams, sizeof(pFatalEventLogsReqParams), 0);
+        vos_mem_set(pFatalEventLogsReqParams,
+                    sizeof(*pFatalEventLogsReqParams), 0);
         pFatalEventLogsReqParams->reason_code = reason_code;
 
         vos_mem_zero(&msg, sizeof(vos_msg_t));
