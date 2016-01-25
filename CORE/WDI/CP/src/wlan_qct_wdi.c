@@ -36657,9 +36657,10 @@ WDI_ProcessStartOemDataRspIndNew
     /* Fill in the indication parameters */
     wdiInd.wdiIndicationType = WDI_START_OEM_DATA_RSP_IND_NEW;
 
-    /* extract response and send it to UMAC */
-    wdiInd.wdiIndicationData.pOemRspNewIndData = (void *)pEventData->pEventData;
-
+    wdiInd.wdiIndicationData.wdiOemDataRspNew.pOemRspNewIndData =
+                                                (void *)pEventData->pEventData;
+    wdiInd.wdiIndicationData.wdiOemDataRspNew.OemRspNewLen =
+                                                    pEventData->uEventDataSize;
     /* Notify UMAC */
     if (pWDICtx->wdiLowLevelIndCB)
     {
