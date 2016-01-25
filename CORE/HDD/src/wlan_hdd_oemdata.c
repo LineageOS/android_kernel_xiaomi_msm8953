@@ -582,7 +582,7 @@ static void send_oem_err_rsp_nlink_msg(v_SINT_t app_pid, tANI_U8 error_code)
   \return - 0 for success, non zero for failure
 
   --------------------------------------------------------------------------*/
-void send_oem_data_rsp_msg(int length, tANI_U8 *oemDataRsp)
+void send_oem_data_rsp_msg(tANI_U32 length, tANI_U8 *oemDataRsp)
 {
    struct sk_buff *skb;
    struct nlmsghdr *nlh;
@@ -604,7 +604,7 @@ void send_oem_data_rsp_msg(int length, tANI_U8 *oemDataRsp)
       return;
    }
 
-   skb = alloc_skb(NLMSG_SPACE(sizeof(tAniMsgHdr) + NEW_OEM_DATA_RSP_SIZE),
+   skb = alloc_skb(NLMSG_SPACE(sizeof(tAniMsgHdr) + length),
                    GFP_KERNEL);
    if (skb == NULL)
    {

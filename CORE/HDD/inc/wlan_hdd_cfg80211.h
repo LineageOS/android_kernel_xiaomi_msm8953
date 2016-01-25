@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1365,7 +1365,7 @@ void wlan_hdd_cfg80211_nan_init(hdd_context_t *pHddCtx);
 
 #ifdef FEATURE_OEM_DATA_SUPPORT
 void wlan_hdd_cfg80211_oemdata_callback(void *ctx, const tANI_U16 evType,
-                                      void *pMsg);
+                                      void *pMsg,  tANI_U32 evLen);
 #endif /* FEATURE_OEM_DATA_SUPPORT */
 
 #if !(defined (SUPPORT_WDEV_CFG80211_VENDOR_EVENT_ALLOC))

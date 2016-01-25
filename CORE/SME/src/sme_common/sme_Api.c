@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -13009,7 +13009,7 @@ eHalStatus sme_EXTScanRegisterCallback (tHalHandle hHal,
 
 #ifdef FEATURE_OEM_DATA_SUPPORT
 eHalStatus sme_OemDataRegisterCallback (tHalHandle hHal,
-                          void (*pOemDataIndCb)(void *, const tANI_U16, void *),
+                void (*pOemDataIndCb)(void *, const tANI_U16, void *, tANI_U32),
                           void *callbackContext)
 {
     eHalStatus status    = eHAL_STATUS_SUCCESS;
