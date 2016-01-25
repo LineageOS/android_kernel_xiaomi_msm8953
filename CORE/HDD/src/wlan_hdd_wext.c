@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -7498,25 +7498,27 @@ void hdd_wmm_tx_snapshot(hdd_adapter_t *pAdapter)
         return;
     }
 
-    for(i =0; i< HDD_MAX_NUM_IBSS_STA; i++)
-   {
-        if(pPeerInfo->ibssStaInfo[i].isUsed)
-        {
-             hddLog(LOGE, "******IBSS STAIndex: %d*********", i);
-             for ( j=0; j< NUM_TX_QUEUES; j++)
-             {
-                spin_lock_bh(&pPeerInfo->ibssStaInfo[i].wmm_tx_queue[j].lock);
-                hddLog(LOGE, "HDD TxQueue Info For AC: %d Count: %d PrevAdress:%p, NextAddress:%p",
-                       j, pPeerInfo->ibssStaInfo[i].wmm_tx_queue[j].count,
-                       pPeerInfo->ibssStaInfo[i].wmm_tx_queue[j].anchor.prev,
-                       pPeerInfo->ibssStaInfo[i].wmm_tx_queue[j].anchor.next);
-                spin_unlock_bh(&pPeerInfo->ibssStaInfo[i].wmm_tx_queue[j].lock);
-             }
+    for (i = 0; i < HDD_MAX_NUM_IBSS_STA; i++) {
+        if (pPeerInfo->ibssStaInfo[i].isUsed) {
+            hddLog(LOGE, "******IBSS STAIndex: %d*********", i);
+            for (j = 0; j < NUM_TX_QUEUES; j++) {
+                if (pPeerInfo->ibssStaInfo[i].wmm_tx_queue[j].count) {
+                    spin_lock_bh(
+                        &pPeerInfo->ibssStaInfo[i].wmm_tx_queue[j].lock);
+                    hddLog(LOGE,
+                        "HDD TxQueue Info For AC: %d Count: %d PrevAdress:%p, NextAddress:%p",
+                        j, pPeerInfo->ibssStaInfo[i].wmm_tx_queue[j].count,
+                        pPeerInfo->ibssStaInfo[i].wmm_tx_queue[j].anchor.prev,
+                        pPeerInfo->ibssStaInfo[i].wmm_tx_queue[j].anchor.next);
+                    spin_unlock_bh(
+                        &pPeerInfo->ibssStaInfo[i].wmm_tx_queue[j].lock);
+                }
+            }
         }
     }
 
-
 }
+
 static int __iw_set_var_ints_getnone(struct net_device *dev,
                                      struct iw_request_info *info,
                                      union iwreq_data *wrqu, char *extra)
