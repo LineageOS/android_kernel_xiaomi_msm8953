@@ -1317,8 +1317,8 @@ __limProcessAddBAReq( tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,tpPESession ps
     if (!(IS_HWSTA_IDX(pSta->staIndex)))
     {
         status = eSIR_MAC_REQ_DECLINED_STATUS;
-        limLog( pMac, LOGE,
-            FL( "Sta Id is not HW Sta Id, Status code is %d " ), status);
+        limLog( pMac, LOG1,
+            FL( "ta Id is not HW Sta Id, Status code is %d " ), status);
         goto returnAfterError;
     }
 #endif //WLAN_SOFTAP_VSTA_FEATURE
