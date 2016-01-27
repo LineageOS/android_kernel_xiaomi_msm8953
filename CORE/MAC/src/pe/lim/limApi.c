@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1787,9 +1787,10 @@ tAniBool limEncTypeMatched(tpAniSirGlobal pMac, tpSchBeaconStruct  pBeacon,
                   pBeacon->capabilityInfo.privacy, pBeacon->wpaPresent,
                                                          pBeacon->rsnPresent);
     limLog(pMac, LOG1,
-            FL("pSession:: Privacy :%d EncyptionType: %d"),
+            FL("pSession:: Privacy :%d EncyptionType: %d WPS %d OSEN %d"),
                   SIR_MAC_GET_PRIVACY(pSession->limCurrentBssCaps),
-                                               pSession->encryptType);
+                       pSession->encryptType, pSession->bWPSAssociation,
+                       pSession->bOSENAssociation);
 
     /* This is handled by sending probe req due to IOT issues so return TRUE
      */
@@ -1831,13 +1832,18 @@ tAniBool limEncTypeMatched(tpAniSirGlobal pMac, tpSchBeaconStruct  pBeacon,
      * in beacon. Therefore no need to
      * check for security type in case
      * OSEN session.
+     * For WPS registration session no need to detect
+     * security mismatch as it wont match and
+     * driver may end up sending probe request without
+     * WPS IE during WPS registartion process.
      */
     /*TODO: AP capability mismatch
      * is not checked here because
      * no logic for beacon parsing
      * is avilable for HS2.0.
      */
-    if (pSession->bOSENAssociation)
+    if (pSession->bOSENAssociation ||
+             pSession->bWPSAssociation)
         return eSIR_TRUE;
 
     return eSIR_FALSE;
