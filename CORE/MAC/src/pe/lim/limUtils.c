@@ -164,53 +164,52 @@ limSearchAndDeleteDialogueToken(tpAniSirGlobal pMac, tANI_U8 token, tANI_U16 ass
     tpDialogueToken pCurrNode = pMac->lim.pDialogueTokenHead;
     tpDialogueToken pPrevNode = pMac->lim.pDialogueTokenHead;
 
-    //if the list is empty
+    /* if the list is empty */
     if(NULL == pCurrNode)
       return eSIR_FAILURE;
 
-    // if the matching node is the first node.
-    if(pCurrNode &&
+    /* If the matching node is the first node.*/
+    if ((token == pCurrNode->token) &&
         (assocId == pCurrNode->assocId) &&
-        (tid == pCurrNode->tid))
-    {
-        pMac->lim.pDialogueTokenHead = pCurrNode->next;        
-        //there was only one node in the list. So tail pointer also needs to be adjusted.
-        if(NULL == pMac->lim.pDialogueTokenHead)
+        (tid == pCurrNode->tid)) {
+        pMac->lim.pDialogueTokenHead = pCurrNode->next;
+        /* There was only one node in the list.
+         * So tail pointer also needs to be adjusted.
+         */
+        if (NULL == pMac->lim.pDialogueTokenHead)
             pMac->lim.pDialogueTokenTail = NULL;
         vos_mem_free(pCurrNode);
-        pMac->lim.pDialogueTokenHead = NULL;
         return eSIR_SUCCESS;
     }
 
-    //first node did not match. so move to the next one.
+    /* first node did not match. so move to the next one. */
     pCurrNode = pCurrNode->next;
-    while(NULL != pCurrNode )
-    {
-        if(token == pCurrNode->token)
-        {
-            break;
-        }
 
+    while (NULL != pCurrNode) {
+         if ((token == pCurrNode->token) &&
+           (assocId == pCurrNode->assocId) &&
+           (tid == pCurrNode->tid)) {
+           break;
+        }
         pPrevNode = pCurrNode;
         pCurrNode = pCurrNode->next;
     }
 
-    if(pCurrNode &&
-        (assocId == pCurrNode->assocId) &&
-        (tid == pCurrNode->tid))
-    {
+    if (pCurrNode) {
         pPrevNode->next = pCurrNode->next;
-        //if the node being deleted is the last one then we also need to move the tail pointer to the prevNode.
+        /* if the node being deleted is the last one
+         * then we also need to move the tail pointer
+         * to the prevNode.
+         */
         if(NULL == pCurrNode->next)
               pMac->lim.pDialogueTokenTail = pPrevNode;
         vos_mem_free(pCurrNode);
-        pMac->lim.pDialogueTokenHead = NULL;
         return eSIR_SUCCESS;
     }
 
-    PELOGW(limLog(pMac, LOGW, FL("LIM does not have matching dialogue token node"));)
+    limLog(pMac, LOGW,
+       FL("LIM does not have matching dialogue token node"));
     return eSIR_FAILURE;
-
 }
 
 
