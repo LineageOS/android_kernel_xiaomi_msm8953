@@ -14520,6 +14520,21 @@ static int __wlan_hdd_cfg80211_connect( struct wiphy *wiphy,
                 __func__);
         return status;
     }
+
+    if (pHddCtx->spoofMacAddr.isEnabled)
+    {
+        hddLog(VOS_TRACE_LEVEL_INFO,
+                        "%s: MAC Spoofing enabled ", __func__);
+        /* Updating SelfSta Mac Addr in TL which will be used to get staidx
+         * to fill TxBds for probe request during SSID scan which may happen
+         * as part of connect command
+         */
+        status = WLANTL_updateSpoofMacAddr(pHddCtx->pvosContext,
+            &pHddCtx->spoofMacAddr.randomMacAddr, &pAdapter->macAddressCurrent);
+        if (status != VOS_STATUS_SUCCESS)
+            return -ECONNREFUSED;
+    }
+
     if ( req->channel )
     {
         status = wlan_hdd_cfg80211_connect_start(pAdapter, req->ssid,
@@ -19196,7 +19211,7 @@ int wlan_hdd_cfg80211_suspend_wlan(struct wiphy *wiphy,
 
 #ifdef FEATURE_OEM_DATA_SUPPORT
 static void wlan_hdd_cfg80211_oem_data_rsp_ind_new(void *ctx,
-                                                      void *pMsg)
+                                   void *pMsg, tANI_U32 evLen)
 {
     hdd_context_t *pHddCtx         = (hdd_context_t *)ctx;
 
@@ -19211,7 +19226,7 @@ static void wlan_hdd_cfg80211_oem_data_rsp_ind_new(void *ctx,
         return;
     }
 
-    send_oem_data_rsp_msg(sizeof(tOemDataRspNew), pMsg);
+    send_oem_data_rsp_msg(evLen, pMsg);
 
     EXIT();
     return;
@@ -19219,7 +19234,7 @@ static void wlan_hdd_cfg80211_oem_data_rsp_ind_new(void *ctx,
 }
 
 void wlan_hdd_cfg80211_oemdata_callback(void *ctx, const tANI_U16 evType,
-                                      void *pMsg)
+                                      void *pMsg,  tANI_U32 evLen)
 {
     hdd_context_t *pHddCtx = (hdd_context_t *)ctx;
 
@@ -19229,11 +19244,11 @@ void wlan_hdd_cfg80211_oemdata_callback(void *ctx, const tANI_U16 evType,
         return;
     }
 
-    hddLog(VOS_TRACE_LEVEL_INFO, FL("Rcvd Event (%d)"), evType);
+    hddLog(VOS_TRACE_LEVEL_INFO, FL("Rcvd Event (%d) evLen %d"), evType, evLen);
 
     switch(evType) {
     case SIR_HAL_START_OEM_DATA_RSP_IND_NEW:
-        wlan_hdd_cfg80211_oem_data_rsp_ind_new(ctx, pMsg);
+        wlan_hdd_cfg80211_oem_data_rsp_ind_new(ctx, pMsg, evLen);
         break;
     default:
         hddLog(VOS_TRACE_LEVEL_ERROR, FL("invalid event type %d "), evType);

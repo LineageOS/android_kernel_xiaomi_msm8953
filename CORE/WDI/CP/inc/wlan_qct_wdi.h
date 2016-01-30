@@ -908,6 +908,19 @@ typedef struct
     wpt_uint32 tx_complete_status;
     wpt_uint32 tx_bd_token;
 }  WDI_TxBDStatus;
+
+#ifdef FEATURE_OEM_DATA_SUPPORT
+/*----------------------------------------------------------------------------
+  OEM DATA RESPONSE - DATA STRUCTURES
+----------------------------------------------------------------------------*/
+typedef struct
+{
+    void *pOemRspNewIndData;
+    /* Max OemRspNewLen possible is NEW_OEM_DATA_RSP_SIZE*/
+    wpt_uint32 OemRspNewLen;
+} WDI_OemDataRspNew;
+#endif
+
 /*---------------------------------------------------------------------------
   WDI_LowLevelIndType
     Inidcation type and information about the indication being carried
@@ -994,7 +1007,7 @@ typedef struct
     WDI_RssiBreachedIndType     wdiRssiBreachedInd;
 #ifdef FEATURE_OEM_DATA_SUPPORT
 /*OEM Data Rsp New Results from FW*/
-    void *pOemRspNewIndData;
+    WDI_OemDataRspNew           wdiOemDataRspNew;
 #endif
   }  wdiIndicationData;
 }WDI_LowLevelIndType;
@@ -4729,14 +4742,6 @@ typedef struct
     wpt_uint8 reserved[2];
     wpt_uint8  oemDataReqNew[NEW_OEM_DATA_REQ_SIZE];
 } WDI_OemDataReqNew, WDI_OemDataReqNewConfig;
-
-/*----------------------------------------------------------------------------
-  OEM DATA RESPONSE - DATA STRUCTURES
-----------------------------------------------------------------------------*/
-typedef struct
-{
-    wpt_uint8  oemDataRspNew[NEW_OEM_DATA_RSP_SIZE];
-} WDI_OemDataRspNew;
 
 /*************************************************************************************************************/
 

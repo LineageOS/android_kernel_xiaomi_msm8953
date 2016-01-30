@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -16377,6 +16377,7 @@ void WDA_lowLevelIndCallback(WDI_LowLevelIndType *wdiLowLevelInd,
             tpAniSirGlobal pMac;
             tANI_U16 indType;
             void *pOemRspNewIndData;
+            tANI_U32 OemRspNewLen;
 
             VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
             "Received WDI_START_OEM_DATA_RSP_IND_NEW Indications from FW");
@@ -16392,7 +16393,8 @@ void WDA_lowLevelIndCallback(WDI_LowLevelIndType *wdiLowLevelInd,
 
            indType = WDA_START_OEM_DATA_RSP_IND_NEW;
            pOemRspNewIndData =
-                   (void *)wdiLowLevelInd->wdiIndicationData.pOemRspNewIndData;
+                   (void *)wdiLowLevelInd->wdiIndicationData.wdiOemDataRspNew.
+                                                              pOemRspNewIndData;
            if (NULL == pOemRspNewIndData)
            {
                VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
@@ -16401,6 +16403,9 @@ void WDA_lowLevelIndCallback(WDI_LowLevelIndType *wdiLowLevelInd,
                VOS_ASSERT(0);
                return;
            }
+
+           OemRspNewLen = wdiLowLevelInd->wdiIndicationData.wdiOemDataRspNew.
+                                                                   OemRspNewLen;
 
            pMac = (tpAniSirGlobal )VOS_GET_MAC_CTXT(pWDA->pVosContext);
            if (NULL == pMac)
@@ -16413,11 +16418,15 @@ void WDA_lowLevelIndCallback(WDI_LowLevelIndType *wdiLowLevelInd,
 
            pCallbackContext = pMac->sme.pOemDataCallbackContext;
 
+           VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                 "%s: OemRspNewLen: %d", __func__, OemRspNewLen);
+
           if(pMac->sme.pOemDataIndCb)
           {
              pMac->sme.pOemDataIndCb(pCallbackContext,
                                      indType,
-                                     pOemRspNewIndData);
+                                     pOemRspNewIndData,
+                                     OemRspNewLen);
           }
           else
           {

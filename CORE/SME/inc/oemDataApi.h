@@ -163,7 +163,7 @@ typedef struct tagOemDataRspNew
 
 /*************************************************************************************************************/
 
-void send_oem_data_rsp_msg(int length, tANI_U8 *oemDataRsp);
+void send_oem_data_rsp_msg(tANI_U32 length, tANI_U8 *oemDataRsp);
 
 #endif //_OEM_DATA_API_H__
 
