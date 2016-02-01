@@ -647,7 +647,7 @@ limProcessEXTScanRealTimeData(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo)
         tEXTScanFullScanResult.ap.capability =
                             *(((tANI_U16 *)&pProbeResponse->Capabilities));
 
-        vos_mem_free(pBeacon);
+        vos_mem_free(pProbeResponse);
     }
     else
     {
