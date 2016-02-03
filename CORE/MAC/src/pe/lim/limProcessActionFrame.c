@@ -1529,7 +1529,8 @@ tANI_U8 *pBody;
   if(eSIR_SUCCESS != limSearchAndDeleteDialogueToken(pMac, frmAddBARsp.DialogToken.token,
         pSta->assocId, frmAddBARsp.AddBAParameterSet.tid))
   {
-      PELOGW(limLog(pMac, LOGE, FL("dialogueToken in received addBARsp did not match with outstanding requests"));)
+      limLog(pMac, LOGE,
+        FL("dialogueToken in received addBARsp did not match with outstanding requests"));
       return;
   }
 

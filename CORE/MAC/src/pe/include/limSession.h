@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -92,6 +92,7 @@ typedef struct sPESession           // Added to Support BT-AMP
     tSirNwType              nwType;
     tpSirSmeStartBssReq     pLimStartBssReq;        //handle to smestart bss req
     tANI_BOOLEAN            bOSENAssociation;       //handle to OSEN assoc req
+    tANI_BOOLEAN            bWPSAssociation;        //WPS Registration
     tpSirSmeJoinReq         pLimJoinReq;            // handle to sme join req
     tpSirSmeJoinReq         pLimReAssocReq;         //handle to sme reassoc req
     tpLimMlmJoinReq         pLimMlmJoinReq;         //handle to MLM join Req
