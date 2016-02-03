@@ -10677,6 +10677,8 @@ int hdd_wlan_startup(struct device *dev )
    sme_UpdateChannelList(pHddCtx->hHal);
 
    /* Fwr capabilities received, Set the Dot11 mode */
+   sme_SetPhyMode(WLAN_HDD_GET_HAL_CTX(pAdapter),
+       hdd_cfg_xlate_to_csr_phy_mode(pHddCtx->cfg_ini->dot11Mode));
    sme_SetDefDot11Mode(pHddCtx->hHal);
 
 #ifndef CONFIG_ENABLE_LINUX_REG
