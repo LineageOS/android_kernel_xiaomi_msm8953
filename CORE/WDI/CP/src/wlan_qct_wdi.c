@@ -189,7 +189,7 @@ static placeHolderInCapBitmap supportEnabledFeatures[] =
    ,DYNAMIC_WMM_PS                 //43
 
    ,MAC_SPOOFED_SCAN               //44
-   ,FEATURE_NOT_SUPPORTED          //45
+   ,BMU_ERROR_GENERIC_RECOVERY     //45
    ,DISA                           //46
    ,FW_STATS                       //47
    ,WPS_PRBRSP_TMPL                //48
