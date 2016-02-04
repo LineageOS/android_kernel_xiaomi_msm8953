@@ -2937,7 +2937,8 @@ static int hdd_cmd_setFccChannel(hdd_context_t *pHddCtx, tANI_U8 *cmd,
         return -EINVAL;
     }
 
-    status = sme_handleSetFccChannel(pHddCtx->hHal, fcc_constraint);
+    status = sme_handleSetFccChannel(pHddCtx->hHal, fcc_constraint,
+                                     pHddCtx->scan_info.mScanPending);
     if (status != eHAL_STATUS_SUCCESS)
         ret = -EPERM;
 
