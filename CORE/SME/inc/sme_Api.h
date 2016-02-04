@@ -3927,7 +3927,8 @@ eHalStatus sme_SetTdls2040BSSCoexistence(tHalHandle hHal, tANI_S32 isEnabled);
 eHalStatus sme_SetRtsCtsHtVht(tHalHandle hHal, tANI_U32 set_value);
 
 tANI_BOOLEAN sme_handleSetFccChannel(tHalHandle hHal,
-                                      tANI_U8 fcc_constraint);
+                                      tANI_U8 fcc_constraint,
+                                      v_U32_t scan_pending);
 
 eHalStatus sme_DeleteAllTDLSPeers(tHalHandle hHal, uint8_t sessionId);
 eHalStatus sme_fatal_event_logs_req(tHalHandle hHal, tANI_U32 is_fatal,
