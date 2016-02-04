@@ -613,7 +613,7 @@ eHalStatus csrScanRequest(tpAniSirGlobal pMac, tANI_U16 sessionId,
     eHalStatus status = eHAL_STATUS_FAILURE;
     tSmeCmd *pScanCmd = NULL;
     eCsrConnectState ConnectState;
-    
+
     if(pScanRequest == NULL)
     {
         smsLog( pMac, LOGE, FL(" pScanRequest is NULL"));
@@ -803,7 +803,8 @@ eHalStatus csrScanRequest(tpAniSirGlobal pMac, tANI_U16 sessionId,
                                    "dwell time for first scan %u"),
                                     scanReq.maxChnTime);
                         }
-                        if (!(pScanRequest->p2pSearch)
+                        if ((pScanCmd->u.scanCmd.reason == eCsrScanUserRequest)
+                           && !(pScanRequest->p2pSearch)
                            &&(pScanRequest->ChannelInfo.numOfChannels
                            < pMac->roam.configParam.
                                  max_chan_for_dwell_time_cfg))
@@ -880,7 +881,8 @@ eHalStatus csrScanRequest(tpAniSirGlobal pMac, tANI_U16 sessionId,
                                  pScanRequest->maxChnTime);
                 }
 
-                if (!(pScanRequest->p2pSearch)
+                if ((pScanCmd->u.scanCmd.reason == eCsrScanUserRequest)
+                         && !(pScanRequest->p2pSearch)
                          && (pScanRequest->ChannelInfo.numOfChannels
                          < pMac->roam.configParam.max_chan_for_dwell_time_cfg))
                 {
