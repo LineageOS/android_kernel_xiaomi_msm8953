@@ -12036,6 +12036,8 @@ void activeListCmdTimeoutHandle(void *userData)
 {
     tHalHandle hHal= (tHalHandle) userData;
     tpAniSirGlobal pMac = PMAC_STRUCT( hHal );
+    tListElem *pEntry;
+    tSmeCmd *pTempCmd = NULL;
 
     if (NULL == pMac)
     {
@@ -12055,6 +12057,21 @@ void activeListCmdTimeoutHandle(void *userData)
     smeGetCommandQStatus(hHal);
 
     vos_state_info_dump_all();
+
+
+    pEntry = csrLLPeekHead(&pMac->sme.smeCmdActiveList, LL_ACCESS_LOCK);
+    if (pEntry) {
+        pTempCmd = GET_BASE_ADDR(pEntry, tSmeCmd, Link);
+    }
+    /* If user initiated scan took more than active list timeout
+     * abort it.
+     */
+    if (pTempCmd && (eSmeCommandScan == pTempCmd->command) &&
+        (eCsrScanUserRequest == pTempCmd->u.scanCmd.reason)) {
+        sme_AbortMacScan(hHal, pTempCmd->sessionId,
+                                 eCSR_SCAN_ABORT_DEFAULT);
+        return;
+    }
 
     if (pMac->roam.configParam.enableFatalEvent)
     {
