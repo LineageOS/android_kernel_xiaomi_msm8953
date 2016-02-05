@@ -16204,7 +16204,7 @@ void WDA_lowLevelIndCallback(WDI_LowLevelIndType *wdiLowLevelInd,
       case WDI_DEL_BA_IND:
       {
          tpBADeleteParams  pDelBAInd =
-           (tpBADeleteParams)vos_mem_malloc(sizeof(tpBADeleteParams));
+           (tpBADeleteParams)vos_mem_malloc(sizeof(*pDelBAInd));
 
          VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
                                   "Received WDI_DEL_BA_IND from WDI ");
