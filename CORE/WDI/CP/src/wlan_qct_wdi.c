@@ -31531,7 +31531,7 @@ WDI_ProcessIbssPeerInfoRsp
    tHalIbssPeerParams        *pHalPeerInfoParams;
    WDI_IbssPeerInfoRspParams wdiPeerInfoRspParams;
    wpt_uint32                allocSize=0;
-   WDI_IbssPeerInfoParams   *pPeerInfoParams;
+   WDI_IbssPeerInfoParams   *pPeerInfoParams = NULL;
    wpt_uint8                 wdiCount=0;
 
    /*-------------------------------------------------------------------------
@@ -31560,28 +31560,31 @@ WDI_ProcessIbssPeerInfoRsp
    wdiPeerInfoRspParams.wdiNumPeers =
              ((tHalIbssPeerInfoRspParams *)pEventData->pEventData)->numOfPeers;
 
+   if (!wdiPeerInfoRspParams.wdiNumPeers) {
+      wdiPeerInfoRspParams.wdiPeerInfoParams = NULL;
+      goto error;
+   }
+   if (wdiPeerInfoRspParams.wdiNumPeers >=
+            WDI_MAX_IBSS_PEER_SUPPORED_STAS) {
+      WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+             "Number of stations %d exceed max supported stations %d set max",
+              wdiPeerInfoRspParams.wdiNumPeers,
+               WDI_MAX_IBSS_PEER_SUPPORED_STAS);
+      wdiPeerInfoRspParams.wdiNumPeers =
+            WDI_MAX_IBSS_PEER_SUPPORED_STAS - 1;
+   }
    /* Size of peer info data received from DAL */
    allocSize = (sizeof(WDI_IbssPeerInfoParams) * (wdiPeerInfoRspParams.wdiNumPeers));
 
    pPeerInfoParams = (WDI_IbssPeerInfoParams*)wpalMemoryAllocate(allocSize);
 
-    if (NULL == pPeerInfoParams)
-    {
-        WPAL_TRACE( eWLAN_MODULE_DAL_CTRL,  eWLAN_PAL_TRACE_LEVEL_WARN,
-            "Failed to allocate memory in ibss peer info response %p %p %p ",
-            pWDICtx, pEventData, pEventData->pEventData);
-        WDI_ASSERT(0);
-        return WDI_STATUS_E_FAILURE;
-    }
-
-   if (wdiPeerInfoRspParams.wdiNumPeers > WDI_MAX_IBSS_PEER_SUPPORED_STAS)
+   if (NULL == pPeerInfoParams)
    {
-      WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_FATAL,
-                   "Number of stations %d exceed max supported stations %d ",
-                    wdiPeerInfoRspParams.wdiNumPeers,
-                    WDI_MAX_IBSS_PEER_SUPPORED_STAS);
-      vos_mem_free (pPeerInfoParams);
-      return WDI_STATUS_MEM_FAILURE;
+       WPAL_TRACE( eWLAN_MODULE_DAL_CTRL,  eWLAN_PAL_TRACE_LEVEL_ERROR,
+           "Failed to allocate memory in ibss peer info response %p %p %p ",
+           pWDICtx, pEventData, pEventData->pEventData);
+       wdiPeerInfoRspParams.wdiPeerInfoParams = NULL;
+       goto error;
    }
 
    for (wdiCount = 0; wdiCount < wdiPeerInfoRspParams.wdiNumPeers; wdiCount++)
@@ -31596,7 +31599,7 @@ WDI_ProcessIbssPeerInfoRsp
    }
 
    wdiPeerInfoRspParams.wdiPeerInfoParams = pPeerInfoParams;
-
+error:
    /*Notify UMAC*/
    if (wdiPeerInfoCb)
    {
@@ -31604,7 +31607,8 @@ WDI_ProcessIbssPeerInfoRsp
    }
 
    /* Free the allocation */
-   vos_mem_free (pPeerInfoParams);
+   if(pPeerInfoParams)
+     vos_mem_free (pPeerInfoParams);
 
    return WDI_STATUS_SUCCESS;
 }
