@@ -10577,7 +10577,7 @@ WDI_AddBAReq
 
  @param wdiAddBAReqParams: the add BA parameters as specified by
                       the Device Interface
-  
+        baReqParamUserDataSize: user data size of wdiAddBAReqParams
         wdiAddBARspCb: callback for passing back the response of
         the add BA operation received from the device
   
@@ -10591,6 +10591,7 @@ WDI_Status
 WDI_TriggerBAReq
 (
   WDI_TriggerBAReqParamsType* pwdiTriggerBAReqParams,
+  wpt_uint8                   baReqParamUserDataSize,
   WDI_TriggerBARspCb          wdiTriggerBARspCb,
   void*                       pUserData
 );
