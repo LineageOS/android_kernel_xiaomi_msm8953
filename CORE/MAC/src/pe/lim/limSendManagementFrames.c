@@ -3124,19 +3124,28 @@ limSendReassocReqWithFTIEsMgmtFrame(tpAniSirGlobal     pMac,
         vos_mem_free(psessionEntry->assocReq);
         psessionEntry->assocReq = NULL;
     }
-
-    psessionEntry->assocReq = vos_mem_malloc(ft_ies_length);
-    if ( NULL == psessionEntry->assocReq )
+    if (ft_ies_length)
     {
-        PELOGE(limLog(pMac, LOGE, FL("Unable to allocate memory to store assoc request"));)
-        psessionEntry->assocReqLen = 0;
+        psessionEntry->assocReq = vos_mem_malloc(ft_ies_length);
+        if (NULL == psessionEntry->assocReq)
+        {
+            limLog(pMac, LOGE,
+                        FL("Unable to allocate memory for FT IEs"));
+            psessionEntry->assocReqLen = 0;
+        }
+        else
+        {
+            /* Store the FT IEs. This is sent to csr/hdd in join cnf response.*/
+            vos_mem_copy(psessionEntry->assocReq,
+                    pMac->ft.ftSmeContext.reassoc_ft_ies,
+                    (ft_ies_length));
+            psessionEntry->assocReqLen = ft_ies_length;
+        }
     }
     else
     {
-       //Store the Assoc request. This is sent to csr/hdd in join cnf response. 
-       vos_mem_copy( psessionEntry->assocReq, pMac->ft.ftSmeContext.reassoc_ft_ies,
-                    (ft_ies_length));
-       psessionEntry->assocReqLen = (ft_ies_length);
+        limLog(pMac, LOG1, FL("FT IEs not present"));
+        psessionEntry->assocReqLen = 0;
     }
 #ifdef FEATURE_WLAN_DIAG_SUPPORT
     limDiagEventReport(pMac, WLAN_PE_DIAG_REASSOC_START_EVENT, psessionEntry,
