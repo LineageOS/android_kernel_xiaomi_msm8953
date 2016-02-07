@@ -608,11 +608,9 @@ VosMCThread
                              &pSchedContext->mcEventFlag))
       {
         spin_lock(&pSchedContext->McThreadLock);
-
+        INIT_COMPLETION(pSchedContext->ResumeMcEvent);
         /* Mc Thread Suspended */
         complete(&pHddCtx->mc_sus_event_var);
-
-        INIT_COMPLETION(pSchedContext->ResumeMcEvent);
         spin_unlock(&pSchedContext->McThreadLock);
 
         /* Wait foe Resume Indication */
@@ -852,6 +850,18 @@ VosWDThread
     clear_bit(WD_POST_EVENT_MASK, &pWdContext->wdEventFlag);
     while(1)
     {
+
+      /* Post Msg to detect thread stuck. */
+      if (test_and_clear_bit(WD_WLAN_DETECT_THREAD_STUCK_MASK,
+                                          &pWdContext->wdEventFlag))
+      {
+        vos_wd_detect_thread_stuck();
+        /*
+         * Process here and return without processing any SSR
+         * related logic.
+         */
+        break;
+      }
       /* Check for any Active Entry Points
        * If active, delay SSR until no entry point is active or
        * delay until count is decremented to ZERO
@@ -942,12 +952,6 @@ VosWDThread
         atomic_set(&pHddCtx->isRestartInProgress, 0);
         pWdContext->resetInProgress = false;
         complete(&pHddCtx->ssr_comp_var);
-      }
-      /* Post Msg to detect thread stuck */
-      else if(test_and_clear_bit(WD_WLAN_DETECT_THREAD_STUCK_MASK,
-                                          &pWdContext->wdEventFlag))
-      {
-        vos_wd_detect_thread_stuck();
       }
       else
       {
@@ -1148,13 +1152,10 @@ static int VosTXThread ( void * Arg )
                              &pSchedContext->txEventFlag))
       {
         spin_lock(&pSchedContext->TxThreadLock);
-
+        INIT_COMPLETION(pSchedContext->ResumeTxEvent);
         /* Tx Thread Suspended */
         complete(&pHddCtx->tx_sus_event_var);
-
-        INIT_COMPLETION(pSchedContext->ResumeTxEvent);
         spin_unlock(&pSchedContext->TxThreadLock);
-
         /* Wait foe Resume Indication */
         wait_for_completion_interruptible(&pSchedContext->ResumeTxEvent);
       }
@@ -1350,11 +1351,9 @@ static int VosRXThread ( void * Arg )
                              &pSchedContext->rxEventFlag))
       {
         spin_lock(&pSchedContext->RxThreadLock);
-
+        INIT_COMPLETION(pSchedContext->ResumeRxEvent);
         /* Rx Thread Suspended */
         complete(&pHddCtx->rx_sus_event_var);
-
-        INIT_COMPLETION(pSchedContext->ResumeRxEvent);
         spin_unlock(&pSchedContext->RxThreadLock);
 
         /* Wait for Resume Indication */

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2014-2015 The Linux Foundation. All rights reserved.
+* Copyright (c) 2014-2016 The Linux Foundation. All rights reserved.
 *
 * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
 *
@@ -77,6 +77,9 @@
 #define PTT_MSG_DIAG_CMDS_TYPE   0x5050
 #define DIAG_TYPE_LOGS   1
 
+/* Limit FW initiated fatal event to ms */
+#define LIMIT_FW_FATAL_EVENT_MS   10000
+
 
 /* Qtimer Frequency */
 #define QTIMER_FREQ      19200000
@@ -104,6 +107,8 @@ struct logger_log_complete {
 	uint32_t reason_code;
 	bool is_report_in_progress;
 	bool is_flush_complete;
+	uint32_t last_fw_bug_reason;
+	unsigned long last_fw_bug_timestamp;
 };
 
 struct fw_mem_dump_logging{
@@ -1325,6 +1330,8 @@ void wlan_init_log_completion(void)
 	gwlan_logging.log_complete.is_fatal = WLAN_LOG_TYPE_NON_FATAL;
 	gwlan_logging.log_complete.is_report_in_progress = false;
 	gwlan_logging.log_complete.reason_code = WLAN_LOG_REASON_CODE_UNUSED;
+	gwlan_logging.log_complete.last_fw_bug_reason = 0;
+	gwlan_logging.log_complete.last_fw_bug_timestamp = 0;
 
 	spin_lock_init(&gwlan_logging.bug_report_lock);
 }
@@ -1854,6 +1861,29 @@ void wlan_process_done_indication(uint8 type, uint32 reason_code)
 		}
 		else
 		{
+			unsigned long flags;
+
+			/* Drop FW initiated fatal event for
+			 * LIMIT_FW_FATAL_EVENT_MS if received for same reason.
+			 */
+			spin_lock_irqsave(&gwlan_logging.bug_report_lock,
+									flags);
+			if ((reason_code ==
+			   gwlan_logging.log_complete.last_fw_bug_reason) &&
+			   ((vos_timer_get_system_time() -
+			    gwlan_logging.log_complete.last_fw_bug_timestamp)
+						< LIMIT_FW_FATAL_EVENT_MS)) {
+				pr_info("%s: Ignoring Fatal event from firmware for reason %d\n",
+					__func__, reason_code);
+				return;
+			}
+			gwlan_logging.log_complete.last_fw_bug_reason =
+								reason_code;
+			gwlan_logging.log_complete.last_fw_bug_timestamp =
+						vos_timer_get_system_time();
+			spin_unlock_irqrestore(&gwlan_logging.bug_report_lock,
+									flags);
+
 			/*Firmware Initiated*/
 			pr_info("%s : FW triggered Fatal Event, reason_code : %d\n", __func__,
 			reason_code);
