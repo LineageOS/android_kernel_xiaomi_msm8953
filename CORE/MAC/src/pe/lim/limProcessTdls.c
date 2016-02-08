@@ -3781,7 +3781,7 @@ tSirRetStatus limProcesSmeTdlsChanSwitchReq(tpAniSirGlobal pMac,
         return eSIR_MEM_ALLOC_FAILED;
     }
 
-    vos_mem_set( (tANI_U8 *)pMsgTdlsChanSwitch, sizeof(tpTdlsChanSwitchParams), 0);
+    vos_mem_set( (tANI_U8 *)pMsgTdlsChanSwitch, sizeof(*pMsgTdlsChanSwitch), 0);
 
     /* if channel bw offset is not set,
        send maximum supported offset in the band */
