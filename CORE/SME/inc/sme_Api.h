@@ -3846,4 +3846,6 @@ eHalStatus sme_GetCurrentAntennaIndex(tHalHandle hHal,
                                       tCsrAntennaIndexCallback callback,
                                       void *pContext, tANI_U8 sessionId);
 
+eHalStatus sme_setBcnMissPenaltyCount(tHalHandle hHal,
+                                      tModifyRoamParamsReqParams *params);
 #endif //#if !defined( __SME_API_H )

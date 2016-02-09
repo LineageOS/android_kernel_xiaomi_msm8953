@@ -13858,3 +13858,48 @@ eHalStatus sme_GetCurrentAntennaIndex(tHalHandle hHal,
     }
     return eHAL_STATUS_FAILURE;
 }
+
+eHalStatus sme_setBcnMissPenaltyCount(tHalHandle hHal,
+                            tModifyRoamParamsReqParams *pModifyRoamReqParams)
+{
+    tpAniSirGlobal pMac = PMAC_STRUCT(hHal);
+    eHalStatus status = eHAL_STATUS_SUCCESS;
+    VOS_STATUS vosStatus;
+    tModifyRoamParamsReqParams *pMsg;
+    vos_msg_t msg;
+
+    status = sme_AcquireGlobalLock(&pMac->sme);
+    if (HAL_STATUS_SUCCESS(status))
+    {
+        pMsg = (tModifyRoamParamsReqParams*)vos_mem_malloc(sizeof(*pMsg));
+        if (NULL == pMsg)
+        {
+            smsLog(pMac, LOGE, FL("failed to allocated memory"));
+            sme_ReleaseGlobalLock( &pMac->sme );
+            return eHAL_STATUS_FAILURE;
+        }
+        if (NULL == pModifyRoamReqParams)
+        {
+            smsLog(pMac, LOGE, FL("Invalid memory"));
+            vos_mem_free(pMsg);
+            sme_ReleaseGlobalLock( &pMac->sme );
+            return eHAL_STATUS_FAILURE;
+        }
+        pMsg->param = pModifyRoamReqParams->param;
+        pMsg->value = pModifyRoamReqParams->value;
+        vos_mem_zero(&msg, sizeof(vos_msg_t));
+        msg.type = WDA_MODIFY_ROAM_PARAMS_IND;
+        msg.reserved = 0;
+        msg.bodyptr = pMsg;
+        vosStatus = vos_mq_post_message( VOS_MQ_ID_WDA, &msg);
+        if ( !VOS_IS_STATUS_SUCCESS(vosStatus) )
+        {
+           status = eHAL_STATUS_FAILURE;
+           vos_mem_free(pMsg);
+        }
+        sme_ReleaseGlobalLock( &pMac->sme );
+        return status;
+    }
+
+    return eHAL_STATUS_FAILURE;
+}
