@@ -19258,6 +19258,56 @@ void wlan_hdd_cfg80211_oemdata_callback(void *ctx, const tANI_U16 evType,
 }
 #endif
 
+/**
+ * __wlan_hdd_cfg80211_abort_scan() - cfg80211 abort scan api
+ * @wiphy: Pointer to wiphy
+ * @wdev: Pointer to wireless device structure
+ *
+ * This function is used to abort an ongoing scan
+ *
+ * Return: None
+ */
+static void __wlan_hdd_cfg80211_abort_scan(struct wiphy *wiphy,
+                                           struct wireless_dev *wdev)
+{
+    struct net_device *dev = wdev->netdev;
+    hdd_adapter_t *adapter = WLAN_HDD_GET_PRIV_PTR(dev);
+    hdd_context_t *hdd_ctx = wiphy_priv(wiphy);
+    int ret;
+
+    ENTER();
+
+    if (NULL == adapter) {
+        hddLog(VOS_TRACE_LEVEL_FATAL, FL("HDD adapter is NULL"));
+        return;
+    }
+
+    ret = wlan_hdd_validate_context(hdd_ctx);
+    if (0 != ret)
+        return;
+
+    wlan_hdd_scan_abort(adapter);
+
+    return;
+}
+
+/**
+ * wlan_hdd_cfg80211_abort_scan - cfg80211 abort scan api
+ * @wiphy: Pointer to wiphy
+ * @wdev: Pointer to wireless device structure
+ *
+ * Return: None
+ */
+void wlan_hdd_cfg80211_abort_scan(struct wiphy *wiphy,
+                                  struct wireless_dev *wdev)
+{
+    vos_ssr_protect(__func__);
+    __wlan_hdd_cfg80211_abort_scan(wiphy, wdev);
+    vos_ssr_unprotect(__func__);
+
+    return;
+}
+
 /* cfg80211_ops */
 static struct cfg80211_ops wlan_hdd_cfg80211_ops =
 {
@@ -19328,5 +19378,6 @@ static struct cfg80211_ops wlan_hdd_cfg80211_ops =
      .testmode_cmd = wlan_hdd_cfg80211_testmode,
 #endif
      .dump_survey = wlan_hdd_cfg80211_dump_survey,
+     .abort_scan = wlan_hdd_cfg80211_abort_scan,
 };
 
