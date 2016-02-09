@@ -2669,13 +2669,6 @@ static eHalStatus roamRoamConnectStatusUpdateHandler( hdd_adapter_t *pAdapter, t
                     MAC_ADDR_ARRAY(pHddStaCtx->conn_info.bssId),
                     pRoamInfo->staId );
 
-         if ( !roamSaveIbssStation( pAdapter, pRoamInfo->staId, (v_MACADDR_t *)pRoamInfo->peerMac ) )
-         {
-            VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_WARN,
-                       "New IBSS peer but we already have the max we can handle.  Can't register this one" );
-            break;
-         }
-
          pHddCtx->sta_to_adapter[pRoamInfo->staId] = pAdapter;
 
          pHddCtx->sta_to_adapter[IBSS_BROADCAST_STAID] = pAdapter;
@@ -2693,6 +2686,13 @@ static eHalStatus roamRoamConnectStatusUpdateHandler( hdd_adapter_t *pAdapter, t
             VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                "Cannot register STA with TL for IBSS.  Failed with vosStatus = %d [%08X]",
                vosStatus, vosStatus );
+         }
+         if (!roamSaveIbssStation(pAdapter,
+               pRoamInfo->staId,
+               (v_MACADDR_t *)pRoamInfo->peerMac))
+         {
+            hddLog(LOGW, FL("Not Able to add sta in sta hash"));
+            break;
          }
          pHddStaCtx->ibss_sta_generation++;
          memset(&staInfo, 0, sizeof(staInfo));
