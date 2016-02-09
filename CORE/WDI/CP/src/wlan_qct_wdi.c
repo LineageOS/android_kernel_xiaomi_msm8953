@@ -549,6 +549,7 @@ WDI_ReqProcFuncType  pfnReqProcTbl[WDI_MAX_UMAC_IND] =
   NULL,
 #endif /* FEATURE_OEM_DATA_SUPPORT */
   WDI_ProcessGetCurrentAntennaIndex,          /* WDI_ANTENNA_DIVERSITY_SELECTION_REQ  */
+  WDI_ProcessBcnMissPenaltyCount,             /* WDI_MODIFY_ROAM_PARAMS_IND */
 };
 
 
@@ -1235,6 +1236,7 @@ static char *WDI_getReqMsgString(wpt_uint16 wdiReqMsgId)
     CASE_RETURN_STRING( WDI_STOP_RSSI_MONITOR_REQ );
     CASE_RETURN_STRING( WDI_START_OEM_DATA_REQ_IND_NEW );
     CASE_RETURN_STRING( WDI_ANTENNA_DIVERSITY_SELECTION_REQ );
+    CASE_RETURN_STRING( WDI_MODIFY_ROAM_PARAMS_IND );
     default:
         return "Unknown WDI MessageId";
   }
@@ -24579,6 +24581,8 @@ WDI_2_HAL_REQ_TYPE
        return WLAN_HAL_START_OEM_DATA_REQ_IND_NEW;
   case WDI_ANTENNA_DIVERSITY_SELECTION_REQ:
        return WLAN_HAL_ANTENNA_DIVERSITY_SELECTION_REQ;
+  case WDI_MODIFY_ROAM_PARAMS_IND:
+       return WLAN_HAL_MODIFY_ROAM_PARAMS_IND;
   default:
     return WLAN_HAL_MSG_MAX;
   }
@@ -36840,4 +36844,117 @@ WDI_GetCurrentAntennaIndex
 
   return WDI_PostMainEvent(&gWDICb, WDI_REQUEST_EVENT, &wdiEventData);
 }
+
+/**
+ @brief Process Set beacon miss penalty count command
+
+ @param  pWDICtx:         pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+WDI_Status
+WDI_ProcessBcnMissPenaltyCount
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+)
+{
+  wpt_uint8*  pSendBuffer = NULL;
+  wpt_uint16  usDataOffset = 0;
+  wpt_uint16  usSendSize = 0;
+  tHalModifyRoamParamsIndParams halModifyRoamParams;
+  WDI_ModifyRoamParamsReqType *modifyRoamParams;
+  WDI_Status wdiStatus = WDI_STATUS_SUCCESS;
+
+  /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+  WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
+               "%s", __func__);
+  /*-------------------------------------------------------------------------
+    Sanity check
+  -------------------------------------------------------------------------*/
+  if (( NULL == pEventData ) || ( NULL == pEventData->pEventData ))
+  {
+      WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_FATAL,
+             "%s: Invalid parameters", __func__);
+      WDI_ASSERT(0);
+      return WDI_STATUS_E_FAILURE;
+  }
+
+  /*-----------------------------------------------------------------------
+    Get message buffer
+  -----------------------------------------------------------------------*/
+
+  if (( WDI_STATUS_SUCCESS != WDI_GetMessageBuffer( pWDICtx,
+                                     WDI_MODIFY_ROAM_PARAMS_IND,
+                                     sizeof(tHalModifyRoamParamsIndParams),
+                          &pSendBuffer, &usDataOffset, &usSendSize))||
+       ( usSendSize < (usDataOffset + sizeof(tHalModifyRoamParamsIndParams) )))
+  {
+      WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_FATAL,
+              "Unable to get send buffer for Modify roam req params %p ",
+               pEventData);
+      WDI_ASSERT(0);
+      return WDI_STATUS_E_FAILURE;
+  }
+
+  modifyRoamParams = (WDI_ModifyRoamParamsReqType *)pEventData->pEventData;
+  halModifyRoamParams.param = modifyRoamParams->param;
+  halModifyRoamParams.value = modifyRoamParams->value;
+  wpalMemoryCopy( pSendBuffer+usDataOffset, &halModifyRoamParams,
+                  sizeof(halModifyRoamParams));
+  pWDICtx->pReqStatusUserData = NULL;
+  pWDICtx->pfncRspCB = NULL;
+
+  /*-------------------------------------------------------------------------
+    Send WDI_MODIFY_ROAM_PARAMS_IND to HAL
+  -------------------------------------------------------------------------*/
+  wdiStatus =  WDI_SendIndication( pWDICtx, pSendBuffer, usSendSize);
+  return (wdiStatus != WDI_STATUS_SUCCESS) ? wdiStatus:WDI_STATUS_SUCCESS_SYNC;
+
+}
+
+/**
+ @brief WDI_SetBcnMissPenaltyCount
+
+ @param params: Req parameter for the FW
+
+ @return SUCCESS or FAIL
+*/
+
+WDI_Status
+WDI_SetBcnMissPenaltyCount
+(
+    WDI_ModifyRoamParamsReqType *params
+)
+{
+  WDI_EventInfoType      wdiEventData;
+
+  /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+  /*------------------------------------------------------------------------
+   Sanity Check
+  ------------------------------------------------------------------------*/
+  if ( eWLAN_PAL_FALSE == gWDIInitialized )
+  {
+      WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                 "WDI API call before module is initialized - Fail request");
+      return WDI_STATUS_E_NOT_ALLOWED;
+  }
+
+  /*------------------------------------------------------------------------
+    Fill in Event data and post to the Main FSM
+  ------------------------------------------------------------------------*/
+  wdiEventData.wdiRequest      = WDI_MODIFY_ROAM_PARAMS_IND;
+  wdiEventData.pEventData      = (void *)params;
+  wdiEventData.uEventDataSize  = sizeof(*params);
+  wdiEventData.pCBfnc          = NULL;
+  wdiEventData.pUserData       = NULL;
+
+  return WDI_PostMainEvent(&gWDICb, WDI_REQUEST_EVENT, &wdiEventData);
+
+} /* WDI_SetBcnMissPenaltyCount */
+
 #endif

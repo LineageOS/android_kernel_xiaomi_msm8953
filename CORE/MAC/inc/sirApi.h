@@ -5865,4 +5865,10 @@ typedef struct
    tSirMacAddr  bssId;
 } tSetWifiConfigParams, *tpSetWifiConfigParams;
 
+typedef struct {
+   tANI_U8   param;
+   tANI_U32  value;
+} tModifyRoamParamsReqParams, * tpModifyRoamParamsReqParams;
+
+
 #endif /* __SIR_API_H */
