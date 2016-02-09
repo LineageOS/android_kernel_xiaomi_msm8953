@@ -16810,7 +16810,7 @@ void WDA_BaCheckActivity(tWDA_CbContext *pWDA)
       pWdaParams->pWdaContext = pWDA;
       pWdaParams->wdaWdiApiMsgParam = wdiTriggerBaReq ;
       pWdaParams->wdaMsgParam = NULL; 
-      status = WDI_TriggerBAReq(wdiTriggerBaReq, 
+      status = WDI_TriggerBAReq(wdiTriggerBaReq, size,
                                    WDA_TriggerBaReqCallback, pWdaParams) ;
       if(IS_WDI_STATUS_FAILURE(status))
       {
