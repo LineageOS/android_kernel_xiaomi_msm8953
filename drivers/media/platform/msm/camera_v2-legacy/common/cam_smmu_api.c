@@ -15,11 +15,9 @@
 #include <linux/dma-buf.h>
 #include <asm/dma-iommu.h>
 #include <linux/dma-direction.h>
-#include <linux/dma-attrs.h>
 #include <linux/of_platform.h>
 #include <linux/iommu.h>
 #include <linux/slab.h>
-#include <linux/qcom_iommu.h>
 #include <linux/dma-mapping.h>
 #include <linux/msm_dma_iommu_mapping.h>
 #include <linux/workqueue.h>
@@ -1462,7 +1460,7 @@ static int cam_smmu_setup_cb(struct cam_context_bank_info *cb,
 	}
 
 	/* create a virtual mapping */
-	cb->mapping = arm_iommu_create_mapping(msm_iommu_get_bus(dev),
+	cb->mapping = arm_iommu_create_mapping(&platform_bus_type,
 		cb->va_start, cb->va_len);
 	if (IS_ERR(cb->mapping)) {
 		pr_err("Error: create mapping Failed\n");
@@ -1564,18 +1562,12 @@ static int cam_populate_smmu_context_banks(struct device *dev,
 
 	/* set up the iommu mapping for the  context bank */
 	if (type == CAM_QSMMU) {
-		ctx = msm_iommu_get_ctx(cb->name);
-		if (IS_ERR_OR_NULL(ctx)) {
-			rc = PTR_ERR(ctx);
-			pr_err("Invalid pointer of ctx : %s rc = %d\n",
-				 cb->name, rc);
-			return -EINVAL;
-		}
-		CDBG("getting QSMMU ctx : %s\n", cb->name);
-	} else {
+		pr_err("Error: QSMMU ctx not supported for: %s\n", cb->name);
+		return -EINVAL;
+	}
 		ctx = dev;
 		CDBG("getting Arm SMMU ctx : %s\n", cb->name);
-	}
+
 	rc = cam_smmu_setup_cb(cb, ctx);
 	if (rc < 0)
 		pr_err("Error: failed to setup cb : %s\n", cb->name);

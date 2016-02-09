@@ -22,7 +22,6 @@
 #include <linux/iommu.h>
 #include <asm/dma-iommu.h>
 #include <linux/dma-direction.h>
-#include <linux/dma-attrs.h>
 #include <linux/dma-buf.h>
 
 #include "msm_camera_io_util.h"

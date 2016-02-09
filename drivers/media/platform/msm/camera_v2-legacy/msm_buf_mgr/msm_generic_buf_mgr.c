@@ -64,20 +64,20 @@ static int32_t msm_buf_mngr_get_buf(struct msm_buf_mngr_device *dev,
 		return -ENOMEM;
 	}
 	INIT_LIST_HEAD(&new_entry->entry);
-	new_entry->vb2_buf = dev->vb2_ops.get_buf(buf_info->session_id,
+	new_entry->vb2_v4l2_buf = dev->vb2_ops.get_buf(buf_info->session_id,
 		buf_info->stream_id);
-	if (!new_entry->vb2_buf) {
+	if (!new_entry->vb2_v4l2_buf) {
 		pr_debug("%s:Get buf is null\n", __func__);
 		kfree(new_entry);
 		return -EINVAL;
 	}
 	new_entry->session_id = buf_info->session_id;
 	new_entry->stream_id = buf_info->stream_id;
-	new_entry->index = new_entry->vb2_buf->v4l2_buf.index;
+	new_entry->index = new_entry->vb2_v4l2_buf->vb2_buf.index;
 	spin_lock_irqsave(&dev->buf_q_spinlock, flags);
 	list_add_tail(&new_entry->entry, &dev->buf_qhead);
 	spin_unlock_irqrestore(&dev->buf_q_spinlock, flags);
-	buf_info->index = new_entry->vb2_buf->v4l2_buf.index;
+	buf_info->index = new_entry->vb2_v4l2_buf->vb2_buf.index;
 	if (buf_info->type == MSM_CAMERA_BUF_MNGR_BUF_USER) {
 		mutex_lock(&dev->cont_mutex);
 		if (!list_empty(&dev->cont_qhead)) {
@@ -112,16 +112,16 @@ static int32_t msm_buf_mngr_get_buf_by_idx(struct msm_buf_mngr_device *dev,
 	}
 
 	INIT_LIST_HEAD(&new_entry->entry);
-	new_entry->vb2_buf = dev->vb2_ops.get_buf_by_idx(buf_info->session_id,
-		buf_info->stream_id, buf_info->index);
-	if (!new_entry->vb2_buf) {
+	new_entry->vb2_v4l2_buf = dev->vb2_ops.get_buf_by_idx(
+			buf_info->session_id, buf_info->stream_id, buf_info->index);
+	if (!new_entry->vb2_v4l2_buf) {
 		pr_debug("%s:Get buf is null\n", __func__);
 		kfree(new_entry);
 		return -EINVAL;
 	}
 	new_entry->session_id = buf_info->session_id;
 	new_entry->stream_id = buf_info->stream_id;
-	new_entry->index = new_entry->vb2_buf->v4l2_buf.index;
+	new_entry->index = new_entry->vb2_v4l2_buf->vb2_buf.index;
 	spin_lock_irqsave(&dev->buf_q_spinlock, flags);
 	list_add_tail(&new_entry->entry, &dev->buf_qhead);
 	spin_unlock_irqrestore(&dev->buf_q_spinlock, flags);
@@ -152,12 +152,12 @@ static int32_t msm_buf_mngr_buf_done(struct msm_buf_mngr_device *buf_mngr_dev,
 			(bufs->stream_id == buf_info->stream_id) &&
 			(bufs->index == buf_info->index)) {
 			ret = buf_mngr_dev->vb2_ops.buf_done
-					(bufs->vb2_buf,
-						buf_info->session_id,
-						buf_info->stream_id,
-						buf_info->frame_id,
-						&buf_info->timestamp,
-						buf_info->reserved);
+								(bufs->vb2_v4l2_buf,
+									buf_info->session_id,
+									buf_info->stream_id,
+									buf_info->frame_id,
+									&buf_info->timestamp,
+									buf_info->reserved);
 			list_del_init(&bufs->entry);
 			kfree(bufs);
 			break;
@@ -180,7 +180,7 @@ static int32_t msm_buf_mngr_put_buf(struct msm_buf_mngr_device *buf_mngr_dev,
 		if ((bufs->session_id == buf_info->session_id) &&
 			(bufs->stream_id == buf_info->stream_id) &&
 			(bufs->index == buf_info->index)) {
-			ret = buf_mngr_dev->vb2_ops.put_buf(bufs->vb2_buf,
+			ret = buf_mngr_dev->vb2_ops.put_buf(bufs->vb2_v4l2_buf,
 				buf_info->session_id, buf_info->stream_id);
 			list_del_init(&bufs->entry);
 			kfree(bufs);
@@ -208,11 +208,11 @@ static int32_t msm_generic_buf_mngr_flush(
 	list_for_each_entry_safe(bufs, save, &buf_mngr_dev->buf_qhead, entry) {
 		if ((bufs->session_id == buf_info->session_id) &&
 			(bufs->stream_id == buf_info->stream_id)) {
-			ret = buf_mngr_dev->vb2_ops.buf_done(bufs->vb2_buf,
+			ret = buf_mngr_dev->vb2_ops.buf_done(bufs->vb2_v4l2_buf,
 						buf_info->session_id,
 						buf_info->stream_id, 0, &ts, 0);
 			pr_err("Bufs not flushed: str_id = %d buf_index = %d ret = %d\n",
-			buf_info->stream_id, bufs->vb2_buf->v4l2_buf.index,
+			buf_info->stream_id, bufs->index,
 			ret);
 			list_del_init(&bufs->entry);
 			kfree(bufs);
@@ -351,7 +351,7 @@ static int msm_buf_mngr_handle_cont_cmd(struct msm_buf_mngr_device *dev,
 				}
 			}
 		}
-		ion_handle = ion_import_dma_buf(dev->ion_client,
+		ion_handle = ion_import_dma_buf_fd(dev->ion_client,
 				cont_cmd->cont_fd);
 		if (IS_ERR_OR_NULL(ion_handle)) {
 			pr_err("Failed to create ion handle for fd %d\n",
@@ -851,8 +851,9 @@ static int32_t __init msm_buf_mngr_init(void)
 	msm_buf_mngr_dev->subdev.sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
 	v4l2_set_subdevdata(&msm_buf_mngr_dev->subdev.sd, msm_buf_mngr_dev);
 
-	media_entity_init(&msm_buf_mngr_dev->subdev.sd.entity, 0, NULL, 0);
-	msm_buf_mngr_dev->subdev.sd.entity.type = MEDIA_ENT_T_V4L2_SUBDEV;
+	media_entity_pads_init(&msm_buf_mngr_dev->subdev.sd.entity, 0, NULL);
+	msm_buf_mngr_dev->subdev.sd.entity.group_id =
+			MSM_CAMERA_SUBDEV_BUF_MNGR;
 	msm_buf_mngr_dev->subdev.sd.entity.group_id =
 		MSM_CAMERA_SUBDEV_BUF_MNGR;
 	msm_buf_mngr_dev->subdev.sd.internal_ops =

@@ -373,8 +373,8 @@ static inline int __msm_sd_register_subdev(struct v4l2_subdev *sd)
 	}
 
 #if defined(CONFIG_MEDIA_CONTROLLER)
-	sd->entity.info.v4l.major = VIDEO_MAJOR;
-	sd->entity.info.v4l.minor = vdev->minor;
+	sd->entity.info.dev.major = VIDEO_MAJOR;
+	sd->entity.info.dev.minor = vdev->minor;
 	sd->entity.name = video_device_node_name(vdev);
 #endif
 	sd->devnode = vdev;
@@ -1094,7 +1094,7 @@ static struct v4l2_file_operations msm_fops = {
 	.open   = msm_open,
 	.poll   = msm_poll,
 	.release = msm_close,
-	.ioctl   = video_ioctl2,
+	.unlocked_ioctl   = video_ioctl2,
 #ifdef CONFIG_COMPAT
 	.compat_ioctl32 = video_ioctl2,
 #endif
@@ -1335,11 +1335,10 @@ static int msm_probe(struct platform_device *pdev)
 	if (WARN_ON(rc < 0))
 		goto media_fail;
 
-	if (WARN_ON((rc == media_entity_init(&pvdev->vdev->entity,
-			0, NULL, 0)) < 0))
+	if (WARN_ON((rc == media_entity_pads_init(&pvdev->vdev->entity,
+					0, NULL)) < 0))
 		goto entity_fail;
 
-	pvdev->vdev->entity.type = MEDIA_ENT_T_DEVNODE_V4L;
 	pvdev->vdev->entity.group_id = QCAMERA_VNODE_GROUP_ID;
 #endif
 
@@ -1351,6 +1350,7 @@ static int msm_probe(struct platform_device *pdev)
 	if (WARN_ON(rc < 0))
 		goto register_fail;
 
+	media_device_init(msm_v4l2_dev->mdev);
 	strlcpy(pvdev->vdev->name, "msm-config", sizeof(pvdev->vdev->name));
 	pvdev->vdev->release  = video_device_release;
 	pvdev->vdev->fops     = &msm_fops;

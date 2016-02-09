@@ -117,7 +117,7 @@ struct msm_fd_buf_handle {
  * @list: Buffer is part of FD device processing queue
  */
 struct msm_fd_buffer {
-	struct vb2_buffer vb;
+	struct vb2_v4l2_buffer vb_v4l2_buf;
 	atomic_t active;
 	struct completion completion;
 	struct msm_fd_format format;

@@ -1181,8 +1181,7 @@ static int msm_camera_flash_i2c_probe(struct i2c_client *client,
 	snprintf(flash_ctrl->msm_sd.sd.name,
 		ARRAY_SIZE(flash_ctrl->msm_sd.sd.name),
 		"msm_camera_flash");
-	media_entity_init(&flash_ctrl->msm_sd.sd.entity, 0, NULL, 0);
-	flash_ctrl->msm_sd.sd.entity.type = MEDIA_ENT_T_V4L2_SUBDEV;
+	media_entity_pads_init(&flash_ctrl->msm_sd.sd.entity, 0, NULL);
 	flash_ctrl->msm_sd.sd.entity.group_id = MSM_CAMERA_SUBDEV_FLASH;
 	flash_ctrl->msm_sd.close_seq = MSM_SD_CLOSE_2ND_CATEGORY | 0x1;
 	msm_sd_register(&flash_ctrl->msm_sd);
@@ -1256,8 +1255,7 @@ static int32_t msm_flash_platform_probe(struct platform_device *pdev)
 	snprintf(flash_ctrl->msm_sd.sd.name,
 		ARRAY_SIZE(flash_ctrl->msm_sd.sd.name),
 		"msm_camera_flash");
-	media_entity_init(&flash_ctrl->msm_sd.sd.entity, 0, NULL, 0);
-	flash_ctrl->msm_sd.sd.entity.type = MEDIA_ENT_T_V4L2_SUBDEV;
+	media_entity_pads_init(&flash_ctrl->msm_sd.sd.entity, 0, NULL);
 	flash_ctrl->msm_sd.sd.entity.group_id = MSM_CAMERA_SUBDEV_FLASH;
 	flash_ctrl->msm_sd.close_seq = MSM_SD_CLOSE_2ND_CATEGORY | 0x1;
 	msm_sd_register(&flash_ctrl->msm_sd);

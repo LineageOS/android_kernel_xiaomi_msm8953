@@ -1081,7 +1081,7 @@ static int msm_fd_hw_enable(struct msm_fd_device *fd,
 	struct msm_fd_buffer *buffer)
 {
 	struct msm_fd_buf_handle *buf_handle =
-		buffer->vb.planes[0].mem_priv;
+			buffer->vb_v4l2_buf.vb2_buf.planes[0].mem_priv;
 
 	if (msm_fd_hw_is_runnig(fd)) {
 		dev_err(fd->dev, "Device is busy we can not enable\n");
@@ -1177,13 +1177,13 @@ void msm_fd_hw_remove_buffers_from_queue(struct msm_fd_device *fd,
 
 	active_buffer = NULL;
 	list_for_each_entry_safe(curr_buff, temp, &fd->buf_queue, list) {
-		if (curr_buff->vb.vb2_queue == vb2_q) {
+		if (curr_buff->vb_v4l2_buf.vb2_buf.vb2_queue == vb2_q) {
 
 			if (atomic_read(&curr_buff->active))
 				active_buffer = curr_buff;
 			else {
 				/* Do a Buffer done on all the other buffers */
-				vb2_buffer_done(&curr_buff->vb,
+				vb2_buffer_done(&curr_buff->vb_v4l2_buf.vb2_buf,
 					VB2_BUF_STATE_DONE);
 				list_del(&curr_buff->list);
 			}
@@ -1197,7 +1197,9 @@ void msm_fd_hw_remove_buffers_from_queue(struct msm_fd_device *fd,
 			msecs_to_jiffies(MSM_FD_PROCESSING_TIMEOUT_MS));
 		if (!time) {
 			/* Do a vb2 buffer done since it timed out */
-			vb2_buffer_done(&active_buffer->vb, VB2_BUF_STATE_DONE);
+			vb2_buffer_done(
+				&active_buffer->vb_v4l2_buf.vb2_buf,
+				VB2_BUF_STATE_DONE);
 			/* Remove active buffer */
 			msm_fd_hw_get_active_buffer(fd);
 			/* Schedule if other buffers are present in device */
