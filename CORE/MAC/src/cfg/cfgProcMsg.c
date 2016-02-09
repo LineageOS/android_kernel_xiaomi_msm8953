@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1697,6 +1697,11 @@ tAniSirCgStatic cfgStatic[CFG_PARAM_MAX_NUM] =
      WNI_CFG_DISABLE_BAR_WAKE_UP_HOST_MIN,
      WNI_CFG_DISABLE_BAR_WAKE_UP_HOST_MAX,
      WNI_CFG_DISABLE_BAR_WAKE_UP_HOST_DEF},
+    {WNI_CFG_SAR_BOFFSET_SET_CORRECTION,
+     CFG_CTL_VALID | CFG_CTL_RE | CFG_CTL_WE | CFG_CTL_INT | CFG_CTL_NTF_HAL,
+     WNI_CFG_SAR_BOFFSET_SET_CORRECTION_MIN,
+     WNI_CFG_SAR_BOFFSET_SET_CORRECTION_MAX,
+     WNI_CFG_SAR_BOFFSET_SET_CORRECTION_DEFAULT},
 };
 
 tAniSirCfgStaticString cfgStaticString[CFG_MAX_STATIC_STRING] =
