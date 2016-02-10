@@ -1873,6 +1873,9 @@ void wlan_process_done_indication(uint8 type, uint32 reason_code)
 			   ((vos_timer_get_system_time() -
 			    gwlan_logging.log_complete.last_fw_bug_timestamp)
 						< LIMIT_FW_FATAL_EVENT_MS)) {
+				spin_unlock_irqrestore(
+					&gwlan_logging.bug_report_lock,
+					flags);
 				pr_info("%s: Ignoring Fatal event from firmware for reason %d\n",
 					__func__, reason_code);
 				return;
