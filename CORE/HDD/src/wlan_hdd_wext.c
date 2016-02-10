@@ -11114,7 +11114,8 @@ static const struct iw_priv_args we_private_args[] = {
 
     {
         WLAN_SET_KEEPALIVE_PARAMS,
-        IW_PRIV_TYPE_BYTE  | sizeof(tKeepAliveRequest),
+        IW_PRIV_TYPE_BYTE  | sizeof(tKeepAliveRequest) |
+        IW_PRIV_SIZE_FIXED,
         0,
         "setKeepAlive" },
 #ifdef WLAN_FEATURE_PACKET_FILTERING
