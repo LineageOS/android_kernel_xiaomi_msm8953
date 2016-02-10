@@ -6046,6 +6046,7 @@ static int __iw_setint_getnone(struct net_device *dev,
            {
                hddLog(LOGE, "invalid mode %d", mode);
                ret = -EIO;
+               break;
            }
 
            pMonCtx =  WLAN_HDD_GET_MONITOR_CTX_PTR(pAdapter);
@@ -6053,6 +6054,7 @@ static int __iw_setint_getnone(struct net_device *dev,
            {
              hddLog(LOGE, "Monitor Context NULL");
              ret = -EIO;
+             break;
            }
            if (pMonCtx->state == set_value)
            {
