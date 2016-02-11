@@ -7398,13 +7398,17 @@ VOS_STATUS hdd_stop_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter,
                 halStatus = sme_RoamDisconnect(pHddCtx->hHal,
                                             pAdapter->sessionId, 
                                             eCSR_DISCONNECT_REASON_UNSPECIFIED);
-            //success implies disconnect command got queued up successfully
-            if(halStatus == eHAL_STATUS_SUCCESS)
+            /* Success implies disconnect command got queued up successfully
+             * Or cmd not queued as scan for SSID is in progress
+             */
+            if((eHAL_STATUS_SUCCESS == halStatus) ||
+               (eHAL_STATUS_CMD_NOT_QUEUED == halStatus))
             {
                ret = wait_for_completion_interruptible_timeout(
                           &pAdapter->disconnect_comp_var,
                            msecs_to_jiffies(WLAN_WAIT_TIME_DISCONNECT));
-               if (ret <= 0)
+               if (ret <= 0 &&
+                   (eHAL_STATUS_CMD_NOT_QUEUED != halStatus))
                {
                    hddLog(VOS_TRACE_LEVEL_ERROR,
                           "%s: wait on disconnect_comp_var failed %ld",
