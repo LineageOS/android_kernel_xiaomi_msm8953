@@ -8448,6 +8448,8 @@ WLANTL_STARxConn
         TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
                "WLAN TL:Invalid tid  %d (Station ID %d) on %s",
                ucTid, ucSTAId, __func__));
+        vos_pkt_return_packet(vosDataBuff);
+        return VOS_STATUS_E_FAILURE;
       }
 
       TLLOG2(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO_HIGH,
@@ -8850,6 +8852,8 @@ WLANTL_STARxAuth
     TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
            "WLAN TL:Invalid tid  %d (Station ID %d) on %s",
            ucTid, ucSTAId, __func__));
+    vos_pkt_return_packet(vosDataBuff);
+    return VOS_STATUS_E_FAILURE;
   }
 
   /*------------------------------------------------------------------------
