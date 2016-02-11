@@ -3498,7 +3498,7 @@ void limProcessSmeGetScanChannelInfo(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
 
 void limProcessSmeGetAssocSTAsInfo(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
 {
-    tSirSmeGetAssocSTAsReq  getAssocSTAsReq;
+    tSirSmeGetAssocSTAsReq  getAssocSTAsReq = {0};
     tpDphHashNode           pStaDs = NULL;
     tpPESession             psessionEntry = NULL;
     tSap_Event              sapEvent;
