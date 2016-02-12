@@ -36077,7 +36077,7 @@ WDI_Process_RssiBreachedInd
 )
 {
   WDI_LowLevelIndType  wdiInd;
-  tHalRssiMonitorIndParams halRssiBreachedInd;
+  tHalRssiMonitorIndParams *halRssiBreachedInd;
   /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
   /*-------------------------------------------------------------------------
@@ -36095,16 +36095,17 @@ WDI_Process_RssiBreachedInd
   /*-------------------------------------------------------------------------
     Extract indication and send it to UMAC
    -------------------------------------------------------------------------*/
-  wpalMemoryCopy(  &halRssiBreachedInd,
-                   pEventData->pEventData,
-                   sizeof(halRssiBreachedInd));
-
+  halRssiBreachedInd = pEventData->pEventData;
 
   /*Fill in the indication parameters*/
   wdiInd.wdiIndicationType = WDI_RSSI_BREACHED_IND;
-  wpalMemoryCopy((void *)&wdiInd.wdiIndicationData.wdiRssiBreachedInd,
-                 (void *)&halRssiBreachedInd,
-                 sizeof(WDI_RssiBreachedIndType));
+  wdiInd.wdiIndicationData.wdiRssiBreachedInd.request_id =
+                                      halRssiBreachedInd->request_id;
+  wpalMemoryCopy(wdiInd.wdiIndicationData.wdiRssiBreachedInd.bssId,
+                 halRssiBreachedInd->bssId,
+                 WDI_MAC_ADDR_LEN);
+  wdiInd.wdiIndicationData.wdiRssiBreachedInd.rssi =
+                                      halRssiBreachedInd->rssi;
   WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
           "%s: session_id %d, rssi : %d, bssId: " MAC_ADDRESS_STR" ", __func__,
            wdiInd.wdiIndicationData.wdiRssiBreachedInd.request_id,
