@@ -286,6 +286,8 @@ VOS_STATUS WDA_ProcessStartOemDataReqIndNew(tWDA_CbContext *pWDA,
 v_VOID_t WDA_ProcessAntennaDiversitySelectionReq(tWDA_CbContext *pWDA,
                                    tSirAntennaDiversitySelectionReq *pData);
 
+VOS_STATUS WDA_ProcessBcnMissPenaltyCount(tWDA_CbContext *pWDA,
+                                   tModifyRoamParamsReqParams *params);
 /*
  * FUNCTION: WDA_ProcessNanRequest
  * Process NAN request
@@ -15381,6 +15383,12 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
                              (tSirAntennaDiversitySelectionReq *)pMsg->bodyptr);
          break;
       }
+      case WDA_MODIFY_ROAM_PARAMS_IND:
+      {
+         WDA_ProcessBcnMissPenaltyCount(pWDA,
+                             (tModifyRoamParamsReqParams *)pMsg->bodyptr);
+         break;
+      }
       default:
       {
          VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
@@ -20888,6 +20896,40 @@ v_VOID_t WDA_ProcessAntennaDiversitySelectionReq(tWDA_CbContext *pWDA,
 
    vos_mem_free(pData);
    return;
+}
+
+/*
+ * FUNCTION: WDA_ProcessBcnMissPenaltyCount
+ * Request to WDI.
+ */
+VOS_STATUS WDA_ProcessBcnMissPenaltyCount(tWDA_CbContext *pWDA,
+                                          tModifyRoamParamsReqParams *params)
+{
+    WDI_Status status;
+
+    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                 FL("---> %s"), __func__);
+
+    if (NULL == params)
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                 FL("tModifyRoamParamsReqParams is received NULL"));
+        return VOS_STATUS_E_NOMEM;
+    }
+
+    status = WDI_SetBcnMissPenaltyCount((WDI_ModifyRoamParamsReqType *)params);
+    if (WDI_STATUS_PENDING == status)
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                 FL("pending status received "));
+    }
+    else if (WDI_STATUS_SUCCESS_SYNC != status)
+    {
+       VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               FL("Failure status %d"), status);
+    }
+    vos_mem_free(params);
+    return CONVERT_WDI2VOS_STATUS(status) ;
 }
 
 #endif
