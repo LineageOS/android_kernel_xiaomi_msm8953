@@ -7714,12 +7714,18 @@ static int __iw_set_var_ints_getnone(struct net_device *dev,
                v_U32_t magic = 0;
                struct completion cmpVar;
                long waitRet = 0;
+               tVOS_CON_MODE mode = hdd_get_conparam();
+
+               if (VOS_MONITOR_MODE != mode) {
+                  hddLog(LOGE, FL("invalid mode %d"), mode);
+                  return -EIO;
+               }
 
                pMonCtx =  WLAN_HDD_GET_MONITOR_CTX_PTR(pAdapter);
                if( pMonCtx == NULL )
                {
                  hddLog(LOGE, "Monitor Context NULL");
-                 break;
+                 return -EIO;
                }
                hddLog(LOG1, "%s: Monitor MOde Configuration: ChNo=%d ChBW=%d CRCCheck=%d type=%d ConversionBit=%d",
                         __func__, apps_args[0], apps_args[1], apps_args[2],
@@ -7750,8 +7756,7 @@ static int __iw_set_var_ints_getnone(struct net_device *dev,
                         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                                     FL("failed to post MON MODE REQ"));
                         magic = 0;
-                        ret = -EIO;
-                        break;
+                        return -EIO;
                     }
                     waitRet = wait_for_completion_timeout(&cmpVar,
                                                        MON_MODE_MSG_TIMEOUT);
@@ -7770,12 +7775,18 @@ static int __iw_set_var_ints_getnone(struct net_device *dev,
                v_U32_t magic = 0;
                struct completion cmpVar;
                long waitRet = 0;
+               tVOS_CON_MODE mode = hdd_get_conparam();
+
+               if (VOS_MONITOR_MODE != mode) {
+                  hddLog(LOGE, FL("invalid mode %d"), mode);
+                  return -EIO;
+               }
 
                pMonCtx =  WLAN_HDD_GET_MONITOR_CTX_PTR(pAdapter);
                if( pMonCtx == NULL )
                {
                   hddLog(LOGE, "Monitor Context NULL");
-                  break;
+                  return -EIO;
                }
                /* Input Validation Part of FW */
                pMonCtx->numOfMacFilters=1;
@@ -7800,8 +7811,7 @@ static int __iw_set_var_ints_getnone(struct net_device *dev,
                         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                                     FL("failed to post MON MODE REQ"));
                         magic = 0;
-                        ret = -EIO;
-                        break;
+                        return -EIO;
                     }
                     waitRet = wait_for_completion_timeout(&cmpVar,
                                                        MON_MODE_MSG_TIMEOUT);
