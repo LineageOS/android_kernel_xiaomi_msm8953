@@ -225,7 +225,7 @@ void wlan_logging_srv_nl_ready_indication(void)
 	static int rate_limit;
 
 	payload_len = sizeof(tAniHdr) + sizeof(wlan_logging_ready) +
-		sizeof(wnl->radio);
+		sizeof(wnl->radio) + sizeof(struct  nlmsghdr);
 	skb = dev_alloc_skb(NLMSG_SPACE(payload_len));
 	if (NULL == skb) {
 		if (!rate_limit) {
@@ -289,7 +289,7 @@ static int wlan_send_sock_msg_to_app(tAniHdr *wmsg, int radio,
 		return -EINVAL;
 	}
 
-	payload_len = wmsg_length + sizeof(wnl->radio);
+	payload_len = wmsg_length + sizeof(wnl->radio) + sizeof(struct nlmsghdr);
 	tot_msg_len = NLMSG_SPACE(payload_len);
 	skb = dev_alloc_skb(tot_msg_len);
 	if (skb == NULL) {
@@ -723,7 +723,8 @@ static int send_fw_log_pkt_to_user(void)
 		/*return vos pkt since skb is already detached */
 		vos_pkt_return_packet(current_pkt);
 
-		extra_header_len = sizeof(msg_header.radio) + sizeof(tAniHdr);
+		extra_header_len = sizeof(msg_header.radio) + sizeof(tAniHdr) +
+                                   sizeof(struct nlmsghdr);
 		nl_payload_len = NLMSG_ALIGN(extra_header_len + skb->len);
 
 		msg_header.nlh.nlmsg_type = ANI_NL_MSG_LOG;
@@ -817,7 +818,8 @@ static int send_data_mgmt_log_pkt_to_user(void)
 		vos_pkt_return_packet(current_pkt);
 
 		extra_header_len = sizeof(msg_header.radio) + sizeof(tAniHdr) +
-						sizeof(msg_header.frameSize);
+						sizeof(msg_header.frameSize) +
+                                                sizeof (struct  nlmsghdr);
 		nl_payload_len = NLMSG_ALIGN(extra_header_len + skb->len);
 
 		msg_header.nlh.nlmsg_type = ANI_NL_MSG_LOG;
@@ -967,7 +969,8 @@ static int send_filled_buffers_to_user(void)
 		spin_unlock_irqrestore(&gwlan_logging.spin_lock, flags);
 		/* 4 extra bytes for the radio idx */
 		payload_len = plog_msg->filled_length +
-			sizeof(wnl->radio) + sizeof(tAniHdr);
+			sizeof(wnl->radio) + sizeof(tAniHdr) +
+                        sizeof(struct nlmsghdr);
 
 		tot_msg_len = NLMSG_SPACE(payload_len);
 		nlh = nlmsg_put(skb, 0, nlmsg_seq++,
@@ -1088,7 +1091,8 @@ static int send_per_pkt_stats_to_user(void)
 		vos_mem_copy(skb_push(plog_msg->skb, sizeof(int)), &diag_type,
 									 sizeof(int));
 
-		extra_header_len = sizeof(msg_header.radio) + sizeof(tAniHdr);
+		extra_header_len = sizeof(msg_header.radio) + sizeof(tAniHdr) +
+                                   sizeof(struct nlmsghdr);
 		nl_payload_len = NLMSG_ALIGN(extra_header_len + plog_msg->skb->len);
 
 		msg_header.nlh.nlmsg_type = ANI_NL_MSG_PUMAC;
