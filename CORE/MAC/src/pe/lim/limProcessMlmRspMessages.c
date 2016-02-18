@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1137,6 +1137,7 @@ limProcessMlmAuthInd(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
         // Log error
         limLog(pMac, LOGP,
            FL("call to AllocateMemory failed for eWNI_SME_AUTH_IND"));
+        return;
     }
     limCopyU16((tANI_U8 *) &pSirSmeAuthInd->messageType, eWNI_SME_AUTH_IND);
     limAuthIndSerDes(pMac, (tpLimMlmAuthInd) pMsgBuf,

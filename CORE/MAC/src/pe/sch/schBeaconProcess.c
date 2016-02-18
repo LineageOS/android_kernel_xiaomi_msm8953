@@ -337,7 +337,7 @@ static void __schBeaconProcessForSession( tpAniSirGlobal      pMac,
     tUpdateBeaconParams beaconParams;
     tANI_U8 sendProbeReq = FALSE;
     tpDphHashNode pStaDs = NULL;
-    tANI_U32   channelBondingMode;
+    tANI_U32   channelBondingMode = 0;
 #ifdef WLAN_FEATURE_11AC
     tpSirMacMgmtHdr    pMh = WDA_GET_RX_MAC_HEADER(pRxPacketInfo);
     tANI_U16  aid;

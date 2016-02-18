@@ -17888,7 +17888,8 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
             {
                 VOS_STATUS status;
                 long ret;
-                tCsrTdlsLinkEstablishParams tdlsLinkEstablishParams;
+                tCsrTdlsLinkEstablishParams tdlsLinkEstablishParams = { {0}, 0,
+                                                0, 0, 0, 0, 0, 0, {0}, 0, {0} };
                 WLAN_STADescType         staDesc;
                 tANI_U16 numCurrTdlsPeers = 0;
                 hddTdlsPeer_t *connPeer = NULL;
