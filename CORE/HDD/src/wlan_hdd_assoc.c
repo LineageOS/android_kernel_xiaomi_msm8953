@@ -1655,9 +1655,6 @@ static eHalStatus hdd_AssociationCompletionHandler( hdd_adapter_t *pAdapter, tCs
         else
             hddLog(VOS_TRACE_LEVEL_ERROR, "%s: Wrong Staid: %d", __func__, pRoamInfo->staId);
 
-#ifdef FEATURE_WLAN_TDLS
-        wlan_hdd_tdls_connection_callback(pAdapter);
-#endif
         //For reassoc, the station is already registered, all we need is to change the state
         //of the STA in TL.
         //If authentication is required (WPA/WPA2/DWEP), change TL to CONNECTED instead of AUTHENTICATED
@@ -1894,6 +1891,9 @@ static eHalStatus hdd_AssociationCompletionHandler( hdd_adapter_t *pAdapter, tCs
         {
             vos_record_roam_event(e_HDD_ENABLE_TX_QUEUE, NULL, 0);
         }
+#ifdef FEATURE_WLAN_TDLS
+        wlan_hdd_tdls_connection_callback(pAdapter);
+#endif
     }
     else
     {
@@ -3425,7 +3425,8 @@ eHalStatus hdd_smeRoamCallback( void *pContext, tCsrRoamInfo *pRoamInfo, tANI_U3
 
                 if((pHddCtx) &&
                    (TRUE == pHddCtx->hdd_wlan_suspended) &&
-                   (eCSR_ROAM_RESULT_NONE == roamResult))
+                   ((eCSR_ROAM_RESULT_NONE == roamResult)||
+                     pRoamInfo->is11rAssoc))
                 {
                     /* Send DTIM period to the FW; only if the wlan is already
                        in suspend. This is the case with roaming (reassoc),
@@ -3452,7 +3453,8 @@ eHalStatus hdd_smeRoamCallback( void *pContext, tCsrRoamInfo *pRoamInfo, tANI_U3
                 if ((pHddCtx) &&
                     (FULL_POWER == pmcGetPmcState(pHddCtx->hHal)) &&
                     (VOS_TRUE == pHddStaCtx->hdd_ReassocScenario) &&
-                    (eCSR_ROAM_RESULT_NONE == roamResult))
+                    ((eCSR_ROAM_RESULT_NONE == roamResult) ||
+                      pRoamInfo->is11rAssoc))
                 {
                     hddLog( LOG1, FL("Device in full power."
                            "Stop and start traffic timer for roaming"));
@@ -3465,7 +3467,8 @@ eHalStatus hdd_smeRoamCallback( void *pContext, tCsrRoamInfo *pRoamInfo, tANI_U3
                 }
 
                 halStatus = hdd_RoamSetKeyCompleteHandler( pAdapter, pRoamInfo, roamId, roamStatus, roamResult );
-                if (eCSR_ROAM_RESULT_NONE == roamResult)
+                if ((eCSR_ROAM_RESULT_NONE == roamResult) ||
+                     pRoamInfo->is11rAssoc)
                     pHddStaCtx->hdd_ReassocScenario = FALSE;
             }
             break;
