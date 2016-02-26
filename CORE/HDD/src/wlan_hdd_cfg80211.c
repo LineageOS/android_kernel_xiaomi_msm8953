@@ -4822,7 +4822,7 @@ static int __wlan_hdd_cfg80211_extscan_stop(struct wiphy *wiphy,
     context = &pHddCtx->ext_scan_context;
     spin_lock(&hdd_context_lock);
     INIT_COMPLETION(context->response_event);
-    context->request_id = request_id = reqMsg.sessionId;
+    context->request_id = request_id = reqMsg.requestId;
     spin_unlock(&hdd_context_lock);
 
     status = sme_EXTScanStop(pHddCtx->hHal, &reqMsg);
