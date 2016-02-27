@@ -2113,7 +2113,7 @@ VOS_STATUS vos_mq_post_message( VOS_MQ_ID msgQueueId, vos_msg_t *pMsg )
 
   vos_mq_put(pTargetMq, pMsgWrapper);
 
-  set_bit(MC_POST_EVENT_MASK, &gpVosContext->vosSched.mcEventFlag);
+  set_bit(MC_POST_EVENT, &gpVosContext->vosSched.mcEventFlag);
   wake_up_interruptible(&gpVosContext->vosSched.mcWaitQueue);
 
   return VOS_STATUS_SUCCESS;
@@ -2257,7 +2257,7 @@ VOS_STATUS vos_mq_post_message_high_pri(VOS_MQ_ID msgQueueId, vos_msg_t *pMsg)
 
   vos_mq_put_front(pTargetMq, pMsgWrapper);
 
-  set_bit(MC_POST_EVENT_MASK, &gpVosContext->vosSched.mcEventFlag);
+  set_bit(MC_POST_EVENT, &gpVosContext->vosSched.mcEventFlag);
   wake_up_interruptible(&gpVosContext->vosSched.mcWaitQueue);
 
   return VOS_STATUS_SUCCESS;
@@ -2384,7 +2384,7 @@ VOS_STATUS vos_tx_mq_serialize( VOS_MQ_ID msgQueueId, vos_msg_t *pMsg )
 
   vos_mq_put(pTargetMq, pMsgWrapper);
 
-  set_bit(TX_POST_EVENT_MASK, &gpVosContext->vosSched.txEventFlag);
+  set_bit(TX_POST_EVENT, &gpVosContext->vosSched.txEventFlag);
   wake_up_interruptible(&gpVosContext->vosSched.txWaitQueue);
 
   return VOS_STATUS_SUCCESS;
@@ -2507,7 +2507,7 @@ VOS_STATUS vos_rx_mq_serialize( VOS_MQ_ID msgQueueId, vos_msg_t *pMsg )
 
   vos_mq_put(pTargetMq, pMsgWrapper);
 
-  set_bit(RX_POST_EVENT_MASK, &gpVosContext->vosSched.rxEventFlag);
+  set_bit(RX_POST_EVENT, &gpVosContext->vosSched.rxEventFlag);
   wake_up_interruptible(&gpVosContext->vosSched.rxWaitQueue);
 
   return VOS_STATUS_SUCCESS;
