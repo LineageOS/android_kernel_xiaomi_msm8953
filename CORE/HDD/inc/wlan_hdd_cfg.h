@@ -2655,6 +2655,13 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_SAR_BOFFSET_SET_CORRECTION_MAX       (1)
 #define CFG_SAR_BOFFSET_SET_CORRECTION_DEFAULT   (0)
 
+/* If gSendMgmtPktViaWQ5 is enabled, mgmt packet will go via WQ5 */
+#define CFG_SEND_MGMT_PKT_VIA_WQ5_NAME    "gSendMgmtPktViaWQ5"
+#define CFG_SEND_MGMT_PKT_VIA_WQ5_MIN      ( 0 )
+#define CFG_SEND_MGMT_PKT_VIA_WQ5_MAX      ( 1)
+#define CFG_SEND_MGMT_PKT_VIA_WQ5_DEF      ( 0 )
+
+
 /*--------------------------------------------------------------------------- 
   Type declarations
   -------------------------------------------------------------------------*/ 
@@ -3185,6 +3192,7 @@ typedef struct
    v_U8_t                      max_chan_for_dwell_time_cfg;
    v_U16_t                     tdls_enable_defer_time;
    v_U8_t                      boffset_correction_enable;
+   v_BOOL_t                    sendMgmtPktViaWQ5;
 } hdd_config_t;
 
 /*--------------------------------------------------------------------------- 

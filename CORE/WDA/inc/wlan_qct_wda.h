@@ -2134,4 +2134,7 @@ void WDA_SetEnableSSR(v_BOOL_t enableSSR);
 
 
 void WDA_FWLoggingDXEdoneInd(v_U32_t logType);
+
+void WDA_SetMgmtPktViaWQ5(v_BOOL_t sendMgmtPktViaWQ5);
+
 #endif

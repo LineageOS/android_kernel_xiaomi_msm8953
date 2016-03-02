@@ -3517,6 +3517,14 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                CFG_SAR_BOFFSET_SET_CORRECTION_DEFAULT,
                CFG_SAR_BOFFSET_SET_CORRECTION_MIN,
                CFG_SAR_BOFFSET_SET_CORRECTION_MAX),
+
+  REG_VARIABLE( CFG_SEND_MGMT_PKT_VIA_WQ5_NAME , WLAN_PARAM_Integer,
+               hdd_config_t, sendMgmtPktViaWQ5,
+               VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+               CFG_SEND_MGMT_PKT_VIA_WQ5_DEF,
+               CFG_SEND_MGMT_PKT_VIA_WQ5_MIN,
+               CFG_SEND_MGMT_PKT_VIA_WQ5_MAX ),
+
 };
 
 /*
@@ -3966,6 +3974,9 @@ static void print_hdd_cfg(hdd_context_t *pHddCtx)
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
            "Name = [gTDLSEnableDeferTime] Value = [%u] ",
            pHddCtx->cfg_ini->tdls_enable_defer_time);
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+          "Name = [gSendMgmtPktViaWQ5] Value = [%u] ",
+          pHddCtx->cfg_ini->sendMgmtPktViaWQ5);
 }
 
 
@@ -5822,6 +5833,8 @@ VOS_STATUS hdd_set_sme_config( hdd_context_t *pHddCtx )
    smeConfig->csrConfig.roamDelayStatsEnabled = pHddCtx->cfg_ini->gEnableRoamDelayStats;
    smeConfig->csrConfig.max_chan_for_dwell_time_cfg =
                         pHddCtx->cfg_ini->max_chan_for_dwell_time_cfg;
+   sme_set_mgmt_frm_via_wq5((tHalHandle)(pHddCtx->hHal),
+           pHddCtx->cfg_ini->sendMgmtPktViaWQ5);
 
    vos_set_multicast_logging(pHddCtx->cfg_ini->multicast_host_msgs);
    halStatus = sme_UpdateConfig( pHddCtx->hHal, smeConfig);

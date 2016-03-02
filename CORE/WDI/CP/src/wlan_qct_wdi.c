@@ -30240,6 +30240,18 @@ void WDI_SetEnableSSR(wpt_boolean  enableSSR)
    gWDICb.bEnableSSR = enableSSR;
 }
 
+/**
+ * WDI_SetMgmtPktViaWQ5() - Set INI params sendMgmtPktViaWQ5 to Control
+ *                           Block Type.
+ * @sendMgmtPktViaWQ5: INI params to enable/disable sending mgmt pkt via WQ5.
+ *
+ * Return: void
+ */
+void WDI_SetMgmtPktViaWQ5(wpt_boolean sendMgmtPktViaWQ5)
+{
+   gWDICb.sendMgmtPktViaWQ5 = sendMgmtPktViaWQ5;
+}
+
 
 #ifdef FEATURE_WLAN_LPHB
 /**

@@ -18913,6 +18913,17 @@ void WDA_SetEnableSSR(v_BOOL_t enableSSR)
    WDI_SetEnableSSR(enableSSR);
 }
 
+/**
+ * WDA_SetMgmtPktViaWQ5() - Set INI params sendMgmtPktViaWQ5 to WDI.
+ * @sendMgmtPktViaWQ5: INI params to enable/disable sending mgmt pkt via WQ5.
+ *
+ * Return: void
+ */
+void WDA_SetMgmtPktViaWQ5(v_BOOL_t sendMgmtPktViaWQ5)
+{
+   WDI_SetMgmtPktViaWQ5(sendMgmtPktViaWQ5);
+}
+
 #ifdef FEATURE_WLAN_LPHB
 /*
  * FUNCTION: WDA_LPHBconfRspCallback
