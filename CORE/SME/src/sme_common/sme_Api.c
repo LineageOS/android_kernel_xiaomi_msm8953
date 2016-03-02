@@ -6909,6 +6909,7 @@ eHalStatus sme_OpenSession(tHalHandle hHal, csrRoamCompleteCallback callback,
 
   --------------------------------------------------------------------------*/
 eHalStatus sme_CloseSession(tHalHandle hHal, tANI_U8 sessionId,
+                            tANI_BOOLEAN fSync,
                             tANI_U8 bPurgeSmeCmdList,
                             csrRoamSessionCloseCallback callback,
                             void *pContext)
@@ -6918,11 +6919,11 @@ eHalStatus sme_CloseSession(tHalHandle hHal, tANI_U8 sessionId,
 
    MTRACE(vos_trace(VOS_MODULE_ID_SME,
                  TRACE_CODE_SME_RX_HDD_CLOSE_SESSION, sessionId, 0));
-   status = sme_AcquireGlobalLock( &pMac->sme );
-   if ( HAL_STATUS_SUCCESS( status ) )
+   status = sme_AcquireGlobalLock(&pMac->sme);
+   if (HAL_STATUS_SUCCESS(status))
    {
-      status = csrRoamCloseSession( pMac, sessionId, FALSE, bPurgeSmeCmdList,
-                                    callback, pContext );
+      status = csrRoamCloseSession(pMac, sessionId, fSync, bPurgeSmeCmdList,
+                                    callback, pContext);
 
       sme_ReleaseGlobalLock( &pMac->sme );
    }
