@@ -549,12 +549,12 @@ limProcessMlmAuthCnf(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
     }
 #ifdef FEATURE_WLAN_DIAG_SUPPORT
     limDiagEventReport(pMac, WLAN_PE_DIAG_AUTH_COMP_EVENT, psessionEntry,
-                       ((tLimMlmAuthCnf *) pMsgBuf)->resultCode,
-                       ((tLimMlmAuthCnf *) pMsgBuf)->protStatusCode);
+                       pMlmAuthCnf->resultCode,
+                       pMlmAuthCnf->protStatusCode);
 #endif
 
     /// Process AUTH confirm from MLM
-    if (((tLimMlmAuthCnf *) pMsgBuf)->resultCode != eSIR_SME_SUCCESS)
+    if (pMlmAuthCnf->resultCode != eSIR_SME_SUCCESS)
     {
         if (psessionEntry->limSmeState == eLIM_SME_WT_AUTH_STATE)
                 {
@@ -573,8 +573,10 @@ limProcessMlmAuthCnf(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
             cfgAuthType = pMac->lim.gLimPreAuthType;
         
         if ((cfgAuthType == eSIR_AUTO_SWITCH) &&
-                (((tLimMlmAuthCnf *) pMsgBuf)->authType == eSIR_SHARED_KEY)
-                && (eSIR_MAC_AUTH_ALGO_NOT_SUPPORTED_STATUS == ((tLimMlmAuthCnf *) pMsgBuf)->protStatusCode))
+             (pMlmAuthCnf->authType == eSIR_SHARED_KEY)
+             && ((eSIR_MAC_AUTH_ALGO_NOT_SUPPORTED_STATUS ==
+             pMlmAuthCnf->protStatusCode) ||
+             (pMlmAuthCnf->resultCode == eSIR_SME_AUTH_TIMEOUT_RESULT_CODE)))
         {
             /**
              * When Shared authentication fails with reason code "13" and
@@ -634,8 +636,8 @@ limProcessMlmAuthCnf(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
                  * Need to send Join response with
                  * auth failure to Host.
                  */
-                limHandleSmeJoinResult(pMac,
-                              ((tLimMlmAuthCnf *) pMsgBuf)->resultCode, ((tLimMlmAuthCnf *) pMsgBuf)->protStatusCode,psessionEntry);
+                limHandleSmeJoinResult(pMac, pMlmAuthCnf->resultCode,
+                              pMlmAuthCnf->protStatusCode, psessionEntry);
             }
             else
             {
@@ -646,11 +648,11 @@ limProcessMlmAuthCnf(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
                 psessionEntry->limSmeState = psessionEntry->limPrevSmeState;
                 MTRACE(macTrace(pMac, TRACE_CODE_SME_STATE, psessionEntry->peSessionId, psessionEntry->limSmeState));
                 limSendSmeAuthRsp(
-                            pMac,
-                            ((tLimMlmAuthCnf *) pMsgBuf)->resultCode,
-                            ((tLimMlmAuthCnf *) pMsgBuf)->peerMacAddr,
-                            ((tLimMlmAuthCnf *) pMsgBuf)->authType,
-                            ((tLimMlmAuthCnf *) pMsgBuf)->protStatusCode,psessionEntry,psessionEntry->smeSessionId,psessionEntry->transactionId);
+                            pMac, pMlmAuthCnf->resultCode,
+                            pMlmAuthCnf->peerMacAddr, pMlmAuthCnf->authType,
+                            pMlmAuthCnf->protStatusCode, psessionEntry,
+                            psessionEntry->smeSessionId,
+                            psessionEntry->transactionId);
             }
         } // end if (cfgAuthType == eAUTO_SWITCH)
     } // if (((tLimMlmAuthCnf *) pMsgBuf)->resultCode != ...
@@ -793,12 +795,11 @@ limProcessMlmAuthCnf(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
              */
             psessionEntry->limSmeState = psessionEntry->limPrevSmeState;
             MTRACE(macTrace(pMac, TRACE_CODE_SME_STATE, psessionEntry->peSessionId, psessionEntry->limSmeState));
-            limSendSmeAuthRsp(
-                        pMac,
-                        ((tLimMlmAuthCnf *) pMsgBuf)->resultCode,
-                        ((tLimMlmAuthCnf *) pMsgBuf)->peerMacAddr,
-                        ((tLimMlmAuthCnf *) pMsgBuf)->authType,
-                        ((tLimMlmAuthCnf *) pMsgBuf)->protStatusCode,psessionEntry,psessionEntry->smeSessionId,psessionEntry->transactionId);
+            limSendSmeAuthRsp(pMac, pMlmAuthCnf->resultCode,
+                            pMlmAuthCnf->peerMacAddr, pMlmAuthCnf->authType,
+                            pMlmAuthCnf->protStatusCode, psessionEntry,
+                            psessionEntry->smeSessionId,
+                            psessionEntry->transactionId);
         }
     } // end if (((tLimMlmAuthCnf *) pMsgBuf)->resultCode != ...
 } /*** end limProcessMlmAuthCnf() ***/
