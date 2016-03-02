@@ -13908,3 +13908,28 @@ eHalStatus sme_setBcnMissPenaltyCount(tHalHandle hHal,
 
     return eHAL_STATUS_FAILURE;
 }
+/**
+ * sme_set_mgmt_frm_via_wq5() - Set INI params sendMgmtPktViaWQ5 to WDA.
+ * @hal: HAL pointer
+ * @sendMgmtPktViaWQ5: INI params to enable/disable sending mgmt pkt via WQ5.
+ *
+ * Return: void
+ */
+void sme_set_mgmt_frm_via_wq5(tHalHandle hHal, tANI_BOOLEAN sendMgmtPktViaWQ5)
+{
+    tpAniSirGlobal pMac = PMAC_STRUCT(hHal);
+    eHalStatus     status = eHAL_STATUS_SUCCESS;
+
+    status = sme_AcquireGlobalLock(&pMac->sme);
+    if (HAL_STATUS_SUCCESS(status))
+    {
+        VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_INFO,
+                "sendMgmtPktViaWQ5 is %d", sendMgmtPktViaWQ5);
+        /* not serializing this messsage, as this is only going
+         * to set a variable in WDA/WDI
+         */
+        WDA_SetMgmtPktViaWQ5(sendMgmtPktViaWQ5);
+        sme_ReleaseGlobalLock(&pMac->sme);
+    }
+    return;
+}
