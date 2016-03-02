@@ -6516,7 +6516,7 @@ error_register_wext:
    {
       INIT_COMPLETION(pAdapter->session_close_comp_var);
       if (eHAL_STATUS_SUCCESS == sme_CloseSession(pHddCtx->hHal,
-                                    pAdapter->sessionId, VOS_TRUE,
+                                    pAdapter->sessionId, FALSE, VOS_TRUE,
                                     hdd_smeCloseSessionCallback, pAdapter))
       {
          unsigned long rc;
@@ -7486,8 +7486,8 @@ VOS_STATUS hdd_stop_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter,
          {
             INIT_COMPLETION(pAdapter->session_close_comp_var);
             if (eHAL_STATUS_SUCCESS ==
-                  sme_CloseSession(pHddCtx->hHal, pAdapter->sessionId, VOS_FALSE,
-                     hdd_smeCloseSessionCallback, pAdapter))
+                    sme_CloseSession(pHddCtx->hHal, pAdapter->sessionId, FALSE,
+                      VOS_FALSE, hdd_smeCloseSessionCallback, pAdapter))
             {
                unsigned long ret;
 
