@@ -1100,7 +1100,7 @@ static int send_per_pkt_stats_to_user(void)
 		msg_header.radio = 0;
 
 		msg_header.wmsg.type = PTT_MSG_DIAG_CMDS_TYPE;
-		msg_header.wmsg.length = plog_msg->skb->len;
+		msg_header.wmsg.length = cpu_to_be16(plog_msg->skb->len);
 
 		if (unlikely(skb_headroom(plog_msg->skb) < sizeof(msg_header))) {
 			pr_err("VPKT [%d]: Insufficient headroom, head[%p],"
