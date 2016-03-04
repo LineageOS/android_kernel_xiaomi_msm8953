@@ -8156,10 +8156,10 @@ WDI_ProcessStopReq
                             WDI_SET_POWER_STATE_TIMEOUT);
      if (eWLAN_PAL_STATUS_SUCCESS != status)
      {
-        WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
+        WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_FATAL,
                   "WDI Init failed to wait on an event");
 
-        WDI_ASSERT(0);
+        VOS_BUG(0);
         goto fail;
       }
   }
