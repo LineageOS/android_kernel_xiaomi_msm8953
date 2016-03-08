@@ -9902,7 +9902,6 @@ int hdd_wlan_startup(struct device *dev )
    pHddCtx->isLoadUnloadInProgress = WLAN_HDD_LOAD_IN_PROGRESS;
 
    vos_set_load_unload_in_progress(VOS_MODULE_ID_VOSS, TRUE);
-   pHddCtx->wifi_turn_on_time_since_boot = vos_get_monotonic_boottime();
 
    /* register for riva power on lock to platform driver
     * Locking power early to ensure FW doesn't reset by kernel while
