@@ -814,7 +814,8 @@ VosWDThread
   daemonize("WD_Thread");
 #endif
   /* Initialize the timer to detect thread stuck issues */
-  if (vos_timer_init(&pWdContext->threadStuckTimer, VOS_TIMER_TYPE_SW,
+  if (vos_timer_init_deferrable(&pWdContext->threadStuckTimer,
+          VOS_TIMER_TYPE_SW,
           vos_wd_detect_thread_stuck_cb, NULL)) {
        hddLog(LOGE, FL("Unable to initialize thread stuck timer"));
   }
