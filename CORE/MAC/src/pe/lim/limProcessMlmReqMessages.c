@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -4576,17 +4576,36 @@ limProcessAssocFailureTimeout(tpAniSirGlobal pMac, tANI_U32 MsgType)
 
 
 
-    /* CR: vos packet memory is leaked when assoc rsp timeouted/failed. */
-    /* notify TL that association is failed so that TL can flush the cached frame  */
+    /*
+     * CR: vos packet memory is leaked when assoc rsp timeouted/failed.
+     * notify TL that association is failed so that TL can flush the
+     * cached frame
+     */
     WLANTL_AssocFailed (psessionEntry->staId);
 
-    // Log error
+    /* Log error */
     limLog(pMac, LOG1,
        FL("Re/Association Response not received before timeout "));
 
-    if (( (psessionEntry->limSystemRole == eLIM_AP_ROLE) || (psessionEntry->limSystemRole == eLIM_BT_AMP_AP_ROLE) )||
-        ( (psessionEntry->limMlmState != eLIM_MLM_WT_ASSOC_RSP_STATE) &&
-          (psessionEntry->limMlmState != eLIM_MLM_WT_REASSOC_RSP_STATE)  && 
+    /*
+     * Send Deauth to handle the scenareo where association timeout happened
+     * when device has missed the assoc resp sent by peer.
+     * By sending deauth try to clear the session created on peer device.
+     */
+    limLog(pMac, LOGE,
+           FL("Sessionid: %d try sending Send deauth on channel %d to BSSID: "
+           MAC_ADDRESS_STR ), psessionEntry->peSessionId,
+           psessionEntry->currentOperChannel,
+           MAC_ADDR_ARRAY(psessionEntry->bssId));
+
+    limSendDeauthMgmtFrame(pMac, eSIR_MAC_UNSPEC_FAILURE_REASON,
+                 psessionEntry->bssId,
+                 psessionEntry, FALSE);
+
+    if (((psessionEntry->limSystemRole == eLIM_AP_ROLE) ||
+          (psessionEntry->limSystemRole == eLIM_BT_AMP_AP_ROLE) )||
+        ((psessionEntry->limMlmState != eLIM_MLM_WT_ASSOC_RSP_STATE) &&
+          (psessionEntry->limMlmState != eLIM_MLM_WT_REASSOC_RSP_STATE)  &&
           (psessionEntry->limMlmState != eLIM_MLM_WT_FT_REASSOC_RSP_STATE)))
     {
         /**
