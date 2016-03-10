@@ -2422,7 +2422,7 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_DISABLE_P2P_MAC_ADDR_SPOOFING              "gDisableP2PMacAddrSpoof"
 #define CFG_DISABLE_P2P_MAC_ADDR_SPOOFING_MIN          (0)
 #define CFG_DISABLE_P2P_MAC_ADDR_SPOOFING_MAX          (1)
-#define CFG_DISABLE_P2P_MAC_ADDR_SPOOFING_DEFAULT      (0)
+#define CFG_DISABLE_P2P_MAC_ADDR_SPOOFING_DEFAULT      (1)
 
 #define CFG_ENABLE_FATAL_EVENT_TRIGGER                 "gEnableFatalEvent"
 #define CFG_ENABLE_FATAL_EVENT_TRIGGER_MIN             (0)
