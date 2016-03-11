@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2013, 2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1141,7 +1141,8 @@ sapFsm
                     }
                     else if (eHAL_STATUS_SUCCESS ==
                          sme_CloseSession(hHal,
-                                         sapContext->sessionId, VOS_TRUE, NULL, NULL))
+                                         sapContext->sessionId, FALSE,
+                                         VOS_TRUE, NULL, NULL))
                      {
                          sapContext->isSapSessionOpen = eSAP_FALSE;
                      }
@@ -1221,15 +1222,13 @@ sapFsm
                     else
                     {
                         sapContext->isSapSessionOpen = eSAP_FALSE;
-                        if (!HAL_STATUS_SUCCESS(
-                            sme_CloseSession(hHal,
-                                     sapContext->sessionId, VOS_TRUE,
-                                     sapRoamSessionCloseCallback, sapContext)))
-                        {
-                            vosStatus = sapSignalHDDevent(sapContext, NULL,
-                                              eSAP_STOP_BSS_EVENT,
-                                              (v_PVOID_t) eSAP_STATUS_SUCCESS);
-                        }
+                        sme_CloseSession(hHal,
+                                sapContext->sessionId,  TRUE, VOS_TRUE,
+                                NULL, sapContext);
+
+                        vosStatus = sapSignalHDDevent(sapContext, NULL,
+                                eSAP_STOP_BSS_EVENT,
+                                (v_PVOID_t) eSAP_STATUS_SUCCESS);
                     }
                 }
             }
