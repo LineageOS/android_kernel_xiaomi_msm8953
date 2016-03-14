@@ -1222,12 +1222,16 @@ sme_process_cmd:
                         case eSmeCommandTdlsDelPeer:
                         case eSmeCommandTdlsLinkEstablish:
                         case eSmeCommandTdlsChannelSwitch: // tdlsoffchan
+                            smsLog(pMac, LOG1,
+                                  FL("sending TDLS Command 0x%x to PE"),
+                                  pCommand->command);
+                            csrLLUnlock(&pMac->sme.smeCmdActiveList);
+                            status = csrTdlsProcessCmd(pMac, pCommand);
+                            if(!HAL_STATUS_SUCCESS(status))
                             {
-                                VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_INFO,
-                                        "sending TDLS Command 0x%x to PE", pCommand->command);
-
-                                csrLLUnlock( &pMac->sme.smeCmdActiveList );
-                                status = csrTdlsProcessCmd( pMac, pCommand );
+                                if(csrLLRemoveEntry(&pMac->sme.smeCmdActiveList,
+                                        &pCommand->Link, LL_ACCESS_LOCK))
+                                 csrReleaseCommand(pMac, pCommand);
                             }
                             break ;
 #endif
