@@ -748,7 +748,7 @@ static int send_fw_log_pkt_to_user(void)
 							sizeof(msg_header));
 
 		ret = nl_srv_bcast(skb);
-		if (ret < 0) {
+		if ((ret < 0) && (ret != -ESRCH)) {
 			pr_info("%s: Send Failed %d drop_count = %u\n",
 				__func__, ret, ++gwlan_logging.fw_log_pkt_drop_cnt);
 		} else {
