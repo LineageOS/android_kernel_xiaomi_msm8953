@@ -277,11 +277,18 @@
  *
  * Any invalid non-zero value will set the start rate
  * to 6 mbps (value 1 will also set it to 6 mbps)
+ *
+ * Bit 8 is used to enable PER discount logic in RA
+ * Ex: if PER discount logic needs to be enabled along with
+ * RA start rate as 6mbps:
+ * (Bit 8 for PER discount logic and Bit 0 for 6 mbps)
+ * gEnableDynamicRAstartRate=257
  */
+
 #define CFG_ENABLE_DYNAMIC_RA_START_RATE_NAME    "gEnableDynamicRAstartRate"
-#define CFG_ENABLE_DYNAMIC_RA_START_RATE_MIN     ( 0 )
-#define CFG_ENABLE_DYNAMIC_RA_START_RATE_MAX     ( 300 )
-#define CFG_ENABLE_DYNAMIC_RA_START_RATE_DEFAULT ( 0 )
+#define CFG_ENABLE_DYNAMIC_RA_START_RATE_MIN     (0)
+#define CFG_ENABLE_DYNAMIC_RA_START_RATE_MAX     (65535)
+#define CFG_ENABLE_DYNAMIC_RA_START_RATE_DEFAULT (0)
 
 /* Bit mask value to enable RTS/CTS for different modes
  * for 2.4 GHz, HT20 - 0x0001, for 2.4 GHz, HT40 - 0x0002
