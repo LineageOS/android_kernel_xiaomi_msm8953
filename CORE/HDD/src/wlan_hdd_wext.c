@@ -9752,7 +9752,7 @@ VOS_STATUS iw_set_pno(struct net_device *dev, struct iw_request_info *info,
     {
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                   "PNO ssid length input is not valid %s",ptr);
-        return VOS_STATUS_E_FAILURE;
+        goto error;
     }
 
     if (( 0 == pnoRequest.aNetworks[i].ssId.length ) ||
@@ -9808,7 +9808,7 @@ VOS_STATUS iw_set_pno(struct net_device *dev, struct iw_request_info *info,
     {
       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_WARN,
                 "Incorrect number of channels");
-      return VOS_STATUS_E_FAILURE;
+      goto error;
     }
 
     if ( 0 !=  pnoRequest.aNetworks[i].ucChannelCount)
@@ -9820,7 +9820,7 @@ VOS_STATUS iw_set_pno(struct net_device *dev, struct iw_request_info *info,
                            &nOffset))
             {    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                            "PNO network channel input is not valid %s",ptr);
-                  return VOS_STATUS_E_FAILURE;
+                  goto error;
             }
             /*Advance to next channel number*/
             ptr += nOffset;
