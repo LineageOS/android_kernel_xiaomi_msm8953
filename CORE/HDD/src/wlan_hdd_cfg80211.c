@@ -14680,6 +14680,7 @@ int wlan_hdd_disconnect( hdd_adapter_t *pAdapter, u16 reason )
     {
         hddLog(LOGE,
               "%s: Failed to disconnect, timed out", __func__);
+        VOS_BUG(0);
         result = -ETIMEDOUT;
     }
 disconnected:
