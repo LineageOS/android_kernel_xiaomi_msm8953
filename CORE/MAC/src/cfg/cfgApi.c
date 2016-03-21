@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1055,7 +1055,7 @@ cfgGetCapabilityInfo(tpAniSirGlobal pMac, tANI_U16 *pCap,tpPESession sessionEntr
         return eSIR_FAILURE;
       }
 #if defined WLAN_VOWIFI_DEBUG
-      PELOGE(cfgLog( pMac, LOGE, "RRM = %d",val );)
+      PELOGE(cfgLog( pMac, LOG1, "RRM = %d",val );)
 #endif
       if (val)
         pCapInfo->rrm = 1;

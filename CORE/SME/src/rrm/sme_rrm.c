@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2014, 2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -520,6 +520,8 @@ static eHalStatus sme_RrmSendScanResult( tpAniSirGlobal pMac,
 #endif
    }
 
+   smsLog(pMac, LOG1, FL("RRM Measurement Done %d"), measurementDone);
+
    if (NULL == pResult)
    {
       // no scan results
@@ -596,22 +598,24 @@ static eHalStatus sme_RrmSendScanResult( tpAniSirGlobal pMac,
     * whether to send a report or not.
     */
 
+   if (counter || measurementDone) {
 #if defined(FEATURE_WLAN_ESE_UPLOAD)
-   if (eRRM_MSG_SOURCE_ESE_UPLOAD == pSmeRrmContext->msgSource)
-   {
-       status = sme_EseSendBeaconReqScanResults(pMac,
+       if (eRRM_MSG_SOURCE_ESE_UPLOAD == pSmeRrmContext->msgSource)
+       {
+           status = sme_EseSendBeaconReqScanResults(pMac,
                                                 sessionId,
                                                 chanList[0],
                                                 pScanResultsArr,
                                                 measurementDone,
                                                 counter);
-   }
-   else
+       }
+       else
 #endif /*FEATURE_WLAN_ESE_UPLOAD*/
-       status = sme_RrmSendBeaconReportXmitInd( pMac,
+           status = sme_RrmSendBeaconReportXmitInd( pMac,
                                                 pScanResultsArr,
                                                 measurementDone,
                                                 counter);
+   }
 
    sme_ScanResultPurge(pMac, pResult); 
 
