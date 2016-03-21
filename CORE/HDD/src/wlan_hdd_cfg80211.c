@@ -17497,6 +17497,7 @@ static int __wlan_hdd_cfg80211_tdls_mgmt(struct wiphy *wiphy,
     /* For explicit trigger of DIS_REQ come out of BMPS for
        successfully receiving DIS_RSP from peer. */
     if ((SIR_MAC_TDLS_SETUP_RSP == action_code) ||
+        (SIR_MAC_TDLS_SETUP_CNF== action_code) ||
         (SIR_MAC_TDLS_DIS_RSP == action_code) ||
         (SIR_MAC_TDLS_DIS_REQ == action_code))
     {
@@ -17956,6 +17957,7 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                     return -EINVAL;
                 }
 
+                wlan_hdd_tdls_set_cap(pAdapter, peer, eTDLS_CAP_SUPPORTED);
                 /* before starting tdls connection, set tdls
                  * off channel established status to default value */
                 pTdlsPeer->isOffChannelEstablished = FALSE;
