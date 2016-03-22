@@ -4107,20 +4107,17 @@ int __wlan_hdd_linux_reg_notifier(struct wiphy *wiphy,
 
         cur_reg_domain = temp_reg_domain;
 
-        if(!vos_is_load_unload_in_progress( VOS_MODULE_ID_VOSS, NULL)) {
-            /* now pass the new country information to sme */
-            if (request->alpha2[0] == '0' && request->alpha2[1] == '0')
-            {
-               sme_GenericChangeCountryCode(pHddCtx->hHal, country_code,
-                                           REGDOMAIN_COUNT);
-            }
-            else
-            {
-               sme_GenericChangeCountryCode(pHddCtx->hHal, country_code,
-                                        temp_reg_domain);
-            }
+        /* now pass the new country information to sme */
+        if (request->alpha2[0] == '0' && request->alpha2[1] == '0')
+        {
+           sme_GenericChangeCountryCode(pHddCtx->hHal, country_code,
+                                       REGDOMAIN_COUNT);
         }
-
+        else
+        {
+           sme_GenericChangeCountryCode(pHddCtx->hHal, country_code,
+                                    temp_reg_domain);
+        }
     }
 
     /* Mark channels 36-48 as passive for US CC */
