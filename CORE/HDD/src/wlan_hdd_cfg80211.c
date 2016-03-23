@@ -2723,13 +2723,14 @@ static void wlan_hdd_cfg80211_extscan_cached_results_ind(void *ctx,
                     pSirWifiScanResult = head_ptr + i;
 
                     /*
-                     * Firmware returns timestamp from WiFi turn ON till
-                     * BSSID was cached (in seconds). Add this with
-                     * time gap between system boot up to WiFi turn ON
+                     * Firmware returns timestamp from extscan_start till
+                     * BSSID was cached (in micro seconds). Add this with
+                     * time gap between system boot up to extscan_start
                      * to derive the time since boot when the
                      * BSSID was cached.
                      */
-                    pSirWifiScanResult->ts += pHddCtx->wifi_turn_on_time_since_boot;
+                    pSirWifiScanResult->ts +=
+                                     pHddCtx->extscan_start_time_since_boot;
                     hddLog(VOS_TRACE_LEVEL_INFO, "[index=%u] Timestamp(%llu) "
                             "Ssid (%s)"
                             "Bssid: %pM "
@@ -4711,6 +4712,8 @@ static int __wlan_hdd_cfg80211_extscan_start(struct wiphy *wiphy,
                      FL("sme_EXTScanStart failed(err=%d)"), status);
         goto fail;
     }
+
+    pHddCtx->extscan_start_time_since_boot = vos_get_monotonic_boottime();
 
     /* request was sent -- wait for the response */
     rc = wait_for_completion_timeout(&context->response_event,
