@@ -1599,6 +1599,8 @@ struct hdd_context_s
 
     /* tdls source timer to enable/disable TDLS on p2p listen */
     vos_timer_t tdls_source_timer;
+
+    v_U64_t extscan_start_time_since_boot;
 };
 
 typedef enum  {
