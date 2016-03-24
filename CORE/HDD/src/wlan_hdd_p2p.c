@@ -386,14 +386,14 @@ VOS_STATUS wlan_hdd_cancel_existing_remain_on_channel(hdd_adapter_t *pAdapter)
             status = wait_for_completion_interruptible_timeout(
                                     &pAdapter->cancel_rem_on_chan_var,
                                     msecs_to_jiffies(WAIT_CANCEL_REM_CHAN));
+            hdd_allow_suspend(WIFI_POWER_EVENT_WAKELOCK_ROC);
             if (0 >= status)
             {
-                hddLog( LOGE,
-                       "%s: timeout waiting for cancel remain on channel"
-                         " ready indication %d",
-                          __func__, status);
+                hddLog(LOGE,
+                       FL("Timeout waiting for cancel remain on channel ready indication %d"),
+                       status);
+                return VOS_STATUS_E_FAILURE;
             }
-            hdd_allow_suspend(WIFI_POWER_EVENT_WAKELOCK_ROC);
          }
          else
          {
