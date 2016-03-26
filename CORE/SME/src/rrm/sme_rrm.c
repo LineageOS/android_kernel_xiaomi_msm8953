@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2014, 2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -75,6 +75,9 @@
 #ifdef FEATURE_WLAN_ESE
 #define RRM_ROAM_SCORE_NEIGHBOR_IAPP_LIST                       30
 #endif
+
+v_TIME_t RRM_scan_timer;
+
 /**---------------------------------------------------------------------------
   
   \brief rrmLLPurgeNeighborCache() - 
@@ -517,6 +520,8 @@ static eHalStatus sme_RrmSendScanResult( tpAniSirGlobal pMac,
 #endif
    }
 
+   smsLog(pMac, LOG1, FL("RRM Measurement Done %d"), measurementDone);
+
    if (NULL == pResult)
    {
       // no scan results
@@ -572,32 +577,46 @@ static eHalStatus sme_RrmSendScanResult( tpAniSirGlobal pMac,
    while (pScanResult)
    {
       pNextResult = sme_ScanResultGetNext(pMac, pResult);
-      pScanResultsArr[counter++] = pScanResult;
+      smsLog(pMac, LOG1, "Scan res timer:%lu, rrm scan timer:%lu",
+             pScanResult->timer, RRM_scan_timer);
+      if(pScanResult->timer >= RRM_scan_timer)
+         pScanResultsArr[counter++] = pScanResult;
       pScanResult = pNextResult; //sme_ScanResultGetNext(hHal, pResult);
       if (counter >= SIR_BCN_REPORT_MAX_BSS_DESC)
          break;
       }
 
-   if (counter)
-   {
-          smsLog(pMac, LOG1, " Number of BSS Desc with RRM Scan %d ", counter);
+   smsLog(pMac, LOG1, " Number of BSS Desc with RRM Scan %d ", counter);
+   /*
+    * The beacon report should be sent whether the counter is zero or non-zero.
+    * There might be a few scan results in the cache but not actually are a
+    * result of this scan. During that scenario, the counter will be zero.
+    * The report should be sent and LIM will further cleanup the RRM to
+    * accept the further incoming requests
+    * In case the counter is Zero, the pScanResultsArr will be NULL.
+    * The next level routine does a check for the measurementDone to determine
+    * whether to send a report or not.
+    */
+
+   if (counter || measurementDone) {
 #if defined(FEATURE_WLAN_ESE_UPLOAD)
-         if (eRRM_MSG_SOURCE_ESE_UPLOAD == pSmeRrmContext->msgSource)
-         {
-             status = sme_EseSendBeaconReqScanResults(pMac,
+       if (eRRM_MSG_SOURCE_ESE_UPLOAD == pSmeRrmContext->msgSource)
+       {
+           status = sme_EseSendBeaconReqScanResults(pMac,
                                                 sessionId,
                                                 chanList[0],
                                                 pScanResultsArr,
                                                 measurementDone,
                                                 counter);
-         }
-         else
+       }
+       else
 #endif /*FEATURE_WLAN_ESE_UPLOAD*/
-             status = sme_RrmSendBeaconReportXmitInd( pMac,
+           status = sme_RrmSendBeaconReportXmitInd( pMac,
                                                 pScanResultsArr,
                                                 measurementDone,
                                                 counter);
    }
+
    sme_ScanResultPurge(pMac, pResult); 
 
    return status;
@@ -738,6 +757,8 @@ eHalStatus sme_RrmIssueScanReq( tpAniSirGlobal pMac )
                scanRequest.scanType,
                scanRequest.maxChnTime );
 
+       RRM_scan_timer = vos_timer_get_system_time();
+
 #if defined WLAN_VOWIFI_DEBUG
        smsLog( pMac, LOGE, "For Duration %d ", scanRequest.maxChnTime );
 #endif
@@ -769,6 +790,11 @@ eHalStatus sme_RrmIssueScanReq( tpAniSirGlobal pMac )
    }
    else if (2 == scanType)  /* beacon table */
    {
+       /*In beacon table mode, scan results are taken directly from scan cache
+         without issuing any scan request. So, it is not proper to update
+         RRM_scan_timer with latest time and hence made it to zero to satisfy
+         pScanResult->timer >= RRM_scan_timer */
+       RRM_scan_timer = 0;
        if ((pSmeRrmContext->currentIndex + 1) < pSmeRrmContext->channelList.numOfChannels)
        {
            sme_RrmSendScanResult( pMac, 1, &pSmeRrmContext->channelList.ChannelList[pSmeRrmContext->currentIndex], false );
