@@ -1021,7 +1021,7 @@ typedef enum
 #define CFG_TL_WFQ_VI_WEIGHT_NAME                           "WfqViWeight"
 #define CFG_TL_WFQ_VI_WEIGHT_MIN                            1
 #define CFG_TL_WFQ_VI_WEIGHT_MAX                            0xFF
-#define CFG_TL_WFQ_VI_WEIGHT_DEFAULT                        5
+#define CFG_TL_WFQ_VI_WEIGHT_DEFAULT                        7
 
 #define CFG_TL_WFQ_VO_WEIGHT_NAME                           "WfqVoWeight"
 #define CFG_TL_WFQ_VO_WEIGHT_MIN                            1
