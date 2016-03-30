@@ -14473,7 +14473,8 @@ static int __wlan_hdd_cfg80211_connect( struct wiphy *wiphy,
 {
     int status;
     u16 channel;
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0)) || \
+             defined(CFG80211_BSSID_HINT_BACKPORT)
     const u8 *bssid_hint = req->bssid_hint;
 #else
     const u8 *bssid_hint = NULL;
