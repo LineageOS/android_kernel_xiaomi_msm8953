@@ -212,7 +212,7 @@ int nl_srv_bcast(struct sk_buff *skb)
       dev_kfree_skb(skb);
 
 
-   if (err < 0)
+   if ((err < 0) && (err != -ESRCH))
    {
       VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_WARN,
          "NLINK: netlink_broadcast failed err = %d", err);
@@ -344,7 +344,7 @@ void nl_srv_nl_ready_indication
 
    /*multicast the message to all listening processes*/
    err = netlink_broadcast(nl_srv_sock, skb, 0, 1, GFP_KERNEL);
-   if (err)
+   if (err && (err != -ESRCH))
    {
       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_LOW,
                 "NLINK: Ready Indication Send Fail %s, err %d",
