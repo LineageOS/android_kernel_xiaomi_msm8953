@@ -12718,11 +12718,11 @@ eHalStatus sme_SpoofMacAddrReq(tHalHandle hHal, v_MACADDR_t *macaddr)
            vos_mem_copy(pMacSpoofCmd->u.macAddrSpoofCmd.macAddr,
                                                macaddr->bytes, VOS_MAC_ADDRESS_LEN);
 
-           status = csrQueueSmeCommand(pMac, pMacSpoofCmd, eANI_BOOLEAN_TRUE);
+           status = csrQueueSmeCommand(pMac, pMacSpoofCmd, false);
            if ( !HAL_STATUS_SUCCESS( status ) )
            {
                smsLog( pMac, LOGE, FL("fail to send msg status = %d\n"), status );
-               csrReleaseCommandScan(pMac, pMacSpoofCmd);
+               csrReleaseCommand(pMac, pMacSpoofCmd);
            }
        }
        else

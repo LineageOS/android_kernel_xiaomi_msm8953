@@ -5663,7 +5663,7 @@ static tANI_BOOLEAN csrRoamProcessResults( tpAniSirGlobal pMac, tSmeCmd *pComman
                                                pSirBssDesc, &BroadcastMac,
                                                FALSE, FALSE, eSIR_TX_RX, 0, 0, NULL, 0 ); // NO keys... these key parameters don't matter.
                 }
-                else
+                else if (!pSession->abortConnection)
                 {
                     //Need to wait for supplicant authtication
                     roamInfo.fAuthRequired = eANI_BOOLEAN_TRUE;
