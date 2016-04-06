@@ -3134,11 +3134,6 @@ int __iw_softap_get_channel_list(struct net_device *dev,
 
     hddLog(LOG1,FL(" number of channels %d"), num_channels);
 
-    if (num_channels > IW_MAX_FREQUENCIES)
-    {
-        num_channels = IW_MAX_FREQUENCIES;
-    }
-
     channel_list->num_channels = num_channels;
     EXIT();
 
