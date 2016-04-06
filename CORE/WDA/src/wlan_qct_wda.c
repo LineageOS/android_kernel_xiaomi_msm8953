@@ -14935,7 +14935,54 @@ VOS_STATUS WDA_ProcessFwrMemDumpReq(tWDA_CbContext * pWDA,
 
 }
 
+/**
+ * wda_process_set_allowed_action_frames_ind() - Set allowed action frames to FW
+ *
+ * @pWDA: WDA Call back context
+ * @allowed_action_frames: Pointer to struct sir_allowed_action_frames
+ *                          that holds allowed action frames bitmask
+ *
+ * This function sets the allowed action frames that the FW needs to
+ * handover to host.The Action frames other than the requested ones
+ * can be dropped in FW
+ *
+ * Return: VOS_STATUS enumeration
+ */
+VOS_STATUS wda_process_set_allowed_action_frames_ind(tWDA_CbContext *pWDA,
+                      struct sir_allowed_action_frames *allowed_action_frames)
+{
+    WDI_Status status;
+    struct WDI_AllowedActionFramesInd *wdi_allowed_action_frames;
+    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                                 FL("---> %s"), __func__);
 
+    wdi_allowed_action_frames = (struct WDI_AllowedActionFramesInd*)
+                                                  vos_mem_malloc(sizeof
+                                                  (*wdi_allowed_action_frames));
+    if (!wdi_allowed_action_frames) {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                  "%s: VOS MEM Alloc Failure", __func__);
+        vos_mem_free(allowed_action_frames);
+        return VOS_STATUS_E_NOMEM;
+    }
+
+    wdi_allowed_action_frames->bitmask = allowed_action_frames->bitmask;
+    wdi_allowed_action_frames->reserved = allowed_action_frames->reserved;
+
+    status = WDI_SetAllowedActionFramesInd(wdi_allowed_action_frames);
+    if (WDI_STATUS_PENDING == status) {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                              FL("pending status received"));
+    } else if (WDI_STATUS_SUCCESS_SYNC != status &&
+                                        (WDI_STATUS_SUCCESS != status)) {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                         FL("Failure in allowed_action_frames API %d"), status);
+    }
+
+    vos_mem_free(wdi_allowed_action_frames);
+    vos_mem_free(allowed_action_frames);
+    return CONVERT_WDI2VOS_STATUS(status) ;
+}
 
 /*
  * FUNCTION: WDA_McProcessMsg
@@ -15883,6 +15930,12 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
                              (tModifyRoamParamsReqParams *)pMsg->bodyptr);
          break;
       }
+
+     case WDA_SET_ALLOWED_ACTION_FRAMES_IND:
+          wda_process_set_allowed_action_frames_ind(pWDA,
+                            (struct sir_allowed_action_frames*)pMsg->bodyptr);
+          break;
+
       default:
       {
          VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,

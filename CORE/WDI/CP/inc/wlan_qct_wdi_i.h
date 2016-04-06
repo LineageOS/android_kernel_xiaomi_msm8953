@@ -551,7 +551,10 @@ typedef enum
     such that we keep them separate */
   WDI_ANTENNA_DIVERSITY_SELECTION_REQ = WDI_MAX_REQ + 21,
   WDI_MODIFY_ROAM_PARAMS_IND = WDI_MAX_REQ + 22,
-  WDI_MAX_UMAC_IND = WDI_MAX_REQ + 23,
+  WDI_SET_ALLOWED_ACTION_FRAMES_IND = WDI_MAX_REQ + 23,
+
+  WDI_MAX_UMAC_IND = WDI_MAX_REQ + 24
+
 }WDI_RequestEnumType;
 
 /*--------------------------------------------------------------------------- 
@@ -6623,6 +6626,21 @@ WDI_ProcessGetCurrentAntennaIndexRsp
 */
 WDI_Status
 WDI_ProcessBcnMissPenaltyCount
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+/**
+ *  WDI_ProcessSetAllowedActionFramesInd - Process Set allowed action
+ *                                         frames command
+ *
+ *  @pWDICtx: pointer to the WLAN DAL context
+ *  @pEventData: pointer to the event information structure
+ *
+ */
+WDI_Status
+WDI_ProcessSetAllowedActionFramesInd
 (
   WDI_ControlBlockType*  pWDICtx,
   WDI_EventInfoType*     pEventData

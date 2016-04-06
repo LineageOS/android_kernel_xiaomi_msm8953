@@ -6464,6 +6464,14 @@ typedef struct {
    wpt_uint32   value;
 }WDI_ModifyRoamParamsReqType;
 
+/**
+ * struct WDI_AllowedActionFramesInd - Allowed Action frames details
+ *
+ */
+struct WDI_AllowedActionFramesInd {
+   wpt_uint32 bitmask;
+   wpt_uint32 reserved;
+};
 /*----------------------------------------------------------------------------
  *   WDI callback types
  *--------------------------------------------------------------------------*/
@@ -12179,6 +12187,18 @@ WDI_Status
 WDI_SetBcnMissPenaltyCount
 (
     WDI_ModifyRoamParamsReqType *params
+);
+
+/**
+ * WDI_SetAllowedActionFramesInd - This API is called to send Allowed
+ *                    Action frame details to FW
+ * @allowed_action_frames: Pointer to WDI_AllowedActionFramesInd structure
+ *                     which holds bitmask of allowed action frames
+ *
+ */
+WDI_Status
+WDI_SetAllowedActionFramesInd(
+   struct WDI_AllowedActionFramesInd *allowed_action_frames
 );
 
 void WDI_SetMgmtPktViaWQ5(wpt_boolean sendMgmtPktViaWQ5);

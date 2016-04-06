@@ -3817,6 +3817,15 @@ typedef struct sSirFWLoggingInitParam
     void                   *fwlogInitCbContext;
 }tSirFWLoggingInitParam,*tpSirFWLoggingInitParam;
 
+/**
+ * struct sir_allowed_action_frames - Parameters to set Allowed action frames
+ * @bitmask: Bits to convey the allowed action frames
+ * @reserved: For future use
+ */
+struct sir_allowed_action_frames {
+    uint32_t bitmask;
+    uint32_t reserved;
+};
 
 /*
  * struct rssi_monitor_req - rssi monitoring
