@@ -14985,6 +14985,22 @@ VOS_STATUS wda_process_set_allowed_action_frames_ind(tWDA_CbContext *pWDA,
 }
 
 /*
+ * FUNCTION: WDA_ProcessBcnMissPenaltyCount
+ * Request to WDI.
+ */
+VOS_STATUS WDA_ProcessTLPauseInd(tWDA_CbContext *pWDA, v_U32_t params)
+{
+    v_U8_t staId;
+
+    VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO, FL("---> %s"), __func__);
+
+    staId = (v_U8_t)params;
+
+    /* Pause TL for Sta ID */
+    return WLANTL_SuspendDataTx(pWDA->pVosContext, &staId, NULL);
+}
+
+/*
  * FUNCTION: WDA_McProcessMsg
  * Trigger DAL-AL to start CFG download 
  */ 
@@ -15936,6 +15952,11 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
                             (struct sir_allowed_action_frames*)pMsg->bodyptr);
           break;
 
+      case WDA_PAUSE_TL_IND:
+      {
+         WDA_ProcessTLPauseInd(pWDA, pMsg->bodyval);
+         break;
+      }
       default:
       {
          VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,

@@ -1506,6 +1506,8 @@ limSendSmeDeauthInd(tpAniSirGlobal pMac, tpDphHashNode pStaDs, tpPESession psess
     tSirMsgQ  mmhMsg;
     tSirSmeDeauthInd  *pSirSmeDeauthInd;
 
+    limSendTLPauseInd(pMac, pStaDs->staIndex);
+
     pSirSmeDeauthInd = vos_mem_malloc(sizeof(tSirSmeDeauthInd));
     if ( NULL == pSirSmeDeauthInd )
     {
