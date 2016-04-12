@@ -3355,8 +3355,9 @@ static void csrMoveTempScanResultsToMainList( tpAniSirGlobal pMac, tANI_U8 reaso
                 }
             }
         }
-        csrElectedCountryInfo(pMac);
-        csrLearnCountryInformation( pMac, NULL, NULL, eANI_BOOLEAN_TRUE );
+        if (csrElectedCountryInfo(pMac))
+            csrLearnCountryInformation(pMac, NULL, NULL,
+                    eANI_BOOLEAN_TRUE);
     }
 
 end:
@@ -3856,6 +3857,8 @@ tANI_BOOLEAN csrElectedCountryInfo(tpAniSirGlobal pMac)
 
     if (!pMac->scan.countryCodeCount)
     {
+        VOS_TRACE( VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_WARN,
+                "No AP with 11d Country code is present in scan list");
         return fRet;
     }
     maxVotes = pMac->scan.votes11d[0].votes;
