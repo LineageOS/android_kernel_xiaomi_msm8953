@@ -21412,10 +21412,9 @@ VOS_STATUS WDA_ProcessStartOemDataReqIndNew(tWDA_CbContext *pWDA,
    {
        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
        FL("Failure in OemDataReqIndNew WDI API, free all memory %d"), wstatus);
-       vos_mem_free(wdiOemDataReqNewConfig);
    }
 
-   // Free the memory allocated in sme_OemDataReqNew
+   vos_mem_free(wdiOemDataReqNewConfig);
    vos_mem_free(pOemDataReqNewConfig);
 
    return status;
