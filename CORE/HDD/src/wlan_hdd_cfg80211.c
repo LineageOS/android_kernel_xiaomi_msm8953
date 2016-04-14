@@ -6400,12 +6400,12 @@ __wlan_hdd_cfg80211_monitor_rssi(struct wiphy *wiphy,
         if (control == QCA_WLAN_RSSI_MONITORING_START) {
                 if (!tb[PARAM_MIN_RSSI]) {
                         hddLog(LOGE, FL("attr min rssi failed"));
-                        return -EINVAL;
+                        goto fail;
                 }
 
                 if (!tb[PARAM_MAX_RSSI]) {
                         hddLog(LOGE, FL("attr max rssi failed"));
-                        return -EINVAL;
+                        goto fail;
                 }
 
                 pReq->minRssi = nla_get_s8(tb[PARAM_MIN_RSSI]);
@@ -6415,7 +6415,7 @@ __wlan_hdd_cfg80211_monitor_rssi(struct wiphy *wiphy,
                 if (!(pReq->minRssi < pReq->maxRssi)) {
                         hddLog(LOGW, FL("min_rssi: %d must be less than max_rssi: %d"),
                                         pReq->minRssi, pReq->maxRssi);
-                        return -EINVAL;
+                        goto fail;
                 }
                 hddLog(LOG1, FL("Min_rssi: %d Max_rssi: %d"),
                        pReq->minRssi, pReq->maxRssi);
@@ -6428,16 +6428,19 @@ __wlan_hdd_cfg80211_monitor_rssi(struct wiphy *wiphy,
         }
         else {
                 hddLog(LOGE, FL("Invalid control cmd: %d"), control);
-                return -EINVAL;
+                goto fail;
         }
 
         if (!HAL_STATUS_SUCCESS(status)) {
                 hddLog(LOGE,
                         FL("sme_set_rssi_monitoring failed(err=%d)"), status);
-                return -EINVAL;
+                goto fail;
         }
 
         return 0;
+fail:
+        vos_mem_free(pReq);
+        return -EINVAL;
 }
 
 /*
@@ -6751,7 +6754,7 @@ wlan_hdd_add_tx_ptrn(hdd_adapter_t *adapter, hdd_context_t *hdd_ctx,
     if (request_id == 0)
     {
         hddLog(LOGE, FL("request_id cannot be zero"));
-        return -EINVAL;
+        goto fail;
     }
 
     if (!tb[PARAM_PERIOD])
