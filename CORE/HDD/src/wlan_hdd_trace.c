@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -151,13 +151,15 @@ static void hdd_state_info_dump(void)
     /* get the global voss context */
     vos_ctx_ptr = vos_get_global_context(VOS_MODULE_ID_VOSS, NULL);
 
-    if (NULL != vos_ctx_ptr) {
-        hdd_ctx_ptr = vos_get_context(VOS_MODULE_ID_HDD, vos_ctx_ptr);
-    } else {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: Invalid Global VOSS Context", __func__);
+    if (!vos_ctx_ptr) {
+        hddLog(LOGE, FL("Invalid Global VOSS Context"));
         VOS_ASSERT(0);
         return;
+    }
+    hdd_ctx_ptr = vos_get_context(VOS_MODULE_ID_HDD, vos_ctx_ptr);
+    if (!hdd_ctx_ptr) {
+       hddLog(LOGE, FL("HDD context is Null"));
+       return;
     }
 
     hddLog(LOG1,

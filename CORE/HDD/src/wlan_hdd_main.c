@@ -11081,7 +11081,7 @@ void hdd_init_frame_logging_done(void *fwlogInitCbContext, tAniLoggingInitRsp *p
 void hdd_init_frame_logging(hdd_context_t* pHddCtx)
 {
    eHalStatus halStatus = eHAL_STATUS_FAILURE;
-   tpSirFWLoggingInitParam wlanFWLoggingInitParam;
+   tSirFWLoggingInitParam wlanFWLoggingInitParam = {0};
 
    if (TRUE != sme_IsFeatureSupportedByFW(MGMT_FRAME_LOGGING) &&
        TRUE != sme_IsFeatureSupportedByFW(LOGGING_ENHANCEMENT))
@@ -11089,15 +11089,6 @@ void hdd_init_frame_logging(hdd_context_t* pHddCtx)
        hddLog(VOS_TRACE_LEVEL_INFO, FL("MGMT_FRAME_LOGGING not supp by FW"));
        return;
    }
-
-   wlanFWLoggingInitParam = vos_mem_malloc(sizeof(tSirFWLoggingInitParam));
-   if(NULL == wlanFWLoggingInitParam)
-   {
-       hddLog(VOS_TRACE_LEVEL_FATAL, "%s: vos_mem_alloc failed ", __func__);
-       return;
-   }
-
-   vos_mem_set(wlanFWLoggingInitParam, sizeof(tSirFWLoggingInitParam), 0);
 
    hddLog(VOS_TRACE_LEVEL_INFO, "%s: Configuring %s %s %s %s Logging",__func__,
                pHddCtx->cfg_ini->enableFWLogging?"FW Log,":"",
@@ -11108,47 +11099,48 @@ void hdd_init_frame_logging(hdd_context_t* pHddCtx)
    if (pHddCtx->cfg_ini->enableFWLogging ||
                  pHddCtx->cfg_ini->enableContFWLogging)
    {
-      wlanFWLoggingInitParam->enableFlag |= WLAN_QXDM_LOG_EN;
+      wlanFWLoggingInitParam.enableFlag |= WLAN_QXDM_LOG_EN;
    }
 
    if (pHddCtx->cfg_ini->enableMgmtLogging)
    {
-      wlanFWLoggingInitParam->enableFlag |= WLAN_FRAME_LOG_EN;
+      wlanFWLoggingInitParam.enableFlag |= WLAN_FRAME_LOG_EN;
    }
    if (pHddCtx->cfg_ini->enableBMUHWtracing)
    {
-      wlanFWLoggingInitParam->enableFlag |= WLAN_BMUHW_TRACE_LOG_EN;
+      wlanFWLoggingInitParam.enableFlag |= WLAN_BMUHW_TRACE_LOG_EN;
    }
    if(pHddCtx->cfg_ini->enableFwrMemDump &&
       (TRUE == sme_IsFeatureSupportedByFW(MEMORY_DUMP_SUPPORTED)))
    {
-      wlanFWLoggingInitParam->enableFlag |= WLAN_FW_MEM_DUMP_EN;
+      wlanFWLoggingInitParam.enableFlag |= WLAN_FW_MEM_DUMP_EN;
    }
-   if( wlanFWLoggingInitParam->enableFlag == 0 )
+   if( wlanFWLoggingInitParam.enableFlag == 0 )
    {
       hddLog(VOS_TRACE_LEVEL_ERROR, "%s: Logging not enabled", __func__);
       return;
    }
-   wlanFWLoggingInitParam->frameType = WLAN_FRAME_LOGGING_FRAMETYPE_MGMT;
-   wlanFWLoggingInitParam->frameSize = WLAN_MGMT_LOGGING_FRAMESIZE_128BYTES;
-   wlanFWLoggingInitParam->bufferMode = WLAN_FRAME_LOGGING_BUFFERMODE_CIRCULAR;
-   wlanFWLoggingInitParam->continuousFrameLogging =
+   wlanFWLoggingInitParam.frameType = WLAN_FRAME_LOGGING_FRAMETYPE_MGMT;
+   wlanFWLoggingInitParam.frameSize = WLAN_MGMT_LOGGING_FRAMESIZE_128BYTES;
+   wlanFWLoggingInitParam.bufferMode = WLAN_FRAME_LOGGING_BUFFERMODE_CIRCULAR;
+   wlanFWLoggingInitParam.continuousFrameLogging =
                               pHddCtx->cfg_ini->enableContFWLogging;
 
-   wlanFWLoggingInitParam->enableFlag &= ~WLAN_DPU_TXP_LOG_EN;
+   wlanFWLoggingInitParam.enableFlag &= ~WLAN_DPU_TXP_LOG_EN;
 
-   wlanFWLoggingInitParam->minLogBufferSize =
+   wlanFWLoggingInitParam.minLogBufferSize =
                               pHddCtx->cfg_ini->minLoggingBufferSize;
-   wlanFWLoggingInitParam->maxLogBufferSize =
+   wlanFWLoggingInitParam.maxLogBufferSize =
                               pHddCtx->cfg_ini->maxLoggingBufferSize;
-   wlanFWLoggingInitParam->fwlogInitCallback = hdd_init_frame_logging_done;
-   wlanFWLoggingInitParam->fwlogInitCbContext= pHddCtx;
+   wlanFWLoggingInitParam.fwlogInitCallback = hdd_init_frame_logging_done;
+   wlanFWLoggingInitParam.fwlogInitCbContext= pHddCtx;
 
-   halStatus = sme_InitMgmtFrameLogging(pHddCtx->hHal, wlanFWLoggingInitParam);
+   halStatus = sme_InitMgmtFrameLogging(pHddCtx->hHal, &wlanFWLoggingInitParam);
 
    if (eHAL_STATUS_SUCCESS != halStatus)
    {
-       vos_mem_free(wlanFWLoggingInitParam);
+       hddLog(LOGE, FL("sme_InitMgmtFrameLogging failed, returned %d"),
+            halStatus);
    }
 
    return;
