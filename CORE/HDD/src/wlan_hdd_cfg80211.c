@@ -12634,8 +12634,12 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
     ret = wlan_hdd_cfg80211_update_bss((WLAN_HDD_GET_CTX(pAdapter))->wiphy,
                                         pAdapter);
 
-    if (0 > ret)
+    if (0 > ret) {
         hddLog(VOS_TRACE_LEVEL_INFO, "%s: NO SCAN result", __func__);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
+        goto allow_suspend;
+#endif
+    }
 
 
     /* If any client wait scan result through WEXT
