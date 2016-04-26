@@ -292,6 +292,11 @@ typedef struct _VosMsgWrapper
 } VosMsgWrapper, *pVosMsgWrapper;
 
 
+typedef struct vos_wdthread_timer_work {
+   vos_timer_callback_t callback;
+   v_PVOID_t userData;
+   struct list_head node;
+}vos_wdthread_timer_work_t;
 
 typedef struct _VosContextType
 {                                                  
@@ -356,6 +361,10 @@ typedef struct _VosContextType
    v_U32_t connectivity_log_level;
    v_U32_t packet_stats_log_level;
    v_U8_t      vosWrapperFullReported;
+   vos_wdthread_timer_work_t wdthread_timer_work;
+   struct list_head wdthread_timer_work_list;
+   struct work_struct wdthread_work;
+   spinlock_t wdthread_work_lock;
 } VosContextType, *pVosContextType;
 
 
