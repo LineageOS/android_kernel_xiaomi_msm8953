@@ -1066,6 +1066,33 @@ void csrReleaseCommandRemoveKey(tpAniSirGlobal pMac, tSmeCmd *pCommand)
     csrReinitRemoveKeyCmd(pMac, pCommand);
     csrReleaseCommand( pMac, pCommand );
 }
+
+/**
+ * csr_is_disconnect_full_power_cmd() - Check if command is for
+ * disconnect or for fullpower
+ * @command: command to check
+ *
+ * Return: true if disconnect or full power command else false
+ */
+bool csr_is_disconnect_full_power_cmd(tSmeCmd *command)
+{
+    switch (command->command) {
+    case eSmeCommandRoam:
+        if (CSR_IS_DISCONNECT_COMMAND(command))
+            return true;
+        break;
+    case eSmeCommandWmStatusChange:
+    case eSmeCommandExitImps:
+    case eSmeCommandExitBmps:
+    case eSmeCommandExitUapsd:
+    case eSmeCommandExitWowl:
+        return true;
+    default:
+        return false;
+    }
+    return false;
+}
+
 void csrAbortCommand( tpAniSirGlobal pMac, tSmeCmd *pCommand, tANI_BOOLEAN fStopping )
 {
 
@@ -15036,7 +15063,8 @@ eHalStatus csrProcessDelStaSessionCommand( tpAniSirGlobal pMac, tSmeCmd *pComman
    return csrSendMBDelSelfStaReqMsg( pMac, 
          pCommand->u.delStaSessionCmd.selfMacAddr );
 }
-static void purgeCsrSessionCmdList(tpAniSirGlobal pMac, tANI_U32 sessionId)
+static void purgeCsrSessionCmdList(tpAniSirGlobal pMac, tANI_U32 sessionId,
+   bool flush_all)
 {
     tDblLinkList *pList = &pMac->roam.roamCmdPendingList;
     tListElem *pEntry, *pNext;
@@ -15055,6 +15083,13 @@ static void purgeCsrSessionCmdList(tpAniSirGlobal pMac, tANI_U32 sessionId)
     {
         pNext = csrLLNext(pList, pEntry, LL_ACCESS_NOLOCK);
         pCommand = GET_BASE_ADDR( pEntry, tSmeCmd, Link );
+
+        if (!flush_all &&
+            csr_is_disconnect_full_power_cmd(pCommand)) {
+            smsLog(pMac, LOGW, FL(" Ignore disconnect"));
+            pEntry = pNext;
+            continue;
+        }
         if(pCommand->sessionId == sessionId)
         {
             if(csrLLRemoveEntry(pList, pEntry, LL_ACCESS_NOLOCK))
@@ -15087,28 +15122,25 @@ void csrCleanupSession(tpAniSirGlobal pMac, tANI_U32 sessionId)
 #ifdef FEATURE_WLAN_BTAMP_UT_RF
         vos_timer_destroy(&pSession->hTimerJoinRetry);
 #endif
-        purgeSmeSessionCmdList(pMac, sessionId, &pMac->sme.smeCmdPendingList);
-        if (pMac->fScanOffload)
-        {
-            purgeSmeSessionCmdList(pMac, sessionId,
-                    &pMac->sme.smeScanCmdPendingList);
-        }
-
-        purgeCsrSessionCmdList(pMac, sessionId);
+        csrPurgeSmeCmdList(pMac, sessionId, true);
         csrInitSession(pMac, sessionId);
     }
 }
 
-void csrPurgeSmeCmdList(tpAniSirGlobal pMac, tANI_U32 sessionId)
+void csrPurgeSmeCmdList(tpAniSirGlobal pMac, tANI_U32 sessionId,
+     bool flush_all)
 {
     purgeSmeSessionCmdList(pMac, sessionId,
-            &pMac->sme.smeCmdPendingList);
+            &pMac->sme.smeCmdPendingList,
+            flush_all);
     if (pMac->fScanOffload)
     {
         purgeSmeSessionCmdList(pMac, sessionId,
-                &pMac->sme.smeScanCmdPendingList);
+                &pMac->sme.smeScanCmdPendingList,
+                flush_all);
     }
-    purgeCsrSessionCmdList(pMac, sessionId);
+    purgeCsrSessionCmdList(pMac, sessionId,
+                           flush_all);
 }
 
 eHalStatus csrRoamCloseSession( tpAniSirGlobal pMac, tANI_U32 sessionId,
@@ -15126,8 +15158,7 @@ eHalStatus csrRoamCloseSession( tpAniSirGlobal pMac, tANI_U32 sessionId,
         }
         else
         {
-            if(bPurgeList)
-                csrPurgeSmeCmdList(pMac, sessionId);
+            csrPurgeSmeCmdList(pMac, sessionId, bPurgeList);
            /*  If bPurgeList is FALSE, it means HDD already free all the
             *  cmd and later queue few essential cmd. Now sme should process
             *  the cmd in  pending queue order only.Hence we should
