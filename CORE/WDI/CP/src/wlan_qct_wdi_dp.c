@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2014, 2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -458,7 +458,8 @@ WDI_FillTxBd
         pBd->dpuRF = BMUWQ_BTQM_TX_MGMT; 
     }
 
-    if (ucTxFlag & WDI_USE_FW_IN_TX_PATH)
+    if (ucTxFlag & WDI_USE_FW_IN_TX_PATH ||
+            (pWDICtx->sendMgmtPktViaWQ5 && (ucType == WDI_MAC_MGMT_FRAME)))
     {
         WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
           "iType: %d SubType %d, MAC S: %08x. MAC D: %08x., Tid=%d",
@@ -891,6 +892,13 @@ WDI_FillTxBd
    
             WDI_STATableGetStaType(pWDICtx, ucStaId, &ucSTAType);
             if(!ucUnicastDst)
+#ifdef WLAN_FEATURE_RMC
+              /*Check for RMC enabled bit if set then
+                queue frames in QID 5 else 0*/
+              if ( ucTxFlag & WDI_RMC_REQUESTED_MASK )
+                pBd->queueId = BTQM_QID5;
+              else
+#endif
                 pBd->queueId = BTQM_QID0;
 #ifndef HAL_SELF_STA_PER_BSS
             else if( ucUnicastDst && (ucStaId == pWDICtx->ucSelfStaId))

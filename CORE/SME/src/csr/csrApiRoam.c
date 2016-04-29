@@ -1986,6 +1986,22 @@ eHalStatus csrChangeDefaultConfigParam(tpAniSirGlobal pMac, tCsrConfigParam *pPa
         pMac->roam.configParam.roamDelayStatsEnabled = pParam->roamDelayStatsEnabled;
         pMac->roam.configParam.max_chan_for_dwell_time_cfg =
                                pParam->max_chan_for_dwell_time_cfg;
+
+        pMac->roam.configParam.enable_edca_params = pParam->enable_edca_params;
+        pMac->roam.configParam.edca_vo_cwmin = pParam->edca_vo_cwmin;
+        pMac->roam.configParam.edca_vi_cwmin = pParam->edca_vi_cwmin;
+        pMac->roam.configParam.edca_bk_cwmin = pParam->edca_bk_cwmin;
+        pMac->roam.configParam.edca_be_cwmin = pParam->edca_be_cwmin;
+
+        pMac->roam.configParam.edca_vo_cwmax = pParam->edca_vo_cwmax;
+        pMac->roam.configParam.edca_vi_cwmax = pParam->edca_vi_cwmax;
+        pMac->roam.configParam.edca_bk_cwmax = pParam->edca_bk_cwmax;
+        pMac->roam.configParam.edca_be_cwmax = pParam->edca_be_cwmax;
+
+        pMac->roam.configParam.edca_vo_aifs = pParam->edca_vo_aifs;
+        pMac->roam.configParam.edca_vi_aifs = pParam->edca_vi_aifs;
+        pMac->roam.configParam.edca_bk_aifs = pParam->edca_bk_aifs;
+        pMac->roam.configParam.edca_be_aifs = pParam->edca_be_aifs;
     }
     
     return status;
@@ -2141,6 +2157,22 @@ eHalStatus csrGetConfigParam(tpAniSirGlobal pMac, tCsrConfigParam *pParam)
 #endif
         pParam->max_chan_for_dwell_time_cfg =
                             pMac->roam.configParam.max_chan_for_dwell_time_cfg;
+
+        pParam->enable_edca_params = pMac->roam.configParam.enable_edca_params;
+        pParam->edca_vo_cwmin = pMac->roam.configParam.edca_vo_cwmin;
+        pParam->edca_vi_cwmin = pMac->roam.configParam.edca_vi_cwmin;
+        pParam->edca_bk_cwmin = pMac->roam.configParam.edca_bk_cwmin;
+        pParam->edca_be_cwmin = pMac->roam.configParam.edca_be_cwmin;
+
+        pParam->edca_vo_cwmax = pMac->roam.configParam.edca_vo_cwmax;
+        pParam->edca_vi_cwmax = pMac->roam.configParam.edca_vi_cwmax;
+        pParam->edca_bk_cwmax = pMac->roam.configParam.edca_bk_cwmax;
+        pParam->edca_be_cwmax = pMac->roam.configParam.edca_be_cwmax;
+
+        pParam->edca_vo_aifs = pMac->roam.configParam.edca_vo_aifs;
+        pParam->edca_vi_aifs = pMac->roam.configParam.edca_vi_aifs;
+        pParam->edca_bk_aifs = pMac->roam.configParam.edca_bk_aifs;
+        pParam->edca_be_aifs = pMac->roam.configParam.edca_be_aifs;
 
         status = eHAL_STATUS_SUCCESS;
     }
@@ -5631,7 +5663,7 @@ static tANI_BOOLEAN csrRoamProcessResults( tpAniSirGlobal pMac, tSmeCmd *pComman
                                                pSirBssDesc, &BroadcastMac,
                                                FALSE, FALSE, eSIR_TX_RX, 0, 0, NULL, 0 ); // NO keys... these key parameters don't matter.
                 }
-                else
+                else if (!pSession->abortConnection)
                 {
                     //Need to wait for supplicant authtication
                     roamInfo.fAuthRequired = eANI_BOOLEAN_TRUE;
@@ -10889,7 +10921,7 @@ void csrRoamWaitForKeyTimeOutHandler(void *pv)
     tCsrRoamSession *pSession = CSR_GET_SESSION( pMac, pInfo->sessionId );
     eHalStatus status = eHAL_STATUS_FAILURE;
 
-    smsLog(pMac, LOGW, FL("WaitForKey timer expired in state=%s sub-state=%s"),
+    smsLog(pMac, LOGE, FL("WaitForKey timer expired in state=%s sub-state=%s"),
            macTraceGetNeighbourRoamState(
            pMac->roam.neighborRoamInfo.neighborRoamState),
            macTraceGetcsrRoamSubState(
@@ -10912,7 +10944,7 @@ void csrRoamWaitForKeyTimeOutHandler(void *pv)
                     NULL, eANI_BOOLEAN_FALSE);
         }
 #endif
-        smsLog(pMac, LOGW, " SME pre-auth state timeout. ");
+        smsLog(pMac, LOGE, " SME pre-auth state timeout. ");
 
         //Change the substate so command queue is unblocked.
         if (CSR_ROAM_SESSION_MAX > pInfo->sessionId)
@@ -10927,26 +10959,18 @@ void csrRoamWaitForKeyTimeOutHandler(void *pv)
             {
                 csrRoamLinkUp(pMac, pSession->connectedProfile.bssid);
                 smeProcessPendingQueue(pMac);
-                if( (pSession->connectedProfile.AuthType ==
-                                           eCSR_AUTH_TYPE_SHARED_KEY) &&
-                    ( (pSession->connectedProfile.EncryptionType ==
-                                           eCSR_ENCRYPT_TYPE_WEP40) ||
-                      (pSession->connectedProfile.EncryptionType ==
-                                           eCSR_ENCRYPT_TYPE_WEP104) ))
+                status = sme_AcquireGlobalLock(&pMac->sme);
+                if (HAL_STATUS_SUCCESS(status))
                 {
-                    status = sme_AcquireGlobalLock( &pMac->sme );
-                    if ( HAL_STATUS_SUCCESS( status ) )
-                    {
-                        csrRoamDisconnect( pMac, pInfo->sessionId,
-                                      eCSR_DISCONNECT_REASON_UNSPECIFIED );
-                        sme_ReleaseGlobalLock( &pMac->sme );
-                    }
+                    csrRoamDisconnect(pMac, pInfo->sessionId,
+                            eCSR_DISCONNECT_REASON_UNSPECIFIED);
+                    sme_ReleaseGlobalLock(&pMac->sme);
                 }
             }
             else
             {
-                smsLog(pMac, LOGW, "%s: could not post link up",
-                        __func__);
+                smsLog(pMac, LOGE, FL("Session id %d is disconnected"),
+                        pInfo->sessionId);
             }
         }
         else
@@ -18228,6 +18252,79 @@ eHalStatus csrHandoffRequest(tpAniSirGlobal pMac,
    return status;
 }
 #endif /* WLAN_FEATURE_ROAM_SCAN_OFFLOAD */
+
+#ifdef WLAN_FEATURE_RMC
+eHalStatus csrEnableRMC(tpAniSirGlobal pMac, tANI_U32 sessionId)
+{
+   tSirSetRMCReq *pMsg = NULL;
+   eHalStatus status = eHAL_STATUS_SUCCESS;
+   tCsrRoamSession *pSession = CSR_GET_SESSION(pMac, sessionId);
+
+   if (!pSession)
+   {
+       smsLog(pMac, LOGE, FL("  session %d not found "), sessionId);
+       return eHAL_STATUS_FAILURE;
+   }
+
+   pMsg = vos_mem_malloc(sizeof(tSirSetRMCReq));
+   if (NULL != pMsg)
+   {
+       vos_mem_set((void *)pMsg, sizeof(tSirSetRMCReq), 0);
+       pMsg->msgType = eWNI_SME_ENABLE_RMC_REQ;
+       pMsg->msgLen  = sizeof(tSirSetRMCReq);
+       vos_mem_copy((v_U8_t *)pMsg->mcastTransmitter,
+             &pSession->selfMacAddr, sizeof(tSirMacAddr));
+
+       status = palSendMBMessage(pMac->hHdd, pMsg);
+       if (!HAL_STATUS_SUCCESS(status))
+       {
+           smsLog(pMac, LOGE, FL(" csr enable RMC Post MSG Fail %d "), status);
+           //pMsg is freed by palSendMBMessage
+       }
+   }
+   else
+   {
+       return eHAL_STATUS_FAILURE;
+   }
+   return status;
+}
+
+eHalStatus csrDisableRMC(tpAniSirGlobal pMac, tANI_U32 sessionId)
+{
+   tSirSetRMCReq *pMsg = NULL;
+   eHalStatus status = eHAL_STATUS_SUCCESS;
+   tCsrRoamSession *pSession = CSR_GET_SESSION(pMac, sessionId);
+
+   if (!pSession)
+   {
+       smsLog(pMac, LOGE, FL("  session %d not found "), sessionId);
+       return eHAL_STATUS_FAILURE;
+   }
+
+   pMsg = vos_mem_malloc(sizeof(tSirSetRMCReq));
+   if (NULL != pMsg)
+   {
+       vos_mem_set((void *)pMsg, sizeof(tSirSetRMCReq), 0);
+       pMsg->msgType = eWNI_SME_DISABLE_RMC_REQ;
+       pMsg->msgLen  = sizeof(tSirSetRMCReq);
+       vos_mem_copy((v_U8_t *)pMsg->mcastTransmitter,
+             &pSession->selfMacAddr, sizeof(tSirMacAddr));
+
+       status = palSendMBMessage(pMac->hHdd, pMsg);
+       if (!HAL_STATUS_SUCCESS(status))
+       {
+           smsLog(pMac, LOGE, FL(" csr disable RMC Post MSG Fail %d "), status);
+           //pMsg is freed by palSendMBMessage
+       }
+   }
+   else
+   {
+       return eHAL_STATUS_FAILURE;
+   }
+   return status;
+}
+
+#endif /* WLAN_FEATURE_RMC */
 
 
 #if defined(FEATURE_WLAN_ESE) && defined(FEATURE_WLAN_ESE_UPLOAD)

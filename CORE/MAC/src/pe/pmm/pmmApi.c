@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -275,7 +275,7 @@ failure:
        {
            if(VOS_TRUE != tx_timer_running(&pMac->lim.limTimers.gLimHeartBeatTimer))
            {
-               PELOGE(pmmLog(pMac, LOGE, FL("Unexpected heartbeat timer not running"));)
+               PELOGE(pmmLog(pMac, LOGW, FL("Unexpected heartbeat timer not running"));)
                limReactivateHeartBeatTimer(pMac, psessionEntry);
            }
        }
@@ -2699,6 +2699,7 @@ tSirRetStatus pmmUapsdSendChangePwrSaveMsg (tpAniSirGlobal pMac, tANI_U8 mode)
         {
             limLog(pMac, LOGW, FL("No Need to enter UAPSD since Trigger "
                  "Enabled and Delivery Enabled Mask is zero for all ACs"));
+            vos_mem_free(pUapsdParams);
             retStatus = eSIR_PMM_INVALID_REQ;
             return retStatus;
         }

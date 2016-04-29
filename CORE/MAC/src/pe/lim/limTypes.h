@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2013, 2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -828,6 +828,7 @@ void limProcessSwitchChannelRsp(tpAniSirGlobal pMac,  void * );
 void limSendHalInitScanReq( tpAniSirGlobal, tLimLimHalScanState, tSirLinkTrafficCheck);
 void limSendHalStartScanReq( tpAniSirGlobal, tANI_U8, tLimLimHalScanState);
 void limSendHalEndScanReq( tpAniSirGlobal, tANI_U8, tLimLimHalScanState);
+void limSendTLPauseInd(tpAniSirGlobal pMac, uint16_t staId);
 void limSendHalFinishScanReq( tpAniSirGlobal, tLimLimHalScanState);
 
 void limContinuePostChannelScan(tpAniSirGlobal pMac);
@@ -872,6 +873,15 @@ tSirRetStatus limSendSaQueryRequestFrame( tpAniSirGlobal pMac, tANI_U8 *transId,
 tSirRetStatus limSendSaQueryResponseFrame( tpAniSirGlobal pMac, 
                    tANI_U8 *transId, tSirMacAddr peer,tpPESession psessionEntry);
 #endif
+
+#ifdef WLAN_FEATURE_RMC
+void limProcessRMCMessages(tpAniSirGlobal pMac, eRmcMessageType msgType,
+                             tANI_U32 *pMsgBuf);
+tSirRetStatus limSendRMCActionFrame(tpAniSirGlobal  pMac,
+                 tSirMacAddr peerMacAddr, tSirRMCInfo  *pRMC,
+                 tpPESession psessionEntry);
+#endif /* WLAN_FEATURE_RMC */
+
 // Inline functions
 
 /**

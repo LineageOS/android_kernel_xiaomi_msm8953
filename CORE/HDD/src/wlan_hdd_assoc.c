@@ -1026,12 +1026,9 @@ static eHalStatus hdd_DisConnectHandler( hdd_adapter_t *pAdapter, tCsrRoamInfo *
     spin_lock_bh(&pAdapter->lock_for_active_session);
 
     /* HDD has initiated disconnect, do not send disconnect indication
-     * to kernel. Sending disconnected event to kernel for userspaces
-     * initiated disconnect will be handled by hdd_DisConnectHandler call
-     * to cfg80211_disconnected.
+     * to kernel.
      */
-    if ((eConnectionState_Disconnecting == pHddStaCtx->conn_info.connState) ||
-        (eConnectionState_NotConnected == pHddStaCtx->conn_info.connState))
+    if (eConnectionState_Disconnecting == pHddStaCtx->conn_info.connState)
     {
        VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                    FL(" HDD has initiated a disconnect, no need to send"
@@ -2127,6 +2124,11 @@ static void hdd_RoamIbssIndicationHandler( hdd_adapter_t *pAdapter,
                       __func__, pAdapter->dev->name);
                return;
             }
+#ifdef WLAN_FEATURE_RMC
+            netif_carrier_on(pAdapter->dev);
+            hddLog(VOS_TRACE_LEVEL_INFO, FL("Enabling queues"));
+            netif_tx_start_all_queues(pAdapter->dev);
+#endif
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,15,0))
             chan_no = pRoamInfo->pBssDesc->channelId;
 

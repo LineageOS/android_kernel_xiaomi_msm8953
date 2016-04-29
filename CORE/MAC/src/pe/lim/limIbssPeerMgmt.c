@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -49,6 +49,9 @@
 #include "limSendMessages.h"
 #include "limSession.h"
 #include "limIbssPeerMgmt.h"
+#ifdef WLAN_FEATURE_RMC
+#include "limRMC.h"
+#endif
 
 
 /**
@@ -820,6 +823,10 @@ void
 limIbssDelete(
     tpAniSirGlobal pMac,tpPESession psessionEntry)
 {
+#ifdef WLAN_FEATURE_RMC
+    limRmcIbssDelete(pMac);
+#endif /* WLAN_FEATURE_RMC */
+
     limIbssDeleteAllPeers(pMac,psessionEntry);
 
     ibss_coalesce_free(pMac);
@@ -1177,6 +1184,10 @@ __limIbssSearchAndDeletePeer(tpAniSirGlobal    pMac,
             ucUcastSig = pStaDs->ucUcastSig;
             ucBcastSig = pStaDs->ucBcastSig;
 
+#ifdef WLAN_FEATURE_RMC
+            limRmcTransmitterDelete(pMac, pStaDs->staAddr);
+#endif /* WLAN_FEATURE_RMC */
+
             /* Send DEL STA only if STA id is valid, mean ADD STA was
              * success.
              */
@@ -1277,6 +1288,11 @@ limIbssAddStaRsp(
                            pStaDs->ucUcastSig, pStaDs->ucBcastSig,
                            eWNI_SME_IBSS_NEW_PEER_IND,
                            psessionEntry->smeSessionId);
+
+#ifdef WLAN_FEATURE_RMC
+    limRmcTriggerRulerSelection(pMac, psessionEntry->selfMacAddr);
+#endif
+
     vos_mem_free(pAddStaParams);
 
     return eSIR_SUCCESS;
@@ -1691,6 +1707,10 @@ void limIbssHeartBeatHandle(tpAniSirGlobal pMac,tpPESession psessionEntry)
                     staIndex = pStaDs->staIndex;
                     ucUcastSig = pStaDs->ucUcastSig;
                     ucBcastSig = pStaDs->ucBcastSig;
+
+#ifdef WLAN_FEATURE_RMC
+                    limRmcTransmitterDelete(pMac, pStaDs->staAddr);
+#endif /* WLAN_FEATURE_RMC */
 
                     (void) limDelSta(pMac, pStaDs, false /*asynchronous*/,psessionEntry);
                     limDeleteDphHashEntry(pMac, pStaDs->staAddr, peerIdx,psessionEntry);

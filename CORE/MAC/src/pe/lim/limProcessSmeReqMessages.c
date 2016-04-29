@@ -59,6 +59,10 @@
 #include "limApi.h"
 #include "wmmApsd.h"
 
+#ifdef WLAN_FEATURE_RMC
+#include "limRMC.h"
+#endif
+
 #include "sapApi.h"
 
 #if defined WLAN_FEATURE_VOWIFI
@@ -2434,6 +2438,12 @@ __limProcessSmeReassocReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
         limLog(pMac, LOGP,
                FL("could not retrieve Capabilities value"));
     }
+
+    lim_update_caps_info_for_bss(pMac, &caps,
+                        pReassocReq->bssDescription.capabilityInfo);
+
+    limLog(pMac, LOG1, FL("Capabilities info Reassoc: 0x%X"), caps);
+
     pMlmReassocReq->capabilityInfo = caps;
     
     /* Update PE sessionId*/
@@ -4933,6 +4943,7 @@ void __limProcessReportMessage(tpAniSirGlobal pMac, tpSirMsgQ pMsg)
          tpSirBeaconReportXmitInd pBcnReport=NULL;
          tpPESession psessionEntry=NULL;
          tANI_U8 sessionId;
+         tpEsePEContext pEseContext = NULL;
 
          if(pMsg->bodyptr == NULL)
          {
@@ -4945,7 +4956,10 @@ void __limProcessReportMessage(tpAniSirGlobal pMac, tpSirMsgQ pMsg)
             limLog(pMac, LOGE, "Session Does not exist for given bssId");
             return;
          }
-         if (psessionEntry->isESEconnection)
+
+         pEseContext = &psessionEntry->eseContext;
+
+         if (psessionEntry->isESEconnection && pEseContext->curMeasReq.isValid)
              eseProcessBeaconReportXmit( pMac, pMsg->bodyptr);
          else
 #endif
@@ -5842,6 +5856,16 @@ limProcessSmeReqMessages(tpAniSirGlobal pMac, tpSirMsgQ pMsg)
         case eWNI_SME_SET_TX_POWER_REQ:
             limSendSetTxPowerReq(pMac,  pMsgBuf);
             break ;
+
+#ifdef WLAN_FEATURE_RMC
+        case eWNI_SME_ENABLE_RMC_REQ:
+            limProcessRMCMessages(pMac, eLIM_RMC_ENABLE_REQ, pMsgBuf);
+            break ;
+
+        case eWNI_SME_DISABLE_RMC_REQ:
+            limProcessRMCMessages(pMac, eLIM_RMC_DISABLE_REQ, pMsgBuf);
+            break ;
+#endif /* WLAN_FEATURE_RMC */
 
         case eWNI_SME_MAC_SPOOF_ADDR_IND:
             __limProcessSmeSpoofMacAddrRequest(pMac,  pMsgBuf);

@@ -734,6 +734,7 @@ typedef struct
    u64                             *rxIntDisableReturn;
    wpt_uint8                       rxIntChanlSrc;
    wpt_uint8                       txCmpIntChanlSrc;
+   wpt_uint8                       rx_low_resource_timer;
 } WLANDXE_EnvInformation;
 
 typedef struct

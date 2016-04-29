@@ -73,6 +73,7 @@
 #define MAX_SSR_WAIT_ITERATIONS 200
 /* Timer value for detecting thread stuck issues */
 #define THREAD_STUCK_TIMER_VAL 5000 // 5 seconds
+#define THREAD_STUCK_COUNT 6
 
 #define MC_Thread 0
 #define TX_Thread 1
@@ -663,6 +664,19 @@ static void vos_wd_detect_thread_stuck(void)
   unsigned long flags;
 
   spin_lock_irqsave(&gpVosWatchdogContext->thread_stuck_lock, flags);
+
+  if ((gpVosWatchdogContext->mcThreadStuckCount == THREAD_STUCK_COUNT) ||
+      (gpVosWatchdogContext->txThreadStuckCount == THREAD_STUCK_COUNT) ||
+      (gpVosWatchdogContext->rxThreadStuckCount == THREAD_STUCK_COUNT))
+  {
+       spin_unlock_irqrestore(&gpVosWatchdogContext->thread_stuck_lock, flags);
+       hddLog(LOGE, FL("Thread Stuck count reached threshold!!!"
+              "MC Count %d RX count %d TX count %d"),
+              gpVosWatchdogContext->mcThreadStuckCount,
+              gpVosWatchdogContext->rxThreadStuckCount,
+              gpVosWatchdogContext->txThreadStuckCount);
+       return;
+  }
 
   if (gpVosWatchdogContext->mcThreadStuckCount ||
       gpVosWatchdogContext->txThreadStuckCount ||
@@ -2163,12 +2177,15 @@ void vos_dump_stack(uint8_t thread_id)
    {
       case MC_Thread:
           wcnss_dump_stack(gpVosSchedContext->McThread);
+          break;
       case TX_Thread:
           wcnss_dump_stack(gpVosSchedContext->TxThread);
+          break;
       case RX_Thread:
           wcnss_dump_stack(gpVosSchedContext->RxThread);
+          break;
       default:
           VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
-                             "%s: Invalid thread invoked",__func__);
+                    "%s: Invalid thread %d invoked",__func__, thread_id);
    }
 }

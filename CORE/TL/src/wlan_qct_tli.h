@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -58,6 +58,7 @@ DESCRIPTION
 
 when        who    what, where, why
 --------    ---    ----------------------------------------------------------
+08/19/13    rajekuma Added RMC support in TL
 02/19/10    bad     Fixed 802.11 to 802.3 ft issues with WAPI
 01/14/10    rnair   Fixed the byte order for the WAI packet type.
 01/08/10    lti     Added TL Data Caching
@@ -184,6 +185,10 @@ when        who    what, where, why
 #define WLANTL_FRAME_TYPE_UCAST 0x00
 
 #define WLANTL_FRAME_TYPESUBTYPE_MASK 0x3F
+
+#ifdef WLAN_FEATURE_RMC
+#define WLANTL_RMC_HASH_TABLE_SIZE (32)
+#endif
 
 /*-------------------------------------------------------------------------
   BT-AMP related definition - !!! should probably be moved to BT-AMP header
@@ -491,6 +496,18 @@ typedef struct
   v_U8_t              ucSet;
 }WLANTL_UAPSDInfoType;
 
+#ifdef WLAN_FEATURE_RMC
+struct tTL_RMCList
+{
+  struct tTL_RMCList    *next;
+  v_MACADDR_t           rmcAddr;
+  v_U16_t               mcSeqCtl;
+  v_U32_t               rxMCDupcnt;
+};
+
+typedef struct tTL_RMCList WLANTL_RMC_SESSION;
+#endif
+
 /*---------------------------------------------------------------------------
   per-STA cache info
 ---------------------------------------------------------------------------*/
@@ -684,6 +701,11 @@ typedef struct
   v_U8_t ptkInstalled;
 
   v_U32_t       linkCapacity;
+
+#ifdef WLAN_FEATURE_RMC
+  WLANTL_RMC_SESSION *mcastSession[WLANTL_RMC_HASH_TABLE_SIZE];
+  vos_lock_t mcLock;
+#endif
 
 #ifdef WLAN_FEATURE_LINK_LAYER_STATS
 
@@ -896,6 +918,14 @@ typedef struct
   v_BOOL_t                  isBMPS;
   /* Whether WDA_DS_TX_START_XMIT msg is pending or not */
   v_BOOL_t   isTxTranmitMsgPending;
+
+#ifdef WLAN_FEATURE_RMC
+  WLANTL_RMC_SESSION *rmcSession[WLANTL_RMC_HASH_TABLE_SIZE];
+  vos_lock_t rmcLock;
+  v_U8_t multicastDuplicateDetectionEnabled;
+  v_U8_t rmcDataPathEnabled;
+  v_U32_t mcastDupCnt;
+#endif
   WLANTL_MonRxCBType           pfnMonRx;
   v_BOOL_t              isConversionReq;
 
@@ -1753,5 +1783,100 @@ WLANTL_FwdPktToHDD
   vos_pkt_t*     pvosDataBuff,
   v_U8_t          ucSTAId
 );
+
+#ifdef WLAN_FEATURE_RMC
+VOS_STATUS WLANTL_RmcInit
+(
+     v_PVOID_t   pAdapter
+);
+
+VOS_STATUS WLANTL_RmcDeInit
+(
+    v_PVOID_t   pAdapter
+);
+
+
+tANI_U8 WLANTL_RmcHashRmcSession ( v_MACADDR_t   *pMcastAddr );
+
+
+WLANTL_RMC_SESSION *WLANTL_RmcLookUpRmcSession
+(
+    WLANTL_RMC_SESSION *rmcSession[],
+    v_MACADDR_t     *pMcastAddr
+);
+
+WLANTL_RMC_SESSION *WLANTL_RmcAddRmcSession
+(
+    WLANTL_RMC_SESSION *rmcSession[],
+    v_MACADDR_t   *pMcastAddr
+);
+
+tANI_U8
+WLANTL_RmcDeleteRmcSession
+(
+    WLANTL_RMC_SESSION *rmcSession[],
+    v_MACADDR_t   *pMcastAddr
+);
+
+VOS_STATUS
+WLANTL_ProcessRmcCommand
+(
+    WLANTL_CbType*  pTLCb,
+    v_MACADDR_t    *pMcastAddr,
+    tANI_U32        command
+);
+
+/*=============================================================================
+  FUNCTION    WLANTL_IsDuplicateMcastFrm
+
+  DESCRIPTION
+    This function checks for duplicast multicast frames and drops them.
+
+  DEPENDENCIES
+
+  PARAMETERS
+
+   IN
+
+   pClientSTA  : Pointer to WLANTL_STAClientType
+   aucBDHeader : Pointer to BD header
+
+  RETURN VALUE
+
+    VOS_FALSE:  This frame is not a duplicate
+
+    VOS_TRUE:   This frame is a duplicate
+
+==============================================================================*/
+v_U8_t
+WLANTL_IsDuplicateMcastFrm
+(
+    WLANTL_STAClientType *pClientSTA,
+    vos_pkt_t* vosDataBuff
+);
+
+/*=============================================================================
+  FUNCTION    WLANTL_McastDeleteAllEntries
+
+  DESCRIPTION
+    This function removes all multicast entries used for duplicate detection
+
+  DEPENDENCIES
+
+  PARAMETERS
+
+   IN
+
+   pClientSTA  : Pointer to WLANTL_STAClientType
+
+  RETURN VALUE
+
+    None
+
+==============================================================================*/
+void
+WLANTL_McastDeleteAllEntries(WLANTL_STAClientType * pClientSTA);
+
+#endif /*WLAN_FEATURE_RMC*/
 
 #endif /* #ifndef WLAN_QCT_TLI_H */

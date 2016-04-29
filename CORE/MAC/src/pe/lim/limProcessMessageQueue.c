@@ -75,6 +75,10 @@
 #include "wmmApsd.h"
 #endif
 
+#ifdef WLAN_FEATURE_RMC
+#include "limRMC.h"
+#endif
+
 #include "vos_types.h"
 #include "vos_packet.h"
 #include "vos_memory.h"
@@ -1607,6 +1611,17 @@ limProcessMessages(tpAniSirGlobal pMac, tpSirMsgQ  limMsg)
             limMsg->bodyptr = NULL;
             break;
 
+#ifdef WLAN_FEATURE_RMC
+        case eWNI_SME_ENABLE_RMC_REQ:
+        case eWNI_SME_DISABLE_RMC_REQ:
+            /*
+             * These messages are from HDD
+             * No need to response to hdd
+             */
+            limProcessSmeReqMessages(pMac,limMsg);
+            break;
+#endif /* WLAN_FEATURE_RMC */
+
         case SIR_HAL_P2P_NOA_START_IND:
         {
             tpPESession psessionEntry = &pMac->lim.gpSession[0];
@@ -2292,6 +2307,28 @@ send_chan_switch_resp:
        limMsg->bodyptr = NULL;
        break;
     }
+#ifdef WLAN_FEATURE_RMC
+    case WDA_RMC_BECOME_RULER:
+        limProcessRMCMessages(pMac, eLIM_RMC_BECOME_RULER_RESP,
+                          (void *)limMsg->bodyptr);
+        vos_mem_free((v_VOID_t*)limMsg->bodyptr);
+        limMsg->bodyptr = NULL;
+        break ;
+
+    case WDA_RMC_RULER_SELECT_RESP:
+        limProcessRMCMessages(pMac, eLIM_RMC_RULER_SELECT_RESP,
+                          (void *)limMsg->bodyptr);
+        vos_mem_free((v_VOID_t*)limMsg->bodyptr);
+        limMsg->bodyptr = NULL;
+        break ;
+
+    case WDA_RMC_UPDATE_IND:
+        limProcessRMCMessages(pMac, eLIM_RMC_RULER_PICK_NEW,
+                          (void *)limMsg->bodyptr);
+        vos_mem_free((v_VOID_t*)limMsg->bodyptr);
+        limMsg->bodyptr = NULL;
+        break ;
+#endif /* WLAN_FEATURE_RMC */
 
     case WDA_SPOOF_MAC_ADDR_RSP:
        limProcessMlmSpoofMacAddrRsp(pMac, (tSirRetStatus)limMsg->bodyval);

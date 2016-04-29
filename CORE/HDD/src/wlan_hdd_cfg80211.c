@@ -2723,13 +2723,14 @@ static void wlan_hdd_cfg80211_extscan_cached_results_ind(void *ctx,
                     pSirWifiScanResult = head_ptr + i;
 
                     /*
-                     * Firmware returns timestamp from WiFi turn ON till
-                     * BSSID was cached (in seconds). Add this with
-                     * time gap between system boot up to WiFi turn ON
+                     * Firmware returns timestamp from extscan_start till
+                     * BSSID was cached (in micro seconds). Add this with
+                     * time gap between system boot up to extscan_start
                      * to derive the time since boot when the
                      * BSSID was cached.
                      */
-                    pSirWifiScanResult->ts += pHddCtx->wifi_turn_on_time_since_boot;
+                    pSirWifiScanResult->ts +=
+                                     pHddCtx->extscan_start_time_since_boot;
                     hddLog(VOS_TRACE_LEVEL_INFO, "[index=%u] Timestamp(%llu) "
                             "Ssid (%s)"
                             "Bssid: %pM "
@@ -4712,6 +4713,8 @@ static int __wlan_hdd_cfg80211_extscan_start(struct wiphy *wiphy,
         goto fail;
     }
 
+    pHddCtx->extscan_start_time_since_boot = vos_get_monotonic_boottime();
+
     /* request was sent -- wait for the response */
     rc = wait_for_completion_timeout(&context->response_event,
                 msecs_to_jiffies(WLAN_WAIT_TIME_EXTSCAN));
@@ -4822,7 +4825,7 @@ static int __wlan_hdd_cfg80211_extscan_stop(struct wiphy *wiphy,
     context = &pHddCtx->ext_scan_context;
     spin_lock(&hdd_context_lock);
     INIT_COMPLETION(context->response_event);
-    context->request_id = request_id = reqMsg.sessionId;
+    context->request_id = request_id = reqMsg.requestId;
     spin_unlock(&hdd_context_lock);
 
     status = sme_EXTScanStop(pHddCtx->hHal, &reqMsg);
@@ -6397,12 +6400,12 @@ __wlan_hdd_cfg80211_monitor_rssi(struct wiphy *wiphy,
         if (control == QCA_WLAN_RSSI_MONITORING_START) {
                 if (!tb[PARAM_MIN_RSSI]) {
                         hddLog(LOGE, FL("attr min rssi failed"));
-                        return -EINVAL;
+                        goto fail;
                 }
 
                 if (!tb[PARAM_MAX_RSSI]) {
                         hddLog(LOGE, FL("attr max rssi failed"));
-                        return -EINVAL;
+                        goto fail;
                 }
 
                 pReq->minRssi = nla_get_s8(tb[PARAM_MIN_RSSI]);
@@ -6412,7 +6415,7 @@ __wlan_hdd_cfg80211_monitor_rssi(struct wiphy *wiphy,
                 if (!(pReq->minRssi < pReq->maxRssi)) {
                         hddLog(LOGW, FL("min_rssi: %d must be less than max_rssi: %d"),
                                         pReq->minRssi, pReq->maxRssi);
-                        return -EINVAL;
+                        goto fail;
                 }
                 hddLog(LOG1, FL("Min_rssi: %d Max_rssi: %d"),
                        pReq->minRssi, pReq->maxRssi);
@@ -6425,16 +6428,19 @@ __wlan_hdd_cfg80211_monitor_rssi(struct wiphy *wiphy,
         }
         else {
                 hddLog(LOGE, FL("Invalid control cmd: %d"), control);
-                return -EINVAL;
+                goto fail;
         }
 
         if (!HAL_STATUS_SUCCESS(status)) {
                 hddLog(LOGE,
                         FL("sme_set_rssi_monitoring failed(err=%d)"), status);
-                return -EINVAL;
+                goto fail;
         }
 
         return 0;
+fail:
+        vos_mem_free(pReq);
+        return -EINVAL;
 }
 
 /*
@@ -6748,7 +6754,7 @@ wlan_hdd_add_tx_ptrn(hdd_adapter_t *adapter, hdd_context_t *hdd_ctx,
     if (request_id == 0)
     {
         hddLog(LOGE, FL("request_id cannot be zero"));
-        return -EINVAL;
+        goto fail;
     }
 
     if (!tb[PARAM_PERIOD])
@@ -12628,8 +12634,12 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
     ret = wlan_hdd_cfg80211_update_bss((WLAN_HDD_GET_CTX(pAdapter))->wiphy,
                                         pAdapter);
 
-    if (0 > ret)
+    if (0 > ret) {
         hddLog(VOS_TRACE_LEVEL_INFO, "%s: NO SCAN result", __func__);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
+        goto allow_suspend;
+#endif
+    }
 
 
     /* If any client wait scan result through WEXT
@@ -13257,7 +13267,7 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
            hddLog(VOS_TRACE_LEVEL_ERROR, "%s: TDLS teardown is ongoing %d",
                                           __func__, status);
        hdd_wlan_block_scan_by_tdls();
-       return status;
+       goto free_mem;
     }
 #endif
 
@@ -14681,22 +14691,12 @@ int wlan_hdd_disconnect( hdd_adapter_t *pAdapter, u16 reason )
     {
         hddLog(LOGE,
               "%s: Failed to disconnect, timed out", __func__);
-        VOS_BUG(0);
         result = -ETIMEDOUT;
     }
 disconnected:
      hddLog(LOG1,
               FL("Set HDD connState to eConnectionState_NotConnected"));
     pHddStaCtx->conn_info.connState = eConnectionState_NotConnected;
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
-    /* Sending disconnect event to userspace for kernel version < 3.11
-     * is handled by __cfg80211_disconnect call to __cfg80211_disconnected
-     */
-    hddLog(LOG1, FL("Send disconnected event to userspace"));
-    cfg80211_disconnected(pAdapter->dev, WLAN_REASON_UNSPECIFIED,
-                    NULL, 0, GFP_KERNEL);
-#endif
 
     EXIT();
     return result;
@@ -15132,6 +15132,9 @@ static int __wlan_hdd_cfg80211_leave_ibss( struct wiphy *wiphy,
     tCsrRoamProfile *pRoamProfile;
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
     int status;
+#ifdef WLAN_FEATURE_RMC
+    tANI_U8 addIE[WNI_CFG_PROBE_RSP_BCN_ADDNIE_DATA_LEN] = {0};
+#endif
 
     ENTER();
 
@@ -15163,6 +15166,41 @@ static int __wlan_hdd_cfg80211_leave_ibss( struct wiphy *wiphy,
                 __func__);
         return -EINVAL;
     }
+
+#ifdef WLAN_FEATURE_RMC
+    /* Clearing add IE of beacon */
+    if (ccmCfgSetStr(pHddCtx->hHal,
+        WNI_CFG_PROBE_RSP_BCN_ADDNIE_DATA, &addIE[0],
+        WNI_CFG_PROBE_RSP_BCN_ADDNIE_DATA_LEN,
+        NULL, eANI_BOOLEAN_FALSE) != eHAL_STATUS_SUCCESS)
+    {
+        hddLog (VOS_TRACE_LEVEL_ERROR,
+                "%s: unable to clear PROBE_RSP_BCN_ADDNIE_DATA", __func__);
+        return -EINVAL;
+    }
+    if (ccmCfgSetInt(pHddCtx->hHal,
+        WNI_CFG_PROBE_RSP_BCN_ADDNIE_FLAG, 0, NULL,
+        eANI_BOOLEAN_FALSE) != eHAL_STATUS_SUCCESS)
+    {
+        hddLog (VOS_TRACE_LEVEL_ERROR,
+                "%s: unable to clear WNI_CFG_PROBE_RSP_BCN_ADDNIE_FLAG",
+                __func__);
+        return -EINVAL;
+    }
+
+    // Reset WNI_CFG_PROBE_RSP Flags
+    wlan_hdd_reset_prob_rspies(pAdapter);
+
+    if (ccmCfgSetInt(WLAN_HDD_GET_HAL_CTX(pAdapter),
+                     WNI_CFG_PROBE_RSP_ADDNIE_FLAG, 0,NULL,
+                     eANI_BOOLEAN_FALSE) == eHAL_STATUS_FAILURE)
+    {
+        hddLog (VOS_TRACE_LEVEL_ERROR,
+                "%s: unable to clear WNI_CFG_PROBE_RSP_ADDNIE_FLAG",
+                __func__);
+        return -EINVAL;
+    }
+#endif
 
     /* Issue Disconnect request */
     INIT_COMPLETION(pAdapter->disconnect_comp_var);
@@ -17459,6 +17497,7 @@ static int __wlan_hdd_cfg80211_tdls_mgmt(struct wiphy *wiphy,
     /* For explicit trigger of DIS_REQ come out of BMPS for
        successfully receiving DIS_RSP from peer. */
     if ((SIR_MAC_TDLS_SETUP_RSP == action_code) ||
+        (SIR_MAC_TDLS_SETUP_CNF== action_code) ||
         (SIR_MAC_TDLS_DIS_RSP == action_code) ||
         (SIR_MAC_TDLS_DIS_REQ == action_code))
     {
@@ -17503,17 +17542,6 @@ static int __wlan_hdd_cfg80211_tdls_mgmt(struct wiphy *wiphy,
         pAdapter->mgmtTxCompletionStatus = FALSE;
         ret = -EINVAL;
         goto tx_failed;
-    }
-
-    if ((SIR_MAC_TDLS_DIS_REQ == action_code) ||
-        (SIR_MAC_TDLS_DIS_RSP == action_code))
-    {
-        /* for DIS_REQ/DIS_RSP, supplicant don't consider the return status.
-         * So we no need to wait for tdls_mgmt_comp for sending ack status.
-         */
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-                "%s: tx done for frm %u", __func__, action_code);
-        return 0;
     }
 
     VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
@@ -17929,6 +17957,7 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                     return -EINVAL;
                 }
 
+                wlan_hdd_tdls_set_cap(pAdapter, peer, eTDLS_CAP_SUPPORTED);
                 /* before starting tdls connection, set tdls
                  * off channel established status to default value */
                 pTdlsPeer->isOffChannelEstablished = FALSE;
@@ -18104,13 +18133,16 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
 
                             tdlsInfo = wlan_hdd_get_conn_info(pHddCtx, staId);
 
-                            /* Initialize initiator wait callback */
-                            vos_timer_init(
+                            if (!vos_timer_is_initialized(
+                                 &pTdlsPeer->initiatorWaitTimeoutTimer))
+                            {
+                                /* Initialize initiator wait callback */
+                                vos_timer_init(
                                     &pTdlsPeer->initiatorWaitTimeoutTimer,
                                     VOS_TIMER_TYPE_SW,
                                     wlan_hdd_tdls_initiator_wait_cb,
                                     tdlsInfo);
-
+                            }
                             wlan_hdd_tdls_timer_restart(pAdapter,
                                                         &pTdlsPeer->initiatorWaitTimeoutTimer,
                                                        WAIT_TIME_TDLS_INITIATOR);
@@ -18453,7 +18485,6 @@ int wlan_hdd_cfg80211_send_tdls_discover_req(struct wiphy *wiphy,
     hddLog(VOS_TRACE_LEVEL_INFO,
            "tdls send discover req: "MAC_ADDRESS_STR,
            MAC_ADDR_ARRAY(peer));
-
 #if TDLS_MGMT_VERSION2
     return wlan_hdd_cfg80211_tdls_mgmt(wiphy, dev, peer,
                             WLAN_TDLS_DISCOVERY_REQUEST, 1, 0, 0, NULL, 0);

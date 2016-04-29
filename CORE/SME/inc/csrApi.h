@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -499,6 +499,10 @@ typedef enum
     eCSR_ROAM_UNPROT_MGMT_FRAME_IND,
 #endif
 
+#ifdef WLAN_FEATURE_RMC
+    eCSR_ROAM_IBSS_PEER_INFO_COMPLETE,
+#endif
+
 #ifdef WLAN_FEATURE_AP_HT40_24G
     eCSR_ROAM_2040_COEX_INFO_IND,
 #endif
@@ -601,6 +605,10 @@ typedef enum
     eCSR_ROAM_RESULT_CHANNEL_SWITCH_REQ_RSP,
 #endif
 
+#ifdef WLAN_FEATURE_RMC
+    eCSR_ROAM_RESULT_IBSS_PEER_INFO_SUCCESS,
+    eCSR_ROAM_RESULT_IBSS_PEER_INFO_FAILED,
+#endif
 }eCsrRoamResult;
 
 
@@ -1199,6 +1207,19 @@ typedef struct tagCsrConfigParam
     tANI_BOOLEAN disableP2PMacSpoofing;
     tANI_BOOLEAN enableFatalEvent;
     tANI_U8 max_chan_for_dwell_time_cfg;
+    uint32_t enable_edca_params;
+    uint32_t edca_vo_cwmin;
+    uint32_t edca_vi_cwmin;
+    uint32_t edca_bk_cwmin;
+    uint32_t edca_be_cwmin;
+    uint32_t edca_vo_cwmax;
+    uint32_t edca_vi_cwmax;
+    uint32_t edca_bk_cwmax;
+    uint32_t edca_be_cwmax;
+    uint32_t edca_vo_aifs;
+    uint32_t edca_vi_aifs;
+    uint32_t edca_bk_aifs;
+    uint32_t edca_be_aifs;
 }tCsrConfigParam;
 
 //Tush
