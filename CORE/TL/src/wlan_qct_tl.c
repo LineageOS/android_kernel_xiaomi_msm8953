@@ -6044,15 +6044,23 @@ WLANTL_RxFrames
         }
       }/*if bcast*/
 
-      if ((WLANTL_STA_ID_INVALID(ucSTAId)) || (WLANTL_TID_INVALID(ucTid)))
+      if (WLANTL_STA_ID_INVALID(ucSTAId))
       {
         TLLOGW(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_WARN,
-                   "WLAN TL:STAId %d, Tid %d. Invalid STA ID/TID- dropping pkt",
-                   ucSTAId, ucTid));
+                   "WLAN TL:STAId %d. Invalid STA ID dropping pkt",
+                   ucSTAId));
         /* Drop packet */
         vos_pkt_return_packet(vosTempBuff);
         vosTempBuff = vosDataBuff;
         continue;
+      }
+
+      if (WLANTL_TID_INVALID( ucTid)) {
+         /* There is a possibility AP uses wrong TID. In that case to avoid
+            dropping EAPOL packet in the driver use TID to zero.*/
+         VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO,
+             "WLAN TL:Invalid Tid: %d Frame type: %d", ucTid, ucFrmType);
+         ucTid = 0;
       }
 
 #ifdef WLAN_FEATURE_LINK_LAYER_STATS
