@@ -19316,6 +19316,8 @@ void wlan_hdd_cfg80211_oemdata_callback(void *ctx, const tANI_U16 evType,
 }
 #endif
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,5,0)) || \
+    defined(CFG80211_ABORT_SCAN)
 /**
  * __wlan_hdd_cfg80211_abort_scan() - cfg80211 abort scan api
  * @wiphy: Pointer to wiphy
@@ -19365,6 +19367,7 @@ void wlan_hdd_cfg80211_abort_scan(struct wiphy *wiphy,
 
     return;
 }
+#endif
 
 /* cfg80211_ops */
 static struct cfg80211_ops wlan_hdd_cfg80211_ops =
@@ -19436,6 +19439,9 @@ static struct cfg80211_ops wlan_hdd_cfg80211_ops =
      .testmode_cmd = wlan_hdd_cfg80211_testmode,
 #endif
      .dump_survey = wlan_hdd_cfg80211_dump_survey,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,5,0)) || \
+    defined(CFG80211_ABORT_SCAN)
      .abort_scan = wlan_hdd_cfg80211_abort_scan,
+#endif
 };
 
