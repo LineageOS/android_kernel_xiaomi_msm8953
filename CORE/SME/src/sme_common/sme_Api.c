@@ -11346,9 +11346,16 @@ eHalStatus sme_HandleDFSChanScan(tHalHandle hHal)
     eHalStatus status    = eHAL_STATUS_SUCCESS;
     tCsrChannel ChannelList;
 
-    /* Flag to block driver scan type conversion from active to passive
-       and vice versa  */
-    pMac->fActiveScanOnDFSChannels = 1;
+    /*
+     * Set Flag to block driver scan type conversion from active to passive
+     * and vice versa in case if fEnableDFSChnlScan is
+     * DFS_CHNL_SCAN_ENABLED_ACTIVE
+     */
+    if (DFS_CHNL_SCAN_ENABLED_ACTIVE ==
+            pMac->scan.fEnableDFSChnlScan)
+        pMac->fActiveScanOnDFSChannels = 1;
+    else
+        pMac->fActiveScanOnDFSChannels = 0;
 
     ChannelList.numChannels = sizeof(ChannelList.channelList);
     status = sme_GetCfgValidChannels(hHal, (tANI_U8 *)ChannelList.channelList,
