@@ -1584,6 +1584,7 @@ nl_srv_exit(pHddCtx->ptt_pid);
 #else
 nl_srv_exit();
 #endif /* WLAN_KD_READY_NOTIFIER */
+ptt_sock_deactivate_svc(pHddCtx);
 err_ftm_register_wext_close:
 hdd_UnregisterWext(pAdapter->dev);
 
@@ -1628,6 +1629,12 @@ int wlan_hdd_ftm_close(hdd_context_t *pHddCtx)
                   "%s: Ftm has been started. stopping ftm", __func__);
         wlan_ftm_stop(pHddCtx);
     }
+#ifdef WLAN_KD_READY_NOTIFIER
+    nl_srv_exit(pHddCtx->ptt_pid);
+#else
+    nl_srv_exit();
+#endif /* WLAN_KD_READY_NOTIFIER */
+    ptt_sock_deactivate_svc(pHddCtx);
 
     //TODO----------
     //Deregister the device with the kernel
@@ -1651,13 +1658,6 @@ int wlan_hdd_ftm_close(hdd_context_t *pHddCtx)
 
     //Close VOSS
     wlan_ftm_vos_close(vosContext);
-
-#ifdef WLAN_KD_READY_NOTIFIER
-    nl_srv_exit(pHddCtx->ptt_pid);
-#else
-    nl_srv_exit();
-#endif /* WLAN_KD_READY_NOTIFIER */
-
     hdd_close_all_adapters( pHddCtx );
     vosStatus = vos_event_destroy(&pHddCtx->ftm.ftm_vos_event);
     if (!VOS_IS_STATUS_SUCCESS(vosStatus))
