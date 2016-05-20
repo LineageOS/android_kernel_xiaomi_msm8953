@@ -567,6 +567,12 @@ int __wlan_hdd_ipv6_changed(struct notifier_block *nb,
              (pAdapterNode->pAdapter->device_mode == WLAN_HDD_INFRA_STATION ||
               pAdapterNode->pAdapter->device_mode == WLAN_HDD_P2P_CLIENT))
         {
+
+            if (eConnectionState_Associated ==
+               WLAN_HDD_GET_STATION_CTX_PTR
+               (pAdapterNode->pAdapter)->conn_info.connState)
+                 sme_dhcp_done_ind(pHddCtx->hHal,
+                       pAdapterNode->pAdapter->sessionId);
             if (pHddCtx->cfg_ini->nEnableSuspend ==
                   WLAN_MAP_SUSPEND_TO_MCAST_BCAST_FILTER)
             {
@@ -1060,6 +1066,12 @@ int __wlan_hdd_ipv4_changed(struct notifier_block *nb,
              (pAdapterNode->pAdapter->device_mode == WLAN_HDD_INFRA_STATION ||
               pAdapterNode->pAdapter->device_mode == WLAN_HDD_P2P_CLIENT))
         {
+
+            if (eConnectionState_Associated ==
+               WLAN_HDD_GET_STATION_CTX_PTR
+               (pAdapterNode->pAdapter)->conn_info.connState)
+                 sme_dhcp_done_ind(pHddCtx->hHal,
+                       pAdapterNode->pAdapter->sessionId);
             if ((pHddCtx->cfg_ini->nEnableSuspend !=
                   WLAN_MAP_SUSPEND_TO_MCAST_BCAST_FILTER)
                || (!pHddCtx->cfg_ini->fhostArpOffload))
