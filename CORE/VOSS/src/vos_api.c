@@ -269,6 +269,7 @@ VOS_STATUS vos_open( v_CONTEXT_t *pVosContext, void *devHandle )
    /* Initialize the timer module */
    vos_timer_module_init();
 
+   vos_wdthread_init_timer_work(vos_process_wd_timer);
 
    /* Initialize the probe event */
    if (vos_event_init(&gpVosContext->ProbeEvent) != VOS_STATUS_SUCCESS)
@@ -1208,6 +1209,8 @@ VOS_STATUS vos_close( v_CONTEXT_t vosContext )
       VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
                 "%s: Could not deinit roamDelayStats", __func__);
   }
+
+  vos_wdthread_flush_timer_work();
 
   return VOS_STATUS_SUCCESS;
 }

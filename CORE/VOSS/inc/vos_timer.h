@@ -343,4 +343,7 @@ v_TIME_t vos_timer_get_system_time( v_VOID_t );
 
 v_BOOL_t vos_timer_is_initialized(vos_timer_t *timer);
 
+void vos_process_wd_timer(void);
+void vos_wdthread_init_timer_work(void *callbackptr);
+void vos_wdthread_flush_timer_work(void);
 #endif // #if !defined __VOSS_TIMER_H
