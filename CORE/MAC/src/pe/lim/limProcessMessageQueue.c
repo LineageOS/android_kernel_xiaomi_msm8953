@@ -2113,8 +2113,11 @@ limProcessMessages(tpAniSirGlobal pMac, tpSirMsgQ  limMsg)
         {
 #ifdef WLAN_ACTIVEMODE_OFFLOAD_FEATURE
             tpPESession     psessionEntry;
-            tANI_U8 sessionId = (tANI_U8)limMsg->bodyval ;
-            psessionEntry = &pMac->lim.gpSession[sessionId];
+            tANI_U8 sessionId;
+            tSirSetActiveModeSetBncFilterReq *bcnFilterReq =
+                (tSirSetActiveModeSetBncFilterReq *)limMsg->bodyptr;
+            psessionEntry = peFindSessionByBssid(pMac, bcnFilterReq->bssid,
+                                                 &sessionId);
             if(psessionEntry != NULL && IS_ACTIVEMODE_OFFLOAD_FEATURE_ENABLE)
             {
                // sending beacon filtering information down to HAL
@@ -2170,17 +2173,22 @@ limProcessMessages(tpAniSirGlobal pMac, tpSirMsgQ  limMsg)
     case eWNI_SME_HT40_STOP_OBSS_SCAN_IND:
         {
            tpPESession     psessionEntry = NULL;
-           tANI_U8 sessionId = (tANI_U8)limMsg->bodyval ;
+           tANI_U8 sessionId;
+           tSirSmeHT40OBSSStopScanInd *ht40StopScanInd =
+               (tSirSmeHT40OBSSStopScanInd *)limMsg->bodyptr;
 
-           psessionEntry = &pMac->lim.gpSession[sessionId];
+           psessionEntry = peFindSessionByBssid(pMac,
+                   ht40StopScanInd->bssid, &sessionId);;
            /* Sending LIM STOP OBSS SCAN Indication
                      Stop command support is only for debugging purpose */
-           if ( IS_HT40_OBSS_SCAN_FEATURE_ENABLE )
+           if (psessionEntry && IS_HT40_OBSS_SCAN_FEATURE_ENABLE)
               limSendHT40OBSSStopScanInd(pMac, psessionEntry);
            else
               VOS_TRACE(VOS_MODULE_ID_PE,VOS_TRACE_LEVEL_ERROR,
                    "OBSS Scan Stop not started ");
         }
+        vos_mem_free(limMsg->bodyptr);
+        limMsg->bodyptr = NULL;
         break;
 #ifdef WLAN_FEATURE_AP_HT40_24G
     case eWNI_SME_SET_HT_2040_MODE:
