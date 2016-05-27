@@ -1867,14 +1867,14 @@ static __inline tANI_U32 defHddRateToDefCfgRate( tANI_U32 defRateIndex )
 #define CFG_TDLS_IMPLICIT_TRIGGER_DEFAULT           ( 0 )
 
 #define CFG_TDLS_TX_STATS_PERIOD                    "gTDLSTxStatsPeriod"
-#define CFG_TDLS_TX_STATS_PERIOD_MIN                ( 10 )
+#define CFG_TDLS_TX_STATS_PERIOD_MIN                (1000)
 #define CFG_TDLS_TX_STATS_PERIOD_MAX                ( 4294967295UL )
-#define CFG_TDLS_TX_STATS_PERIOD_DEFAULT            ( 5000 )
+#define CFG_TDLS_TX_STATS_PERIOD_DEFAULT            (2000)
 
 #define CFG_TDLS_TX_PACKET_THRESHOLD                "gTDLSTxPacketThreshold"
 #define CFG_TDLS_TX_PACKET_THRESHOLD_MIN            ( 0 )
 #define CFG_TDLS_TX_PACKET_THRESHOLD_MAX            ( 4294967295UL )
-#define CFG_TDLS_TX_PACKET_THRESHOLD_DEFAULT        ( 100 )
+#define CFG_TDLS_TX_PACKET_THRESHOLD_DEFAULT        (40)
 
 #define CFG_TDLS_DISCOVERY_PERIOD                   "gTDLSDiscoveryPeriod"
 #define CFG_TDLS_DISCOVERY_PERIOD_MIN               ( 5000 )
@@ -1884,7 +1884,7 @@ static __inline tANI_U32 defHddRateToDefCfgRate( tANI_U32 defRateIndex )
 #define CFG_TDLS_MAX_DISCOVERY_ATTEMPT              "gTDLSMaxDiscoveryAttempt"
 #define CFG_TDLS_MAX_DISCOVERY_ATTEMPT_MIN          ( 1 )
 #define CFG_TDLS_MAX_DISCOVERY_ATTEMPT_MAX          ( 100 )
-#define CFG_TDLS_MAX_DISCOVERY_ATTEMPT_DEFAULT      ( 3 )
+#define CFG_TDLS_MAX_DISCOVERY_ATTEMPT_DEFAULT      (5)
 
 #define CFG_TDLS_IDLE_TIMEOUT                       "gTDLSIdleTimeout"
 #define CFG_TDLS_IDLE_TIMEOUT_MIN                   ( 2000 )
