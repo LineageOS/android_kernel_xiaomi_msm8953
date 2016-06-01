@@ -14174,7 +14174,8 @@ VOS_STATUS WDA_TxPacket(tWDA_CbContext *pWDA,
          pCompFunc(VOS_GET_MAC_CTXT(pWDA->pVosContext), (vos_pkt_t *)pFrmBuf);
       } */
 
-      WLANTL_TLDebugMessage(WLANTL_DEBUG_FW_CLEANUP);
+      /* Send Flush command to FW */
+      vos_fwDumpReq(274, 0, 0, 0, 0, 1);
 
       if (vos_isFatalEventEnabled())
          vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
