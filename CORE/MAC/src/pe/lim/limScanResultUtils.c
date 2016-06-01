@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2014, 2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -232,7 +232,7 @@ limCollectBssDescription(tpAniSirGlobal pMac,
     //SINR no longer reported by HW
     pBssDescr->sinr = 0;
 
-    pBssDescr->nReceivedTime = (tANI_TIMESTAMP)palGetTickCount(pMac->hHdd);
+    pBssDescr->nReceivedTime = vos_timer_get_system_time();
 
 #if defined WLAN_FEATURE_VOWIFI
     if( fScanning )

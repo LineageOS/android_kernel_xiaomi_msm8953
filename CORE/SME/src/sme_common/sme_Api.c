@@ -3737,6 +3737,29 @@ void sme_abortConnection(tHalHandle hHal, tANI_U8 sessionId)
    return;
 }
 
+/* sme_dhcp_done_ind() - send dhcp done ind
+ * @hal: hal context
+ * @session_id: session id
+ *
+ * Return: void.
+ */
+void sme_dhcp_done_ind(tHalHandle hal, uint8_t session_id)
+{
+   tpAniSirGlobal mac_ctx = PMAC_STRUCT(hal);
+   tCsrRoamSession *session;
+
+   if (!mac_ctx)
+      return;
+
+   session = CSR_GET_SESSION(mac_ctx, session_id);
+   if(!session)
+   {
+   smsLog(mac_ctx, LOGE, FL(" session %d not found "), session_id);
+   return;
+   }
+   session->dhcp_done = true;
+}
+
 /* ---------------------------------------------------------------------------
     \fn sme_RoamStopBss
     \brief To stop BSS for Soft AP. This is an asynchronous API.

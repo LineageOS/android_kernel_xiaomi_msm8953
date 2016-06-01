@@ -260,6 +260,7 @@ sapGotoChannelSel
 #endif
     tHalHandle hHal;
     tANI_U8   channel;
+    uint32_t operating_band = 0;
 
     hHal = (tHalHandle)vos_get_context( VOS_MODULE_ID_SME, sapContext->pvosGCtx);
     if (NULL == hHal)
@@ -345,8 +346,36 @@ sapGotoChannelSel
             VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH,
                   FL("SoftAP Configuring for default channel, Ch= %d"),
                   sapContext->channel);
-            /* In case of error, switch to default channel */
-            sapContext->channel = SAP_DEFAULT_CHANNEL;
+            /*
+             * In case of error, select channel based on band
+             * configured in .ini
+             */
+            ccmCfgGetInt(hHal, WNI_CFG_SAP_CHANNEL_SELECT_OPERATING_BAND,
+                         &operating_band);
+            if (operating_band == eSAP_RF_SUBBAND_5_LOW_GHZ ||
+                operating_band == eSAP_RF_SUBBAND_5_MID_GHZ ||
+                operating_band == eSAP_RF_SUBBAND_5_HIGH_GHZ)
+            {
+                VOS_TRACE(VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO,
+                          FL("Default channel selection from band %d"),
+                          operating_band);
+
+                (operating_band == eSAP_RF_SUBBAND_5_LOW_GHZ) ?
+                        (sapContext->channel = SAP_DEFAULT_LOW_5GHZ_CHANNEL) :
+                (operating_band == eSAP_RF_SUBBAND_5_MID_GHZ) ?
+                        (sapContext->channel = SAP_DEFAULT_MID_5GHZ_CHANNEL) :
+                (operating_band == eSAP_RF_SUBBAND_5_HIGH_GHZ) ?
+                        (sapContext->channel =
+                                     SAP_DEFAULT_HIGH_5GHZ_CHANNEL) : 0;
+
+                VOS_TRACE(VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO,
+                          FL("channel selected to start bss %d"),
+                          sapContext->channel);
+            }
+            else
+            {
+                sapContext->channel = SAP_DEFAULT_24GHZ_CHANNEL;
+            }
 
 #ifdef SOFTAP_CHANNEL_RANGE
             if(sapContext->channelList != NULL)
