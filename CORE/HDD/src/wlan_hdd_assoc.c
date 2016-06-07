@@ -1092,12 +1092,12 @@ static eHalStatus hdd_DisConnectHandler( hdd_adapter_t *pAdapter, tCsrRoamInfo *
                /* To avoid wpa_supplicant sending "HANGED" CMD to ICS UI */
                if ( eCSR_ROAM_LOSTLINK == roamStatus )
                {
-                    wlan_hdd_cfg80211_indicate_disconnect(dev, true,
-                                                   WLAN_REASON_UNSPECIFIED);
+                    wlan_hdd_cfg80211_indicate_disconnect(dev, false,
+                                                   pRoamInfo->reasonCode);
                }
                else
                {
-                   wlan_hdd_cfg80211_indicate_disconnect(dev, true,
+                   wlan_hdd_cfg80211_indicate_disconnect(dev, false,
                                                    WLAN_REASON_UNSPECIFIED);
                }
             }
