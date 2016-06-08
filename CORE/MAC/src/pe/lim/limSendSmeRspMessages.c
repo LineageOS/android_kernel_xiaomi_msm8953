@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1369,7 +1369,12 @@ limSendSmeDisassocNtf(tpAniSirGlobal pMac,
             vos_mem_copy(pSirSmeDisConDoneInd->peerMacAddr, peerMacAddr,
                          sizeof(tSirMacAddr));
             pSirSmeDisConDoneInd->sessionId   = smesessionId;
-            pSirSmeDisConDoneInd->reasonCode  = reasonCode;
+
+            if (reasonCode == eSIR_SME_LOST_LINK_WITH_PEER_RESULT_CODE)
+                pSirSmeDisConDoneInd->reasonCode = 0;
+            else
+                pSirSmeDisConDoneInd->reasonCode = reasonCode;
+
             pMsg = (tANI_U32 *)pSirSmeDisConDoneInd;
             break;
 
@@ -1808,7 +1813,12 @@ limSendSmeDeauthNtf(tpAniSirGlobal pMac, tSirMacAddr peerMacAddr, tSirResultCode
             vos_mem_copy(pSirSmeDisConDoneInd->peerMacAddr, peerMacAddr,
                     sizeof(tSirMacAddr));
             pSirSmeDisConDoneInd->sessionId   = smesessionId;
-            pSirSmeDisConDoneInd->reasonCode  = reasonCode;
+
+            if (reasonCode == eSIR_SME_LOST_LINK_WITH_PEER_RESULT_CODE)
+                pSirSmeDisConDoneInd->reasonCode = 0;
+            else
+                pSirSmeDisConDoneInd->reasonCode = reasonCode;
+
             pMsg = (tANI_U32 *)pSirSmeDisConDoneInd;
             break;
 
