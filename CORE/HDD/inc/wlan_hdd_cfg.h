@@ -2255,13 +2255,13 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_BTC_FAST_WLAN_CONN_PREF_MAX         ( 5 )
 
 #define CFG_BTC_STATIC_OPP_WLAN_IDLE_WLAN_LEN             "gBtcStaticOppWlanIdleWlanLen"
-#define CFG_BTC_STATIC_OPP_WLAN_IDLE_WLAN_LEN_DEFAULT     ( 40000 )
+#define CFG_BTC_STATIC_OPP_WLAN_IDLE_WLAN_LEN_DEFAULT     ( 30000 )
 #define CFG_BTC_STATIC_OPP_WLAN_IDLE_WLAN_LEN_MIN         ( 0 )
 #define CFG_BTC_STATIC_OPP_WLAN_IDLE_WLAN_LEN_MAX         ( 250000 )
 
 
 #define CFG_BTC_STATIC_OPP_WLAN_IDLE_BT_LEN             "gBtcStaticOppWlanIdleBtLen"
-#define CFG_BTC_STATIC_OPP_WLAN_IDLE_BT_LEN_DEFAULT     ( 40000 )
+#define CFG_BTC_STATIC_OPP_WLAN_IDLE_BT_LEN_DEFAULT     ( 120000 )
 #define CFG_BTC_STATIC_OPP_WLAN_IDLE_BT_LEN_MIN         ( 0 )
 #define CFG_BTC_STATIC_OPP_WLAN_IDLE_BT_LEN_MAX         ( 250000 )
 /*
