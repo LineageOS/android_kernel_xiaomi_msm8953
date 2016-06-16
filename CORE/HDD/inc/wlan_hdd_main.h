@@ -654,6 +654,9 @@ typedef struct hdd_cfg80211_state_s
   struct sk_buff *skb;
   hdd_remain_on_chan_ctx_t* remain_on_chan_ctx;
   eP2PActionFrameState actionFrmState;
+  /*is_go_neg_ack_received flag is set to 1 when the
+    pending ack for GO negotiation req is received*/
+  v_BOOL_t is_go_neg_ack_received;
 }hdd_cfg80211_state_t;
 
 
