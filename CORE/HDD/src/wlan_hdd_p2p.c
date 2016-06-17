@@ -1259,7 +1259,7 @@ int __wlan_hdd_mgmt_tx( struct wiphy *wiphy, struct net_device *dev,
     int status;
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,38))
-    hdd_adapter_t *goAdapter;
+    uint8_t home_ch = 0;
 #endif
 
     ENTER();
@@ -1394,12 +1394,21 @@ int __wlan_hdd_mgmt_tx( struct wiphy *wiphy, struct net_device *dev,
     }
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,38))
-    goAdapter = hdd_get_adapter( pAdapter->pHddCtx, WLAN_HDD_P2P_GO );
-
+    if ( (( WLAN_HDD_SOFTAP == pAdapter->device_mode ) ||
+          ( WLAN_HDD_P2P_GO == pAdapter->device_mode )) &&
+          (test_bit(SOFTAP_BSS_STARTED, &pAdapter->event_flags)))
+    {
+        home_ch = pAdapter->sessionCtx.ap.operatingChannel;
+    }
+    else if ((pAdapter->device_mode == WLAN_HDD_INFRA_STATION) &&
+            (pAdapter->sessionCtx.station.conn_info.connState ==
+             eConnectionState_Associated))
+    {
+        home_ch = pAdapter->sessionCtx.station.conn_info.operationChannel;
+    }
     //If GO adapter exists and operating on same frequency
     //then we will not request remain on channel
-    if( goAdapter && ( ieee80211_frequency_to_channel(chan->center_freq)
-                         == goAdapter->sessionCtx.ap.operatingChannel ) )
+    if (ieee80211_frequency_to_channel(chan->center_freq) == home_ch)
     {
         /*  if GO exist and is not off channel
          *  wait time should be zero.
@@ -1594,7 +1603,9 @@ bypass_lock:
             goto err;
         }
     }
-    else if (WLAN_HDD_P2P_GO == pAdapter->device_mode)
+    else if( ( WLAN_HDD_SOFTAP== pAdapter->device_mode ) ||
+            ( WLAN_HDD_P2P_GO == pAdapter->device_mode )
+           )
      {
         if( VOS_STATUS_SUCCESS !=
              WLANSAP_SendAction( (WLAN_HDD_GET_CTX(pAdapter))->pvosContext,
