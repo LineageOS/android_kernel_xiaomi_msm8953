@@ -2501,17 +2501,18 @@ static inline void hdd_assign_handoff_src_reassoc(tCsrHandoffRequest
 #endif
 
 /**
- * hdd_reassoc() - perform a userspace-directed reassoc
+ * hdd_reassoc() - perform a user space-directed reassoc
  *
  * @pAdapter: Adapter upon which the command was received
  * @bssid: BSSID with which to reassociate
  * @channel: channel upon which to reassociate
+ * @src:      The source for the trigger of this action
  *
  * Return: 0 for success non-zero for failure
  */
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
 static int hdd_reassoc(hdd_adapter_t *pAdapter, const tANI_U8 *bssid,
-						const tANI_U8 channel)
+			const tANI_U8 channel, const handoff_src src)
 {
 	hdd_station_ctx_t *pHddStaCtx;
 	tCsrHandoffRequest handoffInfo;
@@ -2542,14 +2543,14 @@ static int hdd_reassoc(hdd_adapter_t *pAdapter, const tANI_U8 *bssid,
 
 	/* Proceed with reassoc */
 	handoffInfo.channel = channel;
-	hdd_assign_handoff_src_reassoc(&handoffInfo, REASSOC);
+	hdd_assign_handoff_src_reassoc(&handoffInfo, src);
 	memcpy(handoffInfo.bssid, bssid, sizeof(tSirMacAddr));
 	sme_HandoffRequest(pHddCtx->hHal, &handoffInfo);
 	return 0;
 }
 #else
 static int hdd_reassoc(hdd_adapter_t *pAdapter, const tANI_U8 *bssid,
-						const tANI_U8 channel)
+			const tANI_U8 channel, const handoff_src src)
 {
 	return -EPERM;
 }
@@ -2579,7 +2580,7 @@ hdd_parse_reassoc_v1(hdd_adapter_t *pAdapter, const char *command)
 	if (ret)
 		hddLog(LOGE, FL("Failed to parse reassoc command data"));
 	else
-		ret = hdd_reassoc(pAdapter, bssid, channel);
+		ret = hdd_reassoc(pAdapter, bssid, channel, REASSOC);
 
 	return ret;
 }
@@ -2609,7 +2610,7 @@ hdd_parse_reassoc_v2(hdd_adapter_t *pAdapter, const char *command)
 		hddLog(LOGE, FL("MAC address parsing failed"));
 		ret = -EINVAL;
 	} else {
-		ret = hdd_reassoc(pAdapter, bssid, params.channel);
+		ret = hdd_reassoc(pAdapter, bssid, params.channel, REASSOC);
 	}
 	return ret;
 }
