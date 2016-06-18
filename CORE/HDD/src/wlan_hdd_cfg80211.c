@@ -12849,6 +12849,27 @@ v_BOOL_t hdd_isConnectionInProgress( hdd_context_t *pHddCtx)
     return VOS_FALSE;
 }
 
+/**
+ * csr_scan_request_assign_bssid() - Set the BSSID received from Supplicant
+ *                                   to the Scan request
+ * @scanRequest: Pointer to the csr scan request
+ * @request: Pointer to the scan request from supplicant
+ *
+ * Return: None
+ */
+#ifdef CFG80211_SCAN_BSSID
+static inline void csr_scan_request_assign_bssid(tCsrScanRequest *scanRequest,
+					struct cfg80211_scan_request *request)
+{
+	vos_mem_copy(scanRequest->bssid, request->bssid, VOS_MAC_ADDR_SIZE);
+}
+#else
+static inline void csr_scan_request_assign_bssid(tCsrScanRequest *scanRequest,
+					struct cfg80211_scan_request *request)
+{
+}
+#endif
+
 /*
  * FUNCTION: __wlan_hdd_cfg80211_scan
  * this scan respond to scan trigger and update cfg80211 scan database
@@ -13045,6 +13066,8 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
     }
     scanRequest.minChnTime = cfg_param->nActiveMinChnTime;
     scanRequest.maxChnTime = cfg_param->nActiveMaxChnTime;
+
+    csr_scan_request_assign_bssid(&scanRequest, request);
 
     /* set BSSType to default type */
     scanRequest.BSSType = eCSR_BSS_TYPE_ANY;
