@@ -427,7 +427,8 @@ VOS_STATUS WDA_open(v_PVOID_t pVosContext, v_PVOID_t devHandle,
    wdaContext->pVosContext = pVosContext;
    wdaContext->wdaState = WDA_INIT_STATE;
    wdaContext->uTxFlowMask = WDA_TXFLOWMASK;
-   
+   vos_lock_init(&wdaContext->mgmt_pkt_lock);
+
    /* Initialize WDA-WDI synchronization event */
    status = vos_event_init(&wdaContext->wdaWdiEvent);
    if(!VOS_IS_STATUS_SUCCESS(status)) 
@@ -2645,6 +2646,7 @@ VOS_STATUS WDA_close(v_PVOID_t pVosContext)
                                   "error in WDA close " );
       status = VOS_STATUS_E_FAILURE;
    }
+   vos_lock_destroy(&wdaContext->mgmt_pkt_lock);
    return status;
 }
 /*
@@ -13899,7 +13901,7 @@ VOS_STATUS WDA_TxComplete( v_PVOID_t pVosContext, vos_pkt_t *pData,
    
    tWDA_CbContext *wdaContext= (tWDA_CbContext *)VOS_GET_WDA_CTXT(pVosContext);
    tpAniSirGlobal pMac = (tpAniSirGlobal)VOS_GET_MAC_CTXT((void *)pVosContext) ;
-   tANI_U64 uUserData;
+   uintptr_t uUserData;
 
    VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO, "Enter:%s", __func__);
 
@@ -13913,6 +13915,7 @@ VOS_STATUS WDA_TxComplete( v_PVOID_t pVosContext, vos_pkt_t *pData,
       return VOS_STATUS_E_FAILURE;
    }
 
+    vos_lock_acquire(&wdaContext->mgmt_pkt_lock);
     /*Check if frame was timed out or not*/
     vos_pkt_get_user_data_ptr(  pData, VOS_PKT_USER_DATA_ID_WDA,
                                (v_PVOID_t)&uUserData);
@@ -13923,7 +13926,8 @@ VOS_STATUS WDA_TxComplete( v_PVOID_t pVosContext, vos_pkt_t *pData,
        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_WARN,
                             "%s: MGMT Frame Tx timed out",
                             __func__);
-       vos_pkt_return_packet(pData); 
+       vos_pkt_return_packet(pData);
+       vos_lock_release(&wdaContext->mgmt_pkt_lock);
        return VOS_STATUS_SUCCESS; 
     }
 
@@ -13941,9 +13945,17 @@ VOS_STATUS WDA_TxComplete( v_PVOID_t pVosContext, vos_pkt_t *pData,
                            "%s:packet (%p) is already freed",
                            __func__, pData);
          //Return from here since we reaching here because the packet already timeout
+         vos_lock_release(&wdaContext->mgmt_pkt_lock);
          return status;
       }
    }
+   else {
+      wdaContext->mgmt_pktfree_fail++;
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                            "%s:packet (%p)  userData (%lx) is not freed",
+                            __func__, pData, uUserData);
+   }
+   vos_lock_release(&wdaContext->mgmt_pkt_lock);
 
    /* 
     * Trigger the event to bring the HAL TL Tx complete function to come 
@@ -14155,24 +14167,24 @@ VOS_STATUS WDA_TxPacket(tWDA_CbContext *pWDA,
       VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR, 
                  "%s: Status %d when waiting for TX Frame Event",
                  __func__, status);
-
+      vos_lock_acquire(&pWDA->mgmt_pkt_lock);
       /*Tag Frame as timed out for later deletion*/
       vos_pkt_set_user_data_ptr( (vos_pkt_t *)pFrmBuf, VOS_PKT_USER_DATA_ID_WDA,
                        (v_PVOID_t)WDA_TL_TX_MGMT_TIMED_OUT);
       pWDA->pTxCbFunc = NULL;   /*To stop the limTxComplete being called again  , 
                                 after the packet gets completed(packet freed once)*/
 
+      vos_atomic_set((uintptr_t*)&pWDA->VosPacketToFree, (uintptr_t)WDA_TX_PACKET_FREED);
+
+      /*
+       * Memory barrier to ensure pFrmBuf is set before TX thread access it in
+       * TX completion call back
+       */
+      VOS_SMP_MB;
+      vos_lock_release(&pWDA->mgmt_pkt_lock);
+
       /* TX MGMT fail with COMP timeout, try to detect DXE stall */
       WDA_TransportChannelDebug(pMac, 1, 0);
-
-      /* check whether the packet was freed already,so need not free again when 
-      * TL calls the WDA_Txcomplete routine
-      */
-      vos_atomic_set((uintptr_t*)&pWDA->VosPacketToFree, (uintptr_t)WDA_TX_PACKET_FREED);
-      /*if(vos_atomic_set(uintptr_t *)&pWDA->VosPacketToFree, (uintptr_t)WDA_TX_PACKET_FREED) == (v_U32_t)pFrmBuf)
-      {
-         pCompFunc(VOS_GET_MAC_CTXT(pWDA->pVosContext), (vos_pkt_t *)pFrmBuf);
-      } */
 
       /* Send Flush command to FW */
       vos_fwDumpReq(274, 0, 0, 0, 0, 1);
