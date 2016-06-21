@@ -1619,6 +1619,14 @@ VOS_STATUS vos_nv_close(void)
     vos_mem_vfree(pEncodedBuf);
     vos_mem_free(pDictFile);
     vos_mem_vfree(pnvEncodedBuf);
+   /*
+    * Reset the linux_reg identifier to allow
+    * driver to send fresh regulatory hint to
+    * the kernel in case of a static driver reload
+    * under strict regulatory domain.
+    */
+    linux_reg_cc[0] = '0';
+    linux_reg_cc[1] = '0';
 
     gnvEFSTable=NULL;
     return VOS_STATUS_SUCCESS;
