@@ -1497,10 +1497,19 @@ typedef void * tScanResultHandle;
 #define CSR_INVALID_SCANRESULT_HANDLE       (NULL)
 
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+typedef enum {
+    REASSOC     = 0,
+    FASTREASSOC = 1
+} handoff_src;
+
 typedef struct tagCsrHandoffRequest
 {
     tCsrBssid bssid;
     tANI_U8 channel;
+#ifndef QCA_WIFI_ISOC
+    /* To check if its a REASSOC or a FASTREASSOC IOCTL */
+    tANI_U8 src;
+#endif
 }tCsrHandoffRequest;
 #endif
 

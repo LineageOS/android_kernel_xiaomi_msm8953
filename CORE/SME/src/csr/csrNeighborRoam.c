@@ -5466,6 +5466,30 @@ eHalStatus csrNeighborRoamSssidScanDone(tpAniSirGlobal pMac, eHalStatus status)
     return eHAL_STATUS_SUCCESS;
 }
 
+/**
+ * csr_neighbor_roam_handler_assign_handoff_src() - Assign source of
+ *							roam handoff
+ * @pNeighborRoamInfo: Pointer to csr neighbor roam control info
+ * @pHandoffReqInfo: Pointer to the Handoff request
+ *
+ * Return: None
+ */
+#ifndef QCA_WIFI_ISOC
+static inline void csr_neighbor_roam_handler_assign_handoff_src(
+			tpCsrNeighborRoamControlInfo  pNeighborRoamInfo,
+			tAniHandoffReq *pHandoffReqInfo)
+{
+	pNeighborRoamInfo->handoffReqInfo.src
+		= pHandoffReqInfo->handoff_src;
+}
+#else
+static inline void csr_neighbor_roam_handler_assign_handoff_src(
+			tpCsrNeighborRoamControlInfo  pNeighborRoamInfo,
+			tAniHandoffReq *pHandoffReqInfo)
+{
+}
+#endif
+
 /* ---------------------------------------------------------------------------
 
     \fn csrNeighborRoamHandoffReqHdlr
@@ -5503,6 +5527,8 @@ eHalStatus csrNeighborRoamHandoffReqHdlr(tpAniSirGlobal pMac, void* pMsg)
             {
 
                 pNeighborRoamInfo->handoffReqInfo.channel = pHandoffReqInfo->channel;
+                csr_neighbor_roam_handler_assign_handoff_src(pNeighborRoamInfo,
+                                                               pHandoffReqInfo);
                 vos_mem_copy(pNeighborRoamInfo->handoffReqInfo.bssid,
                              pHandoffReqInfo->bssid,
                              6);
