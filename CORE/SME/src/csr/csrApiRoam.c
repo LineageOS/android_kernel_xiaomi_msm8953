@@ -18258,6 +18258,27 @@ tANI_BOOLEAN csrRoamIsStaMode(tpAniSirGlobal pMac, tANI_U32 sessionId)
   return eANI_BOOLEAN_FALSE;
 }
 
+/**
+ * csr_set_src_handoff_request() - Set handoff source to
+ *                                   SME handoff request
+ * @pHandoffInfo: Pointer to Handoff info
+ * @pMsg: Pointer to SME handoff request message
+ *
+ * Return: None
+ */
+#ifndef QCA_WIFI_ISOC
+static inline void csr_set_src_handoff_request(tAniHandoffReq *pMsg,
+					tCsrHandoffRequest *pHandoffInfo)
+{
+	pMsg->handoff_src = pHandoffInfo->src;
+}
+#else
+static inline void csr_set_src_handoff_request(tAniHandoffReq *pMsg,
+					tCsrHandoffRequest *pHandoffInfo)
+{
+}
+#endif
+
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
 eHalStatus csrHandoffRequest(tpAniSirGlobal pMac,
                              tCsrHandoffRequest *pHandoffInfo)
@@ -18276,6 +18297,7 @@ eHalStatus csrHandoffRequest(tpAniSirGlobal pMac,
    pMsg->msgLen = (tANI_U16)sizeof(tAniHandoffReq);
    pMsg->sessionId = pMac->roam.neighborRoamInfo.csrSessionId;
    pMsg->channel = pHandoffInfo->channel;
+   csr_set_src_handoff_request(pMsg, pHandoffInfo);
    vos_mem_copy(pMsg->bssid,
                        pHandoffInfo->bssid,
                        6);
