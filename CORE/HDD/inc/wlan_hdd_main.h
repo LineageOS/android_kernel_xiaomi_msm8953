@@ -1929,4 +1929,6 @@ void wlan_hdd_defer_scan_init_work(hdd_context_t *pHddCtx,
 #endif
                                 struct cfg80211_scan_request *request,
                                 unsigned long delay);
+int hdd_reassoc(hdd_adapter_t *pAdapter, const tANI_U8 *bssid,
+			const tANI_U8 channel, const handoff_src src);
 #endif    // end #if !defined( WLAN_HDD_MAIN_H )

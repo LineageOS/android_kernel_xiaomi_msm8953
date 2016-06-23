@@ -2511,7 +2511,7 @@ static inline void hdd_assign_handoff_src_reassoc(tCsrHandoffRequest
  * Return: 0 for success non-zero for failure
  */
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
-static int hdd_reassoc(hdd_adapter_t *pAdapter, const tANI_U8 *bssid,
+int hdd_reassoc(hdd_adapter_t *pAdapter, const tANI_U8 *bssid,
 			const tANI_U8 channel, const handoff_src src)
 {
 	hdd_station_ctx_t *pHddStaCtx;
@@ -2549,7 +2549,7 @@ static int hdd_reassoc(hdd_adapter_t *pAdapter, const tANI_U8 *bssid,
 	return 0;
 }
 #else
-static int hdd_reassoc(hdd_adapter_t *pAdapter, const tANI_U8 *bssid,
+int hdd_reassoc(hdd_adapter_t *pAdapter, const tANI_U8 *bssid,
 			const tANI_U8 channel, const handoff_src src)
 {
 	return -EPERM;
