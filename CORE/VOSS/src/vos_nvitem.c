@@ -180,7 +180,7 @@ chan_to_ht_40_index_map chan_to_ht_40_index[NUM_20MHZ_RF_CHANNELS] =
 static CountryInfoTable_t countryInfoTable =
 {
     /* the first entry in the table is always the world domain */
-    138,
+    139,
     {
       {REGDOMAIN_WORLD, {'0', '0'}}, // WORLD DOMAIN
       {REGDOMAIN_ETSI, {'A', 'D'}}, // ANDORRA
@@ -320,6 +320,7 @@ static CountryInfoTable_t countryInfoTable =
       {REGDOMAIN_ETSI, {'Y', 'T'}}, //MAYOTTE
       {REGDOMAIN_ETSI, {'Z', 'A'}}, //SOUTH AFRICA
       {REGDOMAIN_ETSI, {'Z', 'W'}}, //ZIMBABWE
+      {REGDOMAIN_JAPAN, {'X', 'A'}}, //JAPAN PASSIVE
     }
 };
 
@@ -1619,6 +1620,14 @@ VOS_STATUS vos_nv_close(void)
     vos_mem_vfree(pEncodedBuf);
     vos_mem_free(pDictFile);
     vos_mem_vfree(pnvEncodedBuf);
+   /*
+    * Reset the linux_reg identifier to allow
+    * driver to send fresh regulatory hint to
+    * the kernel in case of a static driver reload
+    * under strict regulatory domain.
+    */
+    linux_reg_cc[0] = '0';
+    linux_reg_cc[1] = '0';
 
     gnvEFSTable=NULL;
     return VOS_STATUS_SUCCESS;

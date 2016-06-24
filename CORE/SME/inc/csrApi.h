@@ -515,6 +515,7 @@ typedef enum
 #endif /* FEATURE_WLAN_ESE && FEATURE_WLAN_ESE_UPLOAD */
     eCSR_ROAM_UPDATE_MAX_RATE_IND,
     eCSR_ROAM_LOST_LINK_PARAMS_IND,
+    eCSR_ROAM_UPDATE_SCAN_RESULT,
 }eRoamCmdStatus;
 
 
@@ -1501,8 +1502,16 @@ typedef struct tagCsrHandoffRequest
 {
     tCsrBssid bssid;
     tANI_U8 channel;
+    /* To check if its a REASSOC or a FASTREASSOC IOCTL */
+    tANI_U8 src;
 }tCsrHandoffRequest;
 #endif
+
+typedef enum {
+    REASSOC     = 0,
+    FASTREASSOC = 1,
+    CONNECT_CMD_USERSPACE = 2,
+} handoff_src;
 
 #if defined(FEATURE_WLAN_ESE) && defined(FEATURE_WLAN_ESE_UPLOAD)
 typedef struct tagCsrEseBeaconReqParams

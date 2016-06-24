@@ -470,6 +470,7 @@ static eHalStatus sme_RrmSendScanResult( tpAniSirGlobal pMac,
    tANI_U8 counter=0;
    tpRrmSMEContext pSmeRrmContext = &pMac->rrm.rrmSmeContext;
    tANI_U32 sessionId;
+   tCsrRoamInfo *roam_info;
 
 #if defined WLAN_VOWIFI_DEBUG
    smsLog( pMac, LOGE, "Send scan result to PE ");
@@ -579,8 +580,20 @@ static eHalStatus sme_RrmSendScanResult( tpAniSirGlobal pMac,
       pNextResult = sme_ScanResultGetNext(pMac, pResult);
       smsLog(pMac, LOG1, "Scan res timer:%lu, rrm scan timer:%lu",
              pScanResult->timer, RRM_scan_timer);
-      if(pScanResult->timer >= RRM_scan_timer)
-         pScanResultsArr[counter++] = pScanResult;
+      if (pScanResult->timer >= RRM_scan_timer) {
+          roam_info = vos_mem_malloc(sizeof(*roam_info));
+          if (NULL == roam_info) {
+              smsLog(pMac, LOGW, FL("vos_mem_malloc failed:"));
+              status =  eHAL_STATUS_FAILED_ALLOC;
+              goto rrm_send_scan_results_done;
+          }
+          vos_mem_zero(roam_info, sizeof(*roam_info));
+          roam_info->pBssDesc = &pScanResult->BssDescriptor;
+          csrRoamCallCallback(pMac, sessionId, roam_info, 0,
+                           eCSR_ROAM_UPDATE_SCAN_RESULT, eCSR_ROAM_RESULT_NONE);
+          vos_mem_free(roam_info);
+          pScanResultsArr[counter++] = pScanResult;
+      }
       pScanResult = pNextResult; //sme_ScanResultGetNext(hHal, pResult);
       if (counter >= SIR_BCN_REPORT_MAX_BSS_DESC)
          break;
@@ -617,6 +630,7 @@ static eHalStatus sme_RrmSendScanResult( tpAniSirGlobal pMac,
                                                 counter);
    }
 
+rrm_send_scan_results_done:
    sme_ScanResultPurge(pMac, pResult); 
 
    return status;

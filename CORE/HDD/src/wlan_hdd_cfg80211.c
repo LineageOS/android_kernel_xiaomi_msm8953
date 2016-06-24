@@ -12849,6 +12849,27 @@ v_BOOL_t hdd_isConnectionInProgress( hdd_context_t *pHddCtx)
     return VOS_FALSE;
 }
 
+/**
+ * csr_scan_request_assign_bssid() - Set the BSSID received from Supplicant
+ *                                   to the Scan request
+ * @scanRequest: Pointer to the csr scan request
+ * @request: Pointer to the scan request from supplicant
+ *
+ * Return: None
+ */
+#ifdef CFG80211_SCAN_BSSID
+static inline void csr_scan_request_assign_bssid(tCsrScanRequest *scanRequest,
+					struct cfg80211_scan_request *request)
+{
+	vos_mem_copy(scanRequest->bssid, request->bssid, VOS_MAC_ADDR_SIZE);
+}
+#else
+static inline void csr_scan_request_assign_bssid(tCsrScanRequest *scanRequest,
+					struct cfg80211_scan_request *request)
+{
+}
+#endif
+
 /*
  * FUNCTION: __wlan_hdd_cfg80211_scan
  * this scan respond to scan trigger and update cfg80211 scan database
@@ -13045,6 +13066,8 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
     }
     scanRequest.minChnTime = cfg_param->nActiveMinChnTime;
     scanRequest.maxChnTime = cfg_param->nActiveMaxChnTime;
+
+    csr_scan_request_assign_bssid(&scanRequest, request);
 
     /* set BSSType to default type */
     scanRequest.BSSType = eCSR_BSS_TYPE_ANY;
@@ -14474,6 +14497,41 @@ disconnected:
     return result;
 }
 
+/**
+ * wlan_hdd_reassoc_bssid_hint() - Start reassociation if bssid is present
+ * @adapter: Pointer to the HDD adapter
+ * @req: Pointer to the structure cfg_connect_params receieved from user space
+ *
+ * This function will start reassociation if bssid hint, channel hint and
+ * previous bssid parameters are present in the connect request
+ *
+ * Return: success if reassociation is happening
+ *         Error code if reassociation is not permitted or not happening
+ */
+#ifdef CFG80211_CONNECT_PREV_BSSID
+static int wlan_hdd_reassoc_bssid_hint(hdd_adapter_t *adapter,
+				struct cfg80211_connect_params *req)
+{
+	int status = -EPERM;
+	if (req->bssid_hint && req->channel_hint && req->prev_bssid) {
+		hddLog(VOS_TRACE_LEVEL_INFO,
+			FL("REASSOC Attempt on channel %d to "MAC_ADDRESS_STR),
+			req->channel_hint->hw_value,
+			MAC_ADDR_ARRAY(req->bssid_hint));
+		status  = hdd_reassoc(adapter, req->bssid_hint,
+					req->channel_hint->hw_value,
+					CONNECT_CMD_USERSPACE);
+	}
+	return status;
+}
+#else
+static int wlan_hdd_reassoc_bssid_hint(hdd_adapter_t *adapter,
+				struct cfg80211_connect_params *req)
+{
+	return -EPERM;
+}
+#endif
+
 /*
  * FUNCTION: __wlan_hdd_cfg80211_connect
  * This function is used to start the association process
@@ -14518,6 +14576,10 @@ static int __wlan_hdd_cfg80211_connect( struct wiphy *wiphy,
     {
         return status;
     }
+
+    status = wlan_hdd_reassoc_bssid_hint(pAdapter, req);
+    if (0 == status)
+        return status;
 
 
 #ifdef WLAN_BTAMP_FEATURE
