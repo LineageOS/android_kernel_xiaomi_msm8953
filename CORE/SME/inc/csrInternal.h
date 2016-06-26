@@ -623,6 +623,13 @@ typedef struct tagCsrConfig
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
     tANI_U8      isRoamOffloadScanEnabled;
     tANI_BOOLEAN bFastRoamInConIniFeatureEnabled;
+    v_BOOL_t     isPERRoamEnabled;
+    v_BOOL_t     isPERRoamCCAEnabled;
+    tANI_U32     rateUpThreshold;
+    tANI_U32     rateDownThreshold;
+    tANI_U32     waitPeriodForNextPERScan;
+    tANI_U32     PERtimerThreshold;
+    tANI_U32     PERroamTriggerPercent;
 #endif
 #endif
 

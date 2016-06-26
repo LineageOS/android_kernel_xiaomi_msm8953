@@ -749,9 +749,55 @@ limHandle80211Frames(tpAniSirGlobal pMac, tpSirMsgQ limMsg, tANI_U8 *pDeferMsg)
                                   MAC_ADDR_ARRAY(pHdr->sa));
         }
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
-    if ( WDA_GET_ROAMCANDIDATEIND(pRxPacketInfo))
+    if (WDA_GET_ROAMCANDIDATEIND(pRxPacketInfo))
     {
-        limLog( pMac, LOG2, FL("Notify SME with candidate ind"));
+        limLog( pMac, LOGW, FL("Notify SME with candidate ind"));
+
+        if (WDA_IF_PER_ROAMCANDIDATEIND(pRxPacketInfo) &&
+            IS_FEATURE_SUPPORTED_BY_FW(PER_BASED_ROAMING) &&
+            pMac->roam.configParam.isPERRoamEnabled)
+        {
+            tSirPerRoamScanResult *candidateChanInfo =
+                (tSirPerRoamScanResult *)WDA_GET_RX_MPDU_DATA(pRxPacketInfo);
+            int chanInfoLen = WDA_GET_RX_PAYLOAD_LEN(pRxPacketInfo)
+                                      - sizeof(tANI_U32);
+
+            /* Translate network buffer into system buffer */
+            vos_buff_to_hl_buff((v_U8_t *)candidateChanInfo,
+                          WDA_GET_RX_PAYLOAD_LEN(pRxPacketInfo));
+
+            /* Max candidates allowed */
+            if (candidateChanInfo->candidateCount > SIR_PER_ROAM_MAX_AP_CNT)
+            {
+                limLog(pMac, LOGE,
+                       FL("Got maximum candidates as %d setting default"),
+                       candidateChanInfo->candidateCount);
+                candidateChanInfo->candidateCount = SIR_PER_ROAM_MAX_AP_CNT;
+            }
+
+            vos_mem_set(&pMac->candidateChannelInfo,
+                        sizeof(tSirCandidateChanInfo) *
+                        SIR_PER_ROAM_MAX_CANDIDATE_CNT, 0);
+
+            vos_mem_copy(&pMac->candidateChannelInfo,
+                         candidateChanInfo->channelInfo,
+                         (sizeof(tSirCandidateChanInfo) *
+                         SIR_PER_ROAM_MAX_CANDIDATE_CNT) < chanInfoLen ?
+                         (sizeof(tSirCandidateChanInfo) *
+                         SIR_PER_ROAM_MAX_CANDIDATE_CNT):
+                         chanInfoLen);
+
+            limLog(pMac, LOG1,
+                   FL("PER based Roam candidates %d"),
+                   candidateChanInfo->candidateCount);
+
+            pMac->PERroamCandidatesCnt = candidateChanInfo->candidateCount;
+        } else
+        {
+            /* Normal RSSI based roaming */
+            pMac->PERroamCandidatesCnt = 0;
+        }
+
         //send a session 0 for now - TBD
         limSendSmeCandidateFoundInd(pMac, 0);
         goto end;

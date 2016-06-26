@@ -1381,6 +1381,10 @@ eHalStatus csrNeighborRoamPrepareScanProfileFilter(tpAniSirGlobal pMac, tCsrScan
        pScanFilter->ChannelInfo.numOfChannels = 0;
        pScanFilter->ChannelInfo.ChannelList = NULL;
     }
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+    if (pMac->PERroamCandidatesCnt)
+       pScanFilter->isPERRoamScan = true;
+#endif
 #ifdef WLAN_FEATURE_VOWIFI_11R
     if (pNeighborRoamInfo->is11rAssoc)
     {
@@ -2212,10 +2216,15 @@ static eHalStatus csrNeighborRoamProcessScanComplete (tpAniSirGlobal pMac)
 
                     else
                     {
-                        /* There is no candidate or We are not roaming Now.
-                         * Inform the FW to restart Roam Offload Scan  */
-                        csrRoamOffloadScan(pMac, ROAM_SCAN_OFFLOAD_RESTART,
-                            REASON_NO_CAND_FOUND_OR_NOT_ROAMING_NOW);
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+                        if (pMac->PERroamCandidatesCnt == 0)
+#endif
+                        {
+                            /* There is no candidate or We are not roaming Now.
+                             * Inform the FW to restart Roam Offload Scan  */
+                            csrRoamOffloadScan(pMac, ROAM_SCAN_OFFLOAD_RESTART,
+                                REASON_NO_CAND_FOUND_OR_NOT_ROAMING_NOW);
+                        }
                     }
                 }
                 CSR_NEIGHBOR_ROAM_STATE_TRANSITION(eCSR_NEIGHBOR_ROAM_STATE_CONNECTED);
