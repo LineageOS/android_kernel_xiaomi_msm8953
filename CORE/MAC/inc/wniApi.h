@@ -356,6 +356,9 @@ enum eWniMsgTypes
     eWNI_SME_CANDIDATE_FOUND_IND, /*ROAM candidate indication from FW*/
     eWNI_SME_HANDOFF_REQ,/*upper layer requested handoff to driver in STA mode*/
     eWNI_SME_ROAM_SCAN_OFFLOAD_RSP,/*Fwd the LFR scan offload rsp from FW to SME*/
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+    eWNI_SME_ROAM_SCAN_TRIGGER_RSP,
+#endif
 #ifdef FEATURE_WLAN_LPHB
     eWNI_SME_LPHB_IND,
 #endif /* FEATURE_WLAN_LPHB */

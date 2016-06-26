@@ -402,6 +402,9 @@ typedef struct tagCsrScanResultFilter
     tANI_U8 MFPRequired;
     tANI_U8 MFPCapable;
 #endif
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+    tANI_BOOLEAN isPERRoamScan;
+#endif
 }tCsrScanResultFilter;
 
 
@@ -1181,6 +1184,13 @@ typedef struct tagCsrConfigParam
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
     tANI_BOOLEAN isRoamOffloadScanEnabled;
     tANI_BOOLEAN bFastRoamInConIniFeatureEnabled;
+    v_BOOL_t isPERRoamEnabled;
+    v_BOOL_t isPERRoamCCAEnabled;
+    v_U32_t rateUpThreshold;
+    v_U32_t rateDownThreshold;
+    v_U32_t waitPeriodForNextPERScan;
+    v_U32_t PERtimerThreshold;
+    v_U32_t PERroamTriggerPercent;
 #endif
 #endif
 

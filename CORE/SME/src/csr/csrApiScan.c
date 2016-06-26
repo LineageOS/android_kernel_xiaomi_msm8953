@@ -2043,6 +2043,259 @@ static tANI_U32 csrGetBssCapValue(tpAniSirGlobal pMac, tSirBssDescription *pBssD
     return (ret);
 }
 
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+
+/* Calculate channel weight based on other APs RSSI and count for
+ * PER based roaming */
+static tANI_U32 GetPERRoamRssiCountWeight(tANI_S32 rssi, tANI_S32 count)
+{
+    tANI_S32 rssiWeight=0;
+    tANI_S32 countWeight=0;
+    tANI_S32 rssicountWeight=0;
+
+    rssiWeight = ROAMING_RSSI_WEIGHT * (rssi - MIN_RSSI)
+                 /(MAX_RSSI - MIN_RSSI);
+
+    if(rssiWeight > ROAMING_RSSI_WEIGHT)
+        rssiWeight = ROAMING_RSSI_WEIGHT;
+    else if (rssiWeight < 0)
+        rssiWeight = 0;
+
+    countWeight = ROAM_AP_COUNT_WEIGHT * (count + ROAM_MIN_COUNT)
+                  /(ROAM_MAX_COUNT + ROAM_MIN_COUNT);
+
+    if(countWeight > ROAM_AP_COUNT_WEIGHT)
+        countWeight = ROAM_AP_COUNT_WEIGHT;
+
+    rssicountWeight =  ROAM_MAX_WEIGHT - (rssiWeight + countWeight);
+
+    VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_INFO_HIGH,
+       FL("rssiWeight=%d, countWeight=%d, rssicountWeight=%d rssi=%d count=%d"),
+       rssiWeight, countWeight, rssicountWeight, rssi, count);
+
+    return rssicountWeight;
+}
+
+/* Calculate BSS score based on AP capabilty and channel condition
+ * for PER based roaming */
+static tANI_U32 calculateBssScore(tSirBssDescription *bssInfo,
+                             tANI_S32 best_rssi, tANI_S32 ap_cnt, tANI_S32 cca)
+{
+    tANI_S32 score = 0;
+    tANI_S32 ap_load = 0;
+    tANI_S32 normalised_width = PER_ROAM_20MHZ;
+    tANI_S32 normalised_rssi;
+    tANI_S32 channel_weight;
+    if (bssInfo->rssi) {
+        /* Calculate % of rssi we are getting
+         * max = 100
+         * min = 0
+         * less than -40 = 100%
+         * -40 - -55 = 80%
+         * -55 - -65 = 60%
+         * below that = 100 - value
+         * TODO: a linear decrement function after PER_ROAM_GOOD_RSSI_WEIGHT
+         * since throughput decrements linearly after PER_ROAM_GOOD_RSSI_WEIGHT
+         **/
+        if (bssInfo->rssi >= PER_EXCELENT_RSSI)
+            normalised_rssi = PER_ROAM_EXCELLENT_RSSI_WEIGHT;
+        else if (bssInfo->rssi >= PER_GOOD_RSSI)
+            normalised_rssi = PER_ROAM_GOOD_RSSI_WEIGHT;
+        else if (bssInfo->rssi >= PER_POOR_RSSI)
+            normalised_rssi = PER_ROAM_BAD_RSSI_WEIGHT;
+        else
+            normalised_rssi = bssInfo->rssi - MIN_RSSI;
+
+        /* Calculate score part for rssi */
+        score += (normalised_rssi * RSSI_WEIGHTAGE);
+    }
+
+    if (bssInfo->HTCapsPresent) {
+        score += PER_ROAM_MAX_WEIGHT * HT_CAPABILITY_WEIGHTAGE;
+    }
+    /* VHT caps are available */
+    if (bssInfo->vhtCapsPresent) {
+        score += PER_ROAM_MAX_WEIGHT * VHT_CAP_WEIGHTAGE;
+    }
+
+    if (bssInfo->beacomformingCapable)
+        score += PER_ROAM_MAX_WEIGHT * BEAMFORMING_CAP_WEIGHTAGE;
+
+    /* Channel width  20Mhz=30, 40Mhz=70, 80Mhz=100 */
+    if (bssInfo->chanWidth == eHT_CHANNEL_WIDTH_80MHZ)
+        normalised_width = PER_ROAM_80MHZ;
+    else if (bssInfo->chanWidth == eHT_CHANNEL_WIDTH_40MHZ)
+        normalised_width = PER_ROAM_40MHZ;
+    else
+        normalised_width = PER_ROAM_20MHZ;
+    score += normalised_width * CHAN_WIDTH_WEIGHTAGE;
+
+    /* Channel Band, Channel Number */
+    if (GetRFBand(bssInfo->channelId) == SIR_BAND_5_GHZ)
+        score += PER_ROAM_MAX_WEIGHT * CHAN_BAND_WEIGHTAGE;
+
+    /* WMM emabled */
+    if (bssInfo->wmeInfoPresent)
+        score += PER_ROAM_MAX_WEIGHT * WMM_WEIGHTAGE;
+
+#if defined(FEATURE_WLAN_ESE) || defined(WLAN_FEATURE_ROAM_SCAN_OFFLOAD)
+    /* AP load Ie */
+    if (bssInfo->QBSSLoad_present) {
+        /* calculate value in % */
+        ap_load = (bssInfo->QBSS_ChanLoad * PER_ROAM_MAX_WEIGHT) / MAX_AP_LOAD;
+    }
+#endif
+    //TODO we don't have this info for current AP, need to check
+    /* if CCA consideration is off in configuration, FW will send 50% for
+       every channel which should be considered as it is */
+    if (ap_load)
+        score += (100 - ap_load) * CCA_WEIGHTAGE;
+    else
+        score +=  (100 - cca) * CCA_WEIGHTAGE;
+
+    channel_weight = GetPERRoamRssiCountWeight(best_rssi, ap_cnt);
+
+    score += channel_weight * OTHER_AP_WEIGHT;
+
+    VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_INFO_LOW,
+        FL("rssi=%d normalized_rssi=%d htcaps=%d vht=%d bw=%d channel=%d wmm=%d beamforming=%d ap_load=%d channel_weight=%d"),
+                 bssInfo->rssi, normalised_rssi, bssInfo->HTCapsPresent,
+                 bssInfo->vhtCapsPresent, bssInfo->chanWidth,
+                 bssInfo->channelId, bssInfo->wmeInfoPresent,
+                 bssInfo->beacomformingCapable, ap_load, channel_weight);
+    return score;
+}
+
+/* Calculate candidate AP score for PER based roaming */
+static tANI_S32 csrFindCongestionScore (tpAniSirGlobal pMac, tCsrScanResult *pBss)
+{
+    tANI_S32 score = 0;
+    tANI_S32 i;
+    tANI_S32 candidateApCnt, best_rssi, other_ap_cnt;
+    tANI_U32 current_timestamp;
+    tpCsrNeighborRoamControlInfo pNeighborRoamInfo =
+        &pMac->roam.neighborRoamInfo;
+
+    tSirBssDescription *bssInfo = &(pBss->Result.BssDescriptor);
+    pBss->congestionScore = 0;
+    for (i = 0; i < pMac->PERroamCandidatesCnt; i++)
+        if (pMac->candidateChannelInfo[i].channelNumber ==
+            pBss->Result.BssDescriptor.channelId)
+            break;
+
+    if (i == SIR_PER_ROAM_MAX_CANDIDATE_CNT) {
+        smsLog(pMac, LOGE,
+               FL("candidate chan info not found for channel %d bssid "
+               MAC_ADDRESS_STR), pBss->Result.BssDescriptor.channelId,
+               MAC_ADDR_ARRAY(pBss->Result.BssDescriptor.bssId));
+        return -1;
+    }
+
+    /* find best RSSI of other AP in this channel */
+    best_rssi = MIN_RSSI;
+    for (other_ap_cnt = 0; other_ap_cnt <
+             pMac->candidateChannelInfo[i].otherApCount; other_ap_cnt++) {
+        if (pMac->candidateChannelInfo[i].otherApRssi[other_ap_cnt] > best_rssi)
+            best_rssi = pMac->candidateChannelInfo[i].otherApRssi[other_ap_cnt];
+    }
+
+    score = calculateBssScore(bssInfo, best_rssi,
+                              pMac->candidateChannelInfo[i].otherApCount,
+                              pMac->candidateChannelInfo[i].channelCCA);
+    current_timestamp = jiffies_to_msecs(jiffies);
+
+    /* penalty logic */
+
+    /* In the previous list */
+    for (candidateApCnt = 0; candidateApCnt <
+             SIR_PER_ROAM_MAX_CANDIDATE_CNT; candidateApCnt++) {
+        if (sirCompareMacAddr(pMac->previousRoamApInfo[candidateApCnt].bssAddr,
+                pBss->Result.BssDescriptor.bssId) &&
+           ((current_timestamp - pMac->previousRoamApInfo[candidateApCnt].timeStamp) <
+                PENALTY_TIMEOUT)) {
+            score = (score * PENALTY_REMAINING_SCORE)/PENALTY_TOTAL_SCORE;
+            VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_INFO,
+                 FL("AP BSSID " MAC_ADDRESS_STR "adding penalty(in previous list)new score %d"),
+                 MAC_ADDR_ARRAY(pBss->Result.BssDescriptor.bssId),
+                 score);
+            break;
+        }
+    }
+    /* preauth failed last time */
+    for (candidateApCnt = 0; candidateApCnt <
+             MAX_NUM_PREAUTH_FAIL_LIST_ADDRESS; candidateApCnt++) {
+        if (sirCompareMacAddr(pNeighborRoamInfo->FTRoamInfo.
+                preAuthFailList.macAddress[candidateApCnt],
+                pBss->Result.BssDescriptor.bssId)) {
+            score = (score * PENALTY_REMAINING_SCORE)/PENALTY_TOTAL_SCORE;
+            VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_INFO,
+                 FL("AP BSSID " MAC_ADDRESS_STR "adding penalty(previously auth failed)new score %d"),
+                 MAC_ADDR_ARRAY(pBss->Result.BssDescriptor.bssId),
+                 score);
+            break;
+        }
+    }
+    pBss->congestionScore = score;
+
+    VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_INFO,
+                 FL("AP BSSID " MAC_ADDRESS_STR " score  %d channel %d"),
+                 MAC_ADDR_ARRAY(pBss->Result.BssDescriptor.bssId),
+                 score, pBss->Result.BssDescriptor.channelId);
+    return 0;
+}
+
+/* Calculate current AP score for PER based roaming */
+static tANI_S32 csrFindSelfCongestionScore(tpAniSirGlobal pMac,
+                                      tSirBssDescription *bssInfo)
+{
+    tANI_S32 i, best_rssi, other_ap_cnt;
+    tANI_S32 score = 0;
+
+    for (i = 0; i <= pMac->PERroamCandidatesCnt; i++)
+        if (pMac->candidateChannelInfo[i].channelNumber == bssInfo->channelId)
+            break;
+    if (i > pMac->PERroamCandidatesCnt) {
+        /* home channel info is not present, no need to roam */
+        VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+                  FL("home channel %d congestion info not present"),
+                  bssInfo->channelId);
+        pMac->currentBssScore = PER_ROAM_MAX_BSS_SCORE;
+        return -1;
+    }
+
+    /* find best RSSI of other AP in this channel */
+    best_rssi = MIN_RSSI;
+    for (other_ap_cnt = 0; other_ap_cnt <
+             pMac->candidateChannelInfo[i].otherApCount; other_ap_cnt++) {
+        if (pMac->candidateChannelInfo[i].otherApRssi[other_ap_cnt] > best_rssi)
+            best_rssi = pMac->candidateChannelInfo[i].otherApRssi[other_ap_cnt];
+    }
+
+    score = calculateBssScore(bssInfo, best_rssi,
+                              pMac->candidateChannelInfo[i].otherApCount,
+                              pMac->candidateChannelInfo[i].channelCCA);
+    pMac->currentBssScore = score;
+    VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_INFO,
+                 FL("PER Roam Current AP score  %d channel %d"),
+                 score, bssInfo->channelId);
+    return 0;
+}
+
+
+static tANI_BOOLEAN csrIsBetterBssInCongestion(tCsrScanResult *pBss1,
+                                               tCsrScanResult *pBss2)
+{
+    tANI_BOOLEAN ret;
+
+    if(CSR_IS_BETTER_PREFER_VALUE(pBss1->congestionScore,
+                                  pBss2->congestionScore))
+        ret = eANI_BOOLEAN_TRUE;
+    else
+        ret = eANI_BOOLEAN_FALSE;
+
+    return (ret);
+}
+#endif
 
 //To check whther pBss1 is better than pBss2
 static tANI_BOOLEAN csrIsBetterBss(tCsrScanResult *pBss1, tCsrScanResult *pBss2)
@@ -2168,7 +2421,9 @@ eHalStatus csrScanGetResult(tpAniSirGlobal pMac, tCsrScanResultFilter *pFilter, 
     tDot11fBeaconIEs *pIes, *pNewIes;
     tANI_BOOLEAN fMatch;
     tANI_U16 i = 0;
-    
+    tCsrRoamSession *pSession = CSR_GET_SESSION(pMac,
+                                    pMac->roam.roamSession->sessionId);
+
     if(phResult)
     {
         *phResult = CSR_INVALID_SCANRESULT_HANDLE;
@@ -2285,7 +2540,13 @@ eHalStatus csrScanGetResult(tpAniSirGlobal pMac, tCsrScanResultFilter *pFilter, 
         vos_mem_set(pRetList, sizeof(tScanResultList), 0);
         csrLLOpen(pMac->hHdd, &pRetList->List);
         pRetList->pCurEntry = NULL;
-        
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+        if (pFilter && pFilter->isPERRoamScan)
+            if (pSession && pSession->pConnectBssDesc)
+               csrFindSelfCongestionScore(pMac,
+                                          pSession->pConnectBssDesc);
+#endif
+
         csrLLLock(&pMac->scan.scanResultList);
         pEntry = csrLLPeekHead( &pMac->scan.scanResultList, LL_ACCESS_NOLOCK );
         while( pEntry ) 
@@ -2377,7 +2638,22 @@ eHalStatus csrScanGetResult(tpAniSirGlobal pMac, tCsrScanResultFilter *pFilter, 
                 //No need to lock pRetList because it is locally allocated and no outside can access it at this time
                 if(csrLLIsListEmpty(&pRetList->List, LL_ACCESS_NOLOCK))
                 {
-                    csrLLInsertTail(&pRetList->List, &pResult->Link, LL_ACCESS_NOLOCK);
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+                    if (pFilter && pFilter->isPERRoamScan) {
+                         csrFindCongestionScore(pMac, pResult);
+                         if (pResult->congestionScore > pMac->currentBssScore) {
+                             csrLLInsertTail(&pRetList->List, &pResult->Link,
+                                             LL_ACCESS_NOLOCK);
+                             smsLog(pMac, LOGW,
+                                  FL("added one entry in LL in PER Roam list"));
+                         }
+                    }
+                    else
+#endif
+                    {
+                        csrLLInsertTail(&pRetList->List, &pResult->Link,
+                                        LL_ACCESS_NOLOCK);
+                    }
                 }
                 else
                 {
@@ -2389,20 +2665,48 @@ eHalStatus csrScanGetResult(tpAniSirGlobal pMac, tCsrScanResultFilter *pFilter, 
                     while(pTmpEntry)
                     {
                         pTmpResult = GET_BASE_ADDR( pTmpEntry, tCsrScanResult, Link );
-                        if(csrIsBetterBss(pResult, pTmpResult))
-                        {
-                            csrLLInsertEntry(&pRetList->List, pTmpEntry, &pResult->Link, LL_ACCESS_NOLOCK);
-                            //To indicate we are done
-                            pResult = NULL;
-                            break;
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+                        if (pFilter && pFilter->isPERRoamScan) {
+                            csrFindCongestionScore(pMac, pResult);
+                            if(csrIsBetterBssInCongestion(pResult, pTmpResult)&&
+                             (pResult->congestionScore > pMac->currentBssScore))
+                            {
+                                csrLLInsertEntry(&pRetList->List, pTmpEntry,
+                                              &pResult->Link, LL_ACCESS_NOLOCK);
+                                smsLog(pMac, LOGW,
+                                    FL("added another entry in LL in PER Roam list"));
+                                pResult = NULL;
+                                break;
+                            }
+                            pTmpEntry = csrLLNext(&pRetList->List,
+                                                  pTmpEntry, LL_ACCESS_NOLOCK);
                         }
-                        pTmpEntry = csrLLNext(&pRetList->List, pTmpEntry, LL_ACCESS_NOLOCK);
+                        else
+#endif
+                        {
+                            if(csrIsBetterBss(pResult, pTmpResult))
+                            {
+                                csrLLInsertEntry(&pRetList->List, pTmpEntry,
+                                              &pResult->Link, LL_ACCESS_NOLOCK);
+                                //To indicate we are done
+                                pResult = NULL;
+                                break;
+                            }
+                            pTmpEntry = csrLLNext(&pRetList->List,
+                                                  pTmpEntry, LL_ACCESS_NOLOCK);
+                       }
                     }
                     if(pResult != NULL)
-                    {
-                        //This one is not better than any one
-                        csrLLInsertTail(&pRetList->List, &pResult->Link, LL_ACCESS_NOLOCK);
-                    }
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+                        if ((pFilter && !pFilter->isPERRoamScan) ||
+                            (pFilter == NULL) ||
+                            (pResult->congestionScore > pMac->currentBssScore))
+#endif
+                        {
+                            //This one is not better than any one
+                            csrLLInsertTail(&pRetList->List,
+                                            &pResult->Link, LL_ACCESS_NOLOCK);
+                        }
                 }
                 count++;
             }
@@ -2425,6 +2729,8 @@ eHalStatus csrScanGetResult(tpAniSirGlobal pMac, tCsrScanResultFilter *pFilter, 
                 csrLLClose(&pRetList->List);
                 vos_mem_free(pRetList);
                 status = eHAL_STATUS_E_NULL_VALUE;
+                smsLog(pMac, LOGW,
+                       FL("Nil scan results or no matching AP found"));
             }
             else if(phResult)
             {

@@ -1906,6 +1906,16 @@ eHalStatus sme_TXFailMonitorStartStopInd(tHalHandle hHal,
                                          void * txFailIndCallback);
 #endif /* WLAN_FEATURE_RMC */
 
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+VOS_STATUS sme_set_per_roam_rxconfig (tHalHandle hHal, v_U8_t sessionId,
+                  v_U16_t minRate, v_U16_t maxRate, v_U8_t minPercentage,
+                  v_U16_t minPktRequired, v_U64_t waitPeriodForNextPERScan);
+
+VOS_STATUS sme_unset_per_roam_rxconfig (tHalHandle hHal);
+
+void sme_PERRoamScanStartStop(void *hHal, tANI_U8 start);
+#endif
+
 /* ---------------------------------------------------------------------------
 
     \fn sme_DHCPStartInd

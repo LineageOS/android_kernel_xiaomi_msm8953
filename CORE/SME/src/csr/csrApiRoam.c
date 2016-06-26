@@ -1932,8 +1932,21 @@ eHalStatus csrChangeDefaultConfigParam(tpAniSirGlobal pMac, tCsrConfigParam *pPa
         pMac->roam.configParam.nRoamScanHomeAwayTime = pParam->nRoamScanHomeAwayTime;
 #endif
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
-        pMac->roam.configParam.isRoamOffloadScanEnabled = pParam->isRoamOffloadScanEnabled;
-        pMac->roam.configParam.bFastRoamInConIniFeatureEnabled = pParam->bFastRoamInConIniFeatureEnabled;
+        pMac->roam.configParam.isRoamOffloadScanEnabled =
+                pParam->isRoamOffloadScanEnabled;
+        pMac->roam.configParam.bFastRoamInConIniFeatureEnabled =
+                pParam->bFastRoamInConIniFeatureEnabled;
+        pMac->roam.configParam.isPERRoamEnabled =
+                pParam->isPERRoamEnabled;
+        pMac->roam.configParam.rateUpThreshold = pParam->rateUpThreshold;
+        pMac->roam.configParam.rateDownThreshold = pParam->rateDownThreshold;
+        pMac->roam.configParam.waitPeriodForNextPERScan =
+                pParam->waitPeriodForNextPERScan;
+        pMac->roam.configParam.PERtimerThreshold = pParam->PERtimerThreshold;
+        pMac->roam.configParam.isPERRoamCCAEnabled =
+                pParam->isPERRoamCCAEnabled;
+        pMac->roam.configParam.PERroamTriggerPercent =
+                pParam->PERroamTriggerPercent;
 #endif
 #ifdef FEATURE_WLAN_LFR
         pMac->roam.configParam.isFastRoamIniFeatureEnabled = pParam->isFastRoamIniFeatureEnabled;
@@ -2141,6 +2154,17 @@ eHalStatus csrGetConfigParam(tpAniSirGlobal pMac, tCsrConfigParam *pParam)
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
         pParam->isRoamOffloadScanEnabled = pMac->roam.configParam.isRoamOffloadScanEnabled;
         pParam->bFastRoamInConIniFeatureEnabled = pMac->roam.configParam.bFastRoamInConIniFeatureEnabled;
+        pParam->isPERRoamEnabled =
+                pMac->roam.configParam.isPERRoamEnabled;
+        pParam->rateUpThreshold = pMac->roam.configParam.rateUpThreshold;
+        pParam->rateDownThreshold = pMac->roam.configParam.rateDownThreshold;
+        pParam->waitPeriodForNextPERScan =
+                pMac->roam.configParam.waitPeriodForNextPERScan;
+        pParam->PERtimerThreshold = pMac->roam.configParam.PERtimerThreshold;
+        pParam->isPERRoamCCAEnabled =
+                pMac->roam.configParam.isPERRoamCCAEnabled;
+        pParam->PERroamTriggerPercent =
+                pMac->roam.configParam.PERroamTriggerPercent;
 #endif
 #ifdef FEATURE_WLAN_LFR
         pParam->isFastRoamIniFeatureEnabled = pMac->roam.configParam.isFastRoamIniFeatureEnabled;
@@ -8287,8 +8311,11 @@ static void csrRoamRoamingStateReassocRspProcessor( tpAniSirGlobal pMac, tpSirSm
     tpCsrNeighborRoamControlInfo    pNeighborRoamInfo = &pMac->roam.neighborRoamInfo;
     tCsrRoamInfo roamInfo;
     tANI_U32 roamId = 0;
-    
-    if ( eSIR_SME_SUCCESS == pSmeJoinRsp->statusCode ) 
+    tANI_U32 current_timestamp, max_time = -1;
+    tANI_U32 candidateApCnt, oldestIndex;
+    tANI_U8 nilMac[6] = {0};
+
+    if (eSIR_SME_SUCCESS == pSmeJoinRsp->statusCode)
     {
         smsLog( pMac, LOGW, "CSR SmeReassocReq Successful" );
         result = eCsrReassocSuccess;
@@ -8301,6 +8328,73 @@ static void csrRoamRoamingStateReassocRspProcessor( tpAniSirGlobal pMac, tpSirSm
             /* Need to dig more on indicating events to SME QoS module */
             sme_QosCsrEventInd(pMac, pSmeJoinRsp->sessionId, SME_QOS_CSR_HANDOFF_COMPLETE, NULL);
             csrRoamComplete( pMac, result, pSmeJoinRsp);
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+            /* Add previous BSSID to blacklist ; this will be in blacklised for
+             * some period and score of this AP will be reduced if black listed
+             * to avoid ping pong */
+            if (pMac->PERroamCandidatesCnt)
+            {
+              current_timestamp = jiffies_to_msecs(jiffies);
+              for (candidateApCnt = 0; candidateApCnt <
+                   SIR_PER_ROAM_MAX_CANDIDATE_CNT; candidateApCnt++)
+              {
+                  /* Find one blank entry */
+                  if (sirCompareMacAddr(nilMac,
+                          pMac->previousRoamApInfo[candidateApCnt].bssAddr))
+                  {
+                      vos_mem_copy(pMac->previousRoamApInfo[candidateApCnt].
+                                   bssAddr,
+                                   pNeighborRoamInfo->prevConnProfile.bssid,
+                                   sizeof(tSirMacAddr));
+                      pMac->previousRoamApInfo[candidateApCnt].timeStamp =
+                          current_timestamp;
+                      smsLog(pMac, LOG1, FL("added bssid=" MAC_ADDRESS_STR " at index %d"),
+                             MAC_ADDR_ARRAY(
+                                 pNeighborRoamInfo->prevConnProfile.bssid),
+                             candidateApCnt);
+                      break;
+                  }
+                  /* if already in the list */
+                  if (sirCompareMacAddr(pMac->previousRoamApInfo
+                      [candidateApCnt].bssAddr,
+                      pNeighborRoamInfo->prevConnProfile.bssid) &&
+                      ((current_timestamp -
+                          pMac->previousRoamApInfo[candidateApCnt].timeStamp) >
+                          pMac->PERroamTimeout))
+                  {
+                      vos_mem_copy(pMac->previousRoamApInfo[candidateApCnt].
+                                   bssAddr,
+                                   pNeighborRoamInfo->prevConnProfile.bssid,
+                                   sizeof(tSirMacAddr));
+                      pMac->previousRoamApInfo[candidateApCnt].timeStamp =
+                          current_timestamp;
+                      break;
+                  } else
+                  {
+                      /* find oldest BSSID entry in the blacklist */
+                      if (max_time <
+                             pMac->previousRoamApInfo[candidateApCnt].timeStamp)
+                      {
+                          max_time =
+                             pMac->previousRoamApInfo[candidateApCnt].timeStamp;
+                          oldestIndex = candidateApCnt;
+                      }
+                  }
+              }
+              if (candidateApCnt == SIR_PER_ROAM_MAX_CANDIDATE_CNT)
+              {
+                 smsLog(pMac, LOGW,
+                        "%s: Clearing out oldest roam results bssid="
+                        MAC_ADDRESS_STR,
+                        __func__,
+                        MAC_ADDR_ARRAY(pMac->previousRoamApInfo[oldestIndex].bssAddr));
+                  pMac->previousRoamApInfo[oldestIndex].timeStamp = current_timestamp;
+                  vos_mem_copy(pMac->previousRoamApInfo[oldestIndex].bssAddr,
+                       pNeighborRoamInfo->prevConnProfile.bssid,
+                       sizeof(tSirMacAddr));
+              }
+            }
+#endif
         }
         else
 #endif
@@ -16594,7 +16688,9 @@ tANI_BOOLEAN CsrIsRSOCommandAllowed(tpAniSirGlobal pMac, tANI_U8 command)
 eHalStatus csrRoamOffloadScan(tpAniSirGlobal pMac, tANI_U8 command, tANI_U8 reason)
 {
    vos_msg_t msg;
+   vos_msg_t PERroamScanConfigMsg = {0};
    tSirRoamOffloadScanReq *pRequestBuf;
+   tSirPERRoamOffloadScanReq *PERRoamReqBuf;
    tpCsrNeighborRoamControlInfo    pNeighborRoamInfo = &pMac->roam.neighborRoamInfo;
    tCsrRoamSession *pSession = NULL;
    tANI_U8 i,j,num_channels = 0, ucDot11Mode;
@@ -16880,6 +16976,7 @@ eHalStatus csrRoamOffloadScan(tpAniSirGlobal pMac, tANI_U8 command, tANI_U8 reas
     /* MAWC feature */
     pRequestBuf->MAWCEnabled =
             pMac->roam.configParam.MAWCEnabled;
+
 #ifdef FEATURE_WLAN_ESE
     pRequestBuf->IsESEEnabled = pMac->roam.configParam.isEseIniFeatureEnabled;
 #endif
@@ -17078,6 +17175,52 @@ send_roam_scan_offload_cmd:
     }
 
    VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_DEBUG, "Roam Scan Offload Command %d, Reason %d", command, reason);
+
+   if (sme_IsFeatureSupportedByFW(PER_BASED_ROAMING) &&
+      (command != ROAM_SCAN_OFFLOAD_STOP))
+   {
+
+      /* PER ROAM SCAN */
+      PERRoamReqBuf = vos_mem_malloc(sizeof(*PERRoamReqBuf));
+      if (!PERRoamReqBuf)
+      {
+          VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+                 "%s: Not able to allocate mem for PERRoamReqBuf", __func__);
+          return eHAL_STATUS_FAILURE;
+      }
+      /* PER Roam Config */
+      PERRoamReqBuf->rateUpThreshold =
+              pMac->roam.configParam.rateUpThreshold;
+      PERRoamReqBuf->rateDownThreshold =
+              pMac->roam.configParam.rateDownThreshold;
+      PERRoamReqBuf->waitPeriodForNextPERScan =
+              pMac->roam.configParam.waitPeriodForNextPERScan;
+      PERRoamReqBuf->PERtimerThreshold =
+              pMac->roam.configParam.PERtimerThreshold;
+      PERRoamReqBuf->isPERRoamCCAEnabled =
+              pMac->roam.configParam.isPERRoamCCAEnabled;
+      PERRoamReqBuf->PERroamTriggerPercent =
+              pMac->roam.configParam.PERroamTriggerPercent;
+      PERRoamReqBuf->sessionId = sessionId;
+
+      PERroamScanConfigMsg.type = WDA_PER_ROAM_SCAN_OFFLOAD_REQ;
+      PERroamScanConfigMsg.reserved = 0;
+      PERroamScanConfigMsg.bodyptr = PERRoamReqBuf;
+      if (!VOS_IS_STATUS_SUCCESS(vos_mq_post_message(VOS_MODULE_ID_WDA,
+                                     &PERroamScanConfigMsg))) {
+          VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+               FL("Not able to post WDA_PER_ROAM_SCAN_OFFLOAD_REQ msg to WDA"));
+          vos_mem_free(PERRoamReqBuf);
+          return eHAL_STATUS_FAILURE;
+      }
+      VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_DEBUG,
+                FL("rateUpThreshold =%x rateDownThreshold =%x waitPeriodForNextPERScan=%u PERtimerThreshold=%u"),
+                PERRoamReqBuf->rateUpThreshold,
+                PERRoamReqBuf->rateDownThreshold,
+                PERRoamReqBuf->waitPeriodForNextPERScan,
+                PERRoamReqBuf->PERtimerThreshold);
+   }
+
    return status;
 }
 

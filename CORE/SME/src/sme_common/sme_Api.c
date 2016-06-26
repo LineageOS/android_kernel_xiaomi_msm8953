@@ -6194,6 +6194,90 @@ eHalStatus sme_TXFailMonitorStartStopInd(tHalHandle hHal, tANI_U8 tx_fail_count,
 }
 #endif /* WLAN_FEATURE_RMC */
 
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+void sme_PERRoamScanStartStop(void *hHal, tANI_U8 start)
+{
+    eHalStatus            status;
+    VOS_STATUS            vosStatus;
+    tpAniSirGlobal        pMac = PMAC_STRUCT(hHal);
+    vos_msg_t             vosMessage;
+    tPERRoamScanStart     *pMsg;
+
+    status = sme_AcquireGlobalLock(&pMac->sme);
+    if ( eHAL_STATUS_SUCCESS == status)
+    {
+        pMsg = (tPERRoamScanStart *)
+                   vos_mem_malloc(sizeof(tPERRoamScanStart));
+        if (NULL == pMsg)
+        {
+            VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+                   "%s: Failed to allocate memory", __func__);
+            sme_ReleaseGlobalLock( &pMac->sme );
+            return;
+        }
+
+        pMsg->msgType = WDA_PER_ROAM_SCAN_TRIGGER_REQ;
+        pMsg->msgLen = (tANI_U16)sizeof(*pMsg);
+
+        pMsg->start = start;
+
+        vosMessage.type = WDA_PER_ROAM_SCAN_TRIGGER_REQ;
+        vosMessage.bodyptr = pMsg;
+        vosMessage.reserved = 0;
+
+        MTRACE(vos_trace(VOS_MODULE_ID_SME,
+                 TRACE_CODE_SME_TX_WDA_MSG, NO_SESSION, vosMessage.type));
+        vosStatus = vos_mq_post_message(VOS_MQ_ID_WDA, &vosMessage );
+        if ( !VOS_IS_STATUS_SUCCESS(vosStatus) )
+        {
+           VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+                         "%s: Post TX Fail monitor Start MSG fail", __func__);
+           vos_mem_free(pMsg);
+           status = eHAL_STATUS_FAILURE;
+        }
+        sme_ReleaseGlobalLock(&pMac->sme);
+    }
+}
+
+/* sme_set_per_roam_rxconfig : set PER config for Rx monitoring
+ * @hHal: hal pointer
+ * @staId: station id
+ * @minRate : rate at which to start monitoring
+ * @maxRate : Rate at which to stop monitoring
+ * @minPercentage: minimum % of packets required in minRate to trigger a scan
+ * @minPktRequired: minimum number of packets required to trigger a scan
+ * @waitPeriodForNextPERScan: time to wait before start monitoring again once
+ * roam scan is triggered
+ * */
+
+VOS_STATUS sme_set_per_roam_rxconfig (tHalHandle hHal, v_U8_t staId,
+                             v_U16_t minRate, v_U16_t maxRate,
+                             v_U8_t minPercentage, v_U16_t minPktRequired,
+                             v_U64_t waitPeriodForNextPERScan)
+{
+    tpAniSirGlobal pMac = PMAC_STRUCT(hHal);
+    v_VOID_t * pVosContext = vos_get_global_context(VOS_MODULE_ID_SME, NULL);
+    WLANTL_StartRxRateMonitor(pVosContext, staId, minRate, maxRate,
+                    minPercentage, minPktRequired,
+                    (void *) hHal, waitPeriodForNextPERScan,
+                    sme_PERRoamScanStartStop);
+    pMac->PERroamCandidatesCnt = 0;
+    return eHAL_STATUS_SUCCESS;
+}
+
+/* sme_unset_per_roam_rxconfig : unset PER config for Rx monitoring
+ * */
+VOS_STATUS sme_unset_per_roam_rxconfig (tHalHandle hHal)
+{
+    tpAniSirGlobal pMac = PMAC_STRUCT(hHal);
+    v_VOID_t * pVosContext = vos_get_global_context(VOS_MODULE_ID_SME, NULL);
+    vos_mem_set(pMac->previousRoamApInfo,
+                sizeof(tSirRoamAPInfo) * SIR_PER_ROAM_MAX_CANDIDATE_CNT, 0);
+    WLANTL_StopRxRateMonitor(pVosContext);
+    return eHAL_STATUS_SUCCESS;
+}
+#endif
+
 /* ---------------------------------------------------------------------------
     \fn sme_BtcSignalBtEvent
     \brief  API to signal Bluetooth (BT) event to the WLAN driver. Based on the
