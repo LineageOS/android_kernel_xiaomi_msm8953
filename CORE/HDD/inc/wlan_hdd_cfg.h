@@ -903,6 +903,78 @@ typedef enum
 #define CFG_ROAM_SCAN_OFFLOAD_ENABLED_MIN                   (0)
 #define CFG_ROAM_SCAN_OFFLOAD_ENABLED_MAX                   (1)
 #define CFG_ROAM_SCAN_OFFLOAD_ENABLED_DEFAULT               (1)
+
+/* Enable/disable PER based roaming */
+#define CFG_PER_ROAM_SCAN_OFFLOAD_ENABLED                  "gPERRoamEnable"
+#define CFG_PER_ROAM_SCAN_OFFLOAD_ENABLED_MIN              (0)
+#define CFG_PER_ROAM_SCAN_OFFLOAD_ENABLED_MAX              (1)
+#define CFG_PER_ROAM_SCAN_OFFLOAD_ENABLED_DEFAULT          (0)
+
+/*
+ * Rate at which to stop monitoring data rates for PER based Roam
+ * Value: MBPS * 10
+ * Min: Minimum rate of data transfer
+ * Max: Max rate for 1x1 transmission
+ */
+#define CFG_PER_ROAM_SCAN_RATE_UP_THRESHOLD                "gPERRoamUpThresholdRate"
+#define CFG_PER_ROAM_SCAN_RATE_UP_THRESHOLD_MIN            (10)
+#define CFG_PER_ROAM_SCAN_RATE_UP_THRESHOLD_MAX            (3330)
+#define CFG_PER_ROAM_SCAN_RATE_UP_THRESHOLD_DEFAULT        (400)
+
+/*
+ * rate at which to start monitoring data rates for PER based roam
+ * Value: MBPS * 10
+ */
+#define CFG_PER_ROAM_SCAN_RATE_DOWN_THRESHOLD              "gPERRoamDownThresholdRate"
+#define CFG_PER_ROAM_SCAN_RATE_DOWN_THRESHOLD_MIN          (10)
+#define CFG_PER_ROAM_SCAN_RATE_DOWN_THRESHOLD_MAX          (3330)
+#define CFG_PER_ROAM_SCAN_RATE_DOWN_THRESHOLD_DEFAULT      (100)
+
+/*
+ * time to wait before start monitoring again once a roam scan has been
+ * triggered. (Minimum time difference between two scans)
+ * Value : seconds
+ */
+#define CFG_PER_ROAM_SCAN_WAIT_TIME                        "gPERRoamScanInterval"
+#define CFG_PER_ROAM_SCAN_WAIT_TIME_MIN                    (0)
+#define CFG_PER_ROAM_SCAN_WAIT_TIME_MAX                    (3600)
+#define CFG_PER_ROAM_SCAN_WAIT_TIME_DEFAULT                (1200)
+
+/* Time to collect stats to trigger roam scan for Tx path */
+#define CFG_PER_ROAM_SCAN_PER_TIME_THRESHOLD               "gPERRoamStatsTime"
+#define CFG_PER_ROAM_SCAN_PER_TIME_THRESHOLD_MIN           (0)
+#define CFG_PER_ROAM_SCAN_PER_TIME_THRESHOLD_MAX           (25)
+#define CFG_PER_ROAM_SCAN_PER_TIME_THRESHOLD_DEFAULT       (20)
+
+/* Rx monitoring is enabled to trigger a PER based roam scan */
+#define CFG_PER_ROAM_SCAN_RX_MONITOR_ENABLED               "gPERRoamRxMonitorEnable"
+#define CFG_PER_ROAM_SCAN_RX_MONITOR_ENABLED_MIN           (0)
+#define CFG_PER_ROAM_SCAN_RX_MONITOR_ENABLED_MAX           (1)
+#define CFG_PER_ROAM_SCAN_RX_MONITOR_ENABLED_DEFAULT       (0)
+
+/*
+ * Minimum number of packets required to consider if PER based roam scan
+ * needs to be triggered in Rx
+ */
+#define CFG_PER_ROAM_SCAN_RX_MIN_PACKETS               "gPERRoamRxPktThreshold"
+#define CFG_PER_ROAM_SCAN_RX_MIN_PACKETS_MIN           (10)
+#define CFG_PER_ROAM_SCAN_RX_MIN_PACKETS_MAX           (10000)
+#define CFG_PER_ROAM_SCAN_RX_MIN_PACKETS_DEFAULT       (100)
+
+/*
+ * Minimum percentage of packets needs to be below gPERRoamScanRateDownThreshold
+ * to trigger a roam scan
+ */
+#define CFG_PER_ROAM_SCAN_MIN_PERCENTAGE               "gPERRoamTriggerPercent"
+#define CFG_PER_ROAM_SCAN_MIN_PERCENTAGE_MIN           (20)
+#define CFG_PER_ROAM_SCAN_MIN_PERCENTAGE_MAX           (100)
+#define CFG_PER_ROAM_SCAN_MIN_PERCENTAGE_DEFAULT       (60)
+
+/* Channel sensing is enabled/disabled for PER based roam scan */
+#define CFG_PER_ROAM_SCAN_CCA_ENABLED                  "gPERRoamCCAEnabled"
+#define CFG_PER_ROAM_SCAN_CCA_ENABLED_MIN              (0)
+#define CFG_PER_ROAM_SCAN_CCA_ENABLED_MAX              (1)
+#define CFG_PER_ROAM_SCAN_CCA_ENABLED_DEFAULT          (0)
 #endif
 
 #define CFG_QOS_WMM_PKT_CLASSIFY_BASIS_NAME                "PktClassificationBasis" // DSCP or 802.1Q
@@ -2978,6 +3050,15 @@ typedef struct
 #endif
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
    v_BOOL_t                     isRoamOffloadScanEnabled;
+   v_BOOL_t                     isPERRoamEnabled;
+   v_BOOL_t                     isPERRoamRxPathEnabled;
+   v_BOOL_t                     isPERRoamCCAEnabled;
+   v_U16_t                      rateUpThreshold;
+   v_U16_t                      rateDownThreshold;
+   v_U16_t                      PERroamTriggerPercent;
+   v_U32_t                      waitPeriodForNextPERScan;
+   v_U32_t                      PERtimerThreshold;
+   v_U32_t                      PERroamRxPktsThreshold;
 #endif
    hdd_wmm_classification_t     PktClassificationBasis; // DSCP or 802.1Q
    v_BOOL_t                     bImplicitQosEnabled;
