@@ -1144,6 +1144,14 @@ static eHalStatus hdd_DisConnectHandler( hdd_adapter_t *pAdapter, tCsrRoamInfo *
     }
 
      hdd_wmm_adapter_clear(pAdapter);
+     /* Clear PER based roam stats */
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+     if (sme_IsFeatureSupportedByFW(PER_BASED_ROAMING) &&
+         (WLAN_HDD_INFRA_STATION == pAdapter->device_mode) &&
+         pHddCtx->cfg_ini && pHddCtx->cfg_ini->isPERRoamEnabled &&
+         pHddCtx->cfg_ini->isPERRoamRxPathEnabled)
+         sme_unset_per_roam_rxconfig(pHddCtx->hHal);
+#endif
 #if defined(WLAN_FEATURE_VOWIFI_11R)
      sme_FTReset(WLAN_HDD_GET_HAL_CTX(pAdapter));
 #endif
@@ -1595,6 +1603,22 @@ static eHalStatus hdd_AssociationCompletionHandler( hdd_adapter_t *pAdapter, tCs
         pAdapter->maxRateFlags = pRoamInfo->maxRateFlags;
         // Save the connection info from CSR...
         hdd_connSaveConnectInfo( pAdapter, pRoamInfo, eCSR_BSS_TYPE_INFRASTRUCTURE );
+
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+        if (sme_IsFeatureSupportedByFW(PER_BASED_ROAMING) &&
+            (WLAN_HDD_INFRA_STATION == pAdapter->device_mode) &&
+            !hddDisconInProgress &&
+            pHddCtx->cfg_ini && pHddCtx->cfg_ini->isPERRoamEnabled &&
+            pHddCtx->cfg_ini->isPERRoamRxPathEnabled)
+            sme_set_per_roam_rxconfig(pHddCtx->hHal,
+                 pHddStaCtx->conn_info.staId[0],
+                 pHddCtx->cfg_ini->rateDownThreshold,
+                 pHddCtx->cfg_ini->rateUpThreshold,
+                 pHddCtx->cfg_ini->PERroamTriggerPercent,
+                 pHddCtx->cfg_ini->PERroamRxPktsThreshold,
+                 pHddCtx->cfg_ini->waitPeriodForNextPERScan);
+#endif
+
 #ifdef FEATURE_WLAN_WAPI
         if ( pRoamInfo->u.pConnectedProfile->AuthType == eCSR_AUTH_TYPE_WAPI_WAI_CERTIFICATE ||
                 pRoamInfo->u.pConnectedProfile->AuthType == eCSR_AUTH_TYPE_WAPI_WAI_PSK )

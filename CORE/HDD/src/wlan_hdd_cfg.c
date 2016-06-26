@@ -2776,6 +2776,69 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                         CFG_ENABLE_FAST_ROAM_IN_CONCURRENCY_MIN,
                         CFG_ENABLE_FAST_ROAM_IN_CONCURRENCY_MAX,
                         cbNotifySetEnableFastRoamInConcurrency, 0 ),
+
+   REG_VARIABLE(CFG_PER_ROAM_SCAN_OFFLOAD_ENABLED, WLAN_PARAM_Integer,
+                 hdd_config_t, isPERRoamEnabled,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_PER_ROAM_SCAN_OFFLOAD_ENABLED_DEFAULT,
+                 CFG_PER_ROAM_SCAN_OFFLOAD_ENABLED_MIN,
+                 CFG_PER_ROAM_SCAN_OFFLOAD_ENABLED_MAX),
+
+   REG_VARIABLE(CFG_PER_ROAM_SCAN_RATE_UP_THRESHOLD, WLAN_PARAM_Integer,
+                 hdd_config_t, rateUpThreshold,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_PER_ROAM_SCAN_RATE_UP_THRESHOLD_DEFAULT,
+                 CFG_PER_ROAM_SCAN_RATE_UP_THRESHOLD_MIN,
+                 CFG_PER_ROAM_SCAN_RATE_UP_THRESHOLD_MAX),
+
+   REG_VARIABLE(CFG_PER_ROAM_SCAN_RATE_DOWN_THRESHOLD, WLAN_PARAM_Integer,
+                 hdd_config_t, rateDownThreshold,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_PER_ROAM_SCAN_RATE_DOWN_THRESHOLD_DEFAULT,
+                 CFG_PER_ROAM_SCAN_RATE_DOWN_THRESHOLD_MIN,
+                 CFG_PER_ROAM_SCAN_RATE_DOWN_THRESHOLD_MAX),
+
+   REG_VARIABLE(CFG_PER_ROAM_SCAN_WAIT_TIME, WLAN_PARAM_Integer,
+                 hdd_config_t, waitPeriodForNextPERScan,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_PER_ROAM_SCAN_WAIT_TIME_DEFAULT,
+                 CFG_PER_ROAM_SCAN_WAIT_TIME_MIN,
+                 CFG_PER_ROAM_SCAN_WAIT_TIME_MAX),
+
+   REG_VARIABLE(CFG_PER_ROAM_SCAN_PER_TIME_THRESHOLD, WLAN_PARAM_Integer,
+                 hdd_config_t, PERtimerThreshold,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_PER_ROAM_SCAN_PER_TIME_THRESHOLD_DEFAULT,
+                 CFG_PER_ROAM_SCAN_PER_TIME_THRESHOLD_MIN,
+                 CFG_PER_ROAM_SCAN_PER_TIME_THRESHOLD_MAX),
+
+   REG_VARIABLE(CFG_PER_ROAM_SCAN_RX_MONITOR_ENABLED, WLAN_PARAM_Integer,
+                 hdd_config_t, isPERRoamRxPathEnabled,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_PER_ROAM_SCAN_RX_MONITOR_ENABLED_DEFAULT,
+                 CFG_PER_ROAM_SCAN_RX_MONITOR_ENABLED_MIN,
+                 CFG_PER_ROAM_SCAN_RX_MONITOR_ENABLED_MAX),
+
+   REG_VARIABLE(CFG_PER_ROAM_SCAN_MIN_PERCENTAGE, WLAN_PARAM_Integer,
+                 hdd_config_t, PERroamTriggerPercent,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_PER_ROAM_SCAN_MIN_PERCENTAGE_DEFAULT,
+                 CFG_PER_ROAM_SCAN_MIN_PERCENTAGE_MIN,
+                 CFG_PER_ROAM_SCAN_MIN_PERCENTAGE_MAX),
+
+   REG_VARIABLE(CFG_PER_ROAM_SCAN_RX_MIN_PACKETS, WLAN_PARAM_Integer,
+                 hdd_config_t, PERroamRxPktsThreshold,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_PER_ROAM_SCAN_RX_MIN_PACKETS_DEFAULT,
+                 CFG_PER_ROAM_SCAN_RX_MIN_PACKETS_MIN,
+                 CFG_PER_ROAM_SCAN_RX_MIN_PACKETS_MAX),
+
+   REG_VARIABLE(CFG_PER_ROAM_SCAN_CCA_ENABLED, WLAN_PARAM_Integer,
+                 hdd_config_t, isPERRoamCCAEnabled,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_PER_ROAM_SCAN_CCA_ENABLED_DEFAULT,
+                 CFG_PER_ROAM_SCAN_CCA_ENABLED_MIN,
+                 CFG_PER_ROAM_SCAN_CCA_ENABLED_MAX),
 #endif
 
    REG_VARIABLE( CFG_ENABLE_ADAPT_RX_DRAIN_NAME, WLAN_PARAM_Integer,
@@ -4148,6 +4211,44 @@ static void print_hdd_cfg(hdd_context_t *pHddCtx)
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
             "Name = [%s] Value = [%u] ", CFG_SAP_PROBE_RESP_OFFLOAD_NAME,
             pHddCtx->cfg_ini->sap_probe_resp_offload);
+
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+          "Name = [gPERRoamStatsTime] Value = [%lu] ",
+          (long unsigned int)pHddCtx->cfg_ini->PERtimerThreshold);
+
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+          "Name = [gPERRoamRxMonitorEnabled] Value = [%u] ",
+          pHddCtx->cfg_ini->isPERRoamRxPathEnabled);
+
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+          "Name = [gPERRoamTriggerPercent] Value = [%u] ",
+          pHddCtx->cfg_ini->PERroamTriggerPercent);
+
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+          "Name = [gPERRoamRxPktThreshold] Value = [%u] ",
+          pHddCtx->cfg_ini->PERroamRxPktsThreshold);
+
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+          "Name = [gPERRoamCCAEnabled] Value = [%u] ",
+          pHddCtx->cfg_ini->isPERRoamCCAEnabled);
+
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+          "Name = [gPERRoamScanInterval] Value = [%lu] ",
+          (long unsigned int)pHddCtx->cfg_ini->waitPeriodForNextPERScan);
+
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+          "Name = [gPERRoamDownThresholdRate] Value = [%u] ",
+          pHddCtx->cfg_ini->rateDownThreshold);
+
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+          "Name = [gPERRoamEnable] Value = [%u] ",
+          pHddCtx->cfg_ini->isPERRoamEnabled);
+
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+          "Name = [gPERRoamUpThresholdRate] Value = [%u] ",
+          pHddCtx->cfg_ini->rateUpThreshold);
+#endif
 }
 
 
@@ -5928,8 +6029,20 @@ VOS_STATUS hdd_set_sme_config( hdd_context_t *pHddCtx )
    smeConfig->csrConfig.isWESModeEnabled = pConfig->isWESModeEnabled;
 #endif
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
-   smeConfig->csrConfig.isRoamOffloadScanEnabled = pConfig->isRoamOffloadScanEnabled;
-   smeConfig->csrConfig.bFastRoamInConIniFeatureEnabled = pConfig->bFastRoamInConIniFeatureEnabled;
+   smeConfig->csrConfig.isRoamOffloadScanEnabled =
+           pConfig->isRoamOffloadScanEnabled;
+   smeConfig->csrConfig.bFastRoamInConIniFeatureEnabled =
+           pConfig->bFastRoamInConIniFeatureEnabled;
+   smeConfig->csrConfig.isPERRoamEnabled =
+           pConfig->isPERRoamEnabled;
+   smeConfig->csrConfig.rateUpThreshold = pConfig->rateUpThreshold;
+   smeConfig->csrConfig.rateDownThreshold = pConfig->rateDownThreshold;
+   smeConfig->csrConfig.waitPeriodForNextPERScan =
+           pConfig->waitPeriodForNextPERScan;
+   smeConfig->csrConfig.PERtimerThreshold = pConfig->PERtimerThreshold;
+   smeConfig->csrConfig.isPERRoamCCAEnabled = pConfig->isPERRoamCCAEnabled;
+   smeConfig->csrConfig.PERroamTriggerPercent = pConfig->PERroamTriggerPercent;
+
 
    if (0 == smeConfig->csrConfig.isRoamOffloadScanEnabled)
    {
