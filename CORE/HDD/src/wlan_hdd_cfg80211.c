@@ -6116,8 +6116,13 @@ static int __wlan_hdd_cfg80211_firmware_roaming(struct wiphy *wiphy,
 
     //Update roaming
     status = sme_ConfigFwrRoaming((tHalHandle)(pHddCtx->hHal), isFwrRoamEnabled);
+    if (!HAL_STATUS_SUCCESS(status)) {
+        hddLog(LOGE,
+           FL("sme_ConfigFwrRoaming failed (err=%d)"), status);
+        return -EINVAL;
+    }
     EXIT();
-    return status;
+    return 0;
 }
 
 static int wlan_hdd_cfg80211_firmware_roaming(struct wiphy *wiphy,
