@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -504,4 +504,5 @@ v_BOOL_t vos_isLoadUnloadInProgress(void);
 void vos_probe_threads(void);
 void vos_per_pkt_stats_to_user(void *perPktStat);
 void vos_updatePktStatsInfo(void * pktStat);
+bool vos_is_wlan_logging_enabled(void);
 #endif // if !defined __VOS_NVITEM_H
