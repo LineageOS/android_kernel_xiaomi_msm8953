@@ -1857,7 +1857,8 @@ void wlan_process_done_indication(uint8 type, uint32 reason_code)
         }
 
 	if ((type == WLAN_FW_LOGS) && reason_code &&
-				 vos_isFatalEventEnabled())
+				 vos_isFatalEventEnabled() &&
+				 vos_is_wlan_logging_enabled())
 	{
 		if(wlan_is_log_report_in_progress() == TRUE)
 		{
@@ -1904,7 +1905,7 @@ void wlan_process_done_indication(uint8 type, uint32 reason_code)
 			wake_up_interruptible(&gwlan_logging.wait_queue);
 		}
 	}
-	if(type == WLAN_FW_MEMORY_DUMP)
+	if(type == WLAN_FW_MEMORY_DUMP && vos_is_wlan_logging_enabled())
 	{
 		pr_info("%s: Setting FW MEM DUMP LOGGER event\n", __func__);
 		set_bit(LOGGER_FW_MEM_DUMP_PKT_POST_DONE, &gwlan_logging.event_flag);
