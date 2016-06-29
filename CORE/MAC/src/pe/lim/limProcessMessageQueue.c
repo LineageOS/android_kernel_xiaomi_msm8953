@@ -741,9 +741,12 @@ limHandle80211Frames(tpAniSirGlobal pMac, tpSirMsgQ limMsg, tANI_U8 *pDeferMsg)
         if ((fc.type == SIR_MAC_MGMT_FRAME) &&
                 (fc.subType != SIR_MAC_MGMT_BEACON))
         {
-            limLog(pMac, LOG1, FL("RX MGMT - Type %hu, SubType %hu, Seq.no %d"),
-                    fc.type, fc.subType,
-                    ((pHdr->seqControl.seqNumHi << 4) | (pHdr->seqControl.seqNumLo)));
+            limLog(pMac, LOG1, FL("RX MGMT - Type %hu, SubType %hu,"
+                                  "Seq.no %d, Source mac-addr "
+                                  MAC_ADDRESS_STR), fc.type, fc.subType,
+                                  ((pHdr->seqControl.seqNumHi << 4) |
+                                   (pHdr->seqControl.seqNumLo)),
+                                  MAC_ADDR_ARRAY(pHdr->sa));
         }
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
     if ( WDA_GET_ROAMCANDIDATEIND(pRxPacketInfo))

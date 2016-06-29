@@ -3519,3 +3519,40 @@ bool vos_is_wlan_logging_enabled(void)
 
     return true;
 }
+
+/**---------------------------------------------------------------------------
+
+  \brief vos_is_probe_rsp_offload_enabled -
+
+  API to check if probe response offload feature is enabled from ini
+
+  \param  -  None
+
+  \return -  0: probe response offload is disabled
+             1: probe response offload is enabled
+
+  --------------------------------------------------------------------------*/
+v_BOOL_t vos_is_probe_rsp_offload_enabled(void)
+{
+	hdd_context_t *pHddCtx = NULL;
+	v_CONTEXT_t pVosContext = NULL;
+
+	/* Get the Global VOSS Context */
+	pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+	if (!pVosContext) {
+		hddLog(VOS_TRACE_LEVEL_FATAL,
+		       "%s: Global VOS context is Null", __func__);
+		return FALSE;
+	}
+
+	/* Get the HDD context */
+	pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD,
+						   pVosContext);
+	if (!pHddCtx) {
+		hddLog(VOS_TRACE_LEVEL_FATAL,
+		       "%s: HDD context is Null", __func__);
+		return FALSE;
+	}
+
+	return pHddCtx->cfg_ini->sap_probe_resp_offload;
+}

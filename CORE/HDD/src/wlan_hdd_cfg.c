@@ -3629,6 +3629,12 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                CFG_SEND_MGMT_PKT_VIA_WQ5_MIN,
                CFG_SEND_MGMT_PKT_VIA_WQ5_MAX ),
 
+  REG_VARIABLE(CFG_SAP_PROBE_RESP_OFFLOAD_NAME, WLAN_PARAM_Integer,
+               hdd_config_t, sap_probe_resp_offload,
+               VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+               CFG_SAP_PROBE_RESP_OFFLOAD_DEFAULT,
+               CFG_SAP_PROBE_RESP_OFFLOAD_MIN,
+               CFG_SAP_PROBE_RESP_OFFLOAD_MAX),
 };
 
 /*
@@ -4138,6 +4144,10 @@ static void print_hdd_cfg(hdd_context_t *pHddCtx)
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
           "Name = [gSendMgmtPktViaWQ5] Value = [%u] ",
           pHddCtx->cfg_ini->sendMgmtPktViaWQ5);
+
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+            "Name = [%s] Value = [%u] ", CFG_SAP_PROBE_RESP_OFFLOAD_NAME,
+            pHddCtx->cfg_ini->sap_probe_resp_offload);
 }
 
 

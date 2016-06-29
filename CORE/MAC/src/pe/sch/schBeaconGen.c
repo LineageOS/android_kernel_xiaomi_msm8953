@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -276,6 +276,7 @@ tSirRetStatus schSetFixedBeaconFields(tpAniSirGlobal pMac,tpPESession psessionEn
     if((psessionEntry->limSystemRole == eLIM_AP_ROLE) 
         && ((psessionEntry->proxyProbeRspEn)
         || (IS_FEATURE_SUPPORTED_BY_FW(WPS_PRBRSP_TMPL)))
+        && vos_is_probe_rsp_offload_enabled()
       )
     {
         /* Initialize the default IE bitmap to zero */
@@ -420,6 +421,7 @@ tSirRetStatus schSetFixedBeaconFields(tpAniSirGlobal pMac,tpPESession psessionEn
     if((psessionEntry->limSystemRole == eLIM_AP_ROLE) 
         && ((psessionEntry->proxyProbeRspEn)
         || (IS_FEATURE_SUPPORTED_BY_FW(WPS_PRBRSP_TMPL)))
+        && vos_is_probe_rsp_offload_enabled()
       )
     {
         /* Can be efficiently updated whenever new IE added  in Probe response in future */
