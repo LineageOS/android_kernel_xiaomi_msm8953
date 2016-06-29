@@ -2752,6 +2752,15 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_SEND_MGMT_PKT_VIA_WQ5_MAX      ( 1)
 #define CFG_SEND_MGMT_PKT_VIA_WQ5_DEF      ( 0 )
 
+/*
+ * gSapProbeRespOffload: when set in sap, offloads the
+ * probe response transmission to firmware
+ */
+#define CFG_SAP_PROBE_RESP_OFFLOAD_NAME    "gSapProbeRespOffload"
+#define CFG_SAP_PROBE_RESP_OFFLOAD_MIN     (0)
+#define CFG_SAP_PROBE_RESP_OFFLOAD_MAX     (1)
+#define CFG_SAP_PROBE_RESP_OFFLOAD_DEFAULT (1)
+
 
 /*--------------------------------------------------------------------------- 
   Type declarations
@@ -3297,6 +3306,7 @@ typedef struct
    uint32_t                    edca_bk_aifs;
    uint32_t                    edca_be_aifs;
    v_BOOL_t                    sendMgmtPktViaWQ5;
+   v_BOOL_t                    sap_probe_resp_offload;
 } hdd_config_t;
 
 /*--------------------------------------------------------------------------- 

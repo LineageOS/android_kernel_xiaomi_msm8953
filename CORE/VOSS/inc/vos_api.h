@@ -505,4 +505,7 @@ void vos_probe_threads(void);
 void vos_per_pkt_stats_to_user(void *perPktStat);
 void vos_updatePktStatsInfo(void * pktStat);
 bool vos_is_wlan_logging_enabled(void);
+
+v_BOOL_t vos_is_probe_rsp_offload_enabled(void);
+
 #endif // if !defined __VOS_NVITEM_H
