@@ -12289,6 +12289,7 @@ static int wlan_hdd_cfg80211_update_bss( struct wiphy *wiphy,
     tHalHandle hHal = WLAN_HDD_GET_HAL_CTX(pAdapter);
     tCsrScanResultInfo *pScanResult;
     eHalStatus status = 0;
+    int ret;
     tScanResultHandle pResult;
     struct cfg80211_bss *bss_status = NULL;
     hdd_context_t *pHddCtx;
@@ -12300,21 +12301,10 @@ static int wlan_hdd_cfg80211_update_bss( struct wiphy *wiphy,
                        NO_SESSION, pAdapter->sessionId));
 
     pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
-
-    if (pHddCtx->isLogpInProgress)
+    ret = wlan_hdd_validate_context(pHddCtx);
+    if (0 != ret)
     {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_FATAL,
-                   "%s:LOGP in Progress. Ignore!!!",__func__);
-        return -EAGAIN;
-    }
-
-
-    /*bss_update is not allowed during wlan driver loading or unloading*/
-    if (WLAN_HDD_IS_LOAD_UNLOAD_IN_PROGRESS(pHddCtx))
-    {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                   "%s:Loading_unloading in Progress. Ignore!!!",__func__);
-        return VOS_STATUS_E_PERM;
+        return ret;
     }
 
     if (pAdapter->request != NULL)
@@ -12583,6 +12573,9 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
     struct cfg80211_scan_request *req = NULL;
     int ret = 0;
     bool aborted = false;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
+    bool iface_down = false;
+#endif
     long waitRet = 0;
     tANI_U8 i;
     hdd_context_t *pHddCtx;
@@ -12592,14 +12585,14 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
     pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
     if (NULL == pHddCtx) {
         hddLog(VOS_TRACE_LEVEL_ERROR, FL("HDD context is Null"));
-        goto allow_suspend;
+        return 0;
     }
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
     if (!(pAdapter->dev->flags & IFF_UP))
     {
         hddLog(VOS_TRACE_LEVEL_ERROR, FL("Interface is down"));
-        goto allow_suspend;
+        iface_down = true;
     }
 #endif
     pScanInfo = &pHddCtx->scan_info;
@@ -12638,16 +12631,15 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
                 (int) scanId);
     }
 
-    ret = wlan_hdd_cfg80211_update_bss((WLAN_HDD_GET_CTX(pAdapter))->wiphy,
-                                        pAdapter);
-
-    if (0 > ret) {
-        hddLog(VOS_TRACE_LEVEL_INFO, "%s: NO SCAN result", __func__);
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
-        goto allow_suspend;
+    if (!iface_down)
 #endif
+    {
+        ret = wlan_hdd_cfg80211_update_bss((WLAN_HDD_GET_CTX(pAdapter))->wiphy,
+                                        pAdapter);
+        if (0 > ret)
+            hddLog(VOS_TRACE_LEVEL_INFO, "%s: NO SCAN result", __func__);
     }
-
 
     /* If any client wait scan result through WEXT
      * send scan done event to client */
@@ -12679,17 +12671,15 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
     req = pAdapter->request;
     pAdapter->request = NULL;
 
+    /* Scan is no longer pending */
+    pScanInfo->mScanPending = VOS_FALSE;
+
     if (!req || req->wiphy == NULL)
     {
         hddLog(VOS_TRACE_LEVEL_ERROR, "request is became NULL");
-        pScanInfo->mScanPending = VOS_FALSE;
         complete(&pScanInfo->abortscan_event_var);
         goto allow_suspend;
     }
-
-    pAdapter->request = NULL;
-    /* Scan is no longer pending */
-    pScanInfo->mScanPending = VOS_FALSE;
 
     /* last_scan_timestamp is used to decide if new scan
      * is needed or not on station interface. If last station
@@ -12721,10 +12711,14 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
          aborted = true;
     }
 
-    cfg80211_scan_done(req, aborted);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
+    if (!iface_down)
+#endif
+        cfg80211_scan_done(req, aborted);
 
     complete(&pScanInfo->abortscan_event_var);
 
+allow_suspend:
     if ((pHddCtx->cfg_ini->enableMacSpoofing == MAC_ADDR_SPOOFING_FW_HOST_ENABLE
        ) && (pHddCtx->spoofMacAddr.isEnabled
          ||  pHddCtx->spoofMacAddr.isReqDeferred)) {
@@ -12735,7 +12729,6 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
                            msecs_to_jiffies(MAC_ADDR_SPOOFING_DEFER_INTERVAL));
     }
 
-allow_suspend:
     /* release the wake lock at the end of the scan*/
     hdd_allow_suspend(WIFI_POWER_EVENT_WAKELOCK_SCAN);
 
@@ -12745,8 +12738,11 @@ allow_suspend:
      * to process the connect request to AP */
     hdd_prevent_suspend_timeout(1000, WIFI_POWER_EVENT_WAKELOCK_SCAN);
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
+    if (!iface_down)
+#endif
 #ifdef FEATURE_WLAN_TDLS
-    wlan_hdd_tdls_scan_done_callback(pAdapter);
+        wlan_hdd_tdls_scan_done_callback(pAdapter);
 #endif
 
     EXIT();
