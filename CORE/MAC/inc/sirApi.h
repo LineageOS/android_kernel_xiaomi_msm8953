@@ -719,11 +719,11 @@ typedef struct sSirBssDescription
     tANI_U8              mdiePresent;
     tANI_U8              mdie[SIR_MDIE_SIZE];                // MDIE for 11r, picked from the beacons
 #endif
-#ifdef FEATURE_WLAN_ESE
-    tANI_U16             QBSSLoad_present;
-    tANI_U16             QBSSLoad_avail; 
+#if defined(FEATURE_WLAN_ESE) || defined(WLAN_FEATURE_ROAM_SCAN_OFFLOAD)
+    tANI_U8              QBSSLoad_present;
+    tANI_U8              QBSS_ChanLoad;
+    tANI_U16             QBSSLoad_avail;
 #endif
-    // Please keep the structure 4 bytes aligned above the ieFields
 
     tANI_U8              fProbeRsp; //whether it is from a probe rsp
     tANI_U8              reservedPadding1;
@@ -731,9 +731,14 @@ typedef struct sSirBssDescription
     tANI_U8              reservedPadding3;
     tANI_U32             WscIeLen;
     tANI_U8              WscIeProbeRsp[WSCIE_PROBE_RSP_LEN];
-    tANI_U8              reservedPadding4;
-    
+    tANI_U8              HTCapsPresent;
+    tANI_U8              vhtCapsPresent;
+    tANI_U8              wmeInfoPresent;
+    tANI_U8              beacomformingCapable;
+    tANI_U8              chanWidth;
+    /* Please keep the structure 4 bytes aligned above the ieFields */
     tANI_U32             ieFields[1];
+
 } tSirBssDescription, *tpSirBssDescription;
 
 /// Definition for response message to previously
@@ -3971,6 +3976,35 @@ typedef struct
 #endif //FEATURE_WLAN_SCAN_PNO
 
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+#define SIR_PER_ROAM_MAX_AP_CNT 20
+#define SIR_PER_ROAM_MAX_CANDIDATE_CNT 10
+typedef struct __attribute__((packed))
+{
+    tANI_U8    channelNumber;
+    tANI_U8    channelCCA;
+    tANI_U8    otherApCount;
+    tANI_S8    otherApRssi[SIR_PER_ROAM_MAX_AP_CNT];
+} tSirCandidateChanInfo, * tpSirCandidateChanInfo;
+
+typedef struct sPERRoamScanStart
+{
+    tANI_U16                msgType;
+    tANI_U16                msgLen;
+    tANI_U8                 start;
+} tPERRoamScanStart, *tpPERRoamScanStart;
+
+typedef struct sSirRoamAPInfo
+{
+    tSirMacAddr bssAddr;
+    unsigned int timeStamp;
+} tSirRoamAPInfo, *tpSirRoamAPInfo;
+
+typedef struct __attribute__((packed))
+{
+    tANI_U32    candidateCount;
+    tSirCandidateChanInfo  channelInfo[SIR_PER_ROAM_MAX_CANDIDATE_CNT];
+} tSirPerRoamScanResult, * tpSirPerRoamScanResult;
+
 typedef struct
 {
   tSirMacSSid ssId;
@@ -4016,6 +4050,35 @@ typedef struct sSirRoamOffloadScanReq
   tSirRoamNetworkType ConnectedNetwork;
   tSirMobilityDomainInfo MDID;
 } tSirRoamOffloadScanReq, *tpSirRoamOffloadScanReq;
+
+/**
+ * struct sSirPERRoamOffloadScanReq - Offload PER config params
+ * @sessionId: session id
+ * @rateUpThreshold: rate at which to stop monitoring the rate
+ * @rateDownThreshold: rate at which to start monitoring
+ * @isPERRoamCCAEnabled: CCA sensing is enabled or disabled
+ * @waitPeriodForNextPERScan: time to wait before start monitoring again once a
+ * scan has been triggered
+ * @PERtimerThreshold: time to collect stats to trigger roam scan
+ * @PERroamTriggerPercent: minimum percentage of packets needs to be below
+ * rateDownThreshold to trigger a roam scan
+ */
+typedef struct sSirPERRoamOffloadScanReq
+{
+  tANI_U16  sessionId;
+  tANI_U16  rateUpThreshold;
+  tANI_U16  rateDownThreshold;
+  tANI_U16  isPERRoamCCAEnabled;
+  tANI_U32  waitPeriodForNextPERScan;
+  tANI_U32  PERtimerThreshold;
+  tANI_U32  PERroamTriggerPercent;
+} tSirPERRoamOffloadScanReq, *tpSirPERRoamOffloadScanReq;
+
+typedef struct sSirPERRoamTriggerScanReq
+{
+  tANI_BOOLEAN roamScanReq;
+} tSirPERRoamTriggerScanReq, *tpSirPERRoamTriggerScanReq;
+
 #endif //WLAN_FEATURE_ROAM_SCAN_OFFLOAD
 
 #define SIR_NOCHANGE_POWER_VALUE  0xFFFFFFFF

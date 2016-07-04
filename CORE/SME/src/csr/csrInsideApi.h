@@ -112,6 +112,43 @@
 #define CSR_JOIN_RETRY_TIMEOUT_PERIOD        ( 1 *  PAL_TIMER_TO_SEC_UNIT )  // 1 second
 #endif
 
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+#define ROAMING_RSSI_WEIGHT 50
+#define MIN_RSSI (-100)
+#define MAX_RSSI 0
+#define ROAM_AP_COUNT_WEIGHT 50
+#define ROAM_MAX_COUNT 30
+#define ROAM_MIN_COUNT 0
+#define ROAM_MAX_WEIGHT 100
+
+#define RSSI_WEIGHTAGE 25
+#define HT_CAPABILITY_WEIGHTAGE 10
+#define VHT_CAP_WEIGHTAGE 6
+#define BEAMFORMING_CAP_WEIGHTAGE 2
+#define CHAN_WIDTH_WEIGHTAGE 10
+#define CHAN_BAND_WEIGHTAGE 5
+#define WMM_WEIGHTAGE 2
+#define CCA_WEIGHTAGE 10
+#define OTHER_AP_WEIGHT 30
+
+#define MAX_AP_LOAD 255
+#define PENALTY_TIMEOUT (30 * 60 * 1000)
+#define PENALTY_REMAINING_SCORE (7)
+#define PENALTY_TOTAL_SCORE (10)
+#define PER_EXCELENT_RSSI -40
+#define PER_GOOD_RSSI -55
+#define PER_POOR_RSSI -65
+#define PER_ROAM_EXCELLENT_RSSI_WEIGHT 100
+#define PER_ROAM_GOOD_RSSI_WEIGHT 80
+#define PER_ROAM_BAD_RSSI_WEIGHT 60
+#define PER_ROAM_MAX_WEIGHT 100
+#define PER_ROAM_80MHZ 100
+#define PER_ROAM_40MHZ 70
+#define PER_ROAM_20MHZ 30
+#define PER_ROAM_PENALTY (3/10)
+#define PER_ROAM_MAX_BSS_SCORE 10000
+#endif
+
 typedef enum 
 {
     eCsrNextScanNothing,
@@ -170,7 +207,9 @@ typedef struct tagCsrScanResult
     eCsrEncryptionType ucEncryptionType; //Preferred Encryption type that matched with profile.
     eCsrEncryptionType mcEncryptionType; 
     eCsrAuthType authType; //Preferred auth type that matched with the profile.
-
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+    int congestionScore;
+#endif
     tCsrScanResultInfo Result;
 }tCsrScanResult;
 

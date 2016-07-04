@@ -489,6 +489,11 @@ typedef enum
   WDI_STOP_RSSI_MONITOR_REQ                      = 114,
   WDI_WIFI_CONFIG_SET_REQ                        = 115,
 
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+  WDI_PER_ROAM_SCAN_OFFLOAD_REQ                  = 116,
+  WDI_PER_ROAM_SCAN_TRIGGER_REQ                  = 117,
+#endif
+
   WDI_MAX_REQ,
 
   /*Send a suspend Indication down to HAL*/
@@ -861,6 +866,10 @@ typedef enum
   WDI_STOP_RSSI_MONITOR_RSP                      = 114,
 
   WDI_WIFI_CONFIG_SET_RSP                        = 115,
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+  WDI_PER_ROAM_SCAN_OFFLOAD_RSP                  = 116,
+  WDI_PER_ROAM_SCAN_TRIGGER_RSP                  = 117,
+#endif
 
   /*-------------------------------------------------------------------------
     Indications
@@ -5576,6 +5585,14 @@ WDI_ProcessRoamScanOffloadReq
   WDI_ControlBlockType*  pWDICtx,
   WDI_EventInfoType*     pEventData
 );
+
+WDI_Status
+WDI_ProcessPERRoamScanOffloadReq(WDI_ControlBlockType *pWDICtx,
+                                 WDI_EventInfoType *pEventData);
+
+WDI_Status
+WDI_ProcessPERRoamScanTriggerReq(WDI_ControlBlockType *pWDICtx,
+                                 WDI_EventInfoType *pEventData);
 /**
  @brief Process Start Roam Candidate Lookup Response function (called when a
         response is being received over the bus from HAL)
@@ -5588,6 +5605,20 @@ WDI_ProcessRoamScanOffloadReq
 */
 WDI_Status
 WDI_ProcessRoamScanOffloadRsp
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessPERRoamScanOffloadRsp
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessPERRoamScanTriggerRsp
 (
   WDI_ControlBlockType*  pWDICtx,
   WDI_EventInfoType*     pEventData
