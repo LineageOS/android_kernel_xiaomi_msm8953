@@ -444,6 +444,7 @@ static void __limInitHTVars(tpAniSirGlobal pMac)
     pMac->lim.gHTDualCTSProtection = 0;
     pMac->lim.gHTSTBCBasicMCS = 0;
     pMac->lim.gAddBA_Declined = 0;               // Flag to Decline the BAR if the particular bit (0-7) is being set   
+    vos_mem_set(&pMac->lim.staBaInfo, sizeof(pMac->lim.staBaInfo), 0);
 }
 
 static tSirRetStatus __limInitConfig( tpAniSirGlobal pMac )
