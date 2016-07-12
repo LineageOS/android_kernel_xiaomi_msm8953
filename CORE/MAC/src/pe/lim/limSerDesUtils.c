@@ -283,6 +283,9 @@ limGetBssDescription( tpAniSirGlobal pMac, tSirBssDescription *pBssDescription,
         return eSIR_FAILURE;
     }
 
+    pBuf += (WSCIE_PROBE_RSP_LEN);
+    len -= (WSCIE_PROBE_RSP_LEN);
+
     /* Extract HTCapsPresent */
     pBssDescription->HTCapsPresent = *pBuf++;
     len --;
