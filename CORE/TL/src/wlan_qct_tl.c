@@ -9013,7 +9013,7 @@ static void WLANTL_updatePERStats(WLANTL_CbType *pTLCb,
        pTLCb->gDsRxRoamStats.rxRoamStats[pTLCb->gDsRxRoamStats.index].time;
 
    if (timeDifference)
-       incrementCnt = timeDifference / ROAM_PER_INDEX_TIME;
+       incrementCnt = do_div(timeDifference, ROAM_PER_INDEX_TIME);
 
    /* More that ROAM_PER_INDEX_TIME has esclapsed,
     * fill data at new index */
@@ -9053,9 +9053,9 @@ static void WLANTL_updatePERStats(WLANTL_CbType *pTLCb,
    if ((pTLCb->gDsRxRoamStats.totalPkt != 0) &&
        (pTLCb->gDsRxRoamStats.totalPkt >
                 pTLCb->gDsRxRoamStats.minPktRequired)&&
-       (((pTLCb->gDsRxRoamStats.lowRatePkt * 100)/
-                pTLCb->gDsRxRoamStats.totalPkt) >
-       pTLCb->gDsRxRoamStats.minPercentage))
+       ((pTLCb->gDsRxRoamStats.lowRatePkt * 100) >
+                (pTLCb->gDsRxRoamStats.totalPkt *
+       pTLCb->gDsRxRoamStats.minPercentage)))
    {
        /* callback handler to trigger a roam scan */
        if (pTLCb->gDsRxRoamStats.triggerRoamScanfn)
