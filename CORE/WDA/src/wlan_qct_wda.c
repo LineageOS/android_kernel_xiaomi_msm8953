@@ -136,6 +136,8 @@
 #define WDA_MAC_ADDR_ARRAY(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
 #define WDA_MAC_ADDRESS_STR "%02x:%02x:%02x:%02x:%02x:%02x"
 #define WDA_DUMPCMD_WAIT_TIMEOUT 10000
+#define WDA_BA_MAX_RETRY_THRESHOLD 10
+#define WDA_BA_RETRY_TIME 300000   /* Time is in msec, equal to 5 mins */
 
 /* extern declarations */
 extern void vos_WDAComplete_cback(v_PVOID_t pVosContext);
@@ -160,6 +162,7 @@ void WDA_lowLevelIndCallback(WDI_LowLevelIndType *wdiLowLevelInd,
                                                           void* pUserData ) ;
 static VOS_STATUS wdaCreateTimers(tWDA_CbContext *pWDA) ;
 static VOS_STATUS wdaDestroyTimers(tWDA_CbContext *pWDA);
+bool WDA_AllowAddBA(tpAniSirGlobal pMAc, tANI_U8 staId, tANI_U8 tid);
 void WDA_BaCheckActivity(tWDA_CbContext *pWDA) ;
 void WDA_TimerTrafficStatsInd(tWDA_CbContext *pWDA);
 void WDA_HALDumpCmdCallback(WDI_HALDumpCmdRspParamsType *wdiRspParams, void* pUserData);
@@ -17374,6 +17377,24 @@ void WDA_TimerTrafficStatsInd(tWDA_CbContext *pWDA)
    }
 }
 
+bool WDA_AllowAddBA(tpAniSirGlobal pMac, tANI_U8 staId, tANI_U8 tid)
+{
+   if (!pMac->lim.staBaInfo[staId].failed_count[tid])
+      return true;
+   if ((WDA_BA_MAX_RETRY_THRESHOLD <=
+        pMac->lim.staBaInfo[staId].failed_count[tid]) ||
+       ((pMac->lim.staBaInfo[staId].failed_timestamp[tid] +
+        (pMac->lim.staBaInfo[staId].failed_count[tid] * WDA_BA_RETRY_TIME)) >=
+        jiffies_to_msecs(jiffies)))
+   {
+      VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+          "%s: AP/STA has declined ADDBA req for tid %d, declined %d times",
+          __func__, tid, pMac->lim.staBaInfo[staId].failed_count[tid]);
+      return false;
+   }
+   return true;
+}
+
 /*
  * BA Activity check timer handler
  */
@@ -17462,6 +17483,7 @@ void WDA_BaCheckActivity(tWDA_CbContext *pWDA)
             }
             else if(!WDA_GET_BA_TXFLAG(pWDA, curSta, tid)
                    && (WLANTL_STA_AUTHENTICATED == tlSTAState)
+                   && WDA_AllowAddBA(pMac, curSta, tid)
                    && (((eSYSTEM_STA_IN_IBSS_ROLE ==
                             pWDA->wdaGlobalSystemRole) && txPktCount )
                    || (txPktCount >= WDA_LAST_POLLED_THRESHOLD(pWDA,

@@ -255,6 +255,11 @@ typedef struct {
     void *pMlmDeauthReq;
 }tLimDisassocDeauthCnfReq;
 
+typedef struct {
+    tANI_U32 failed_count[MAX_TIDS];
+    v_TIME_t failed_timestamp[MAX_TIDS];
+} tLimStaBAInfo;
+
 typedef struct sAniSirLim
 {
     //////////////////////////////////////     TIMER RELATED START ///////////////////////////////////////////
@@ -908,6 +913,7 @@ tLimMlmOemDataRsp       *gpLimMlmOemDataRsp;
     tANI_U32 remOnChnSeqNum;
     tANI_U32 txBdToken;
     tANI_U32 EnableTdls2040BSSCoexIE;
+    tLimStaBAInfo staBaInfo[WLAN_MAX_STA_COUNT];
 } tAniSirLim, *tpAniSirLim;
 
 typedef struct sLimMgmtFrameRegistration

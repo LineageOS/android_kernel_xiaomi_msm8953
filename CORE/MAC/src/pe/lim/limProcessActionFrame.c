@@ -1541,6 +1541,10 @@ tANI_U8 *pBody;
   if( eSIR_MAC_SUCCESS_STATUS == frmAddBARsp.Status.status )
   {
     tANI_U32 val;
+    pMac->lim.staBaInfo[pSta->staIndex].
+        failed_count[frmAddBARsp.AddBAParameterSet.tid] = 0;
+    pMac->lim.staBaInfo[pSta->staIndex].
+        failed_timestamp[frmAddBARsp.AddBAParameterSet.tid] = 0;
     if (wlan_cfgGetInt(pMac, WNI_CFG_NUM_BUFF_ADVERT , &val) != eSIR_SUCCESS)
     {
         limLog(pMac, LOG1, FL("Unable to get WNI_CFG_NUM_BUFF_ADVERT"));
@@ -1567,8 +1571,13 @@ tANI_U8 *pBody;
     }
   }
   else
+  {
+    pMac->lim.staBaInfo[pSta->staIndex].
+       failed_count[frmAddBARsp.AddBAParameterSet.tid]++;
+    pMac->lim.staBaInfo[pSta->staIndex].failed_timestamp[
+       frmAddBARsp.AddBAParameterSet.tid] = jiffies_to_msecs(jiffies);
     goto returnAfterError;
-
+  }
   // Change STA state to wait for ADDBA Rsp from HAL
   LIM_SET_STA_BA_STATE(pSta, frmAddBARsp.AddBAParameterSet.tid, eLIM_BA_STATE_WT_ADD_RSP);
 
