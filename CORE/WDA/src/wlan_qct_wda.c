@@ -15068,11 +15068,22 @@ VOS_STATUS wda_process_set_allowed_action_frames_ind(tWDA_CbContext *pWDA,
 VOS_STATUS WDA_ProcessTLPauseInd(tWDA_CbContext *pWDA, v_U32_t params)
 {
     v_U8_t staId;
+    WLANTL_CbType*  pTLCb = NULL;
 
     VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO, FL("---> %s"), __func__);
 
     staId = (v_U8_t)params;
 
+    pTLCb = VOS_GET_TL_CB(pWDA->pVosContext);
+    if ( NULL == pTLCb )
+    {
+        VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
+           "WLAN TL:Invalid TL pointer from pvosGCtx on WLANTL_SuspendDataTx");
+        return VOS_STATUS_E_FAULT;
+    }
+
+
+    pTLCb->atlSTAClients[staId]->disassoc_progress = VOS_TRUE;
     /* Pause TL for Sta ID */
     return WLANTL_SuspendDataTx(pWDA->pVosContext, &staId, NULL);
 }
