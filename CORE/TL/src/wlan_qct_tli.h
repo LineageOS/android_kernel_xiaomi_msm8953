@@ -723,6 +723,9 @@ typedef struct
   /* BD Rate for transmitting ARP packets */
   v_U8_t arpRate;
   v_BOOL_t arpOnWQ5;
+
+  /* Disassoc in progress */
+  v_BOOL_t disassoc_progress;
 }WLANTL_STAClientType;
 
 /*---------------------------------------------------------------------------
