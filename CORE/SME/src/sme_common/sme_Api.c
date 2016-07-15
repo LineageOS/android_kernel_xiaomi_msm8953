@@ -14012,7 +14012,8 @@ eHalStatus sme_fatal_event_logs_req(tHalHandle hHal, tANI_U32 is_fatal,
  *
  * Return: tANI_BOOLEAN.
  */
-tANI_BOOLEAN sme_handleSetFccChannel(tHalHandle hHal, tANI_U8 fcc_constraint)
+tANI_BOOLEAN sme_handleSetFccChannel(tHalHandle hHal, tANI_U8 fcc_constraint,
+                                     v_U32_t scan_pending)
 {
     eHalStatus status = eHAL_STATUS_SUCCESS;
     tpAniSirGlobal pMac = PMAC_STRUCT(hHal);
@@ -14022,10 +14023,14 @@ tANI_BOOLEAN sme_handleSetFccChannel(tHalHandle hHal, tANI_U8 fcc_constraint)
     if (eHAL_STATUS_SUCCESS == status &&
                  (!sme_Is11dSupported(hHal)) )
     {
-           pMac->scan.fcc_constraint = !fcc_constraint;
-           /* update the channel list to the firmware */
-           csrUpdateChannelList(pMac);
+        pMac->scan.fcc_constraint = !fcc_constraint;
 
+        if (scan_pending == TRUE) {
+            pMac->scan.defer_update_channel_list = true;
+        } else {
+            /* update the channel list to the firmware */
+            csrUpdateChannelList(pMac);
+        }
     }
 
         sme_ReleaseGlobalLock(&pMac->sme);

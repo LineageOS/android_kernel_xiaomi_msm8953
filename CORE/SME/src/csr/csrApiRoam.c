@@ -17177,7 +17177,8 @@ send_roam_scan_offload_cmd:
    VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_DEBUG, "Roam Scan Offload Command %d, Reason %d", command, reason);
 
    if (sme_IsFeatureSupportedByFW(PER_BASED_ROAMING) &&
-      (command != ROAM_SCAN_OFFLOAD_STOP))
+      (command != ROAM_SCAN_OFFLOAD_STOP) &&
+      pMac->roam.configParam.isPERRoamEnabled)
    {
 
       /* PER ROAM SCAN */

@@ -1430,6 +1430,7 @@ WLANTL_RegisterSTAClient
   pClientSTA->tlPri    = WLANTL_STA_PRI_NORMAL;
   pClientSTA->wSTADesc.ucSTAId  = pwSTADescType->ucSTAId;
   pClientSTA->ptkInstalled = 0;
+  pClientSTA->disassoc_progress = VOS_FALSE;
 
   pMac = vos_get_context(VOS_MODULE_ID_PE, pvosGCtx);
   if ( NULL != pMac )
@@ -4929,7 +4930,8 @@ WLANTL_GetFrames
            for ( i = 0; i < WLAN_MAX_STA_COUNT; i++)
            {
               if (NULL != pTLCb->atlSTAClients[i] && (pTLCb->atlSTAClients[i]->ucExists) &&
-                  (pTLCb->atlSTAClients[i]->ucPktPending))
+                  (pTLCb->atlSTAClients[i]->ucPktPending) &&
+                  (pTLCb->atlSTAClients[i]->disassoc_progress == VOS_FALSE))
               {
                   /* There is station to be Served */
                   break;
@@ -11518,7 +11520,8 @@ WLAN_TLAPGetNextTxIds
           continue;
         }
 
-        if (WLANTL_STA_AUTHENTICATED != pTLCb->atlSTAClients[ucNextSTA]->tlState)
+        if ((WLANTL_STA_AUTHENTICATED != pTLCb->atlSTAClients[ucNextSTA]->tlState)
+           || (pTLCb->atlSTAClients[ucNextSTA]->disassoc_progress == VOS_TRUE ))
         {
           TLLOG2(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO_HIGH,
                  "%s Sta %d not in auth state so skipping it.",
@@ -12186,7 +12189,7 @@ WLANTL_CleanSTA
   ptlSTAClient->wSTADesc.ucSwFrameTXXlation = 0;
   ptlSTAClient->wSTADesc.ucSwFrameRXXlation = 0;
   ptlSTAClient->wSTADesc.ucProtectedFrame = 0;
-
+  ptlSTAClient->disassoc_progress = VOS_FALSE;
   /*-------------------------------------------------------------------------
     AMSDU information for the STA
    -------------------------------------------------------------------------*/
