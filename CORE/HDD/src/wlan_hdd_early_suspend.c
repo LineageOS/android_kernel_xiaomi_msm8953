@@ -1967,8 +1967,8 @@ VOS_STATUS hdd_wlan_shutdown(void)
    }
 
    //Stop the traffic monitor timer
-   if ( VOS_TIMER_STATE_RUNNING ==
-                        vos_timer_getCurrentState(&pHddCtx->tx_rx_trafficTmr))
+   if ((pHddCtx->cfg_ini->dynSplitscan)&& (VOS_TIMER_STATE_RUNNING ==
+                        vos_timer_getCurrentState(&pHddCtx->tx_rx_trafficTmr)))
    {
         vos_timer_stop(&pHddCtx->tx_rx_trafficTmr);
    }
