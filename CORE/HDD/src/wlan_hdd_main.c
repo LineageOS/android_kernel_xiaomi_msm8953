@@ -10368,15 +10368,16 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
    }
 
    //Stop the traffic monitor timer
-   if ( VOS_TIMER_STATE_RUNNING ==
-                        vos_timer_getCurrentState(&pHddCtx->tx_rx_trafficTmr))
+   if ((pHddCtx->cfg_ini->dynSplitscan) && (VOS_TIMER_STATE_RUNNING ==
+        vos_timer_getCurrentState(&pHddCtx->tx_rx_trafficTmr)))
    {
         vos_timer_stop(&pHddCtx->tx_rx_trafficTmr);
    }
 
    // Destroy the traffic monitor timer
-   if (!VOS_IS_STATUS_SUCCESS(vos_timer_destroy(
-                         &pHddCtx->tx_rx_trafficTmr)))
+   if ((pHddCtx->cfg_ini->dynSplitscan) &&
+       (!VOS_IS_STATUS_SUCCESS(vos_timer_destroy(
+                         &pHddCtx->tx_rx_trafficTmr))))
    {
        hddLog(VOS_TRACE_LEVEL_ERROR,
            "%s: Cannot deallocate Traffic monitor timer", __func__);
