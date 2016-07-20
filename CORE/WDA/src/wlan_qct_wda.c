@@ -14999,10 +14999,10 @@ VOS_STATUS WDA_ProcessFwrMemDumpReq(tWDA_CbContext * pWDA,
                  FL("Fwr Mem Dump Req failed, free all the memory"));
        status = CONVERT_WDI2VOS_STATUS(wstatus);
        vos_mem_free(pWdaParams->wdaWdiApiMsgParam) ;
-       vos_mem_free(pWdaParams->wdaMsgParam);
-       vos_mem_free(pWdaParams);
        pWdaParams->wdaWdiApiMsgParam = NULL;
+       vos_mem_free(pWdaParams->wdaMsgParam);
        pWdaParams->wdaMsgParam = NULL;
+       vos_mem_free(pWdaParams);
    }
 
     return status;

@@ -2252,7 +2252,7 @@ limProcessMessages(tpAniSirGlobal pMac, tpSirMsgQ  limMsg)
         {
             tpPESession     psessionEntry;
             tANI_U8         sessionId;
-            tDphHashNode   *pStaDs;
+            tDphHashNode   *pStaDs = NULL;
             int i, aid;
             tTdlsLinkEstablishParams *pTdlsLinkEstablishParams;
             pTdlsLinkEstablishParams = (tTdlsLinkEstablishParams*) limMsg->bodyptr;
@@ -2289,10 +2289,16 @@ limProcessMessages(tpAniSirGlobal pMac, tpSirMsgQ  limMsg)
                     }
                 }
 send_link_resp:
-                limSendSmeTdlsLinkEstablishReqRsp(pMac,
+                if (pStaDs)
+                   limSendSmeTdlsLinkEstablishReqRsp(pMac,
                                                   psessionEntry->smeSessionId,
                                                   pStaDs->staAddr,
                                                   pStaDs,
+                                                  pTdlsLinkEstablishParams->status) ;
+                else
+                   limSendSmeTdlsLinkEstablishReqRsp(pMac,
+                                                  psessionEntry->smeSessionId,
+                                                  NULL, NULL,
                                                   pTdlsLinkEstablishParams->status) ;
             }
             vos_mem_free((v_VOID_t *)(limMsg->bodyptr));
@@ -2304,7 +2310,7 @@ send_link_resp:
         {
             tpPESession     psessionEntry;
             tANI_U8         sessionId;
-            tDphHashNode   *pStaDs;
+            tDphHashNode   *pStaDs = NULL;
             int i, aid;
             tTdlsChanSwitchParams *pTdlsChanSwitchParams;
             pTdlsChanSwitchParams = (tTdlsChanSwitchParams*) limMsg->bodyptr;
@@ -2341,11 +2347,17 @@ send_link_resp:
                     }
                 }
 send_chan_switch_resp:
-                limSendSmeTdlsChanSwitchReqRsp(pMac,
+                if (pStaDs)
+                    limSendSmeTdlsChanSwitchReqRsp(pMac,
                                                   psessionEntry->smeSessionId,
                                                   pStaDs->staAddr,
                                                   pStaDs,
-                                                  pTdlsChanSwitchParams->status) ;
+                                                  pTdlsChanSwitchParams->status);
+               else
+                    limSendSmeTdlsChanSwitchReqRsp(pMac,
+                                                  psessionEntry->smeSessionId,
+                                                  NULL, NULL,
+                                                  pTdlsChanSwitchParams->status);
             }
             vos_mem_free((v_VOID_t *)(limMsg->bodyptr));
             limMsg->bodyptr = NULL;
