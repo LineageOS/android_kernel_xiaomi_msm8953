@@ -3956,6 +3956,8 @@ eHalStatus sme_GetCurrentAntennaIndex(tHalHandle hHal,
 
 eHalStatus sme_setBcnMissPenaltyCount(tHalHandle hHal,
                                       tModifyRoamParamsReqParams *params);
+eHalStatus sme_remove_bssid_from_scan_list(tHalHandle hal,
+	tSirMacAddr bssid);
 void sme_set_mgmt_frm_via_wq5(tHalHandle hHal,
         tANI_BOOLEAN sendMgmtPktViaWQ5);
 #endif //#if !defined( __SME_API_H )

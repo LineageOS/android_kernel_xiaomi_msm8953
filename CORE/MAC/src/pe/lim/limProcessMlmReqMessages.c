@@ -4458,6 +4458,8 @@ limProcessAuthFailureTimeout(tpAniSirGlobal pMac)
 
             break;
     }
+    /* Reinit scan results to remove the unreachable BSS */
+    limReInitScanResults(pMac);
 } /*** limProcessAuthFailureTimeout() ***/
 
 
@@ -4700,6 +4702,8 @@ limProcessAssocFailureTimeout(tpAniSirGlobal pMac, tANI_U32 MsgType)
                 eSIR_SME_REASSOC_TIMEOUT_RESULT_CODE, eSIR_MAC_UNSPEC_FAILURE_STATUS,psessionEntry);
         }
     }
+    /* Reinit scan results to remove the unreachable BSS */
+    limReInitScanResults(pMac);
 } /*** limProcessAssocFailureTimeout() ***/
 
 

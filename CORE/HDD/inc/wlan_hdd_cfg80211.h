@@ -1425,6 +1425,9 @@ static inline void wlan_hdd_cfg80211_indicate_disconnect(struct net_device *dev,
 }
 #endif
 
+struct cfg80211_bss* wlan_hdd_cfg80211_update_bss_list(
+   hdd_adapter_t *pAdapter, tSirMacAddr bssid);
+
 struct cfg80211_bss *wlan_hdd_cfg80211_inform_bss_frame(hdd_adapter_t *pAdapter,
 		tSirBssDescription *bss_desc);
 #endif
