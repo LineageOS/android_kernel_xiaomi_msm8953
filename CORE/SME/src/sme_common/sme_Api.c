@@ -14304,6 +14304,32 @@ eHalStatus sme_setBcnMissPenaltyCount(tHalHandle hHal,
 
     return eHAL_STATUS_FAILURE;
 }
+
+/**
+ * sme_remove_bssid_from_scan_list() - wrapper to remove the bssid from
+ * scan list
+ * @hal: hal context.
+ * @bssid: bssid to be removed
+ *
+ * This function remove the given bssid from scan list.
+ *
+ * Return: hal status.
+ */
+eHalStatus sme_remove_bssid_from_scan_list(tHalHandle hal,
+    tSirMacAddr bssid)
+{
+    eHalStatus status = eHAL_STATUS_FAILURE;
+    tpAniSirGlobal pMac = PMAC_STRUCT(hal);
+
+    status = sme_AcquireGlobalLock(&pMac->sme);
+    if (HAL_STATUS_SUCCESS(status)) {
+        csr_remove_bssid_from_scan_list(pMac, bssid);
+        sme_ReleaseGlobalLock(&pMac->sme);
+    }
+
+    return status;
+}
+
 /**
  * sme_set_mgmt_frm_via_wq5() - Set INI params sendMgmtPktViaWQ5 to WDA.
  * @hal: HAL pointer
