@@ -18065,13 +18065,13 @@ static int __wlan_hdd_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device 
                     return -EINVAL;
                 }
 
-                wlan_hdd_tdls_set_cap(pAdapter, peer, eTDLS_CAP_SUPPORTED);
                 /* before starting tdls connection, set tdls
                  * off channel established status to default value */
                 pTdlsPeer->isOffChannelEstablished = FALSE;
 
                 mutex_unlock(&pHddCtx->tdls_lock);
 
+                wlan_hdd_tdls_set_cap(pAdapter, peer, eTDLS_CAP_SUPPORTED);
                 /* TDLS Off Channel, Disable tdls channel switch,
                    when there are more than one tdls link */
                 numCurrTdlsPeers = wlan_hdd_tdlsConnectedPeers(pAdapter);
