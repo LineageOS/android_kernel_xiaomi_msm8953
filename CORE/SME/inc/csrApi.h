@@ -613,6 +613,8 @@ typedef enum
     eCSR_ROAM_RESULT_IBSS_PEER_INFO_SUCCESS,
     eCSR_ROAM_RESULT_IBSS_PEER_INFO_FAILED,
 #endif
+    /* If Scan for SSID failed to found proper BSS */
+    eCSR_ROAM_RESULT_SCAN_FOR_SSID_FAILURE,
 }eCsrRoamResult;
 
 
