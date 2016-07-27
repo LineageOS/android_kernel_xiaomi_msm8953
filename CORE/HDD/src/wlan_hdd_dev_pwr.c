@@ -151,7 +151,7 @@ static int wlan_suspend(hdd_context_t* pHddCtx)
    {
        /* Fail this suspend */
        pHddCtx->continuous_suspend_fail_cnt++;
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_WARN,
         FL("Fail wlan suspend: not in IMPS/BMPS, continuous Failcnt %d"),
         pHddCtx->continuous_suspend_fail_cnt);
 
