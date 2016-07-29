@@ -157,11 +157,11 @@ limCollectBssDescription(tpAniSirGlobal pMac,
     /**
      * Length of BSS desription is without length of
      * length itself and length of pointer
-     * that holds the next BSS description
+     * that holds ieFields
      */
     pBssDescr->length = (tANI_U16)(
-                    sizeof(tSirBssDescription) - sizeof(tANI_U16) -
-                    sizeof(tANI_U32) + ieLen);
+                    ((uintptr_t)OFFSET_OF(tSirBssDescription, ieFields)) -
+                    sizeof(pBssDescr->length) + ieLen);
 
     // Copy BSS Id
     vos_mem_copy((tANI_U8 *) &pBssDescr->bssId,
