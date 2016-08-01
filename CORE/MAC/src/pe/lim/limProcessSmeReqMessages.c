@@ -1708,8 +1708,8 @@ __limProcessSmeJoinReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
     tANI_U16            nSize;
     tANI_U8             sessionId;
     tpPESession         psessionEntry = NULL;
-    tANI_U8             smesessionId;
-    tANI_U16            smetransactionId;
+    tANI_U8             smesessionId = 0;
+    tANI_U16            smetransactionId = 0;
     tPowerdBm           localPowerConstraint = 0, regMax = 0;
     tANI_U16            ieLen;
     v_U8_t              *vendorIE;
@@ -1896,16 +1896,16 @@ __limProcessSmeJoinReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
                 "***__limProcessSmeJoinReq: txBFIniFeatureEnabled=%d****",
                 psessionEntry->txBFIniFeatureEnabled);
 
+            if (cfgSetInt(pMac, WNI_CFG_VHT_SU_BEAMFORMEE_CAP,
+                       psessionEntry->txBFIniFeatureEnabled) != eSIR_SUCCESS)
+            {
+                limLog(pMac, LOGP, FL("could not set  "
+                                "WNI_CFG_VHT_SU_BEAMFORMEE_CAP at CFG"));
+                retCode = eSIR_LOGP_EXCEPTION;
+                goto end;
+            }
             if( psessionEntry->txBFIniFeatureEnabled )
             {
-                if (cfgSetInt(pMac, WNI_CFG_VHT_SU_BEAMFORMEE_CAP, psessionEntry->txBFIniFeatureEnabled)
-                                                             != eSIR_SUCCESS)
-                {
-                    limLog(pMac, LOGP, FL("could not set  "
-                                  "WNI_CFG_VHT_SU_BEAMFORMEE_CAP at CFG"));
-                    retCode = eSIR_LOGP_EXCEPTION;
-                    goto end;
-                }
                 VOS_TRACE(VOS_MODULE_ID_PE, VOS_TRACE_LEVEL_INFO_MED,
                     "***__limProcessSmeJoinReq: txBFCsnValue=%d****",
                     pSmeJoinReq->txBFCsnValue);
@@ -2030,7 +2030,8 @@ __limProcessSmeJoinReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
         {
             limLog(pMac, LOGP, FL("call to AllocateMemory "
                                 "failed for mlmJoinReq"));
-            return;
+            retCode = eSIR_SME_RESOURCES_UNAVAILABLE;
+            goto end;
         }
         (void) vos_mem_set((void *) pMlmJoinReq, val, 0);
 
