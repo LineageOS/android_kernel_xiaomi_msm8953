@@ -342,7 +342,8 @@ tSirRetStatus limCreateSessionForRemainOnChn(tpAniSirGlobal pMac, tPESession **p
         }
         /* Store PE sessionId in session Table  */
         psessionEntry->peSessionId = sessionId;
-
+        /* Store SME session Id in sessionTable */
+        psessionEntry->smeSessionId = pMac->lim.gpLimRemainOnChanReq->sessionId;
         psessionEntry->limSystemRole = eLIM_P2P_DEVICE_ROLE;
         CFG_GET_STR( nSirStatus, pMac,  WNI_CFG_SUPPORTED_RATES_11A,
                psessionEntry->rateSet.rate, val , SIR_MAC_MAX_NUMBER_OF_RATES );

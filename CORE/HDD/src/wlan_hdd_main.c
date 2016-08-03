@@ -9053,7 +9053,7 @@ VOS_STATUS hdd_stop_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter,
                  FL("wait on disconnect_comp_var failed %ld"), ret);
              }
          }
-         else if(pScanInfo != NULL && pHddCtx->scan_info.mScanPending)
+         if(pScanInfo != NULL && pHddCtx->scan_info.mScanPending)
          {
             wlan_hdd_scan_abort(pAdapter);
          }

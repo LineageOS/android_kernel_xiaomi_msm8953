@@ -2643,7 +2643,7 @@ void dxeRXEventHandler
    if((WLANDXE_POWER_STATE_IMPS == dxeCtxt->hostPowerState) ||
       (WLANDXE_POWER_STATE_DOWN == dxeCtxt->hostPowerState))
    {
-      if (WLANDXE_POWER_STATE_IMPS == dxeCtxt->hostPowerState)
+      if (WLANDXE_POWER_STATE_DOWN != dxeCtxt->hostPowerState)
       {
         if(0 == intSrc)
         {
@@ -2662,8 +2662,8 @@ void dxeRXEventHandler
         }
       }
 
-      HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_WARN,
-         "%s Riva is in %d, Just Pull frames without any register touch ",
+      HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
+         "%s Riva is in %d, Just Pull frames without any register touch",
            __func__, dxeCtxt->hostPowerState);
 
       /* Not to touch any register, just pull frame directly from chain ring
@@ -2675,7 +2675,7 @@ void dxeRXEventHandler
       if(eWLAN_PAL_STATUS_SUCCESS != status)
       {
          HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
-                  "dxeRXEventHandler Pull from RX high channel fail");        
+                  "dxeRXEventHandler Pull from RX high channel fail");
       }
       /* In case FW could not power collapse in IMPS mode
        * Next power restore might have empty interrupt
@@ -2716,7 +2716,8 @@ void dxeRXEventHandler
       dxeEnvBlk.rxIntDisableReturn = VOS_RETURN_ADDRESS;
       dxeEnvBlk.rxIntDisableFrame = __builtin_frame_address(0);
       HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
-            "dxeRXEventHandler RX Int Disabled by IMPS");
+            "%s Host is in %d RX Int Disabled",
+            __func__, dxeCtxt->hostPowerState);
       return;
    }
 
@@ -5752,9 +5753,12 @@ wpt_status WLANDXE_SetPowerState
       {
          HDXE_ASSERT(0);
       }
+      DXTRACE(dxeTrace(WLANDXE_DMA_CHANNEL_MAX, TRACE_POWER_STATE,
+                                                pDxeCtrlBlk->hostPowerState));
    }
 
-   if (WLANDXE_POWER_STATE_FULL == pDxeCtrlBlk->hostPowerState) {
+   if (WDTS_POWER_STATE_FULL == powerState &&
+       WLANDXE_POWER_STATE_FULL == pDxeCtrlBlk->hostPowerState) {
       state = wpal_get_int_state(DXE_INTERRUPT_RX_READY);
       if (0 == state && eWLAN_PAL_TRUE == pDxeCtrlBlk->rxIntDisabledByIMPS) {
           dxeEnvBlk.rx_imps_set_fp = 1;
