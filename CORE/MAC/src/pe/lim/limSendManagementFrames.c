@@ -198,19 +198,41 @@ tSirRetStatus limStripOffExtCapIEAndUpdateStruct(tpAniSirGlobal pMac,
 }
 
 void limMergeExtCapIEStruct(tDot11fIEExtCap *pDst,
-                            tDot11fIEExtCap *pSrc)
+                            tDot11fIEExtCap *pSrc,
+                            bool add)
 {
-    tANI_U8 *tempDst = (tANI_U8 *)pDst;
-    tANI_U8 *tempSrc = (tANI_U8 *)pSrc;
-    tANI_U8 structlen = sizeof(tDot11fIEExtCap);
+    tANI_U8 *tempDst = (tANI_U8 *)pDst->bytes;
+    tANI_U8 *tempSrc = (tANI_U8 *)pSrc->bytes;
+    tANI_U8 structlen = DOT11F_IE_EXTCAP_MAX_LEN;
 
+    // if src is not present, nothing to do
+    if(!pSrc->present) {
+        return;
+    }
+
+    // if dst is not present, and add=false, nothing to do
+    if (!pDst->present && !add) {
+        return;
+    }
+
+    // in other cases, need to merge the bits
+    pDst->present = 1;
     while(tempDst && tempSrc && structlen--)
     {
-        *tempDst |= *tempSrc;
+        if (add) {
+            *tempDst |= *tempSrc;
+        } else {
+            *tempDst &= *tempSrc;
+        }
         tempDst++;
         tempSrc++;
     }
     pDst->num_bytes = lim_compute_ext_cap_ie_length(pDst);
+
+    // if all bits are zero, it means it is not prsent.
+    if (pDst->num_bytes == 0) {
+        pDst->present = 0;
+    }
 }
 
 /**
@@ -947,7 +969,7 @@ limSendProbeRspMgmtFrame(tpAniSirGlobal pMac,
     /*merge ExtCap IE*/
     if (extractedExtCapFlag && extractedExtCap.present)
     {
-        limMergeExtCapIEStruct(&pFrm->ExtCap, &extractedExtCap);
+        limMergeExtCapIEStruct(&pFrm->ExtCap, &extractedExtCap, true);
     }
 
     nStatus = dot11fGetPackedProbeResponseSize( pMac, pFrm, &nPayload );
@@ -1630,7 +1652,7 @@ limSendAssocRspMgmtFrame(tpAniSirGlobal pMac,
     /* merge the ExtCap struct*/
     if (extractedExtCapFlag && extractedExtCap.present)
     {
-        limMergeExtCapIEStruct(&(frm.ExtCap), &extractedExtCap);
+        limMergeExtCapIEStruct(&(frm.ExtCap), &extractedExtCap, true);
     }
 
     nStatus = dot11fGetPackedAssocResponseSize( pMac, &frm, &nPayload );
@@ -2296,7 +2318,7 @@ limSendAssocReqMgmtFrame(tpAniSirGlobal   pMac,
     vos_mem_set( ( tANI_U8* )pFrm, sizeof( tDot11fAssocRequest ), 0 );
 
     vos_mem_set(( tANI_U8* )&extractedExtCap, sizeof( tDot11fIEExtCap ), 0);
-    if (psessionEntry->is_ext_caps_present)
+    if (psessionEntry->ExtCap.present)
     {
         nSirStatus = limStripOffExtCapIEAndUpdateStruct(pMac, pAddIE,
                                   &nAddIELen,
@@ -2485,7 +2507,7 @@ limSendAssocReqMgmtFrame(tpAniSirGlobal   pMac,
 
     }
 #endif
-    if (psessionEntry->is_ext_caps_present)
+    if (psessionEntry->ExtCap.present)
         PopulateDot11fExtCap( pMac, &pFrm->ExtCap, psessionEntry);
 
 #if defined WLAN_FEATURE_VOWIFI_11R
@@ -2522,7 +2544,13 @@ limSendAssocReqMgmtFrame(tpAniSirGlobal   pMac,
     /* merge the ExtCap struct*/
     if (extractedExtCapFlag && extractedExtCap.present)
     {
-        limMergeExtCapIEStruct(&pFrm->ExtCap, &extractedExtCap);
+        limMergeExtCapIEStruct(&pFrm->ExtCap, &extractedExtCap, true);
+    }
+
+    if (pFrm->ExtCap.present && psessionEntry->ExtCap.present) {
+        limMergeExtCapIEStruct(&pFrm->ExtCap, &psessionEntry->ExtCap, false);
+        limLog(pMac, LOG1,
+            FL("Clear the bits in EXTCAP IE that AP don't support to avoid IoT issues."));
     }
 
     nStatus = dot11fGetPackedAssocRequestSize( pMac, pFrm, &nPayload );
@@ -2970,7 +2998,7 @@ limSendReassocReqWithFTIEsMgmtFrame(tpAniSirGlobal     pMac,
 
     }
 #endif
-    if (psessionEntry->is_ext_caps_present)
+    if (psessionEntry->ExtCap.present)
         PopulateDot11fExtCap( pMac, &frm.ExtCap, psessionEntry);
 
     nStatus = dot11fGetPackedReAssocRequestSize( pMac, &frm, &nPayload );
@@ -3455,7 +3483,7 @@ limSendReassocReqMgmtFrame(tpAniSirGlobal     pMac,
         limLog( pMac, LOG1, FL("Populate VHT IEs in Re-Assoc Request"));
         PopulateDot11fVHTCaps( pMac, &frm.VHTCaps,
                      psessionEntry->currentOperChannel, eSIR_FALSE );
-        if (psessionEntry->is_ext_caps_present)
+        if (psessionEntry->ExtCap.present)
             PopulateDot11fExtCap( pMac, &frm.ExtCap, psessionEntry);
     }
 #endif
