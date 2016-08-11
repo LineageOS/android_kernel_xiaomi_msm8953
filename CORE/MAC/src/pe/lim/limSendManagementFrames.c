@@ -109,7 +109,7 @@ tSirRetStatus limStripOffExtCapIE(tpAniSirGlobal pMac,
             tempLen += (elem_len + 2);
         }
         else
-        { /*Est Cap present size is 8 + 2 byte at present*/
+        {
             if ( NULL != pExtractedExtCapIEBuf )
             {
                 vos_mem_set(pExtractedExtCapIEBuf,
@@ -135,6 +135,7 @@ void limUpdateExtCapIEtoStruct(tpAniSirGlobal pMac,
                             tDot11fIEExtCap *pDst)
 {
     tANI_U8 pOut[DOT11F_IE_EXTCAP_MAX_LEN];
+    tANI_U8 tag, len, *val;
 
     if ( NULL == pBuf )
     {
@@ -149,22 +150,23 @@ void limUpdateExtCapIEtoStruct(tpAniSirGlobal pMac,
         return ;
     }
 
-    if ( DOT11F_EID_EXTCAP != pBuf[0] ||
-         pBuf[1] > DOT11F_IE_EXTCAP_MAX_LEN )
+    /* Get tlv */
+    tag = pBuf[0];
+    len = pBuf[1];
+    val = &pBuf[2];
+
+    if ( DOT11F_EID_EXTCAP != tag ||
+         len > DOT11F_IE_EXTCAP_MAX_LEN )
     {
         limLog( pMac, LOG1,
-               FL("Invalid IEs eid = %d elem_len=%d "),
-                                               pBuf[0],pBuf[1]);
+               FL("Invalid IEs eid = %d elem_len=%d "), tag, len);
         return;
     }
-    vos_mem_set(( tANI_U8* )&pOut[0], DOT11F_IE_EXTCAP_MAX_LEN, 0);
-    /* conversion should follow 4, 2, 2 byte order */
-    limUtilsframeshtonl(pMac, &pOut[0],*((tANI_U32*)&pBuf[2]),0);
-    limUtilsframeshtons(pMac, &pOut[4],*((tANI_U16*)&pBuf[6]),0);
-    limUtilsframeshtons(pMac, &pOut[6],*((tANI_U16*)&pBuf[8]),0);
 
+    vos_mem_zero(pOut, DOT11F_IE_EXTCAP_MAX_LEN);
+    vos_mem_copy(pOut, val, len);
     if ( DOT11F_PARSE_SUCCESS != dot11fUnpackIeExtCap( pMac,
-                &pOut[0], DOT11F_IE_EXTCAP_MAX_LEN, pDst) )
+                 pOut, len, pDst) )
     {
         limLog( pMac, LOGE,
                FL("dot11fUnpackIeExtCap Parse Error "));
@@ -208,6 +210,7 @@ void limMergeExtCapIEStruct(tDot11fIEExtCap *pDst,
         tempDst++;
         tempSrc++;
     }
+    pDst->num_bytes = lim_compute_ext_cap_ie_length(pDst);
 }
 
 /**
@@ -2310,9 +2313,12 @@ limSendAssocReqMgmtFrame(tpAniSirGlobal   pMac,
      */
     else
     {
-        if (extractedExtCap.interworkingService)
-            extractedExtCap.qosMap = 1;
-        extractedExtCapFlag = lim_is_ext_cap_ie_present(&extractedExtCap);
+        struct s_ext_cap *p_ext_cap = (struct s_ext_cap *)extractedExtCap.bytes;
+        if (p_ext_cap->interworkingService) {
+            p_ext_cap->qosMap = 1;
+        }
+        extractedExtCap.num_bytes = lim_compute_ext_cap_ie_length(&extractedExtCap);
+        extractedExtCapFlag = (extractedExtCap.num_bytes > 0);
     }
 
     caps = pMlmAssocReq->capabilityInfo;
