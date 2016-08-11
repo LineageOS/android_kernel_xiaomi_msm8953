@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016. The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -8555,24 +8555,23 @@ bool lim_is_robust_mgmt_action_frame(uint8 action_catagory)
 }
 
 /**
- * lim_is_ext_cap_ie_present - checks if ext ie is present
+ * lim_compute_ext_cap_ie_length - compute the length of ext cap ie
+ * based on the bits set
  * @ext_cap: extended IEs structure
  *
- * Return: true if ext IEs are present else false
+ * Return: length of the ext cap ie, 0 means should not present
  */
-bool lim_is_ext_cap_ie_present (tDot11fIEExtCap *ext_cap)
-{
-    int i, size;
-    uint8_t *tmp_buf;
+tANI_U8 lim_compute_ext_cap_ie_length (tDot11fIEExtCap *ext_cap) {
+    tANI_U8 i = DOT11F_IE_EXTCAP_MAX_LEN;
 
-    tmp_buf = (uint8_t *) ext_cap;
-    size = sizeof(*ext_cap);
+    while (i) {
+        if (ext_cap->bytes[i-1]) {
+            break;
+        }
+        i --;
+    }
 
-    for (i = 0; i < size; i++)
-        if (tmp_buf[i])
-            return true;
-
-    return false;
+    return i;
 }
 
 /**
