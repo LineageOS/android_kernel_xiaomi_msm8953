@@ -89,6 +89,7 @@ static const hdd_tmLevelAction_t thermalMigrationAction[WLAN_HDD_TM_LEVEL_MAX] =
    /* TM Level 4, MAX TM level, enter IMPS */
    {0, 1, 1000, 500, 10}
 };
+
 #ifdef HAVE_WCNSS_SUSPEND_RESUME_NOTIFY
 static bool suspend_notify_sent;
 #endif
@@ -151,7 +152,7 @@ static int wlan_suspend(hdd_context_t* pHddCtx)
    {
        /* Fail this suspend */
        pHddCtx->continuous_suspend_fail_cnt++;
-       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_WARN,
         FL("Fail wlan suspend: not in IMPS/BMPS, continuous Failcnt %d"),
         pHddCtx->continuous_suspend_fail_cnt);
 
@@ -340,6 +341,7 @@ mc_suspend:
    /* Set the Station state as Suspended */
    pHddCtx->isWlanSuspended = TRUE;
    pHddCtx->last_suspend_success = 0;
+   pHddCtx->rx_wow_dump = true;
    hdd_wlan_suspend_resume_event(HDD_WLAN_SUSPEND);
    return 0;
 }

@@ -3212,6 +3212,61 @@ v_BOOL_t vos_isUnloadInProgress(void)
 }
 
 /**
+ *vos_get_rx_wow_dump()
+ *
+ * Return true/flase to dump RX packet
+ *
+ */
+bool vos_get_rx_wow_dump(void)
+{
+    hdd_context_t *pHddCtx = NULL;
+    v_CONTEXT_t pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+
+    if(!pVosContext)
+    {
+       hddLog(VOS_TRACE_LEVEL_FATAL,"%s: Global VOS context is Null", __func__);
+       return FALSE;
+    }
+
+    pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD, pVosContext );
+    if(!pHddCtx) {
+       VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+                "%s: HDD context is Null", __func__);
+       return FALSE;
+    }
+
+    return pHddCtx->rx_wow_dump;
+}
+
+/**
+ *vos_set_rx_wow_dump() - Set RX wow pkt dump
+ *@value: Value of RX wow pkt dump
+ *
+ * Return none.
+ *
+ */
+void vos_set_rx_wow_dump(bool value)
+{
+    hdd_context_t *pHddCtx = NULL;
+    v_CONTEXT_t pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+
+    if(!pVosContext)
+    {
+       hddLog(VOS_TRACE_LEVEL_FATAL,"%s: Global VOS context is Null", __func__);
+       return;
+    }
+
+    pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD, pVosContext );
+    if(!pHddCtx) {
+       VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+                "%s: HDD context is Null", __func__);
+       return;
+    }
+
+    pHddCtx->rx_wow_dump = value;
+}
+
+/**
  * vos_probe_threads() - VOS API to post messages
  * to all the threads to detect if they are active or not
  *

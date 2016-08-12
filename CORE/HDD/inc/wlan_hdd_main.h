@@ -1431,6 +1431,7 @@ struct hdd_context_s
 
    
    v_BOOL_t hdd_wlan_suspended;
+   bool rx_wow_dump;
    
    spinlock_t filter_lock;
    

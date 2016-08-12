@@ -1207,7 +1207,7 @@ VOS_STATUS hdd_conf_arp_offload(hdd_adapter_t *pAdapter, int fenable)
        }
        else
        {
-           hddLog(VOS_TRACE_LEVEL_ERROR, FL("IP Address is not assigned"));
+           hddLog(VOS_TRACE_LEVEL_WARN, FL("IP Address is not assigned"));
            return VOS_STATUS_E_AGAIN;
        }
 
@@ -1479,7 +1479,7 @@ void hdd_suspend_wlan(void)
 
    if (pHddCtx->hdd_wlan_suspended)
    {
-      hddLog(VOS_TRACE_LEVEL_ERROR,
+      hddLog(VOS_TRACE_LEVEL_INFO,
              "%s: Ignore suspend wlan, Already suspended!", __func__);
       return;
    }
