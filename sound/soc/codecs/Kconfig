@@ -8,6 +8,9 @@ config SND_SOC_I2C_AND_SPI
 	default y if I2C=y
 	default y if SPI_MASTER=y
 
+config SOUND_CONTROL
+	bool "Sound control for wcd9335"
+
 menu "CODEC drivers"
 
 config SND_SOC_ALL_CODECS
