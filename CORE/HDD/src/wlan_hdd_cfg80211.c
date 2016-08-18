@@ -7901,7 +7901,11 @@ int wlan_hdd_cfg80211_init(struct device *dev,
 #ifndef CONFIG_ENABLE_LINUX_REG
     /* the flag for the other case would be initialzed in
        vos_init_wiphy_from_nv_bin */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
+    wiphy->regulatory_flags |= REGULATORY_STRICT_REG;
+#else
     wiphy->flags |= WIPHY_FLAG_STRICT_REGULATORY;
+#endif
 #endif
 
     /* This will disable updating of NL channels from passive to
