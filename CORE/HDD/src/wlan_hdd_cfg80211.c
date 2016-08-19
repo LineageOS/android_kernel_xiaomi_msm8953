@@ -15682,6 +15682,8 @@ static int __wlan_hdd_cfg80211_get_station(struct wiphy *wiphy, struct net_devic
     {
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                   "%s: Roaming in progress, so unable to proceed this request", __func__);
+        /* return a cached value */
+        sinfo->signal = pAdapter->rssi;
         return 0;
     }
 
