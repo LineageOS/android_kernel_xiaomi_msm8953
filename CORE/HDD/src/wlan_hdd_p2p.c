@@ -257,6 +257,7 @@ eHalStatus wlan_hdd_remain_on_channel_callback( tHalHandle hHal, void* pCtx,
                 NULL, 0 );
     }
     mutex_lock(&pHddCtx->roc_lock);
+    pRemainChanCtx = cfgState->remain_on_chan_ctx;
     if ( pRemainChanCtx )
     {
         if (pRemainChanCtx->action_pkt_buff.frame_ptr != NULL
@@ -264,14 +265,13 @@ eHalStatus wlan_hdd_remain_on_channel_callback( tHalHandle hHal, void* pCtx,
         {
             vos_mem_free(pRemainChanCtx->action_pkt_buff.frame_ptr);
         }
+        hddLog( LOG1, FL(
+                    "Freeing ROC ctx cfgState->remain_on_chan_ctx=%p"),
+                cfgState->remain_on_chan_ctx);
+        vos_mem_free( pRemainChanCtx );
+        pRemainChanCtx = NULL;
+        cfgState->remain_on_chan_ctx = NULL;
     }
-
-    hddLog( LOG1, FL(
-                "Freeing ROC ctx cfgState->remain_on_chan_ctx=%p"),
-            cfgState->remain_on_chan_ctx);
-    vos_mem_free( pRemainChanCtx );
-    pRemainChanCtx = NULL;
-    cfgState->remain_on_chan_ctx = NULL;
     mutex_unlock(&pHddCtx->roc_lock);
     if (eHAL_STATUS_SUCCESS != status)
         complete(&pAdapter->rem_on_chan_ready_event);

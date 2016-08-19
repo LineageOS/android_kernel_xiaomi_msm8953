@@ -11089,11 +11089,10 @@ static int __wlan_hdd_change_station(struct wiphy *wiphy,
             }
 
             if (pHddCtx->cfg_ini->fEnableTDLSWmmMode &&
-                   (params->sta_flags_set & BIT(NL80211_STA_FLAG_WME))) {
-
+                (params->ht_capa || params->vht_capa ||
+                (params->sta_flags_set & BIT(NL80211_STA_FLAG_WME))))
                 /* TDLS Peer is WME/QoS capable */
                 isQosWmmSta = TRUE;
-            }
 
             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                       "%s: TDLS Peer is QOS capable isQosWmmSta= %d HTcapPresent= %d",
