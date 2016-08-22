@@ -2293,7 +2293,6 @@ static tANI_S32 csrFindSelfCongestionScore(tpAniSirGlobal pMac,
     return 0;
 }
 
-
 static tANI_BOOLEAN csrIsBetterBssInCongestion(tCsrScanResult *pBss1,
                                                tCsrScanResult *pBss2)
 {
@@ -3571,6 +3570,7 @@ static void csrMoveTempScanResultsToMainList( tpAniSirGlobal pMac, tANI_U8 reaso
     tANI_U32 sessionId = CSR_SESSION_ID_INVALID;
     tAniSSID tmpSsid;
     v_TIME_t timer=0;
+    tANI_U8 occupied_chan_count = pMac->scan.occupiedChannels.numChannels;
 
     tmpSsid.length = 0;
 
@@ -3659,6 +3659,19 @@ static void csrMoveTempScanResultsToMainList( tpAniSirGlobal pMac, tANI_U8 reaso
         }
     }
 
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+    if (csrIsSessionClientAndConnected(pMac,
+        pMac->roam.roamSession->sessionId) &&
+        (pMac->scan.occupiedChannels.numChannels != occupied_chan_count))
+    {
+        /* Update FW with new list */
+        smsLog(pMac, LOGW,
+               FL("Updating occupied channel list, new chanNum %d"),
+               pMac->scan.occupiedChannels.numChannels);
+        csrRoamOffloadScan(pMac, ROAM_SCAN_OFFLOAD_UPDATE_CFG,
+                           REASON_CHANNEL_LIST_CHANGED);
+    }
+#endif
     pEntry = csrLLPeekHead( &pMac->scan.scanResultList, LL_ACCESS_LOCK );
     //we don't need to update CC while connected to an AP which is advertising CC already
     if (csrIs11dSupported(pMac))
