@@ -10100,6 +10100,13 @@ void csrRoamCheckForLinkStatusChange( tpAniSirGlobal pMac, tSirSmeRsp *pSirMsg )
                                      &roamInfo, 0,
                                      eCSR_ROAM_LOSTLINK,
                                      eCSR_ROAM_RESULT_DISASSOC_IND);
+                pSession = CSR_GET_SESSION(pMac,
+                          pDisConDoneInd->sessionId);
+                if (pSession &&
+                   !CSR_IS_INFRA_AP(&pSession->connectedProfile))
+                     csrRoamStateChange(pMac,
+                        eCSR_ROAMING_STATE_IDLE,
+                        pDisConDoneInd->sessionId);
             }
             else
             {
