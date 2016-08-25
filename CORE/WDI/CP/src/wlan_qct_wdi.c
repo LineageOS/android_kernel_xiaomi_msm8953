@@ -27195,6 +27195,8 @@ WDI_ProcessPERRoamScanOffloadReq(WDI_ControlBlockType *pWDICtx,
                      wdiPERRoamOffloadReq->rateDownThreshold;
    halPERRoamConfigReq.perRoamConfigParams.isPERRoamCCAEnabled =
                      wdiPERRoamOffloadReq->isPERRoamCCAEnabled;
+   halPERRoamConfigReq.perRoamConfigParams.PERRoamFullScanThreshold =
+                     wdiPERRoamOffloadReq->PERRoamFullScanThreshold;
    halPERRoamConfigReq.perRoamConfigParams.PERroamTriggerPercent =
                      wdiPERRoamOffloadReq->PERroamTriggerPercent;
    halPERRoamConfigReq.perRoamConfigParams.PERtimerThreshold =
@@ -27206,15 +27208,18 @@ WDI_ProcessPERRoamScanOffloadReq(WDI_ControlBlockType *pWDICtx,
                    &halPERRoamConfigReq.perRoamConfigParams,
                    sizeof(halPERRoamConfigReq.perRoamConfigParams));
 
-   WPAL_TRACE( eWLAN_MODULE_DAL_CTRL,  eWLAN_PAL_TRACE_LEVEL_INFO,
-          "request_id %d waitPeriodForNextPERScan=%d rateUpThreshold=%d rateDownThreshold=%d isPERRoamCCAEnabled=%d PERtimerThreshold=%d PERroamTriggerPercent =%d",
-          halPERRoamConfigReq.perRoamConfigParams.request_id,
+   WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
+          "waitPeriodForNextPERScan=%d rateUpThreshold=%d rateDownThreshold=%d isPERRoamCCAEnabled=%d",
           halPERRoamConfigReq.perRoamConfigParams.waitPeriodForNextPERScan,
           halPERRoamConfigReq.perRoamConfigParams.rateUpThreshold,
           halPERRoamConfigReq.perRoamConfigParams.rateDownThreshold,
-          halPERRoamConfigReq.perRoamConfigParams.isPERRoamCCAEnabled,
+          halPERRoamConfigReq.perRoamConfigParams.isPERRoamCCAEnabled);
+   WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
+          "PERtimerThreshold=%d PERroamTriggerPercent =%d PERRoamFullScanThreshold %d",
           halPERRoamConfigReq.perRoamConfigParams.PERtimerThreshold,
-          halPERRoamConfigReq.perRoamConfigParams.PERroamTriggerPercent);
+          halPERRoamConfigReq.perRoamConfigParams.PERroamTriggerPercent,
+          halPERRoamConfigReq.perRoamConfigParams.PERRoamFullScanThreshold);
+
    return  WDI_SendMsg(pWDICtx, pSendBuffer, usSendSize,
                wdiPERRoamOffloadScancb, pEventData->pUserData,
                WDI_PER_ROAM_SCAN_OFFLOAD_RSP);
