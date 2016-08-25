@@ -975,6 +975,11 @@ typedef enum
 #define CFG_PER_ROAM_SCAN_CCA_ENABLED_MIN             (0)
 #define CFG_PER_ROAM_SCAN_CCA_ENABLED_MAX             (1)
 #define CFG_PER_ROAM_SCAN_CCA_ENABLED_DEFAULT         (0)
+
+#define CFG_PER_ROAM_FULL_SCAN_RSSI_THRESHOLD         "gPERRoamFullScanRssiDiffThreshold"
+#define CFG_PER_ROAM_FULL_SCAN_RSSI_THRESHOLD_MIN     (5)
+#define CFG_PER_ROAM_FULL_SCAN_RSSI_THRESHOLD_MAX     (50)
+#define CFG_PER_ROAM_FULL_SCAN_RSSI_THRESHOLD_DEFAULT (10)
 #endif
 
 #define CFG_QOS_WMM_PKT_CLASSIFY_BASIS_NAME                "PktClassificationBasis" // DSCP or 802.1Q
@@ -3053,6 +3058,7 @@ typedef struct
    v_BOOL_t                     isPERRoamEnabled;
    v_BOOL_t                     isPERRoamRxPathEnabled;
    v_BOOL_t                     isPERRoamCCAEnabled;
+   v_S15_t                      PERRoamFullScanThreshold;
    v_U16_t                      rateUpThreshold;
    v_U16_t                      rateDownThreshold;
    v_U16_t                      PERroamTriggerPercent;

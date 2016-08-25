@@ -1947,6 +1947,8 @@ eHalStatus csrChangeDefaultConfigParam(tpAniSirGlobal pMac, tCsrConfigParam *pPa
         pMac->roam.configParam.PERtimerThreshold = pParam->PERtimerThreshold;
         pMac->roam.configParam.isPERRoamCCAEnabled =
                 pParam->isPERRoamCCAEnabled;
+        pMac->roam.configParam.PERRoamFullScanThreshold =
+                pParam->PERRoamFullScanThreshold;
         pMac->roam.configParam.PERroamTriggerPercent =
                 pParam->PERroamTriggerPercent;
 #endif
@@ -2165,6 +2167,8 @@ eHalStatus csrGetConfigParam(tpAniSirGlobal pMac, tCsrConfigParam *pParam)
         pParam->PERtimerThreshold = pMac->roam.configParam.PERtimerThreshold;
         pParam->isPERRoamCCAEnabled =
                 pMac->roam.configParam.isPERRoamCCAEnabled;
+        pParam->PERRoamFullScanThreshold =
+                pMac->roam.configParam.PERRoamFullScanThreshold;
         pParam->PERroamTriggerPercent =
                 pMac->roam.configParam.PERroamTriggerPercent;
 #endif
@@ -17202,6 +17206,8 @@ send_roam_scan_offload_cmd:
               pMac->roam.configParam.PERtimerThreshold;
       PERRoamReqBuf->isPERRoamCCAEnabled =
               pMac->roam.configParam.isPERRoamCCAEnabled;
+      PERRoamReqBuf->PERRoamFullScanThreshold =
+              pMac->roam.configParam.PERRoamFullScanThreshold;
       PERRoamReqBuf->PERroamTriggerPercent =
               pMac->roam.configParam.PERroamTriggerPercent;
       PERRoamReqBuf->sessionId = sessionId;
