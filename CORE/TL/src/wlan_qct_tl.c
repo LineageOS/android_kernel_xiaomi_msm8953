@@ -8973,7 +8973,7 @@ static void WLANTL_ClearOldPERStats(WLANTL_CbType *pTLCb, v_U8_t incrementCnt)
 static void WLANTL_updatePERStats(WLANTL_CbType *pTLCb,
                                   v_U8_t rateIndex)
 {
-   v_U8_t incrementCnt;
+   v_U8_t incrementCnt = 0;
    v_U64_t currentTime, timeDifference;
 
    /*
