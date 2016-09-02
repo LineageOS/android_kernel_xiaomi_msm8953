@@ -18142,6 +18142,8 @@ VOS_STATUS WDA_ProcessPERRoamScanOffloadReq(tWDA_CbContext *pWDA,
           pPERRoamOffloadScanReqParams->PERtimerThreshold;
    pwdiPERRoamOffloadScanInfo->isPERRoamCCAEnabled =
           pPERRoamOffloadScanReqParams->isPERRoamCCAEnabled;
+   pwdiPERRoamOffloadScanInfo->PERRoamFullScanThreshold =
+          pPERRoamOffloadScanReqParams->PERRoamFullScanThreshold;
    pwdiPERRoamOffloadScanInfo->PERroamTriggerPercent =
           pPERRoamOffloadScanReqParams->PERroamTriggerPercent;
 
