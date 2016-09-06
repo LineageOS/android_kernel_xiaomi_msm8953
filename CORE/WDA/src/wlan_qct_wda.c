@@ -13359,7 +13359,9 @@ VOS_STATUS WDA_HALDumpCmdReq(tpAniSirGlobal   pMac, tANI_U32  cmd,
             VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
             "%s: WDA_HALDUMP reporting  other error",__func__);
          }
-         VOS_BUG(0);
+         if (!(vos_isLoadUnloadInProgress() ||
+               vos_is_logp_in_progress(VOS_MODULE_ID_VOSS, NULL)))
+             VOS_BUG(0);
       }
    }
    return status;
