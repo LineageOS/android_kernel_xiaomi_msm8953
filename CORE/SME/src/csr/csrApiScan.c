@@ -2086,7 +2086,7 @@ static tANI_U32 calculateBssScore(tSirBssDescription *bssInfo,
     tANI_S32 score = 0;
     tANI_S32 ap_load = 0;
     tANI_S32 normalised_width = PER_ROAM_20MHZ;
-    tANI_S32 normalised_rssi;
+    tANI_S32 normalised_rssi = 0;
     tANI_S32 channel_weight;
     if (bssInfo->rssi) {
         /* Calculate % of rssi we are getting

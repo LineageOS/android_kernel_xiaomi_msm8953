@@ -8318,7 +8318,7 @@ static void csrRoamRoamingStateReassocRspProcessor( tpAniSirGlobal pMac, tpSirSm
     tCsrRoamInfo roamInfo;
     tANI_U32 roamId = 0;
     tANI_U32 current_timestamp, max_time = -1;
-    tANI_U32 candidateApCnt, oldestIndex;
+    tANI_U32 candidateApCnt, oldestIndex = 0;
     tANI_U8 nilMac[6] = {0};
 
     if (eSIR_SME_SUCCESS == pSmeJoinRsp->statusCode)

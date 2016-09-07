@@ -27163,10 +27163,17 @@ WDI_ProcessPERRoamScanOffloadReq(WDI_ControlBlockType *pWDICtx,
    WDI_PERRoamOffloadScanCb wdiPERRoamOffloadScancb = NULL;
    tSetPerRoamConfigReq halPERRoamConfigReq;
 
+   if (!pEventData) {
+       WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
+                  "%s: *pEventdata is null", __func__);
+       WDI_ASSERT(0);
+       return WDI_STATUS_E_FAILURE;
+   }
+
    wdiPERRoamOffloadReq = (WDI_PERRoamOffloadScanInfo *)pEventData->pEventData;
    wdiPERRoamOffloadScancb   = (WDI_PERRoamOffloadScanCb)pEventData->pCBfnc;
 
-   if ((!pEventData) || (!wdiPERRoamOffloadReq)|| (!wdiPERRoamOffloadScancb)) {
+   if (!wdiPERRoamOffloadReq || !wdiPERRoamOffloadScancb) {
       WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
                   "%s: Invalid parameters", __func__);
       WDI_ASSERT(0);
@@ -27236,10 +27243,17 @@ WDI_ProcessPERRoamScanTriggerReq(WDI_ControlBlockType *pWDICtx,
    WDI_PERRoamTriggerScanInfo *wdiPERRoamTriggerReq;
    tStartRoamScanReq halPERRoamTriggerReq;
 
+   if (!pEventData) {
+       WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
+                  "%s: pEventdata is null", __func__);
+       WDI_ASSERT(0);
+       return WDI_STATUS_E_FAILURE;
+  }
+
    wdiPERRoamTriggerReq = (WDI_PERRoamTriggerScanInfo *) pEventData->pEventData;
    wdiPERRoamTriggerScancb   = (WDI_PERRoamTriggerScanCb)pEventData->pCBfnc;
 
-   if ((!pEventData) || (!wdiPERRoamTriggerReq) || (!wdiPERRoamTriggerScancb)) {
+   if (!wdiPERRoamTriggerReq || !wdiPERRoamTriggerScancb) {
       WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
                   "%s: Invalid parameters", __func__);
       WDI_ASSERT(0);
