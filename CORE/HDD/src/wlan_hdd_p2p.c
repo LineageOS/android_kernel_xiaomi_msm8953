@@ -260,6 +260,13 @@ eHalStatus wlan_hdd_remain_on_channel_callback( tHalHandle hHal, void* pCtx,
     pRemainChanCtx = cfgState->remain_on_chan_ctx;
     if ( pRemainChanCtx )
     {
+        /* Trigger kernel panic if ROC timer state is not set to unused state
+         * before freeing the ROC ctx.
+         */
+         if (VOS_TIMER_STATE_UNUSED != vos_timer_getCurrentState(
+                 &pRemainChanCtx->hdd_remain_on_chan_timer))
+            VOS_BUG(0);
+
         if (pRemainChanCtx->action_pkt_buff.frame_ptr != NULL
                 && pRemainChanCtx->action_pkt_buff.frame_length != 0)
         {
@@ -776,6 +783,9 @@ static int wlan_hdd_request_remain_on_channel( struct wiphy *wiphy,
     }
 
     mutex_lock(&pHddCtx->roc_lock);
+
+   if (cfgState->remain_on_chan_ctx)
+       VOS_BUG(0);
 
     pRemainChanCtx = vos_mem_malloc( sizeof(hdd_remain_on_chan_ctx_t) );
     if( NULL == pRemainChanCtx )
