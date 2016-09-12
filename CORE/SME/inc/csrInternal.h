@@ -625,6 +625,7 @@ typedef struct tagCsrConfig
     tANI_BOOLEAN bFastRoamInConIniFeatureEnabled;
     v_BOOL_t     isPERRoamEnabled;
     v_BOOL_t     isPERRoamCCAEnabled;
+    v_S15_t      PERRoamFullScanThreshold;
     tANI_U32     rateUpThreshold;
     tANI_U32     rateDownThreshold;
     tANI_U32     waitPeriodForNextPERScan;
