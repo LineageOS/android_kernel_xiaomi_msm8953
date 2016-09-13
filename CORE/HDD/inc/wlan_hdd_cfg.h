@@ -908,7 +908,7 @@ typedef enum
 #define CFG_PER_ROAM_SCAN_OFFLOAD_ENABLED                  "gPERRoamEnable"
 #define CFG_PER_ROAM_SCAN_OFFLOAD_ENABLED_MIN              (0)
 #define CFG_PER_ROAM_SCAN_OFFLOAD_ENABLED_MAX              (1)
-#define CFG_PER_ROAM_SCAN_OFFLOAD_ENABLED_DEFAULT          (1)
+#define CFG_PER_ROAM_SCAN_OFFLOAD_ENABLED_DEFAULT          (0)
 
 /*
  * Rate at which to stop monitoring data rates for PER based Roam
