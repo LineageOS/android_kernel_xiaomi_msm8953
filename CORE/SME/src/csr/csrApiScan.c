@@ -2147,7 +2147,6 @@ static tANI_U32 calculateBssScore(tSirBssDescription *bssInfo,
         ap_load = (bssInfo->QBSS_ChanLoad * PER_ROAM_MAX_WEIGHT) / MAX_AP_LOAD;
     }
 #endif
-    //TODO we don't have this info for current AP, need to check
     /* if CCA consideration is off in configuration, FW will send 50% for
        every channel which should be considered as it is */
     if (ap_load)
@@ -2193,6 +2192,13 @@ static tANI_S32 csrFindCongestionScore (tpAniSirGlobal pMac, tCsrScanResult *pBs
         return -1;
     }
 
+    if (bssInfo->rssi < PER_BAD_RSSI) {
+        smsLog(pMac, LOG1,
+               FL("discrarding candidate due to low rssi=%d bssid "
+               MAC_ADDRESS_STR), bssInfo->rssi,
+               MAC_ADDR_ARRAY(pBss->Result.BssDescriptor.bssId));
+        return 0;
+    }
     /* find best RSSI of other AP in this channel */
     best_rssi = MIN_RSSI;
     for (other_ap_cnt = 0; other_ap_cnt <
