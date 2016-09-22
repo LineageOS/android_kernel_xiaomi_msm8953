@@ -37678,8 +37678,6 @@ WDI_StartOemDataReqIndNew
 {
    WDI_EventInfoType      wdiEventData;
 
-  VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_ERROR,
-                  "%s: %d",__func__, __LINE__);
   /*------------------------------------------------------------------------
     Sanity Check
   ------------------------------------------------------------------------*/
@@ -37723,9 +37721,6 @@ WDI_ProcessStartOemDataReqIndNew
   wpt_uint16               usDataOffset        = 0;
   tpStartOemDataReqParamsNew   pHalStartOemDataReqParamsNew;
   WDI_Status wdiStatus = WDI_STATUS_SUCCESS;
-
-  VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_ERROR,
-                  "%s: %d",__func__, __LINE__);
 
   if (( NULL == pWDICtx ) || ( NULL == pEventData ) ||
            ( NULL == pEventData->pEventData))

@@ -3798,6 +3798,7 @@ static int iw_get_rssi(struct net_device *dev,
          (note that it is not NUL-terminated) */
       memcpy(cmd, pHddStaCtx->conn_info.SSID.SSID.ssId, ssidlen );
 
+      wlan_hdd_get_station_stats(pAdapter);
       vosStatus = wlan_hdd_get_rssi(pAdapter, &s7Rssi);
 
       if (VOS_STATUS_SUCCESS == vosStatus)
