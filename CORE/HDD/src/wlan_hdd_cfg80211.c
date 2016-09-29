@@ -97,6 +97,7 @@
 #include "wlan_hdd_dev_pwr.h"
 #include "qwlan_version.h"
 #include "wlan_logging_sock_svc.h"
+#include "wlan_hdd_misc.h"
 
 
 #define g_mode_rates_size (12)
@@ -10586,7 +10587,10 @@ int __wlan_hdd_cfg80211_change_iface( struct wiphy *wiphy,
                     pAdapter->device_mode = (type == NL80211_IFTYPE_STATION) ?
                                   WLAN_HDD_INFRA_STATION: WLAN_HDD_P2P_CLIENT;
                 }
-                hdd_set_conparam(0);
+
+                /* set con_mode to STA only when no SAP concurrency mode */
+                if (!(hdd_get_concurrency_mode() & (VOS_SAP | VOS_P2P_GO)))
+                    hdd_set_conparam(0);
                 pHddCtx->change_iface = type;
                 memset(&pAdapter->sessionCtx, 0, sizeof(pAdapter->sessionCtx));
                 hdd_set_station_ops( pAdapter->dev );
