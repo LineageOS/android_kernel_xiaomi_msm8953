@@ -1230,8 +1230,14 @@ static void initConfigParam(tpAniSirGlobal pMac)
     pMac->roam.configParam.nActiveMinChnTime = CSR_ACTIVE_MIN_CHANNEL_TIME;
     pMac->roam.configParam.nPassiveMaxChnTime = CSR_PASSIVE_MAX_CHANNEL_TIME;
     pMac->roam.configParam.nPassiveMinChnTime = CSR_PASSIVE_MIN_CHANNEL_TIME;
-    pMac->roam.configParam.nActiveMaxChnTimeBtc = CSR_ACTIVE_MAX_CHANNEL_TIME_BTC;
-    pMac->roam.configParam.nActiveMinChnTimeBtc = CSR_ACTIVE_MIN_CHANNEL_TIME_BTC;
+    pMac->roam.configParam.max_chntime_btc_esco =
+          CSR_ACTIVE_MAX_CHANNEL_TIME_ESCO_BTC;
+    pMac->roam.configParam.min_chntime_btc_esco =
+          CSR_ACTIVE_MIN_CHANNEL_TIME_ESCO_BTC;
+    pMac->roam.configParam.min_chntime_btc_sco =
+          CSR_ACTIVE_MIN_CHANNEL_TIME_SCO_BTC;
+    pMac->roam.configParam.max_chntime_btc_sco=
+          CSR_ACTIVE_MAX_CHANNEL_TIME_SCO_BTC;
     pMac->roam.configParam.disableAggWithBtc = eANI_BOOLEAN_TRUE;
 #ifdef WLAN_AP_STA_CONCURRENCY
     pMac->roam.configParam.nActiveMaxChnTimeConc = CSR_ACTIVE_MAX_CHANNEL_TIME_CONC;
@@ -1799,14 +1805,22 @@ eHalStatus csrChangeDefaultConfigParam(tpAniSirGlobal pMac, tCsrConfigParam *pPa
             cfgSetInt(pMac, WNI_CFG_OBSS_HT40_SCAN_WIDTH_TRIGGER_INTERVAL,
                       pParam->nOBSSScanWidthTriggerInterval);
         }
-        if (pParam->nActiveMaxChnTimeBtc)
+        if (pParam->max_chntime_btc_esco)
         {
-            pMac->roam.configParam.nActiveMaxChnTimeBtc = pParam->nActiveMaxChnTimeBtc;
+            pMac->roam.configParam.max_chntime_btc_esco =
+                             pParam->max_chntime_btc_esco;
         }
-        if (pParam->nActiveMinChnTimeBtc)
+        if (pParam->min_chntime_btc_esco)
         {
-            pMac->roam.configParam.nActiveMinChnTimeBtc = pParam->nActiveMinChnTimeBtc;
+            pMac->roam.configParam.min_chntime_btc_esco =
+                             pParam->min_chntime_btc_esco;
         }
+        if (pParam->min_chntime_btc_sco)
+            pMac->roam.configParam.min_chntime_btc_sco =
+                   pParam->min_chntime_btc_sco;
+        if (pParam->max_chntime_btc_sco)
+            pMac->roam.configParam.max_chntime_btc_sco =
+                   pParam->max_chntime_btc_sco;
 #ifdef WLAN_AP_STA_CONCURRENCY
         if (pParam->nActiveMaxChnTimeConc)
         {
@@ -2083,8 +2097,14 @@ eHalStatus csrGetConfigParam(tpAniSirGlobal pMac, tCsrConfigParam *pParam)
         pParam->nActiveMinChnTime = pMac->roam.configParam.nActiveMinChnTime;
         pParam->nPassiveMaxChnTime = pMac->roam.configParam.nPassiveMaxChnTime;
         pParam->nPassiveMinChnTime = pMac->roam.configParam.nPassiveMinChnTime;
-        pParam->nActiveMaxChnTimeBtc = pMac->roam.configParam.nActiveMaxChnTimeBtc;
-        pParam->nActiveMinChnTimeBtc = pMac->roam.configParam.nActiveMinChnTimeBtc;
+        pParam->max_chntime_btc_esco =
+                 pMac->roam.configParam.max_chntime_btc_esco;
+        pParam->min_chntime_btc_esco =
+                 pMac->roam.configParam.min_chntime_btc_esco;
+        pParam->min_chntime_btc_sco =
+                 pMac->roam.configParam.min_chntime_btc_sco;
+        pParam->max_chntime_btc_sco =
+                 pMac->roam.configParam.max_chntime_btc_sco;
         pParam->disableAggWithBtc = pMac->roam.configParam.disableAggWithBtc;
 #ifdef WLAN_AP_STA_CONCURRENCY
         pParam->nActiveMaxChnTimeConc = pMac->roam.configParam.nActiveMaxChnTimeConc;
