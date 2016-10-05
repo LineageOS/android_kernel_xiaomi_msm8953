@@ -5618,11 +5618,11 @@ static tANI_BOOLEAN csrRoamProcessResults( tpAniSirGlobal pMac, tSmeCmd *pComman
             */
             //csrRoamStateChange( pMac, eCSR_ROAMING_STATE_JOINED );
 
-            /* Reset remainInPowerActiveTillDHCP as it might have been set
+            /* Reset full_power_till_set_key as it might have been set
              * by last failed secured connection.
              * It should be set only for secured connection.
              */
-            pMac->pmc.remainInPowerActiveTillDHCP = FALSE;
+            pMac->pmc.full_power_till_set_key = false;
             if( CSR_IS_INFRASTRUCTURE( pProfile ) )
             {
                 pSession->connectState = eCSR_ASSOC_STATE_TYPE_INFRA_ASSOCIATED;
@@ -5877,15 +5877,14 @@ static tANI_BOOLEAN csrRoamProcessResults( tpAniSirGlobal pMac, tSmeCmd *pComman
             //enough to let security and DHCP handshake succeed before entry into BMPS
             if (pmcShouldBmpsTimerRun(pMac))
             {
-                /* Set remainInPowerActiveTillDHCP to make sure we wait for
+                /* Set full_power_till_set_key to make sure we wait for
                  * until keys are set before going into BMPS.
                  */
                 if(eANI_BOOLEAN_TRUE == roamInfo.fAuthRequired)
                 {
-                     pMac->pmc.remainInPowerActiveTillDHCP = TRUE;
-                     smsLog(pMac, LOG1, FL("Set remainInPowerActiveTillDHCP "
-                            "to make sure we wait until keys are set before"
-                            " going to BMPS"));
+                     pMac->pmc.full_power_till_set_key = true;
+                     smsLog(pMac, LOG1,
+                       FL("Set full_power_till_set_key to make sure we wait until keys are set before going to BMPS"));
                 }
 
                 if (pmcStartTrafficTimer(pMac, BMPS_TRAFFIC_TIMER_ALLOW_SECURITY_DHCP)
@@ -10598,9 +10597,8 @@ void csrRoamCheckForLinkStatusChange( tpAniSirGlobal pMac, tSirSmeRsp *pSirMsg )
                             }
                             if( pRsp->peerMacAddr[0] & 0x01 )
                             {
-                                pMac->pmc.remainInPowerActiveTillDHCP = FALSE;
-                                smsLog(pMac, LOG1, FL("Reset"
-                                "remainInPowerActiveTillDHCP to allow BMPS"));
+                                pMac->pmc.full_power_till_set_key = false;
+                                smsLog(pMac, LOG1, FL("Reset full_power_till_set_key to allow BMPS"));
                             }
                             setKeyEvent.encryptionModeMulticast = 
                                 (v_U8_t)diagEncTypeFromCSRType(pSession->connectedProfile.mcEncryptionType);

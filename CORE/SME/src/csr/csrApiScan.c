@@ -2147,7 +2147,6 @@ static tANI_U32 calculateBssScore(tSirBssDescription *bssInfo,
         ap_load = (bssInfo->QBSS_ChanLoad * PER_ROAM_MAX_WEIGHT) / MAX_AP_LOAD;
     }
 #endif
-    //TODO we don't have this info for current AP, need to check
     /* if CCA consideration is off in configuration, FW will send 50% for
        every channel which should be considered as it is */
     if (ap_load)
@@ -2193,6 +2192,13 @@ static tANI_S32 csrFindCongestionScore (tpAniSirGlobal pMac, tCsrScanResult *pBs
         return -1;
     }
 
+    if (bssInfo->rssi < PER_BAD_RSSI) {
+        smsLog(pMac, LOG1,
+               FL("discrarding candidate due to low rssi=%d bssid "
+               MAC_ADDRESS_STR), bssInfo->rssi,
+               MAC_ADDR_ARRAY(pBss->Result.BssDescriptor.bssId));
+        return 0;
+    }
     /* find best RSSI of other AP in this channel */
     best_rssi = MIN_RSSI;
     for (other_ap_cnt = 0; other_ap_cnt <
@@ -3585,6 +3591,7 @@ static void csrMoveTempScanResultsToMainList( tpAniSirGlobal pMac, tANI_U8 reaso
     tANI_U32 sessionId = CSR_SESSION_ID_INVALID;
     tAniSSID tmpSsid;
     v_TIME_t timer=0;
+    tANI_U8 occupied_chan_count = pMac->scan.occupiedChannels.numChannels;
 
     tmpSsid.length = 0;
 
@@ -3673,6 +3680,19 @@ static void csrMoveTempScanResultsToMainList( tpAniSirGlobal pMac, tANI_U8 reaso
         }
     }
 
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+    if (sme_IsFeatureSupportedByFW(PER_BASED_ROAMING) &&
+       (csrGetInfraSessionId(pMac) != -1) &&
+        (pMac->scan.occupiedChannels.numChannels != occupied_chan_count))
+    {
+        /* Update FW with new list */
+        smsLog(pMac, LOGW,
+               FL("Updating occupied channel list, new chanNum %d"),
+               pMac->scan.occupiedChannels.numChannels);
+        csrRoamOffloadScan(pMac, ROAM_SCAN_OFFLOAD_UPDATE_CFG,
+                           REASON_CHANNEL_LIST_CHANGED);
+    }
+#endif
     pEntry = csrLLPeekHead( &pMac->scan.scanResultList, LL_ACCESS_LOCK );
     //we don't need to update CC while connected to an AP which is advertising CC already
     if (csrIs11dSupported(pMac))
