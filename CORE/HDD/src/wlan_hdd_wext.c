@@ -5560,7 +5560,7 @@ static int iw_set_mlme(struct net_device *dev,
     return ret;
 }
 
-int wlan_hdd_set_proximity(int set_value)
+int wlan_hdd_set_proximity(int set_value, tHalHandle hal)
 {
     sHwCalValues hwCalValues;
     uint16 hwCalTxPower;
@@ -5586,7 +5586,7 @@ int wlan_hdd_set_proximity(int set_value)
         if (txPwr > TX_PWR_MAX)
             txPwr = TX_PWR_MAX;
 
-        if (sme_SetMaxTxPowerPerBand(eCSR_BAND_24, txPwr) !=
+        if (sme_SetMaxTxPowerPerBand(eCSR_BAND_24, txPwr, hal) !=
                                 eHAL_STATUS_SUCCESS) {
             hddLog(VOS_TRACE_LEVEL_ERROR,
               FL("Setting tx power failed for 2.4GHz band %d"), txPwr);
@@ -5600,7 +5600,7 @@ int wlan_hdd_set_proximity(int set_value)
         if (txPwr > TX_PWR_MAX)
             txPwr = TX_PWR_MAX;
 
-        if (sme_SetMaxTxPowerPerBand(eCSR_BAND_5G, txPwr) !=
+        if (sme_SetMaxTxPowerPerBand(eCSR_BAND_5G, txPwr, hal) !=
                                 eHAL_STATUS_SUCCESS) {
             hddLog(VOS_TRACE_LEVEL_ERROR,
               FL("setting tx power failed for 5GHz band %d"), txPwr);
@@ -5608,14 +5608,14 @@ int wlan_hdd_set_proximity(int set_value)
         }
     }
     else if(FALSE == set_value) {
-        if (sme_SetMaxTxPowerPerBand(eCSR_BAND_24, txPwr) !=
+        if (sme_SetMaxTxPowerPerBand(eCSR_BAND_24, txPwr, hal) !=
                                 eHAL_STATUS_SUCCESS) {
             hddLog(VOS_TRACE_LEVEL_ERROR,
               FL("Setting tx power failed for 2.4GHz band %d"), txPwr);
             return -EIO;
         }
 
-        if (sme_SetMaxTxPowerPerBand(eCSR_BAND_5G, txPwr) !=
+        if (sme_SetMaxTxPowerPerBand(eCSR_BAND_5G, txPwr, hal) !=
                                 eHAL_STATUS_SUCCESS) {
             hddLog(VOS_TRACE_LEVEL_ERROR,
               FL("setting tx power failed for 5GHz band %d"), txPwr);
@@ -5982,10 +5982,13 @@ static int __iw_setint_getnone(struct net_device *dev,
         }
         case WE_SET_MAX_TX_POWER_2_4:
         {
+           if (NULL == hHal)
+               return -EINVAL;
+
            hddLog(VOS_TRACE_LEVEL_INFO,
                   "%s: Setting maximum tx power %d dBm for 2.4 GHz band",
                   __func__, set_value);
-           if (sme_SetMaxTxPowerPerBand(eCSR_BAND_24, set_value) !=
+           if (sme_SetMaxTxPowerPerBand(eCSR_BAND_24, set_value, hHal) !=
                                         eHAL_STATUS_SUCCESS)
            {
               hddLog(VOS_TRACE_LEVEL_ERROR,
@@ -5998,10 +6001,13 @@ static int __iw_setint_getnone(struct net_device *dev,
         }
         case WE_SET_MAX_TX_POWER_5_0:
         {
+           if (NULL == hHal)
+               return -EINVAL;
+
            hddLog(VOS_TRACE_LEVEL_INFO,
                   "%s: Setting maximum tx power %d dBm for 5.0 GHz band",
                   __func__, set_value);
-           if (sme_SetMaxTxPowerPerBand(eCSR_BAND_5G, set_value) !=
+           if (sme_SetMaxTxPowerPerBand(eCSR_BAND_5G, set_value, hHal) !=
                                         eHAL_STATUS_SUCCESS)
            {
               hddLog(VOS_TRACE_LEVEL_ERROR,
@@ -6305,7 +6311,10 @@ static int __iw_setint_getnone(struct net_device *dev,
         }
         case WE_SET_PROXIMITY_ENABLE:
         {
-            ret = wlan_hdd_set_proximity(set_value);
+           if (NULL == hHal)
+               return -EINVAL;
+
+            ret = wlan_hdd_set_proximity(set_value, hHal);
             break;
         }
         default:
