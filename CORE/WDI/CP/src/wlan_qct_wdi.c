@@ -578,6 +578,9 @@ WDI_ReqProcFuncType  pfnReqProcTbl[WDI_MAX_UMAC_IND] =
   WDI_ProcessGetCurrentAntennaIndex,          /* WDI_ANTENNA_DIVERSITY_SELECTION_REQ  */
   WDI_ProcessBcnMissPenaltyCount,             /* WDI_MODIFY_ROAM_PARAMS_IND */
   WDI_ProcessSetAllowedActionFramesInd,  /* WDI_SET_ALLOWED_ACTION_FRAMES_IND */
+#ifdef SAP_AUTH_OFFLOAD
+  WDI_ProcessSapAuthOffloadInd,          /* WDI_PROCESS_SAP_AUTH_OFFLOAD_IND */
+#endif
 };
 
 
@@ -1299,6 +1302,9 @@ static char *WDI_getReqMsgString(wpt_uint16 wdiReqMsgId)
     CASE_RETURN_STRING( WDI_ANTENNA_DIVERSITY_SELECTION_REQ );
     CASE_RETURN_STRING( WDI_MODIFY_ROAM_PARAMS_IND );
     CASE_RETURN_STRING( WDI_SET_ALLOWED_ACTION_FRAMES_IND );
+#ifdef SAP_AUTH_OFFLOAD
+    CASE_RETURN_STRING( WDI_PROCESS_SAP_AUTH_OFFLOAD_IND);
+#endif
     default:
         return "Unknown WDI MessageId";
   }
@@ -24755,6 +24761,10 @@ WDI_2_HAL_REQ_TYPE
   case WDI_PER_ROAM_SCAN_TRIGGER_REQ:
       return WLAN_HAL_PER_ROAM_SCAN_TRIGGER_REQ;
 #endif
+#ifdef SAP_AUTH_OFFLOAD
+  case WDI_PROCESS_SAP_AUTH_OFFLOAD_IND:
+      return WLAN_HAL_SAP_AUTH_OFFLOAD_IND;
+#endif
   default:
     return WLAN_HAL_MSG_MAX;
   }
@@ -38200,3 +38210,125 @@ WDI_Status WDI_SetAllowedActionFramesInd(
 
     return WDI_PostMainEvent(&gWDICb, WDI_REQUEST_EVENT, &wdiEventData);
 }
+#ifdef SAP_AUTH_OFFLOAD
+/**
+ *  WDI_ProcessSapAuthOffloadInd() - Process SAP AUTH ofload
+ *                                   Indication message and post it to HAL
+ *
+ *  @pWDICtx: pointer to the WLAN DAL context
+ *  @pEventData: pointer to the event information structure
+ *
+ *  Return: WDI_Status enumeration
+ */
+WDI_Status
+WDI_ProcessSapAuthOffloadInd
+(
+ WDI_ControlBlockType*  pWDICtx,
+ WDI_EventInfoType*     pEventData
+ )
+{
+    wpt_uint8*  pSendBuffer = NULL;
+    wpt_uint16  usDataOffset = 0;
+    wpt_uint16  usSendSize = 0;
+    tSapOffloadEnableMsg  *sapOffloadEnableIndParam;
+    struct  WDI_sap_ofl_enable_params *pwdiSapOflEnableParams;
+    WDI_Status wdiStatus = WDI_STATUS_SUCCESS;
+    int buffer_len = 0;
+
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+    WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
+            "%s", __func__);
+
+    /*-------------------------------------------------------------------------
+      Sanity check
+      -------------------------------------------------------------------------*/
+    if (( NULL == pEventData ) || ( NULL == pEventData->pEventData ))
+    {
+        WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_FATAL,
+                "%s: Invalid parameters", __func__);
+        WDI_ASSERT(0);
+        return WDI_STATUS_E_FAILURE;
+    }
+    /*-----------------------------------------------------------------------
+      Get message buffer
+      -----------------------------------------------------------------------*/
+    pwdiSapOflEnableParams =
+        (struct WDI_sap_ofl_enable_params*)pEventData->pEventData;
+
+    if (pwdiSapOflEnableParams->psk_len)
+        buffer_len = pwdiSapOflEnableParams->psk_len +
+                     sizeof(tSapOffloadEnableMsg) - sizeof(tANI_U8);
+    else
+        buffer_len = sizeof(tSapOffloadEnableMsg);
+
+    if (( WDI_STATUS_SUCCESS != WDI_GetMessageBuffer( pWDICtx,
+                    WDI_PROCESS_SAP_AUTH_OFFLOAD_IND,
+                    buffer_len,
+                    &pSendBuffer, &usDataOffset, &usSendSize))||
+            ( usSendSize < (usDataOffset + sizeof(tSapOffloadEnableMsg) )))
+    {
+        WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_FATAL,
+                "Unable to get send buffer in  SAP Auth offload Ind %p ",
+                pEventData);
+        WDI_ASSERT(0);
+        return WDI_STATUS_E_FAILURE;
+    }
+    pwdiSapOflEnableParams =
+        (struct WDI_sap_ofl_enable_params*)pEventData->pEventData;
+    sapOffloadEnableIndParam =
+        (tSapOffloadEnableMsg*)(pSendBuffer + usDataOffset);
+    wpalMemoryCopy(&sapOffloadEnableIndParam->selfMacAddr,
+            &pwdiSapOflEnableParams->macAddr, sizeof(wpt_macAddr));
+
+    sapOffloadEnableIndParam->enable = pwdiSapOflEnableParams->enable;
+    sapOffloadEnableIndParam->rsn_authmode =
+        pwdiSapOflEnableParams->rsn_authmode;
+    sapOffloadEnableIndParam->rsn_ucastcipherset =
+        pwdiSapOflEnableParams->rsn_ucastcipherset;
+    sapOffloadEnableIndParam->rsn_mcastcipherset =
+        pwdiSapOflEnableParams->rsn_mcastcipherset;
+    sapOffloadEnableIndParam->psk_len = pwdiSapOflEnableParams->psk_len;
+    wpalMemoryCopy(&sapOffloadEnableIndParam->psk, &pwdiSapOflEnableParams->key,
+            pwdiSapOflEnableParams->psk_len);
+    pWDICtx->pReqStatusUserData = NULL;
+    pWDICtx->pfncRspCB = NULL;
+    /*-------------------------------------------------------------------------
+      Send SAP_AUTH_OFFLOAD_IND Indication to HAL
+      -------------------------------------------------------------------------*/
+    wdiStatus =  WDI_SendIndication( pWDICtx, pSendBuffer, usSendSize);
+    return (wdiStatus != WDI_STATUS_SUCCESS) ?
+                                            wdiStatus:WDI_STATUS_SUCCESS_SYNC;
+
+}
+
+/**
+ *  WDI_process_sap_auth_offload() - Process SAP AUTH offload
+ *                                   Indication message and post it to HAL
+ *
+ *  @pWDICtx: pointer to the WLAN DAL context
+ *  @pEventData: pointer to the event information structure
+ *
+ *  Return: WDI_Status enumeration
+ */
+WDI_Status WDI_process_sap_auth_offload(
+        struct WDI_sap_ofl_enable_params  *params)
+{
+    WDI_EventInfoType wdiEventData;
+
+    if (eWLAN_PAL_FALSE == gWDIInitialized)
+    {
+        WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                "WDI API call before module is initialized - Fail req");
+        return WDI_STATUS_E_NOT_ALLOWED;
+    }
+
+    wdiEventData.wdiRequest = WDI_PROCESS_SAP_AUTH_OFFLOAD_IND;
+    wdiEventData.pEventData = params;
+    wdiEventData.uEventDataSize  = sizeof(*params);
+    wdiEventData.pCBfnc = NULL;
+    wdiEventData.pUserData = NULL;
+
+    return WDI_PostMainEvent(&gWDICb, WDI_REQUEST_EVENT, &wdiEventData);
+}
+#endif

@@ -557,8 +557,11 @@ typedef enum
   WDI_ANTENNA_DIVERSITY_SELECTION_REQ = WDI_MAX_REQ + 21,
   WDI_MODIFY_ROAM_PARAMS_IND = WDI_MAX_REQ + 22,
   WDI_SET_ALLOWED_ACTION_FRAMES_IND = WDI_MAX_REQ + 23,
+#ifdef SAP_AUTH_OFFLOAD
+  WDI_PROCESS_SAP_AUTH_OFFLOAD_IND = WDI_MAX_REQ +24,
+#endif
 
-  WDI_MAX_UMAC_IND = WDI_MAX_REQ + 24
+  WDI_MAX_UMAC_IND = WDI_MAX_REQ + 25
 
 }WDI_RequestEnumType;
 
@@ -6676,5 +6679,21 @@ WDI_ProcessSetAllowedActionFramesInd
   WDI_ControlBlockType*  pWDICtx,
   WDI_EventInfoType*     pEventData
 );
+#ifdef SAP_AUTH_OFFLOAD
+/**
+ *  WDI_ProcessSapAuthOffloadInd - Process Set sap offload enable
+ *                                         command
+ *
+ *  @pWDICtx: pointer to the WLAN DAL context
+ *  @pEventData: pointer to the event information structure
+ *
+ */
+WDI_Status
+WDI_ProcessSapAuthOffloadInd
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+ );
+#endif
 #endif /*WLAN_QCT_WDI_I_H*/
 

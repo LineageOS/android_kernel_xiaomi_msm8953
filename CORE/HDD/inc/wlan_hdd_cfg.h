@@ -50,6 +50,11 @@
 //Number of items that can be configured
 #define MAX_CFG_INI_ITEMS   512
 
+#ifdef SAP_AUTH_OFFLOAD
+/* 802.11 pre-share key length */
+#define WLAN_PSK_STRING_LENGTH   (64)
+#endif /* SAP_AUTH_OFFLOAD */
+
 // Defines for all of the things we read from the configuration (registry).
 
 #define CFG_RTS_THRESHOLD_NAME                 "RTSThreshold"
@@ -1655,6 +1660,29 @@ typedef enum
 #define CFG_ENABLE_TCP_DELACK_MIN            (0)
 #define CFG_ENABLE_TCP_DELACK_MAX            (1)
 #define CFG_ENABLE_TCP_DELACK_DEFAULT        (1)
+
+#ifdef SAP_AUTH_OFFLOAD
+/* Enable/Disable SAP Authentication offload
+ * Default: enable
+ */
+#define CFG_ENABLE_SAP_AUTH_OFL_NAME                   "gEnableSAPAuthOffload"
+#define CFG_ENABLE_SAP_AUTH_OFL_MIN                    ( 0 )
+#define CFG_ENABLE_SAP_AUTH_OFL_MAX                    ( 1 )
+#define CFG_ENABLE_SAP_AUTH_OFL_DEFAULT                ( 1 )
+
+/* SAP Authentication offload Security Type
+ *  0: None Security
+ *  1: WPA2-PSK CCMP
+ */
+#define CFG_SAP_AUTH_OFL_SECURITY_TYPE_NAME               "gSAPAuthOffloadSec"
+#define CFG_SAP_AUTH_OFL_SECURITY_TYPE_MIN                ( 0 )
+#define CFG_SAP_AUTH_OFL_SECURITY_TYPE_MAX                ( 1 )
+#define CFG_SAP_AUTH_OFL_SECURITY_TYPE_DEFAULT            ( 0 )
+
+/* SAP Authentication offload Security Key */
+#define CFG_SAP_AUTH_OFL_KEY_NAME     "gSAPAuthOffloadKey"
+#define CFG_SAP_AUTH_OFL_KEY_DEFAULT  ""
+#endif /* SAP_AUTH_OFFLOAD */
 
 /* In cfg.dat 1=1MBPS, 2=2MBPS, 3=5_5MBPS, 4=11MBPS, 5=6MBPS, 6=9MBPS,
  * 7=12MBPS, 8=18MBPS, 9=24MBPS. But 6=9MBPS and 8=18MBPS are not basic
@@ -3453,6 +3481,11 @@ typedef struct
    v_BOOL_t                    sendMgmtPktViaWQ5;
    v_BOOL_t                    sap_probe_resp_offload;
    v_BOOL_t                    disable_scan_during_sco;
+#ifdef SAP_AUTH_OFFLOAD
+   bool                        enable_sap_auth_offload;
+   uint32_t                    sap_auth_offload_sec_type;
+   uint8_t                     sap_auth_offload_key[WLAN_PSK_STRING_LENGTH];
+#endif /* SAP_AUTH_OFFLOAD */
 } hdd_config_t;
 
 /*--------------------------------------------------------------------------- 

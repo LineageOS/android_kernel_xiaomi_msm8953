@@ -6489,6 +6489,28 @@ struct WDI_AllowedActionFramesInd {
    wpt_uint32 bitmask;
    wpt_uint32 reserved;
 };
+
+struct WDI_sap_ofl_enable_params{
+
+    wpt_macAddr macAddr;
+    /** enable/disable sap auth offload */
+    wpt_uint32 enable;
+    /** authentication mode (defined above) */
+    wpt_uint32 rsn_authmode;
+    /** unicast cipher set */
+    wpt_uint32 rsn_ucastcipherset;
+    /** mcast/group cipher set */
+    wpt_uint32 rsn_mcastcipherset;
+    /** mcast/group management frames cipher set */
+    wpt_uint32 rsn_mcastmgmtcipherset;
+    /** sap channel */
+    wpt_uint32 channel;
+    /** length of psk */
+    wpt_uint32 psk_len;
+    wpt_uint8 key[64];
+};
+
+
 /*----------------------------------------------------------------------------
  *   WDI callback types
  *--------------------------------------------------------------------------*/
@@ -12237,4 +12259,9 @@ WDI_SetAllowedActionFramesInd(
 );
 
 void WDI_SetMgmtPktViaWQ5(wpt_boolean sendMgmtPktViaWQ5);
+WDI_Status
+WDI_process_sap_auth_offload(
+   struct WDI_sap_ofl_enable_params *sap_ofl_enable_cmd
+);
+
 #endif /* #ifndef WLAN_QCT_WDI_H */

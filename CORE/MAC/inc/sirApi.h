@@ -6063,5 +6063,39 @@ typedef struct {
    tANI_U32  value;
 } tModifyRoamParamsReqParams, * tpModifyRoamParamsReqParams;
 
+#ifdef SAP_AUTH_OFFLOAD
+/* 80211 Pre-Share Key length */
+#define SIR_PSK_MAX_LEN   64
 
+/**
+ * enum tSirSecurityType - definition for Software AP Auth Offload
+ *                         Security Type
+ * @eSIR_OFFLOAD_NONE: None type security
+ * @eSIR_OFFLOAD_WPA2PSK_CCMP: WPA2-PSK
+ */
+enum tSirSecurityType
+{
+    eSIR_OFFLOAD_NONE,
+    eSIR_OFFLOAD_WPA2PSK_CCMP,
+};
+
+/**
+ * struct tSirSapOffloadInfo - Structure to store sap offload related params.
+ * @macAddr: Self mac address
+ * @sap_auth_offload_enable: tell if sap auth offload is enabled or not.
+ * @sap_auth_offload_sec_type: tells security type
+ *        0 - none
+ *        1 - WPA1-PSK
+ * @key_len: psk key length
+ * @key: psk key.
+ */
+struct tSirSapOffloadInfo
+{
+    tSirMacAddr macAddr;
+    bool sap_auth_offload_enable;
+    uint32_t sap_auth_offload_sec_type;
+    uint32_t key_len;
+    uint8_t key[SIR_PSK_MAX_LEN];
+};
+#endif /* SAP_AUTH_OFFLOAD */
 #endif /* __SIR_API_H */

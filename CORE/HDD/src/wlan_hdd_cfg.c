@@ -3755,6 +3755,26 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                CFG_DISABLE_SCAN_DURING_SCO_DEFAULT,
                CFG_DISABLE_SCAN_DURING_SCO_MIN,
                CFG_DISABLE_SCAN_DURING_SCO_MAX ),
+#ifdef SAP_AUTH_OFFLOAD
+  REG_VARIABLE(CFG_ENABLE_SAP_AUTH_OFL_NAME, WLAN_PARAM_Integer,
+               hdd_config_t, enable_sap_auth_offload,
+               VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+               CFG_ENABLE_SAP_AUTH_OFL_DEFAULT,
+               CFG_ENABLE_SAP_AUTH_OFL_MIN,
+               CFG_ENABLE_SAP_AUTH_OFL_MAX ),
+
+  REG_VARIABLE(CFG_SAP_AUTH_OFL_SECURITY_TYPE_NAME, WLAN_PARAM_Integer,
+               hdd_config_t, sap_auth_offload_sec_type,
+               VAR_FLAGS_OPTIONAL | CFG_SAP_AUTH_OFL_SECURITY_TYPE_DEFAULT,
+               CFG_SAP_AUTH_OFL_SECURITY_TYPE_DEFAULT,
+               CFG_SAP_AUTH_OFL_SECURITY_TYPE_MIN,
+               CFG_SAP_AUTH_OFL_SECURITY_TYPE_MAX ),
+
+  REG_VARIABLE_STRING(CFG_SAP_AUTH_OFL_KEY_NAME, WLAN_PARAM_String,
+                      hdd_config_t, sap_auth_offload_key,
+                      VAR_FLAGS_OPTIONAL,
+                      (void *) CFG_SAP_AUTH_OFL_KEY_DEFAULT ),
+#endif
 };
 
 /*
@@ -4319,7 +4339,11 @@ static void print_hdd_cfg(hdd_context_t *pHddCtx)
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
         "Name = [gDisableScanDuringSco] Value = [%u] ",
          pHddCtx->cfg_ini->disable_scan_during_sco);
-
+#endif
+#ifdef SAP_AUTH_OFFLOAD
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+          "Name = [gEnableSAPAuthOffload] Value = [%u] ",
+          pHddCtx->cfg_ini->enable_sap_auth_offload);
 #endif
 }
 

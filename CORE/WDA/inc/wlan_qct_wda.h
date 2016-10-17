@@ -1352,6 +1352,12 @@ eHalStatus WDA_SetRegDomain(void * clientCtxt, v_REGDOMAIN_t regId,
 
 #define WDA_PAUSE_TL_IND                       SIR_HAL_PAUSE_TL_IND
 
+#ifdef SAP_AUTH_OFFLOAD
+#define WDA_SAP_OFL_ADD_STA                   SIR_HAL_SAP_OFL_ADD_STA
+#define WDA_SAP_OFL_DEL_STA                   SIR_HAL_SAP_OFL_DEL_STA
+#define WDA_SET_SAP_AUTH_OFL                  SIR_HAL_SET_SAP_AUTH_OFL
+#endif /* SAP_AUTH_OFFLOAD */
+
 #define HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME 0x40 // Bit 6 will be used to control BD rate for Management frames
 
 #define halTxFrame(hHal, pFrmBuf, frmLen, frmType, txDir, tid, pCompFunc, pData, txFlag) \

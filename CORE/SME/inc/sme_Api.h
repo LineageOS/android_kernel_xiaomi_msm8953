@@ -3965,4 +3965,19 @@ eHalStatus sme_remove_bssid_from_scan_list(tHalHandle hal,
 void sme_set_mgmt_frm_via_wq5(tHalHandle hHal,
         tANI_BOOLEAN sendMgmtPktViaWQ5);
 eHalStatus sme_update_cfg_int_param(tHalHandle hHal, tANI_U32 cfg_id);
+#ifdef SAP_AUTH_OFFLOAD
+/**
+ * sme_set_sap_auth_offload() enable/disable SAP Auth Offload
+ * @hHal: hal layer handler
+ * @sap_auth_offload_info: the information of  SAP Auth Offload
+ *
+ * This function provide enable/disable SAP authenticaiton offload
+ * feature on target firmware
+ *
+ * Return: eHalStatus.
+ */
+eHalStatus sme_set_sap_auth_offload(tHalHandle hHal,
+        struct tSirSapOffloadInfo *sap_auth_offload_info);
+
+#endif /* SAP_AUTH_OFFLOAD */
 #endif //#if !defined( __SME_API_H )

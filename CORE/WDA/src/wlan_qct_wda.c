@@ -15291,6 +15291,74 @@ VOS_STATUS wda_process_set_allowed_action_frames_ind(tWDA_CbContext *pWDA,
     return CONVERT_WDI2VOS_STATUS(status) ;
 }
 
+#ifdef SAP_AUTH_OFFLOAD
+VOS_STATUS wda_process_sap_auth_offload(tWDA_CbContext *pWDA,
+        struct tSirSapOffloadInfo *sap_auth_offload_info)
+{
+    WDI_Status status = WDI_STATUS_SUCCESS;
+    struct WDI_sap_ofl_enable_params *sap_ofl_enable_cmd;
+    v_U16_t psk_len, psk_len_padded;
+
+    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+            "------> %s " ,__func__);
+
+    if(NULL == sap_auth_offload_info)
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                "%s: sap_auth_offload_info received NULL", __func__);
+        VOS_ASSERT(0) ;
+        return VOS_STATUS_E_FAULT;
+    }
+    psk_len = sap_auth_offload_info->key_len;
+    psk_len_padded = roundup(psk_len, sizeof(v_U32_t));
+
+    sap_ofl_enable_cmd = (struct WDI_sap_ofl_enable_params*)
+        vos_mem_malloc(sizeof
+                (*sap_ofl_enable_cmd));
+    if (!sap_ofl_enable_cmd) {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                "%s: VOS MEM Alloc Failure", __func__);
+        vos_mem_free(sap_auth_offload_info);
+        return VOS_STATUS_E_NOMEM;
+    }
+    vos_mem_zero(sap_ofl_enable_cmd, sizeof(*sap_ofl_enable_cmd));
+    vos_mem_copy(sap_ofl_enable_cmd->macAddr,
+            sap_auth_offload_info->macAddr, VOS_MAC_ADDRESS_LEN);
+
+    sap_ofl_enable_cmd->enable = sap_auth_offload_info->sap_auth_offload_enable;
+    sap_ofl_enable_cmd->psk_len = psk_len;
+    switch (sap_auth_offload_info->sap_auth_offload_sec_type) {
+        case eSIR_OFFLOAD_WPA2PSK_CCMP:
+            sap_ofl_enable_cmd->rsn_authmode = WDI_AUTH_TYPE_RSN_PSK;
+            sap_ofl_enable_cmd->rsn_mcastcipherset = WDI_ED_CCMP;
+            sap_ofl_enable_cmd->rsn_ucastcipherset = WDI_ED_CCMP;
+            break;
+        case eSIR_OFFLOAD_NONE:
+        default:
+            VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                  "Set SAP AP Auth offload with none support security type\n");
+            break;
+    }
+    vos_mem_copy(sap_ofl_enable_cmd->key, sap_auth_offload_info->key, psk_len);
+
+    status = WDI_process_sap_auth_offload(sap_ofl_enable_cmd);
+
+    if (WDI_STATUS_PENDING == status) {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                FL("pending status received"));
+    } else if (WDI_STATUS_SUCCESS_SYNC != status &&
+            (WDI_STATUS_SUCCESS != status)) {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                FL("Failure in process_sap_auth_offload API %d"), status);
+    }
+
+    vos_mem_free(sap_ofl_enable_cmd);
+    vos_mem_free(sap_auth_offload_info);
+    return CONVERT_WDI2VOS_STATUS(status) ;
+
+}
+#endif
+
 /*
  * FUNCTION: WDA_ProcessBcnMissPenaltyCount
  * Request to WDI.
@@ -16306,6 +16374,14 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
          WDA_ProcessTLPauseInd(pWDA, pMsg->bodyval);
          break;
       }
+#ifdef SAP_AUTH_OFFLOAD
+      case WDA_SET_SAP_AUTH_OFL:
+      {
+          wda_process_sap_auth_offload(pWDA,
+                  (struct tSirSapOffloadInfo*)pMsg->bodyptr);
+          break;
+      }
+#endif
       default:
       {
          VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
