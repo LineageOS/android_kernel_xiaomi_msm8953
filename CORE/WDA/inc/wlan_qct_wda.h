@@ -816,6 +816,11 @@ tBssSystemRole wdaGetGlobalSystemRole(tpAniSirGlobal pMac);
 #ifdef WLAN_FEATURE_EXTSCAN
 #define WDA_GET_EXTSCANFULLSCANRESIND(pRxMeta) (((WDI_DS_RxMetaInfoType*)(pRxMeta))->extscanBuffer)
 #endif
+
+#ifdef SAP_AUTH_OFFLOAD
+#define WDA_GET_SAP_AUTHOFFLOADIND(pRxMeta)  (((WDI_DS_RxMetaInfoType*)(pRxMeta))->indType)
+#endif
+
 /* WDA_GET_RX_RSSI_DB ********************************************************/
 // Volans RF
 #  define WDA_RSSI_OFFSET             100

@@ -9306,6 +9306,19 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
 
     pConfig->privacy = (pMgmt_frame->u.beacon.capab_info &
                         WLAN_CAPABILITY_PRIVACY) ? VOS_TRUE : VOS_FALSE;
+#ifdef SAP_AUTH_OFFLOAD
+    /* In case of sap offload, hostapd.conf is configuted with open mode and
+     * security is configured from ini file. Due to open mode in hostapd.conf
+     * privacy bit is set to false which will result in not sending,
+     * data packets as encrypted.
+     * If enable_sap_auth_offload is enabled in ini and
+     * sap_auth_offload_sec_type is type of WPA2-PSK,
+     * driver will set privacy bit to 1.
+     */
+    if (pHddCtx->cfg_ini->enable_sap_auth_offload &&
+            pHddCtx->cfg_ini->sap_auth_offload_sec_type)
+        pConfig->privacy = VOS_TRUE;
+#endif
 
     (WLAN_HDD_GET_AP_CTX_PTR(pHostapdAdapter))->uPrivacy = pConfig->privacy;
 

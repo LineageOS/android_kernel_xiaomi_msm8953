@@ -679,6 +679,66 @@ limProcessEXTScanRealTimeData(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo)
 } /*** end limProcessEXTScanRealTimeData() ***/
 #endif /* WLAN_FEATURE_EXTSCAN */
 
+#ifdef SAP_AUTH_OFFLOAD
+/*
+ * lim_process_sap_offload_indication: function to process add sta/ del sta
+ *                   indication for SAP auth offload.
+ *
+ * @pMac: mac context
+ * @pRxPacketInfo: rx buffer
+ *
+ * This Function will go through buffer and if
+ * indication type is ADD_STA_IND, function will extract all data related to
+ * client and will call limAddSta
+ * and if indication type is DEL_STA_IND, function will call
+ * limSendSmeDisassocInd to do cleanup for station.
+ *
+ * Return : none
+ */
+static void lim_process_sap_offload_indication(tpAniSirGlobal pMac,
+        tANI_U8 *pRxPacketInfo)
+{
+    int i = 0;
+    tSapOfldIndications *sap_offload_indication_rx_buf =
+        (tSapOfldIndications *)WDA_GET_RX_MPDU_DATA(pRxPacketInfo);
+    tSapOfldInd *sap_offload_ind =
+        (tSapOfldInd*)sap_offload_indication_rx_buf->indications;
+
+    limLog( pMac, LOG1,
+            FL("Notify SME with Sap Offload ind and indication type is %d  num_indication %d \n"),
+            sap_offload_ind->indType,
+            (tANI_U8) sap_offload_indication_rx_buf->num_indications);
+
+    for (i=1; i <= (tANI_U8)(sap_offload_indication_rx_buf->num_indications);
+            i++)
+    {
+        if (sap_offload_ind->indType == SAP_OFFLOAD_ADD_STA_IND)
+        {
+            tSapOfldAddStaIndMsg *add_sta;
+            add_sta = (tSapOfldAddStaIndMsg *)sap_offload_ind->indication;
+            lim_sap_offload_add_sta(pMac, add_sta);
+            if (sap_offload_indication_rx_buf->num_indications > 1)
+                sap_offload_ind =
+                    (tSapOfldInd *)((tANI_U8 *)sap_offload_ind +
+                            sizeof(tSapOfldAddStaIndMsg));
+        }
+        else if (sap_offload_ind->indType == SAP_OFFLOAD_DEL_STA_IND)
+        {
+            tSapOfldDelStaIndMsg *del_sta;
+            del_sta = (tSapOfldDelStaIndMsg *)sap_offload_ind->indication;
+            lim_sap_offload_del_sta(pMac, del_sta);
+            sap_offload_ind = (tSapOfldInd *)((tANI_U8 *)sap_offload_ind +
+                    sizeof(tSapOfldDelStaIndMsg));
+        }
+        else
+        {
+            limLog(pMac, LOGE, FL("No Valid indication for connected station"));
+        }
+    }
+
+}
+#endif
+
 /**
  * limHandle80211Frames()
  *
@@ -714,6 +774,15 @@ limHandle80211Frames(tpAniSirGlobal pMac, tpSirMsgQ limMsg, tANI_U8 *pDeferMsg)
 
     *pDeferMsg= false;
     limGetBDfromRxPacket(pMac, limMsg->bodyptr, (tANI_U32 **)&pRxPacketInfo);
+
+#ifdef SAP_AUTH_OFFLOAD
+    if ((WDA_GET_SAP_AUTHOFFLOADIND(pRxPacketInfo)  == 1) &&
+         pMac->sap_auth_offload)
+    {
+        lim_process_sap_offload_indication(pMac, pRxPacketInfo);
+        goto end;
+    }
+#endif
 
 #ifdef WLAN_FEATURE_EXTSCAN
 
@@ -2417,7 +2486,6 @@ send_chan_switch_resp:
          vos_mem_free((v_VOID_t*)limMsg->bodyptr);
          limMsg->bodyptr = NULL;
          break;
-
     default:
         vos_mem_free((v_VOID_t*)limMsg->bodyptr);
         limMsg->bodyptr = NULL;

@@ -6097,5 +6097,85 @@ struct tSirSapOffloadInfo
     uint32_t key_len;
     uint8_t key[SIR_PSK_MAX_LEN];
 };
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    /** staId returned from firmware for each STA association to SAP */
+    tANI_U8 staIdx;
+    /** bssIdx on which the STA is added */
+    tANI_U8 bssIdx;
+    /** DPU desc index of this station */
+    tANI_U8 dpuIndex;
+    /** Bcast DPU index of this station */
+    tANI_U8 bcastDpuIndex;
+    /** Bcast DPU Management index of this station */
+    tANI_U8 bcastMgmtDpuIdx;
+
+    tANI_U8 ucUcastSig;
+
+    tANI_U8 ucBcastSig;
+
+    tANI_U8 ucMgmtSig;
+    /** aid (association id) of this station */
+    tANI_U32 assoc_id;
+    /** peer station's mac addr */
+    tSirMacAddr peer_macaddr;
+    /** length of association request frame */
+    tANI_U32 data_len;
+    /* Following this structure is the byte stream of a whole
+     * association request frame of length data_len
+     */
+    tANI_U8 bufp[1];
+} tSapOfldAddStaIndMsg, *tpSapOfldAddStaIndMsg;
+
+typedef enum
+{
+    SAP_OFL_DEL_STA_FLAG_NONE       = 0x00,
+    SAP_OFL_DEL_STA_FLAG_RECONNECT  = 0x01,
+} eSapOfldDelStaFlags;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tANI_U32 staIdx;
+    /** bssIdx on which the STA is added */
+    tANI_U32 bssIdx;
+    /** aid (association id) of this station */
+    tANI_U32 assoc_id;
+    /** peer station's mac addr */
+    tSirMacAddr peer_macaddr;
+    /** disassociation reason */
+    tANI_U32 reason;
+    /** flags - wmi_sap_ofl_del_sta_flags */
+    tANI_U32 flags;
+} tSapOfldDelStaIndMsg, *tpSapOfldDelStaIndMsg;
+
+typedef enum
+{
+    SAP_OFFLOAD_ADD_STA_IND       = 0x00,
+    SAP_OFFLOAD_DEL_STA_IND       = 0x01,
+} eSapOfldIndType;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    /* indType will be from eSapOfldIndType */
+    tANI_U32 indType;
+    /* size of this array will be depend on the indication type.
+     * Indication type can be either ADD_STA_IND or DEL_STA_IND.
+     * If indication type is ADD_STA_IND, size of this indication
+     * array will be sizeof(tSapOfldDelStaIndMsg)
+     * and if indication type is DEL_STA_IND, size of this indication
+     * arrary will be sizeof(tSapOfldAddStaIndMsg)
+     */
+    tANI_U8         indication[1];
+} tSapOfldInd;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tANI_U32 num_indications;
+    /* size of this array will be depend on the number of indications.*/
+    tSapOfldInd indications[1];
+}tSapOfldIndications;
+
 #endif /* SAP_AUTH_OFFLOAD */
+
 #endif /* __SIR_API_H */

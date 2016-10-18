@@ -5309,7 +5309,13 @@ eHalStatus sme_RoamSetKey(tHalHandle hHal, tANI_U8 sessionId, tCsrRoamSetKey *pS
       smsLog(pMac, LOGE, FL("Invalid key length %d"), pSetKey->keyLength);
       return eHAL_STATUS_FAILURE;
    }
-
+#ifdef SAP_AUTH_OFFLOAD
+   if (pMac->sap_auth_offload_sec_type)
+   {
+       smsLog(pMac, LOGW, FL("No set key is required in sap auth offload enable"));
+       return  eHAL_STATUS_SUCCESS;
+   }
+#endif
    status = sme_AcquireGlobalLock( &pMac->sme );
    if ( HAL_STATUS_SUCCESS( status ) )
    {

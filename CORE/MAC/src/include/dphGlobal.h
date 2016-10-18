@@ -639,6 +639,12 @@ typedef struct sDphHashNode
      */
     tANI_U8 isDisassocDeauthInProgress;
     bool sta_deletion_in_progress;
+#ifdef SAP_AUTH_OFFLOAD
+    tANI_U8 dpuIndex;
+    tANI_U8 bcastDpuIndex;
+    tANI_U8 bcastMgmtDpuIdx;
+    tANI_U8 ucMgmtSig;
+#endif
     struct sDphHashNode  *next;
 
 

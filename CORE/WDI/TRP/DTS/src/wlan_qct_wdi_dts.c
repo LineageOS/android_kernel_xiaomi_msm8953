@@ -668,6 +668,7 @@ wpt_status WDTS_RxPacket (void *pContext, wpt_packet *pFrame, WDTS_ChannelType c
   wpt_uint8                  isFcBd = 0;
   WDI_DS_LoggingSessionType *pLoggingSession;
   tPerPacketStats             rxStats = {0};
+  wpt_uint32 indType =0;
 
   tpSirMacFrameCtl  pMacFrameCtl;
   // Do Sanity checks
@@ -733,45 +734,52 @@ wpt_status WDTS_RxPacket (void *pContext, wpt_packet *pFrame, WDTS_ChannelType c
 
   pRxMetadata = WDI_DS_ExtractRxMetaData(pFrame);
 
-  // Special handling for frames which contain logging information
   if (WDTS_CHANNEL_RX_LOG == channel)
   {
-      if (VPKT_SIZE_BUFFER_ALIGNED < (usMPDULen+ucMPDUHOffset))
+      indType       = (wpt_uint32)WDI_RX_BD_GET_PER_SAPOFFLOAD(pBDHeader);
+      if(indType) {
+          DTI_TRACE(DTI_TRACE_LEVEL_INFO, "indtype is %d size of pacekt is %lu",
+                  indType, sizeof(WDI_RxBdType));
+      }
+      else
       {
-          /* Size of the packet tranferred by the DMA engine is
-           * greater than the the memory allocated for the skb
-           * Recover the SKB  case of length is in same memory page
-           */
-          WPAL_TRACE(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_FATAL,
-                   "Invalid Frame size, might memory corrupted(%d+%d/%d)",
-                   usMPDULen, ucMPDUHOffset, VPKT_SIZE_BUFFER_ALIGNED);
-
-          // Store RXBD,  skb head, tail and skb lenght in circular buffer
-          WDTS_StoreMetaInfo(pFrame, pBDHeader);
-
-          if ((usMPDULen+ucMPDUHOffset) <= WDTS_MAX_PAGE_SIZE)
+          if (VPKT_SIZE_BUFFER_ALIGNED < (usMPDULen+ucMPDUHOffset))
           {
-              wpalRecoverTail(pFrame);
-              wpalPacketFree(pFrame);
-          } else {
-              //Recovery may cause adjoining buffer corruption
-              WPAL_BUG(0);
+              /* Size of the packet tranferred by the DMA engine is
+               * greater than the the memory allocated for the skb
+               * Recover the SKB  case of length is in same memory page
+               */
+              WPAL_TRACE(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_FATAL,
+                      "Invalid Frame size, might memory corrupted(%d+%d/%d)",
+                      usMPDULen, ucMPDUHOffset, VPKT_SIZE_BUFFER_ALIGNED);
+
+              // Store RXBD,  skb head, tail and skb lenght in circular buffer
+              WDTS_StoreMetaInfo(pFrame, pBDHeader);
+
+              if ((usMPDULen+ucMPDUHOffset) <= WDTS_MAX_PAGE_SIZE)
+              {
+                  wpalRecoverTail(pFrame);
+                  wpalPacketFree(pFrame);
+              } else {
+                  //Recovery may cause adjoining buffer corruption
+                  WPAL_BUG(0);
+              }
+
+              return eWLAN_PAL_STATUS_SUCCESS;
           }
+
+          /* Firmware should send the Header offset as length
+           * of RxBd and data length should be populated to
+           * the length of total data being sent
+           */
+          wpalPacketSetRxLength(pFrame, usMPDULen+ucMPDUHOffset);
+          wpalPacketRawTrimHead(pFrame, ucMPDUHOffset);
+
+          // Invoke Rx complete callback
+          wpalLogPktSerialize(pFrame);
 
           return eWLAN_PAL_STATUS_SUCCESS;
       }
-
-      /* Firmware should send the Header offset as length
-       * of RxBd and data length should be populated to
-       * the length of total data being sent
-       */
-      wpalPacketSetRxLength(pFrame, usMPDULen+ucMPDUHOffset);
-      wpalPacketRawTrimHead(pFrame, ucMPDUHOffset);
-
-      // Invoke Rx complete callback
-      wpalLogPktSerialize(pFrame);
-
-      return eWLAN_PAL_STATUS_SUCCESS;
   }
   else
   {
@@ -780,7 +788,9 @@ wpt_status WDTS_RxPacket (void *pContext, wpt_packet *pFrame, WDTS_ChannelType c
 
   if(!isFcBd)
   {
-      if(usMPDUDOffset <= ucMPDUHOffset || usMPDULen < ucMPDUHLen) {
+      /* When channel is WDTS_CHANNEL_RX_LOG firmware doesn't send MPDU header*/
+      if ((usMPDUDOffset <= ucMPDUHOffset || usMPDULen < ucMPDUHLen) &&
+              (WDTS_CHANNEL_RX_LOG != channel)) {
         DTI_TRACE( DTI_TRACE_LEVEL_ERROR,
             "WLAN TL:BD header corrupted - dropping packet");
         /* Drop packet ???? */ 
@@ -866,6 +876,30 @@ wpt_status WDTS_RxPacket (void *pContext, wpt_packet *pFrame, WDTS_ChannelType c
       pRxMetadata->roamCandidateInd = WDI_RX_BD_GET_ROAMCANDIDATEIND(pBDHeader);
       pRxMetadata->perRoamCndInd = WDI_RX_BD_GET_PER_ROAMCANDIDATEIND(pBDHeader);
 #endif
+#ifdef SAP_AUTH_OFFLOAD
+      /* Currently firmware use WDTS_CHANNEL_RX_LOG channel for two purpose.
+       * 1) For firmare logging information: driver will do special handling
+       * for those message.
+       * 2) When SAP offload is enabled: In this case, indication type is stored
+       * in pRxMetadata which will be used by LIM later.
+       */
+      if (WDTS_CHANNEL_RX_LOG == channel)
+      {
+          pRxMetadata->indType =
+              (wpt_uint32)WDI_RX_BD_GET_PER_SAPOFFLOAD(pBDHeader);
+          if (pRxMetadata->indType == WDI_RXBD_MLME_STA_STATUS)
+          {
+              DTI_TRACE( DTI_TRACE_LEVEL_INFO, "%s: Indtype is %d\n",
+                      __func__, pRxMetadata->indType);
+              pRxMetadata->type    = WDI_MAC_MGMT_FRAME;
+          }
+      }
+      else
+      {
+          pRxMetadata->indType = 0;
+      }
+#endif
+
 #ifdef WLAN_FEATURE_EXTSCAN
       pRxMetadata->extscanBuffer = WDI_RX_BD_GET_EXTSCANFULLSCANRESIND(pBDHeader);
 #endif

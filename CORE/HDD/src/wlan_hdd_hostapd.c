@@ -792,52 +792,45 @@ void hdd_set_sap_auth_offload(hdd_adapter_t *pHostapdAdapter,
         bool enabled)
 {
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pHostapdAdapter);
-    struct tSirSapOffloadInfo *sap_offload_info = NULL;
+    struct tSirSapOffloadInfo sap_offload_info;
 
-    /* Prepare the request to send to SME */
-    sap_offload_info = vos_mem_malloc(sizeof(*sap_offload_info));
-    if (NULL == sap_offload_info) {
-        hddLog(VOS_TRACE_LEVEL_ERROR,
-                "%s: could not allocate tSirSapOffloadInfo!", __func__);
-        return;
-    }
-
-    vos_mem_zero(sap_offload_info, sizeof(*sap_offload_info));
-    vos_mem_copy(sap_offload_info->macAddr,
+    vos_mem_copy( &sap_offload_info.macAddr,
             pHostapdAdapter->macAddressCurrent.bytes, VOS_MAC_ADDR_SIZE);
 
-    sap_offload_info->sap_auth_offload_enable =
-        pHddCtx->cfg_ini->enable_sap_auth_offload && enabled;
-    sap_offload_info->sap_auth_offload_sec_type =
+    sap_offload_info.sap_auth_offload_enable = enabled;
+    sap_offload_info.sap_auth_offload_sec_type =
         pHddCtx->cfg_ini->sap_auth_offload_sec_type;
-    sap_offload_info->key_len =
+    sap_offload_info.key_len =
         strlen(pHddCtx->cfg_ini->sap_auth_offload_key);
 
-    if (sap_offload_info->sap_auth_offload_enable) {
-        if (sap_offload_info->key_len < 8 ||
-                sap_offload_info->key_len > WLAN_PSK_STRING_LENGTH) {
+    if (sap_offload_info.sap_auth_offload_enable &&
+        sap_offload_info.sap_auth_offload_sec_type)
+    {
+        if (sap_offload_info.key_len < 8 ||
+                sap_offload_info.key_len > WLAN_PSK_STRING_LENGTH)
+        {
             hddLog(VOS_TRACE_LEVEL_ERROR,
                     "%s: invalid key length(%d) of WPA security!", __func__,
-                    sap_offload_info->key_len);
-            goto end;
+                    sap_offload_info.key_len);
+            return;
         }
     }
-
-    vos_mem_copy(sap_offload_info->key,
-            pHddCtx->cfg_ini->sap_auth_offload_key,
-            sap_offload_info->key_len);
+    if (sap_offload_info.key_len)
+    {
+        vos_mem_copy(sap_offload_info.key,
+                pHddCtx->cfg_ini->sap_auth_offload_key,
+                sap_offload_info.key_len);
+    }
     if (eHAL_STATUS_SUCCESS !=
-            sme_set_sap_auth_offload(pHddCtx->hHal, sap_offload_info)) {
+            sme_set_sap_auth_offload(pHddCtx->hHal, &sap_offload_info))
+    {
         hddLog(VOS_TRACE_LEVEL_ERROR,
                 "%s: sme_set_sap_auth_offload fail!", __func__);
-        goto end;
+        return;
     }
 
     hddLog(VOS_TRACE_LEVEL_INFO_HIGH,
             "%s: sme_set_sap_auth_offload successfully!", __func__);
-
-end:
-    vos_mem_free(sap_offload_info);
     return;
 }
 #endif
@@ -4845,6 +4838,7 @@ VOS_STATUS hdd_init_ap_mode( hdd_adapter_t *pAdapter )
     if (pHddCtx->cfg_ini->enable_sap_auth_offload)
         hdd_set_sap_auth_offload(pAdapter, TRUE);
 #endif
+
     // Allocate the Wireless Extensions state structure
     phostapdBuf = WLAN_HDD_GET_HOSTAP_STATE_PTR( pAdapter );
 

@@ -4382,7 +4382,90 @@ VOS_STATUS WDA_ProcessAddStaReq(tWDA_CbContext *pWDA,
    }
    return CONVERT_WDI2VOS_STATUS(status) ;
 }
+#ifdef SAP_AUTH_OFFLOAD
 
+/**
+ * WDA_ProcessSapAuthOffloadAddStaReq():  process add sta command.
+ *
+ * @pWDA: WDA Call back context
+ * @addStaReqParam: Add sta request params
+ *
+ * This function process sta params and store them to WDA layer.
+ * It will register station entry to mempool as well.
+ * As station is already in associated state in firmware this
+ * function doesnt send any request to firmware and wait for response,
+ * instead of that this function will send response from here.
+ *
+ * Return: Return VOS_STATUS
+ */
+VOS_STATUS WDA_ProcessSapAuthOffloadAddStaReq(tWDA_CbContext *pWDA,
+                                    tAddStaParams *addStaReqParam)
+{
+    WDI_Status status = WDI_STATUS_SUCCESS ;
+    WDI_AddStaParams   wdiAddSTAParam = {0};
+    WDI_ConfigSTAReqParamsType *wdiConfigStaReqParam =
+        (WDI_ConfigSTAReqParamsType *)vos_mem_malloc(
+                sizeof(WDI_ConfigSTAReqParamsType)) ;
+
+    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+            "------> %s " ,__func__);
+
+    if (NULL == wdiConfigStaReqParam)
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                "%s: VOS MEM Alloc Failure", __func__);
+        VOS_ASSERT(0);
+        return VOS_STATUS_E_NOMEM;
+    }
+
+    vos_mem_set(wdiConfigStaReqParam, sizeof(WDI_ConfigSTAReqParamsType), 0);
+    /* update STA params into WDI structure */
+    WDA_UpdateSTAParams(pWDA, &wdiConfigStaReqParam->wdiReqInfo,
+            addStaReqParam);
+    wdiAddSTAParam.ucSTAIdx = wdiConfigStaReqParam->wdiReqInfo.staIdx;
+    wdiAddSTAParam.ucStaType    = WDI_STA_ENTRY_PEER;
+    /* MAC Address of STA */
+    wpalMemoryCopy(wdiAddSTAParam.staMacAddr,
+            wdiConfigStaReqParam->wdiReqInfo.macSTA,
+            WDI_MAC_ADDR_LEN);
+
+    wpalMemoryCopy(wdiAddSTAParam.macBSSID,
+            wdiConfigStaReqParam->wdiReqInfo.macBSSID,
+            WDI_MAC_ADDR_LEN);
+
+    wdiAddSTAParam.dpuIndex = addStaReqParam->dpuIndex;
+    wdiAddSTAParam.dpuSig   = addStaReqParam->ucUcastSig;
+    wdiAddSTAParam.bcastDpuIndex     = addStaReqParam->bcastDpuIndex;
+    wdiAddSTAParam.bcastDpuSignature = addStaReqParam->ucBcastSig;
+    wdiAddSTAParam.bcastMgmtDpuIndex         = addStaReqParam->bcastMgmtDpuIdx;
+    wdiAddSTAParam.bcastMgmtDpuSignature     = addStaReqParam->ucMgmtSig;
+
+    WDI_STATableAddSta(pWDA->pWdiContext, &wdiAddSTAParam);
+    pWDA->wdaStaInfo[wdiConfigStaReqParam->wdiReqInfo.staIdx].ucValidStaIndex =
+        WDA_VALID_STA_INDEX;
+    pWDA->wdaStaInfo[wdiConfigStaReqParam->wdiReqInfo.staIdx].currentOperChan =
+        addStaReqParam->currentOperChan;
+
+    if (WDI_STATUS_SUCCESS !=
+            WDI_STATableFindStaidByAddr(pWDA->pWdiContext,
+                wdiConfigStaReqParam->wdiReqInfo.macSTA,
+                (wpt_uint8 *)&wdiConfigStaReqParam->wdiReqInfo.staIdx))
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                "%s: Failed to get selfStaIdx!", __func__);
+    }
+    if (WDI_DS_AddSTAMemPool(pWDA->pWdiContext,
+                wdiConfigStaReqParam->wdiReqInfo.staIdx))
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                "%s: add STA into mempool fail", __func__);
+        VOS_ASSERT(0) ;
+    }
+    vos_mem_free(wdiConfigStaReqParam);
+    WDA_SendMsg(pWDA, WDA_ADD_STA_RSP, (void *)addStaReqParam, 0) ;
+    return status;
+}
+#endif
 /*
  * FUNCTION: WDA_DelBSSRspCallback
  * Dens DEL BSS RSP back to PE
@@ -4647,6 +4730,43 @@ void WDA_DelSTAReqCallback(WDI_Status   wdiStatus,
 
    return ;
 }
+
+#ifdef SAP_AUTH_OFFLOAD
+/**
+ * WDA_ProcessSapAuthOffloadDelStaReq():  process del sta command.
+ *
+ * @pWDA: WDA Call back context
+ * @delStaParam: Del sta request params
+ *
+ * This function process sta params and remove entry from WDA layer.
+ * It will unregister station entry from mempool as well.
+ * As station is already in disassociated state in firmware this
+ * function doesn't send any request to firmware and wait for response,
+ * instead of that this function will send response from here.
+ *
+ * Return: Return VOS_STATUS
+ */
+void WDA_ProcessSapAuthOffloadDelStaReq(tWDA_CbContext *pWDA,
+        tDeleteStaParams *delStaParam)
+
+{
+    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+            "------> %s " ,__func__);
+
+    if (WDI_DS_DelSTAMemPool(pWDA->pWdiContext, delStaParam->staIdx))
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                "%s: DEL STA from MemPool Fail", __func__);
+        //   VOS_ASSERT(0) ;
+    }
+    WDI_STATableDelSta(pWDA->pWdiContext, delStaParam->staIdx);
+    pWDA->wdaStaInfo[delStaParam->staIdx].ucValidStaIndex =
+        WDA_INVALID_STA_INDEX;
+    pWDA->wdaStaInfo[delStaParam->staIdx].currentOperChan = 0;
+    WDA_SendMsg(pWDA, WDA_DELETE_STA_RSP, (void *)delStaParam, 0);
+    return ;
+}
+#endif
 
 /*
  * FUNCTION: WDA_ProcessDelStaReq
@@ -16379,6 +16499,18 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
       {
           wda_process_sap_auth_offload(pWDA,
                   (struct tSirSapOffloadInfo*)pMsg->bodyptr);
+          break;
+      }
+      case WDA_SAP_OFL_ADD_STA:
+      {
+          WDA_ProcessSapAuthOffloadAddStaReq(pWDA,
+                  (tAddStaParams *)pMsg->bodyptr);
+          break;
+      }
+      case WDA_SAP_OFL_DEL_STA:
+      {
+          WDA_ProcessSapAuthOffloadDelStaReq(pWDA,
+                  (tDeleteStaParams *)pMsg->bodyptr);
           break;
       }
 #endif
