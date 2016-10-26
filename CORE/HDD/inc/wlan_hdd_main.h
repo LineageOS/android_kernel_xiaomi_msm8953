@@ -243,6 +243,8 @@ typedef v_U8_t tWlanHddMacAddr[HDD_MAC_ADDR_LEN];
 
 #define WLAN_WAIT_TIME_EXTSCAN  1000
 
+#define HDD_MAX_STA_COUNT (HAL_NUM_STA)
+
 /*
  * Generic asynchronous request/response support
  *
@@ -1460,6 +1462,8 @@ struct hdd_context_s
    
    v_BOOL_t hdd_wlan_suspended;
    bool rx_wow_dump;
+
+   uint8_t bad_sta[HDD_MAX_STA_COUNT];
    
    spinlock_t filter_lock;
    

@@ -506,6 +506,9 @@ v_BOOL_t vos_isLoadUnloadInProgress(void);
 bool vos_get_rx_wow_dump(void);
 void vos_set_rx_wow_dump(bool value);
 
+void vos_set_hdd_bad_sta(uint8_t sta_id);
+void vos_reset_hdd_bad_sta(uint8_t sta_id);
+
 void vos_probe_threads(void);
 void vos_per_pkt_stats_to_user(void *perPktStat);
 void vos_updatePktStatsInfo(void * pktStat);

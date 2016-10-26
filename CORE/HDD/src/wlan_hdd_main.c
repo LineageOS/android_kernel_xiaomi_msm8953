@@ -12366,6 +12366,8 @@ int hdd_wlan_startup(struct device *dev )
    }
 #endif
 
+   vos_mem_set((uint8_t *)&pHddCtx->bad_sta, HDD_MAX_STA_COUNT, 0);
+
    // Register IPv4 notifier to notify if any change in IP
    // So that we can reconfigure the offload parameters
    pHddCtx->ipv4_notifier.notifier_call = wlan_hdd_ipv4_changed;

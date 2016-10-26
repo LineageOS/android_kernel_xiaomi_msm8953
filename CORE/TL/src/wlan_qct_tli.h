@@ -736,6 +736,14 @@ typedef struct
   uint32_t tx_sample[WLANTL_SAMPLE_COUNT];
   uint64_t tx_samples_sum;
 
+  /* flow control */
+  uint8_t weight;
+  uint8_t weight_count;
+  uint8_t per;
+  uint8_t set_flag;
+  uint16_t queue;
+  uint16_t trate;
+
 }WLANTL_STAClientType;
 
 /*---------------------------------------------------------------------------
@@ -819,6 +827,19 @@ typedef struct
    v_PVOID_t                            macCtxt;
    vos_lock_t                           hosLock;
 } WLANTL_HO_SUPPORT_TYPE;
+
+typedef struct {
+  uint8 sta_id;
+  uint8 avg_per;
+  uint16 queue_len;
+  uint16_t rate;
+  uint16_t reserved;
+} WLANTL_PerStaFlowControlParam;
+
+typedef struct {
+  uint8 num_stas;
+  WLANTL_PerStaFlowControlParam *sta_fc_info;
+} WLANTL_FlowControlInfo;
 
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
 #define ROAM_MAX_INDEX_NUM              50
