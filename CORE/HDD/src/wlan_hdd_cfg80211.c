@@ -1440,12 +1440,14 @@ static v_VOID_t hdd_link_layer_process_radio_stats(hdd_adapter_t *pAdapter,
 
     hddLog(VOS_TRACE_LEVEL_INFO,
            "LL_STATS_RADIO"
+           " number of radios = %u"
            " radio is %d onTime is %u "
            " txTime is %u  rxTime is %u "
            " onTimeScan is %u  onTimeNbd is %u "
            " onTimeEXTScan is %u onTimeRoamScan is %u "
            " onTimePnoScan is %u  onTimeHs20 is %u "
            " numChannels is %u",
+           NUM_RADIOS,
            pWifiRadioStat->radio, pWifiRadioStat->onTime,
            pWifiRadioStat->txTime, pWifiRadioStat->rxTime,
            pWifiRadioStat->onTimeScan, pWifiRadioStat->onTimeNbd,
@@ -1478,6 +1480,9 @@ static v_VOID_t hdd_link_layer_process_radio_stats(hdd_adapter_t *pAdapter,
         nla_put_u32(vendor_event,
              QCA_WLAN_VENDOR_ATTR_LL_STATS_RADIO_ID,
              pWifiRadioStat->radio)      ||
+        nla_put_u32(vendor_event,
+             QCA_WLAN_VENDOR_ATTR_LL_STATS_NUM_RADIOS,
+             NUM_RADIOS)     ||
         nla_put_u32(vendor_event,
              QCA_WLAN_VENDOR_ATTR_LL_STATS_RADIO_ON_TIME,
              pWifiRadioStat->onTime)     ||
