@@ -1958,7 +1958,7 @@ static __iw_softap_setparam(struct net_device *dev,
             }
         case QCSAP_PARAM_SET_PROXIMITY:
             {
-                ret = wlan_hdd_set_proximity(set_value);
+                ret = wlan_hdd_set_proximity(set_value, hHal);
                 break;
             }
         default:

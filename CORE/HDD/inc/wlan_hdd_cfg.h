@@ -2042,6 +2042,17 @@ static __inline tANI_U32 defHddRateToDefCfgRate( tANI_U32 defRateIndex )
 #define CFG_TDLS_SCAN_COEX_SUPPORT_ENABLE_MAX        (1)
 #define CFG_TDLS_SCAN_COEX_SUPPORT_ENABLE_DEFAULT    (0)
 
+/* Enable/Disable Consecutive Beacon miss */
+#define CFG_ENABLE_CONSECUTIVE_BMISS_NAME        "gEnableConcBmiss"
+#define CFG_ENABLE_CONSECUTIVE_BMISS_MIN         ( 2 )
+#define CFG_ENABLE_CONSECUTIVE_BMISS_MAX         ( 10 )
+#define CFG_ENABLE_CONSECUTIVE_BMISS_DEFAULT     ( 5 )
+
+/* Enable/Disable units of beacon wait time */
+#define CFG_ENABLE_UNITS_BEACON_WAIT_NAME        "gEnableUnitBwait"
+#define CFG_ENABLE_UNITS_BEACON_WAIT_MIN         ( 2 )
+#define CFG_ENABLE_UNITS_BEACON_WAIT_MAX         ( 10 )
+#define CFG_ENABLE_UNITS_BEACON_WAIT_DEFAULT     ( 2 )
 
 /* if gEnableTDLSScan
  * 0: Same as gEnableTDLSScanCoexistence ; driver will do disconnect if
@@ -2355,6 +2366,13 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_BTC_STATIC_OPP_WLAN_IDLE_BT_LEN_DEFAULT     ( 120000 )
 #define CFG_BTC_STATIC_OPP_WLAN_IDLE_BT_LEN_MIN         ( 0 )
 #define CFG_BTC_STATIC_OPP_WLAN_IDLE_BT_LEN_MAX         ( 250000 )
+
+
+#define CFG_BTC_DISABLE_WLAN_LINK_CRITICAL             "gBtcDisableWlanLinkCritical"
+#define CFG_BTC_DISABLE_WLAN_LINK_CRITICAL_DEFAULT     ( 0 )
+#define CFG_BTC_DISABLE_WLAN_LINK_CRITICAL_MIN         ( 0 )
+#define CFG_BTC_DISABLE_WLAN_LINK_CRITICAL_MAX         ( 1 )
+
 /*
  * Connection related log Enable/Disable.
  * 0x1 - Enable mgmt pkt logs (no probe req/rsp).
@@ -3252,6 +3270,8 @@ typedef struct
    v_BOOL_t                    fEnableActiveModeOffload;
 #endif
    v_U32_t                     enableLpwrImgTransition;
+   v_U8_t                      enable_conc_bmiss;
+   v_U8_t                      enable_units_bwait;
    v_U8_t                      scanAgingTimeout;
    v_BOOL_t                    enableTxLdpc;
    v_U8_t                      disableLDPCWithTxbfAP;
@@ -3380,6 +3400,7 @@ typedef struct
    v_BOOL_t                    toggleArpBDRates;
    v_U32_t                     btcStaticOppWlanIdleWlanLen;
    v_U32_t                     btcStaticOppWlanIdleBtLen;
+   v_U32_t                     btc_disable_wlan_link_critical;
    v_U32_t                     linkFailTimeout;
    v_U32_t                     linkFailTxCnt;
    v_BOOL_t                    ignorePeerHTopMode;
