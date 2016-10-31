@@ -3490,6 +3490,13 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                  CFG_BTC_STATIC_OPP_WLAN_IDLE_WLAN_LEN_MIN,
                  CFG_BTC_STATIC_OPP_WLAN_IDLE_WLAN_LEN_MAX ),
 
+   REG_VARIABLE( CFG_BTC_DISABLE_WLAN_LINK_CRITICAL , WLAN_PARAM_Integer,
+                 hdd_config_t, btc_disable_wlan_link_critical,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_BTC_DISABLE_WLAN_LINK_CRITICAL_DEFAULT,
+                 CFG_BTC_DISABLE_WLAN_LINK_CRITICAL_MIN,
+                 CFG_BTC_DISABLE_WLAN_LINK_CRITICAL_MAX ),
+
    REG_VARIABLE( CFG_BTC_STATIC_OPP_WLAN_IDLE_BT_LEN , WLAN_PARAM_Integer,
                  hdd_config_t, btcStaticOppWlanIdleBtLen,
                  VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
@@ -5841,6 +5848,14 @@ v_BOOL_t hdd_update_config_dat( hdd_context_t *pHddCtx )
    {
       fStatus = FALSE;
       hddLog(LOGE, "Could not pass on WNI_CFG_BTC_STATIC_OPP_WLAN_IDLE_BT_LEN ");
+   }
+
+   if (ccmCfgSetInt(pHddCtx->hHal, WNI_CFG_BTC_DISABLE_WLAN_LINK_CRITICAL,
+                    pConfig->btc_disable_wlan_link_critical, NULL,
+                    eANI_BOOLEAN_FALSE) == eHAL_STATUS_FAILURE)
+   {
+      fStatus = FALSE;
+      hddLog(LOGE, "Could not pass on WNI_CFG_BTC_DISABLE_WLAN_LINK_CRITICAL");
    }
 
    if (ccmCfgSetInt(pHddCtx->hHal, WNI_CFG_LINK_FAIL_TIMEOUT,

@@ -2366,6 +2366,13 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_BTC_STATIC_OPP_WLAN_IDLE_BT_LEN_DEFAULT     ( 120000 )
 #define CFG_BTC_STATIC_OPP_WLAN_IDLE_BT_LEN_MIN         ( 0 )
 #define CFG_BTC_STATIC_OPP_WLAN_IDLE_BT_LEN_MAX         ( 250000 )
+
+
+#define CFG_BTC_DISABLE_WLAN_LINK_CRITICAL             "gBtcDisableWlanLinkCritical"
+#define CFG_BTC_DISABLE_WLAN_LINK_CRITICAL_DEFAULT     ( 0 )
+#define CFG_BTC_DISABLE_WLAN_LINK_CRITICAL_MIN         ( 0 )
+#define CFG_BTC_DISABLE_WLAN_LINK_CRITICAL_MAX         ( 1 )
+
 /*
  * Connection related log Enable/Disable.
  * 0x1 - Enable mgmt pkt logs (no probe req/rsp).
@@ -3393,6 +3400,7 @@ typedef struct
    v_BOOL_t                    toggleArpBDRates;
    v_U32_t                     btcStaticOppWlanIdleWlanLen;
    v_U32_t                     btcStaticOppWlanIdleBtLen;
+   v_U32_t                     btc_disable_wlan_link_critical;
    v_U32_t                     linkFailTimeout;
    v_U32_t                     linkFailTxCnt;
    v_BOOL_t                    ignorePeerHTopMode;
