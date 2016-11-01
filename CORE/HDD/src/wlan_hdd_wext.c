@@ -8977,7 +8977,6 @@ static void hdd_pkt_filter_done(void *data, v_U32_t status)
 {
    struct statsContext *cbCtx = (struct statsContext *)data;
 
-
    hddLog(VOS_TRACE_LEVEL_INFO,
               FL("Pkt Filter Clear Status : %d"), status);
 
@@ -9007,6 +9006,7 @@ static void hdd_pkt_filter_done(void *data, v_U32_t status)
 int wlan_hdd_set_filter(hdd_adapter_t *pAdapter, tpPacketFilterCfg pRequest)
 {
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+    hdd_station_ctx_t *pHddStaCtx = &pAdapter->sessionCtx.station;
     tSirRcvPktFilterCfgType    packetFilterSetReq = {0};
     tSirRcvFltPktClearParam    packetFilterClrReq = {0};
     struct statsContext        cbCtx;
@@ -9095,6 +9095,12 @@ int wlan_hdd_set_filter(hdd_adapter_t *pAdapter, tpPacketFilterCfg pRequest)
 
             hddLog(VOS_TRACE_LEVEL_INFO_HIGH, "%s: Clear Packet Filter Request for Id: %d",
                     __func__, pRequest->filterId);
+
+            if ((WLAN_HDD_INFRA_STATION == pAdapter->device_mode) ||
+                (WLAN_HDD_P2P_CLIENT == pAdapter->device_mode)) {
+               WLANTL_ResetRxSSN((WLAN_HDD_GET_CTX(pAdapter))->pvosContext,
+                                 pHddStaCtx->conn_info.staId[0]);
+            }
 
             init_completion(&cbCtx.completion);
             cbCtx.magic = CLEAR_FILTER_MAGIC;
