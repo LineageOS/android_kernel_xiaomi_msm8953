@@ -13103,9 +13103,13 @@ v_BOOL_t hdd_is_apps_power_collapse_allowed(hdd_context_t* pHddCtx)
                     return TRUE;
                 }
                 hddLog( LOGE, "%s: do not allow APPS power collapse-"
-                    "pmcState = %d scanRspPending = %d inMiddleOfRoaming = %d",
-                    __func__, pmcState, scanRspPending, inMiddleOfRoaming );
-                return FALSE;
+                        "pmcState = %d scanRspPending = %d "
+                        "inMiddleOfRoaming = %d connected = %d",
+                        __func__, pmcState, scanRspPending,
+                        inMiddleOfRoaming, hdd_connIsConnected(
+                        WLAN_HDD_GET_STATION_CTX_PTR( pAdapter )));
+                wlan_hdd_get_tdls_stats(pAdapter);
+               return FALSE;
             }
         }
         status = hdd_get_next_adapter ( pHddCtx, pAdapterNode, &pNext );
