@@ -19266,6 +19266,7 @@ static int wlan_hdd_cfg80211_testmode(struct wiphy *wiphy,
 }
 #endif /* CONFIG_NL80211_TESTMODE */
 
+extern void hdd_set_wlan_suspend_mode(bool suspend);
 static int __wlan_hdd_cfg80211_dump_survey(struct wiphy *wiphy,
                                          struct net_device *dev,
                                          int idx, struct survey_info *survey)
@@ -19412,6 +19413,15 @@ int __wlan_hdd_cfg80211_resume_wlan(struct wiphy *wiphy)
 
     MTRACE(vos_trace(VOS_MODULE_ID_HDD, TRACE_CODE_HDD_CFG80211_RESUME_WLAN,
                      NO_SESSION, pHddCtx->isWiphySuspended));
+
+    if ((VOS_STA_SAP_MODE == hdd_get_conparam()) &&
+        pHddCtx->is_ap_mode_wow_supported)
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                  "%s: Resume SoftAP", __func__);
+           hdd_set_wlan_suspend_mode(false);
+    }
+
     spin_lock(&pHddCtx->schedScan_lock);
     pHddCtx->isWiphySuspended = FALSE;
     if (TRUE != pHddCtx->isSchedScanUpdatePending)
@@ -19494,6 +19504,13 @@ int __wlan_hdd_cfg80211_suspend_wlan(struct wiphy *wiphy,
     if (0 != ret)
     {
         return ret;
+    }
+
+   if ((VOS_STA_SAP_MODE == hdd_get_conparam()) &&
+       (pHddCtx->is_ap_mode_wow_supported)) {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                  "%s: Suspend SoftAP", __func__);
+         hdd_set_wlan_suspend_mode(true);
     }
 
 

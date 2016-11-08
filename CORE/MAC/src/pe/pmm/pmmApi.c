@@ -2176,14 +2176,22 @@ void pmmEnterWowlRequestHandler(tpAniSirGlobal pMac, tpSirMsgQ pMsg)
         goto end;
     }
 #endif
-
-
-    if ((pMac->pmm.gPmmState != ePMM_STATE_BMPS_SLEEP) && (pMac->pmm.gPmmState != ePMM_STATE_WOWLAN))
+    /**
+     * In SAP mode BMPS is not supported skip bmps validation and
+     * send command directly.
+     */
+    if (pSessionEntry->operMode != BSS_OPERATIONAL_MODE_AP)
     {
-        pmmLog(pMac, LOGE, FL("Rcvd PMC_ENTER_WOWL_REQ in invalid Power Save state "));
-        limSendSmeRsp(pMac, eWNI_PMC_ENTER_WOWL_RSP, eSIR_SME_INVALID_PMM_STATE, 0, 0);
-        goto end;
-    }
+       if ((pMac->pmm.gPmmState != ePMM_STATE_BMPS_SLEEP) &&
+           (pMac->pmm.gPmmState != ePMM_STATE_WOWLAN))
+       {
+          pmmLog(pMac, LOGE, FL("Rcvd PMC_ENTER_WOWL_REQ in invalid Power Save state "));
+          limSendSmeRsp(pMac, eWNI_PMC_ENTER_WOWL_RSP,
+                        eSIR_SME_INVALID_PMM_STATE, 0, 0);
+          goto end;
+        }
+    } else
+         pmmLog(pMac,LOG1, FL("SAP dosn't support BMPS mode directly post wowl request"));
 
     pHalWowlParams = vos_mem_malloc(sizeof(*pHalWowlParams));
     if ( NULL == pHalWowlParams )
