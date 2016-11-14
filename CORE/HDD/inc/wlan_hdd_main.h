@@ -667,7 +667,6 @@ typedef enum{
     HDD_SSR_DISABLED,
 }e_hdd_ssr_required;
 
-#ifdef WLAN_FEATURE_RMC
 /*---------------------------------------------------------------------------
   hdd_ibss_peer_info_params_t
 ---------------------------------------------------------------------------*/
@@ -726,7 +725,6 @@ typedef struct
     /** Peer Info parameters */
     hdd_ibss_peer_info_params_t  ibssPeerList[HDD_MAX_NUM_IBSS_STA];
 }hdd_ibss_peer_info_t;
-#endif
 
 struct hdd_station_ctx
 {
@@ -755,9 +753,7 @@ struct hdd_station_ctx
 
    /*Save the wep/wpa-none keys*/
    tCsrRoamSetKey ibss_enc_key;
-#ifdef WLAN_FEATURE_RMC
    hdd_ibss_peer_info_t ibss_peer_info;
-#endif
 
    v_BOOL_t hdd_ReassocScenario;
 
