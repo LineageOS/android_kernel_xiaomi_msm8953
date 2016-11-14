@@ -2445,7 +2445,7 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_RA_RATE_LIMIT_INTERVAL_NAME         "gRARateLimitInterval"
 #define CFG_RA_RATE_LIMIT_INTERVAL_DEFAULT      (60)
 #define CFG_RA_RATE_LIMIT_INTERVAL_MIN          (0)
-#define CFG_RA_RATE_LIMIT_INTERVAL_MAX          (60)
+#define CFG_RA_RATE_LIMIT_INTERVAL_MAX          (3600)
 
 #define CFG_ROAMING_DFS_CHANNEL_NAME                "gAllowDFSChannelRoam"
 #define CFG_ROAMING_DFS_CHANNEL_MIN                 (0)
