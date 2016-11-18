@@ -15384,6 +15384,7 @@ static int __wlan_hdd_cfg80211_leave_ibss( struct wiphy *wiphy,
     tCsrRoamProfile *pRoamProfile;
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
     int status;
+    eHalStatus hal_status;
 #ifdef WLAN_FEATURE_RMC
     tANI_U8 addIE[WNI_CFG_PROBE_RSP_BCN_ADDNIE_DATA_LEN] = {0};
 #endif
@@ -15456,8 +15457,23 @@ static int __wlan_hdd_cfg80211_leave_ibss( struct wiphy *wiphy,
 
     /* Issue Disconnect request */
     INIT_COMPLETION(pAdapter->disconnect_comp_var);
-    sme_RoamDisconnect( WLAN_HDD_GET_HAL_CTX(pAdapter), pAdapter->sessionId,
-                                  eCSR_DISCONNECT_REASON_IBSS_LEAVE);
+    hal_status = sme_RoamDisconnect(WLAN_HDD_GET_HAL_CTX(pAdapter),
+                 pAdapter->sessionId,
+                 eCSR_DISCONNECT_REASON_IBSS_LEAVE);
+    if (!HAL_STATUS_SUCCESS(hal_status)) {
+        hddLog(LOGE,
+               FL("sme_RoamDisconnect failed hal_status(%d)"),
+               hal_status);
+        return -EAGAIN;
+    }
+    status = wait_for_completion_timeout(
+                     &pAdapter->disconnect_comp_var,
+                     msecs_to_jiffies(WLAN_WAIT_TIME_DISCONNECT));
+    if (!status) {
+        hddLog(LOGE,
+              FL("wait on disconnect_comp_var failed"));
+        return -ETIMEDOUT;
+    }
 
     EXIT();
     return 0;
@@ -19266,6 +19282,7 @@ static int wlan_hdd_cfg80211_testmode(struct wiphy *wiphy,
 }
 #endif /* CONFIG_NL80211_TESTMODE */
 
+extern void hdd_set_wlan_suspend_mode(bool suspend);
 static int __wlan_hdd_cfg80211_dump_survey(struct wiphy *wiphy,
                                          struct net_device *dev,
                                          int idx, struct survey_info *survey)
@@ -19412,6 +19429,15 @@ int __wlan_hdd_cfg80211_resume_wlan(struct wiphy *wiphy)
 
     MTRACE(vos_trace(VOS_MODULE_ID_HDD, TRACE_CODE_HDD_CFG80211_RESUME_WLAN,
                      NO_SESSION, pHddCtx->isWiphySuspended));
+
+    if ((VOS_STA_SAP_MODE == hdd_get_conparam()) &&
+        pHddCtx->is_ap_mode_wow_supported)
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                  "%s: Resume SoftAP", __func__);
+           hdd_set_wlan_suspend_mode(false);
+    }
+
     spin_lock(&pHddCtx->schedScan_lock);
     pHddCtx->isWiphySuspended = FALSE;
     if (TRUE != pHddCtx->isSchedScanUpdatePending)
@@ -19494,6 +19520,13 @@ int __wlan_hdd_cfg80211_suspend_wlan(struct wiphy *wiphy,
     if (0 != ret)
     {
         return ret;
+    }
+
+   if ((VOS_STA_SAP_MODE == hdd_get_conparam()) &&
+       (pHddCtx->is_ap_mode_wow_supported)) {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                  "%s: Suspend SoftAP", __func__);
+         hdd_set_wlan_suspend_mode(true);
     }
 
 

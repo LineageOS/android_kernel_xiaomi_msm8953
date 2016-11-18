@@ -208,6 +208,7 @@ typedef struct tagSmeCmd
         struct s_ani_set_tx_max_pwr set_tx_max_pwr;
         tpNanRequest pNanReq;
         struct csr_set_tx_max_pwr_per_band set_tx_max_pwr_per_band;
+        tpSirUpdateChanList chan_list;
     }u;
 }tSmeCmd;
 

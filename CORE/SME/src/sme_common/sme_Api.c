@@ -846,6 +846,36 @@ eHalStatus sme_process_set_max_tx_power_per_band(tpAniSirGlobal mac_ctx,
     return eHAL_STATUS_SUCCESS;
 }
 
+
+/**
+ * sme_process_update_channel_list() - Update channel list
+ * @mac_ctx: mac context
+ * @command: cmd param containing band, and power in db
+ *
+ * Return: eHalStatus
+ */
+eHalStatus sme_process_update_channel_list(tpAniSirGlobal mac_ctx,
+                  tSmeCmd *command)
+{
+    vos_msg_t msg;
+
+    msg.type = WDA_UPDATE_CHAN_LIST_REQ;
+    msg.reserved = 0;
+    msg.bodyptr = command->u.chan_list;
+
+    MTRACE(vos_trace(VOS_MODULE_ID_SME,
+                 TRACE_CODE_SME_TX_WDA_MSG, NO_SESSION, msg.type));
+
+    if (VOS_STATUS_SUCCESS !=
+            vos_mq_post_message(VOS_MODULE_ID_WDA, &msg)) {
+        smsLog(mac_ctx, LOGE,
+               FL("Unable to post message to WDA"));
+        vos_mem_free(command->u.chan_list);
+        return eHAL_STATUS_FAILURE;
+    }
+    return eHAL_STATUS_SUCCESS;
+}
+
 static void smeProcessNanReq(tpAniSirGlobal pMac, tSmeCmd *pCommand )
 {
     tSirMsgQ msgQ;
@@ -1140,6 +1170,18 @@ sme_process_cmd:
                                         &pCommand->Link, LL_ACCESS_LOCK)) {
                                csrReleaseCommand(pMac, pCommand);
                             }
+                            break;
+
+                        case eSmeCommandUpdateChannelList:
+                            csrLLUnlock(&pMac->sme.smeCmdActiveList);
+                            sme_process_update_channel_list(pMac, pCommand);
+                            if (csrLLRemoveEntry(&pMac->sme.smeCmdActiveList,
+                                        &pCommand->Link, LL_ACCESS_LOCK)) {
+                               csrReleaseCommand(pMac, pCommand);
+                            }
+                            smsLog(pMac, LOG1,
+                                   FL("eSmeCommandUpdateChannelList processed"));
+                            fContinue = eANI_BOOLEAN_TRUE;
                             break;
 
 #ifdef FEATURE_OEM_DATA_SUPPORT
@@ -3126,7 +3168,25 @@ eHalStatus sme_ScanRequest(tHalHandle hHal, tANI_U8 sessionId, tCsrScanRequest *
     tpAniSirGlobal pMac = PMAC_STRUCT( hHal );
     MTRACE(vos_trace(VOS_MODULE_ID_SME,
            TRACE_CODE_SME_RX_HDD_MSG_SCAN_REQ, sessionId, pscanReq->scanType));
-    smsLog(pMac, LOG2, FL("enter"));
+
+    smsLog(pMac, LOG1,
+           FL("isCoexScoIndSet %d disable_scan_during_sco %d is_disconnected %d"),
+           pMac->isCoexScoIndSet,
+           pMac->scan.disable_scan_during_sco,
+           csrIsConnStateDisconnected(pMac, sessionId));
+
+    if (pMac->isCoexScoIndSet && pMac->scan.disable_scan_during_sco &&
+        csrIsConnStateDisconnected(pMac, sessionId)) {
+        csrScanFlushResult(pMac);
+        pMac->scan.disable_scan_during_sco_timer_info.callback = callback;
+        pMac->scan.disable_scan_during_sco_timer_info.dev = pContext;
+        pMac->scan.disable_scan_during_sco_timer_info.scan_id= *pScanRequestID;
+
+        vos_timer_start(&pMac->scan.disable_scan_during_sco_timer,
+                                                CSR_DISABLE_SCAN_DURING_SCO);
+        return eHAL_STATUS_SUCCESS;
+    }
+
     do
     {
         if(pMac->scan.fScanEnable &&

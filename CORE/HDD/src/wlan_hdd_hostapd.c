@@ -79,6 +79,7 @@
 #include "wlan_hdd_p2p.h"
 #include "cfgApi.h"
 #include "wniCfg.h"
+#include <wlan_hdd_wowl.h>
 
 #ifdef FEATURE_WLAN_CH_AVOID
 #include "wcnss_wlan.h"
@@ -1805,6 +1806,7 @@ static __iw_softap_setparam(struct net_device *dev,
     int set_value = value[1];
     eHalStatus status;
     int ret = 0; /* success */
+    int enable_pattrn_byte_match, enable_magic_pkt;
     v_CONTEXT_t pVosContext;
 
     ENTER();
@@ -1959,6 +1961,37 @@ static __iw_softap_setparam(struct net_device *dev,
         case QCSAP_PARAM_SET_PROXIMITY:
             {
                 ret = wlan_hdd_set_proximity(set_value, hHal);
+                break;
+            }
+        case QCSAP_PARAM_SET_WOWL:
+            {
+                if (!pHddCtx->is_ap_mode_wow_supported)
+                {
+                    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                              "%s: Not supported",__func__);
+                    return -ENOTSUPP;
+                }
+                switch (set_value)
+                {
+                   case 0x00:
+                     hdd_exit_wowl(pHostapdAdapter, eWOWL_EXIT_USER);
+                     break;
+                   case 0x01:
+                   case 0x02:
+                   case 0x03:
+                     enable_magic_pkt =  (set_value & 0x01) ? 1 : 0;
+                     enable_pattrn_byte_match = (set_value & 0x02) ? 1 : 0;
+                     hddLog(LOGE, "magic packet ? = %s pattern byte matching ? = %s",
+                           (enable_magic_pkt ? "YES":"NO"),
+                           (enable_pattrn_byte_match ? "YES":"NO"));
+                     hdd_enter_wowl(pHostapdAdapter, enable_magic_pkt,
+                                    enable_pattrn_byte_match);
+                     break;
+                   default:
+                     hddLog(LOGE, "Invalid arg  %d in WE_WOWL IOCTL", set_value);
+                     ret = -EINVAL;
+                     break;
+                }
                 break;
             }
         default:
@@ -2119,6 +2152,112 @@ static iw_softap_getparam(struct net_device *dev,
 
     return ret;
 }
+
+int
+static __iw_softap_setchar_getnone(struct net_device *dev,
+                                 struct iw_request_info *info,
+                                 union iwreq_data *wrqu, char *extra)
+{
+    int sub_cmd;
+    int ret = 0; /* success */
+    char *pBuffer = NULL;
+    hdd_adapter_t *pAdapter;
+    hdd_context_t *pHddCtx;
+    struct iw_point s_priv_data;
+
+    ENTER();
+
+    if (!capable(CAP_NET_ADMIN))
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  FL("permission check failed"));
+        return -EPERM;
+    }
+
+    pAdapter = (netdev_priv(dev));
+    pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+    ret = wlan_hdd_validate_context(pHddCtx);
+    if (0 != ret)
+    {
+        return ret;
+    }
+
+    if (!pHddCtx->is_ap_mode_wow_supported)
+    {
+      VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                "%s: Not supported",__func__);
+      return -ENOTSUPP;
+   }
+
+    /* helper function to get iwreq_data with compat handling. */
+    if (hdd_priv_get_data(&s_priv_data, wrqu))
+    {
+       return -EINVAL;
+    }
+
+    /* make sure all params are correctly passed to function */
+    if ((NULL == s_priv_data.pointer) || (0 == s_priv_data.length))
+    {
+       return -EINVAL;
+    }
+
+    sub_cmd = s_priv_data.flags;
+
+    /* ODD number is used for set, copy data using copy_from_user */
+    pBuffer = mem_alloc_copy_from_user_helper(s_priv_data.pointer,
+                                               s_priv_data.length);
+    if (NULL == pBuffer)
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  "mem_alloc_copy_from_user_helper fail");
+        return -ENOMEM;
+    }
+
+    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+              "%s: Received length %d", __func__, s_priv_data.length);
+    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+              "%s: Received data %s", __func__, pBuffer);
+
+    switch(sub_cmd)
+    {
+       case WE_WOWL_ADD_PTRN:
+          VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO, "ADD_PTRN");
+          ret = hdd_add_wowl_ptrn(pAdapter, pBuffer);
+          if (!ret)
+             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                       "Failed to add pattern :%d", ret);
+          break;
+       case WE_WOWL_DEL_PTRN:
+          VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO, "DEL_PTRN");
+          ret = hdd_del_wowl_ptrn(pAdapter, pBuffer);
+          if (!ret)
+             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                       "Failed to del pattern :%d", ret);
+          break;
+        default:
+           VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR, "ioctl not supported in SOFTAP");
+           ret = -EINVAL;
+           break;
+     }
+
+     kfree(pBuffer);
+     return ret;
+}
+
+int
+static iw_softap_setchar_getnone(struct net_device *dev,
+                                 struct iw_request_info *info,
+                                 union iwreq_data *wrqu, char *extra)
+{
+    int ret;
+
+    vos_ssr_protect(__func__);
+    ret = __iw_softap_setchar_getnone(dev, info, wrqu, extra);
+    vos_ssr_unprotect(__func__);
+
+    return ret;
+}
+
 /* Usage:
     BLACK_LIST  = 0
     WHITE_LIST  = 1 
@@ -4419,6 +4558,8 @@ static const struct iw_priv_args hostapd_private_args[] = {
       IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0,  "setMcRate" },
   { QCSAP_PARAM_SET_PROXIMITY,
       IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0,  "setProximity" },
+  { QCSAP_PARAM_SET_WOWL,
+      IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0,  "wowl" },
   { QCSAP_IOCTL_GETPARAM,
       IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
       IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,    "getparam" },
@@ -4530,11 +4671,29 @@ static const struct iw_priv_args hostapd_private_args[] = {
         IW_PRIV_TYPE_INT| IW_PRIV_SIZE_FIXED | 1,
         0,
         "setTrafficMon" },
+    /* handlers for main ioctl */
+    {   QCSAP_IOCTL_SET_CHAR_GET_NONE,
+        IW_PRIV_TYPE_CHAR| 512,
+        0,
+        "" },
+
+    /* handlers for sub-ioctl */
+    {   WE_WOWL_ADD_PTRN,
+        IW_PRIV_TYPE_CHAR| 512,
+        0,
+        "wowlAddPtrn" },
+
+    {   WE_WOWL_DEL_PTRN,
+        IW_PRIV_TYPE_CHAR| 512,
+        0,
+        "wowlDelPtrn" },
 };
 
 static const iw_handler hostapd_private[] = {
    [QCSAP_IOCTL_SETPARAM - SIOCIWFIRSTPRIV] = iw_softap_setparam,  //set priv ioctl
-   [QCSAP_IOCTL_GETPARAM - SIOCIWFIRSTPRIV] = iw_softap_getparam,  //get priv ioctl   
+   [QCSAP_IOCTL_GETPARAM - SIOCIWFIRSTPRIV] = iw_softap_getparam,  //get priv ioctl
+   [QCSAP_IOCTL_SET_CHAR_GET_NONE - SIOCIWFIRSTPRIV] =
+                                    iw_softap_setchar_getnone,
    [QCSAP_IOCTL_GET_STAWPAIE - SIOCIWFIRSTPRIV] = iw_get_genie, //get station genIE
    [QCSAP_IOCTL_STOPBSS - SIOCIWFIRSTPRIV] = iw_softap_stopbss,       // stop bss
    [QCSAP_IOCTL_VERSION - SIOCIWFIRSTPRIV] = iw_softap_version,       // get driver version
@@ -4683,6 +4842,8 @@ VOS_STATUS hdd_init_ap_mode( hdd_adapter_t *pAdapter )
 
     set_bit(WMM_INIT_DONE, &pAdapter->event_flags);
 
+    pHddCtx->is_ap_mode_wow_supported =
+              sme_IsFeatureSupportedByFW(SAP_MODE_WOW);
     return status;
 
 error_wmm_init:

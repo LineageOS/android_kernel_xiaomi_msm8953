@@ -3364,4 +3364,16 @@ WLANTL_SetMcastDuplicateDetection
  */
 void WLANTL_ResetRxSSN(v_PVOID_t pvosGCtx, uint8_t ucSTAId);
 
+/*
+ * WLANTL_SetDataPktFilter - Set data filter flag
+ * @pvosGCtx: global vos context
+ * @ucSTAId: station id
+ * @flag: packet data filter flag
+ *
+ * This function sets the data pkt filter flag of all tids
+ * of the station for whom BA reorder session exists.
+ *
+ * Return: none
+ */
+void WLANTL_SetDataPktFilter(v_PVOID_t pvosGCtx, uint8_t ucSTAId, bool flag);
 #endif /* #ifndef WLAN_QCT_WLANTL_H */

@@ -12297,6 +12297,13 @@ int hdd_wlan_startup(struct device *dev )
    // Initialize the restart logic
    wlan_hdd_restart_init(pHddCtx);
 
+   if (pHddCtx->cfg_ini->fIsLogpEnabled) {
+       vos_wdthread_init_timer_work(vos_process_wd_timer);
+       /* Initialize the timer to detect thread stuck issues */
+       vos_thread_stuck_timer_init(
+               &((VosContextType*)pVosContext)->vosWatchdog);
+   }
+
    //Register the traffic monitor timer now
    if ( pHddCtx->cfg_ini->dynSplitscan)
    {
@@ -12487,11 +12494,11 @@ static int hdd_driver_init( void)
 
 #ifdef HAVE_WCNSS_CAL_DOWNLOAD
    /* wait until WCNSS driver downloads NV */
-   while (!wcnss_device_ready() && 5 >= ++max_retries) {
+   while (!wcnss_device_ready() && 10 >= ++max_retries) {
        msleep(1000);
    }
 
-   if (max_retries >= 5) {
+   if (max_retries >= 10) {
       hddLog(VOS_TRACE_LEVEL_FATAL,"%s: WCNSS driver not ready", __func__);
       vos_wake_lock_destroy(&wlan_wake_lock);
 #ifdef WLAN_LOGGING_SOCK_SVC_ENABLE
@@ -13103,9 +13110,13 @@ v_BOOL_t hdd_is_apps_power_collapse_allowed(hdd_context_t* pHddCtx)
                     return TRUE;
                 }
                 hddLog( LOGE, "%s: do not allow APPS power collapse-"
-                    "pmcState = %d scanRspPending = %d inMiddleOfRoaming = %d",
-                    __func__, pmcState, scanRspPending, inMiddleOfRoaming );
-                return FALSE;
+                        "pmcState = %d scanRspPending = %d "
+                        "inMiddleOfRoaming = %d connected = %d",
+                        __func__, pmcState, scanRspPending,
+                        inMiddleOfRoaming, hdd_connIsConnected(
+                        WLAN_HDD_GET_STATION_CTX_PTR( pAdapter )));
+                wlan_hdd_get_tdls_stats(pAdapter);
+               return FALSE;
             }
         }
         status = hdd_get_next_adapter ( pHddCtx, pAdapterNode, &pNext );
