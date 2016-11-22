@@ -12297,6 +12297,13 @@ int hdd_wlan_startup(struct device *dev )
    // Initialize the restart logic
    wlan_hdd_restart_init(pHddCtx);
 
+   if (pHddCtx->cfg_ini->fIsLogpEnabled) {
+       vos_wdthread_init_timer_work(vos_process_wd_timer);
+       /* Initialize the timer to detect thread stuck issues */
+       vos_thread_stuck_timer_init(
+                &((VosContextType*)pVosContext)->vosWatchdog);
+   }
+
    //Register the traffic monitor timer now
    if ( pHddCtx->cfg_ini->dynSplitscan)
    {
