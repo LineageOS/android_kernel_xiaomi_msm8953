@@ -2773,7 +2773,7 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 
 /* DHCP Server IP*/
 #define CFG_DHCP_SERVER_IP_NAME     "gDHCPServerIP"
-#define CFG_DHCP_SERVER_IP_DEFAULT  "192,168,1,2"
+#define CFG_DHCP_SERVER_IP_DEFAULT  "192.168.1.2"
 #endif /* DHCP_SERVER_OFFLOAD */
 
 /*
@@ -3538,7 +3538,7 @@ VOS_STATUS hdd_execute_config_command(hdd_context_t *pHddCtx, char *command);
 tANI_BOOLEAN hdd_is_okc_mode_enabled(hdd_context_t *pHddCtx);
 
 VOS_STATUS hdd_string_to_u8_array(char *str, tANI_U8 *intArray, tANI_U8 *len,
-				  tANI_U8 intArrayMaxLen);
+				  tANI_U8 intArrayMaxLen, char *seperator);
 
 #define VAR_OFFSET( _Struct, _Var ) (offsetof(_Struct, _Var))
 #define VAR_SIZE( _Struct, _Var ) (sizeof(((_Struct *)0)->_Var))
