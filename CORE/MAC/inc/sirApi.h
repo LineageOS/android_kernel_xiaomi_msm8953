@@ -766,7 +766,7 @@ typedef struct sSirChannelList
 
 typedef struct sSirDFSChannelList
 {
-    tANI_U32         timeStamp[SIR_MAX_24G_5G_CHANNEL_RANGE];
+    v_TIME_t         timeStamp[SIR_MAX_24G_5G_CHANNEL_RANGE];
 
 } tSirDFSChannelList, *tpSirDFSChannelList;
 
