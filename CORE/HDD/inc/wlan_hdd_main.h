@@ -1533,6 +1533,8 @@ struct hdd_context_s
 
     v_BOOL_t sus_res_mcastbcast_filter_valid;
 
+    v_BOOL_t mc_list_cfg_in_fwr;
+
     /* debugfs entry */
     struct dentry *debugfs_phy;
 
