@@ -269,8 +269,6 @@ VOS_STATUS vos_open( v_CONTEXT_t *pVosContext, void *devHandle )
    /* Initialize the timer module */
    vos_timer_module_init();
 
-   vos_wdthread_init_timer_work(vos_process_wd_timer);
-
    /* Initialize the probe event */
    if (vos_event_init(&gpVosContext->ProbeEvent) != VOS_STATUS_SUCCESS)
    {
