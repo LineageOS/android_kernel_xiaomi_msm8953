@@ -2219,7 +2219,7 @@ static tANI_S32 csrFindCongestionScore (tpAniSirGlobal pMac, tCsrScanResult *pBs
         return -1;
     }
 
-    if (bssInfo->rssi < PER_BAD_RSSI) {
+    if (bssInfo->rssi < pMac->roam.configParam.PERMinRssiThresholdForRoam) {
         smsLog(pMac, LOG1,
                FL("discrarding candidate due to low rssi=%d bssid "
                MAC_ADDRESS_STR), bssInfo->rssi,
