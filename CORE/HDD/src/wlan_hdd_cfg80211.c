@@ -12699,6 +12699,11 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
 
     ENTER();
 
+    if (!pAdapter || pAdapter->magic != WLAN_HDD_ADAPTER_MAGIC ||
+        !pAdapter->dev) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("Adapter is not valid"));
+        return 0;
+    }
     pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
     if (NULL == pHddCtx) {
         hddLog(VOS_TRACE_LEVEL_ERROR, FL("HDD context is Null"));
