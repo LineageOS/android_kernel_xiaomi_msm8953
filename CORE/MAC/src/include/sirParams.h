@@ -145,6 +145,11 @@ typedef enum {
    PER_BASED_ROAMING = 63,
 #endif
    SAP_MODE_WOW = 64,
+   /* SAP_OFFLOADS flag will be used for
+    * SAP auth offload, SAP DHCP offload and
+    * SAP DNS offload.
+    */
+   SAP_OFFLOADS = 65,
    //MAX_FEATURE_SUPPORTED = 128
 } placeHolderInCapBitmap;
 

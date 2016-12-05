@@ -220,6 +220,8 @@ static placeHolderInCapBitmap supportEnabledFeatures[] =
    ,WIFI_CONFIG                    //61
    ,ANTENNA_DIVERSITY_SELECTION    //62
    ,PER_BASED_ROAMING              //63
+   ,SAP_MODE_WOW                   //64
+   ,SAP_OFFLOADS                   //65
 };
 
 /*-------------------------------------------------------------------------- 
@@ -1640,6 +1642,16 @@ void WDI_TraceHostFWCapabilities(tANI_U32 *capabilityBitmap)
                           snprintf(pCapStr, sizeof("PER_BASED_ROAMING"),
                                          "%s", "PER_BASED_ROAMING");
                           pCapStr += strlen("PER_BASED_ROAMING");
+                          break;
+                     case SAP_MODE_WOW:
+                          snprintf(pCapStr, sizeof("SAP_MODE_WOW"),
+                                         "%s", "SAP_MODE_WOW");
+                          pCapStr += strlen("SAP_MODE_WOW");
+                          break;
+                     case SAP_OFFLOADS:
+                          snprintf(pCapStr, sizeof("SAP_OFFLOADS"),
+                                         "%s", "SAP_OFFLOADS");
+                          pCapStr += strlen("SAP_OFFLOADS");
                           break;
                  }
                  *pCapStr++ = ',';
