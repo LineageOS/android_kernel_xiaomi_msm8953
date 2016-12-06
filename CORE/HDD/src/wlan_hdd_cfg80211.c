@@ -4008,7 +4008,7 @@ __wlan_hdd_cfg80211_extscan_set_ssid_hotlist(struct wiphy *wiphy,
         hddLog(LOG1, FL("SSID %s"),
                ssid_string);
         ssid_len = strlen(ssid_string);
-        if (ssid_length > SIR_MAC_MAX_SSID_LENGTH) {
+        if (ssid_length >= SIR_MAC_MAX_SSID_LENGTH) {
                 hddLog(LOGE, FL("Invalid ssid length"));
                 goto fail;
         }
