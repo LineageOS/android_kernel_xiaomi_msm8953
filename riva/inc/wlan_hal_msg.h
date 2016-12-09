@@ -604,6 +604,7 @@ typedef enum
    WLAN_HAL_SET_PER_ROAM_CONFIG_RSP          = 335,
    WLAN_HAL_PER_ROAM_SCAN_TRIGGER_REQ        = 336,
    WLAN_HAL_PER_ROAM_SCAN_TRIGGER_RSP        = 337,
+   WLAN_HAL_SAP_AUTH_OFFLOAD_IND             = 341,
 
    WLAN_HAL_MSG_MAX = WLAN_HAL_MSG_TYPE_MAX_ENUM_SIZE
 }tHalHostMsgType;
@@ -9303,6 +9304,26 @@ typedef PACKED_PRE struct PACKED_POST
    tHalMsgHeader header;
    tHalModifyRoamParamsIndParams  modifyRoamParamsReqParams;
 } tHalModifyRoamParamsInd, *tpHalModifyRoamParamsInd;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tSirMacAddr selfMacAddr;
+    tANI_U32 enable;
+    tSirMacSSid ssId;
+    tANI_U32 rsn_authmode;
+    tANI_U32 rsn_ucastcipherset;
+    tANI_U32 rsn_mcastcipherset;
+    tANI_U32 rsn_mcastmgmtcipherset;
+    tANI_U32 channel;
+    tANI_U32 psk_len;
+    tANI_U8 psk[1];
+} tSapOffloadEnableMsg, *tpSapOffloadEnableMsg;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tHalMsgHeader header;
+    tSapOffloadEnableMsg SapOffloadEnableMsg;
+} tHalSapoffloadEnable, *tpHalSapoffloadEnable;
 
 #if defined(__ANI_COMPILER_PRAGMA_PACK_STACK)
 #pragma pack(pop)
