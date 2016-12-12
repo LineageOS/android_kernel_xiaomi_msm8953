@@ -5825,6 +5825,9 @@ static inline tANI_U16 WDA_ConvertWniCfgIdToHALCfgId(v_U32_t wniCfgId)
          return QWLAN_HAL_CFG_ENABLE_RTSCTS_HTVHT;
       case WNI_CFG_ENABLE_MC_ADDR_LIST:
          return QWLAN_HAL_CFG_ENABLE_MC_ADDR_LIST;
+      case WNI_CFG_HEART_BEAT_THRESHOLD:
+         return QWLAN_HAL_CFG_PS_HEART_BEAT_THRESHOLD;
+
       default:
       {
          VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,

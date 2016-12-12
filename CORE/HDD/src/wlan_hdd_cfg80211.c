@@ -7258,6 +7258,10 @@ static int wlan_hdd_cfg80211_get_link_properties(struct wiphy *wiphy,
     return cfg80211_vendor_cmd_reply(reply_skb);
 }
 
+#define BEACON_MISS_THRESH_2_4 \
+        QCA_WLAN_VENDOR_ATTR_CONFIG_BEACON_MISS_THRESHOLD_24
+#define BEACON_MISS_THRESH_5_0 \
+        QCA_WLAN_VENDOR_ATTR_CONFIG_BEACON_MISS_THRESHOLD_5
 #define PARAM_WIFICONFIG_MAX QCA_WLAN_VENDOR_ATTR_CONFIG_MAX
 #define PARAM_MODULATED_DTIM QCA_WLAN_VENDOR_ATTR_CONFIG_MODULATED_DTIM
 #define PARAM_STATS_AVG_FACTOR QCA_WLAN_VENDOR_ATTR_CONFIG_STATS_AVG_FACTOR
@@ -7293,12 +7297,16 @@ static int __wlan_hdd_cfg80211_wifi_configuration_set(struct wiphy *wiphy,
     tModifyRoamParamsReqParams modifyRoamParamsReq;
     eHalStatus status;
     int ret_val;
+    uint8_t hb_thresh_val;
+
     static const struct nla_policy policy[PARAM_WIFICONFIG_MAX + 1] = {
                         [PARAM_STATS_AVG_FACTOR] = { .type = NLA_U16 },
                         [PARAM_MODULATED_DTIM] = { .type = NLA_U32 },
                         [PARAM_GUARD_TIME] = { .type = NLA_U32},
                         [PARAM_BCNMISS_PENALTY_PARAM_COUNT] =
                                              { .type = NLA_U32},
+                        [BEACON_MISS_THRESH_2_4] = { .type = NLA_U8 },
+                        [BEACON_MISS_THRESH_5_0] = { .type = NLA_U8 },
     };
 
     ENTER();
@@ -7419,6 +7427,50 @@ static int __wlan_hdd_cfg80211_wifi_configuration_set(struct wiphy *wiphy,
             return ret_val;
         }
 
+    }
+
+    if (tb[QCA_WLAN_VENDOR_ATTR_CONFIG_BEACON_MISS_THRESHOLD_24]) {
+       hb_thresh_val = nla_get_u8(
+                      tb[QCA_WLAN_VENDOR_ATTR_CONFIG_BEACON_MISS_THRESHOLD_24]);
+
+       hddLog(LOG1, "WLAN set heartbeat threshold for 2.4Ghz %d",
+                                              hb_thresh_val);
+       ccmCfgSetInt((WLAN_HDD_GET_CTX(pAdapter))->hHal,
+                     WNI_CFG_HEART_BEAT_THRESHOLD, hb_thresh_val,
+                     NULL, eANI_BOOLEAN_FALSE);
+
+       status = sme_update_hb_threshold(
+                        (WLAN_HDD_GET_CTX(pAdapter))->hHal,
+                         WNI_CFG_HEART_BEAT_THRESHOLD,
+                         hb_thresh_val, eCSR_BAND_24);
+       if (eHAL_STATUS_SUCCESS != status) {
+           hddLog(LOGE, "WLAN set heartbeat threshold FAILED %d", status);
+           vos_mem_free(pReq);
+           pReq = NULL;
+           return -EPERM;
+       }
+    }
+
+    if (tb[QCA_WLAN_VENDOR_ATTR_CONFIG_BEACON_MISS_THRESHOLD_5]) {
+       hb_thresh_val = nla_get_u8(
+                     tb[QCA_WLAN_VENDOR_ATTR_CONFIG_BEACON_MISS_THRESHOLD_5]);
+
+       hddLog(LOG1, "WLAN set heartbeat threshold for 5Ghz %d",
+                                            hb_thresh_val);
+       ccmCfgSetInt((WLAN_HDD_GET_CTX(pAdapter))->hHal,
+                     WNI_CFG_HEART_BEAT_THRESHOLD, hb_thresh_val,
+                     NULL, eANI_BOOLEAN_FALSE);
+
+       status = sme_update_hb_threshold(
+                        (WLAN_HDD_GET_CTX(pAdapter))->hHal,
+                         WNI_CFG_HEART_BEAT_THRESHOLD,
+                         hb_thresh_val, eCSR_BAND_5G);
+       if (eHAL_STATUS_SUCCESS != status) {
+           hddLog(LOGE, "WLAN set heartbeat threshold FAILED %d", status);
+           vos_mem_free(pReq);
+           pReq = NULL;
+           return -EPERM;
+       }
     }
 
     EXIT();

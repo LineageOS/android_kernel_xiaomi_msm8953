@@ -14819,3 +14819,37 @@ eHalStatus sme_set_mdns_resp(tHalHandle hal,
     return (status);
 }
 #endif /* MDNS_OFFLOAD */
+
+/**
+ * sme_update_hb_threshold() - Set heartbeat Threshold value.
+ * @hal: HAL pointer
+ * @cfgId: cfg param id
+ * @hbThresh: heartbeat threshold value.
+ *
+ * Return: Success/Failure
+ */
+eHalStatus sme_update_hb_threshold(tHalHandle hHal, tANI_U32 cfgId,
+                       tANI_U8 hbThresh, eCsrBand eBand)
+{
+       eHalStatus status = eHAL_STATUS_SUCCESS;
+       tpAniSirGlobal pMac = PMAC_STRUCT(hHal);
+
+       if ((hbThresh <  WNI_CFG_HEART_BEAT_THRESHOLD_STAMIN) ||
+           (hbThresh > WNI_CFG_HEART_BEAT_THRESHOLD_STAMAX)) {
+           smsLog(pMac, LOGE, FL("invalid heartbeat threshold %hhu"), hbThresh);
+           return eHAL_STATUS_FAILURE;
+       }
+
+       if(eBand == eCSR_BAND_24)
+           pMac->roam.configParam.HeartbeatThresh24 = hbThresh;
+
+       if(eBand == eCSR_BAND_5G)
+           pMac->roam.configParam.HeartbeatThresh50 = hbThresh;
+
+       status = sme_update_cfg_int_param(hHal, WNI_CFG_HEART_BEAT_THRESHOLD);
+       if (eHAL_STATUS_SUCCESS != status) {
+           smsLog(pMac, LOGE, FL("WLAN set heartbeat threshold FAILED"));
+           status = eHAL_STATUS_FAILURE;
+       }
+       return status;
+}

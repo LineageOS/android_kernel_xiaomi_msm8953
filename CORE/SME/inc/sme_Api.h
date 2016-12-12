@@ -3995,4 +3995,7 @@ eHalStatus sme_set_mdns_fqdn(tHalHandle hal,
 eHalStatus sme_set_mdns_resp(tHalHandle hal,
                              sir_mdns_resp_info_t *mdns_resp);
 #endif /* MDNS_OFFLOAD */
+
+eHalStatus sme_update_hb_threshold(tHalHandle hHal, tANI_U32 cfgId,
+                       tANI_U8 hbThresh, eCsrBand eBand);
 #endif //#if !defined( __SME_API_H )
