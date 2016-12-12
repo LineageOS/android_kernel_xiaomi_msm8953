@@ -190,6 +190,9 @@ when        who    what, where, why
 #define WLANTL_RMC_HASH_TABLE_SIZE (32)
 #endif
 
+#define WLANTL_SAMPLE_INTERVAL 50
+#define WLANTL_SAMPLE_COUNT 2
+
 /*-------------------------------------------------------------------------
   BT-AMP related definition - !!! should probably be moved to BT-AMP header
 ---------------------------------------------------------------------------*/
@@ -727,6 +730,12 @@ typedef struct
 
   /* Disassoc in progress */
   v_BOOL_t disassoc_progress;
+
+  /* sample timer Tx frames */
+  uint64_t tx_frames;
+  uint32_t tx_sample[WLANTL_SAMPLE_COUNT];
+  uint64_t tx_samples_sum;
+
 }WLANTL_STAClientType;
 
 /*---------------------------------------------------------------------------
@@ -966,6 +975,10 @@ typedef struct
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
   WLANTL_RoamMonitorType gDsRxRoamStats;
 #endif
+
+  /* TX sample data timer */
+  vos_timer_t tx_frames_timer;
+  uint8_t sample_count;
 
 }WLANTL_CbType;
 

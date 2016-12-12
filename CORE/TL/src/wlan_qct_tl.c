@@ -696,6 +696,8 @@ WLANTL_Open
   pTLCb->ucCurLeftWeight = 1;
   pTLCb->ucCurrentSTA = WLAN_MAX_STA_COUNT-1;
 
+  vos_timer_init(&pTLCb->tx_frames_timer, VOS_TIMER_TYPE_SW,
+                         WLANTL_SampleTx, (void *)pTLCb);
 #if 0
   //flow control field init
   vos_mem_zero(&pTLCb->tlFCInfo, sizeof(tFcTxParams_type));
@@ -833,8 +835,10 @@ WLANTL_Start
 
   /* Enable transmission */
   vos_atomic_set_U8( &pTLCb->ucTxSuspended, 0);
-
   pTLCb->uResCount = uResCount;
+
+  vos_timer_start(&pTLCb->tx_frames_timer, WLANTL_SAMPLE_INTERVAL);
+
   return VOS_STATUS_SUCCESS;
 }/* WLANTL_Start */
 
@@ -916,6 +920,10 @@ WLANTL_Stop
                "Handoff Support module stop fail"));
   }
 #endif
+
+   if (VOS_TIMER_STATE_STOPPED !=
+                  vos_timer_getCurrentState(&pTLCb->tx_frames_timer))
+      vos_timer_stop(&pTLCb->tx_frames_timer);
 
   /*-------------------------------------------------------------------------
     Clean client stations
@@ -1010,6 +1018,15 @@ WLANTL_Close
                "RMC module DeInit fail"));
   }
 #endif
+
+   if (VOS_TIMER_STATE_RUNNING ==
+                       vos_timer_getCurrentState(&pTLCb->tx_frames_timer)) {
+         vos_timer_stop(&pTLCb->tx_frames_timer);
+   }
+   if (!VOS_IS_STATUS_SUCCESS(vos_timer_destroy(&pTLCb->tx_frames_timer))) {
+         TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
+                "%s: Cannot deallocate TX frames sample timer", __func__));
+   }
 
   /*------------------------------------------------------------------------
     Cleanup TL control block.
@@ -4911,6 +4928,8 @@ WLANTL_GetFrames
           pClientSTA->uIngress_length += uResLen;
           pClientSTA->uBuffThresholdMax = (pClientSTA->uBuffThresholdMax >= uResLen) ?
             (pClientSTA->uBuffThresholdMax - uResLen) : 0;
+
+          pClientSTA->tx_frames ++;
 
         }
         else
@@ -13847,6 +13866,61 @@ void WLANTL_SetDataPktFilter(v_PVOID_t pvosGCtx, uint8_t ucSTAId, bool flag)
    }
 }
 
+/**
+ * WLANTL_ShiftArrByOne() - utility function to shift array by one
+ * @arr: pointer to array
+ * @len: length of the array
+ *
+ * Caller responsibility to provide the correct length of the array
+ * other may leads to bugs.
+ *
+ * Return: void
+ */
+static void WLANTL_ShiftArrByOne(uint32_t *arr, uint8_t len)
+{
+   int i;
+   for (i = 0; i < len - 1; i ++)
+      arr[i] = arr[i + 1];
+   arr[i] = 0;
+}
+
+/**
+ * WLANTL_SampleTx() - collect tx samples
+ * @data: TL context pointer
+ *
+ * This function records the last five tx bytes sent samples
+ * collected after tx_bytes_timer expire.
+ *
+ * Return: void
+ */
+void WLANTL_SampleTx(void *data)
+{
+   WLANTL_CbType* pTLCb = (WLANTL_CbType *)data;
+   WLANTL_STAClientType* pClientSTA = NULL;
+   uint8_t count = pTLCb->sample_count;
+   uint8_t i;
+
+   for ( i = 0; i < WLAN_MAX_STA_COUNT; i++) {
+       if (NULL != pTLCb->atlSTAClients[i] &&
+           pTLCb->atlSTAClients[i]->ucExists) {
+          pClientSTA = pTLCb->atlSTAClients[i];
+
+          if (count > (WLANTL_SAMPLE_COUNT - 1)) {
+              count = WLANTL_SAMPLE_COUNT - 1;
+              pClientSTA->tx_samples_sum -= pClientSTA->tx_sample[0];
+              WLANTL_ShiftArrByOne(pClientSTA->tx_sample, WLANTL_SAMPLE_COUNT);
+          }
+
+          pClientSTA->tx_sample[count] = pClientSTA->tx_frames;
+          pClientSTA->tx_samples_sum += pClientSTA->tx_sample[count];
+          pClientSTA->tx_frames = 0;
+          count++;
+          pTLCb->sample_count = count;
+       }
+   }
+
+   vos_timer_start(&pTLCb->tx_frames_timer, WLANTL_SAMPLE_INTERVAL);
+}
 #ifdef WLAN_FEATURE_RMC
 VOS_STATUS WLANTL_RmcInit
 (
