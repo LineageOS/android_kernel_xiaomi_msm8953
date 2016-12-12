@@ -6876,6 +6876,8 @@ typedef enum {
     WIFI_CONFIG            = 61,
     ANTENNA_DIVERSITY_SELECTION  = 62,
     PER_BASED_ROAMING      = 63,
+    SAP_MODE_WOW           = 64,
+    SAP_OFFLOADS           = 65,
     MAX_FEATURE_SUPPORTED  = 128,
 } placeHolderInCapBitmap;
 
