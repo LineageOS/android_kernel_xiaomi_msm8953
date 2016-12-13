@@ -222,6 +222,7 @@ static placeHolderInCapBitmap supportEnabledFeatures[] =
    ,PER_BASED_ROAMING              //63
    ,SAP_MODE_WOW                   //64
    ,SAP_OFFLOADS                   //65
+   ,SAP_BUFF_ALLOC                 //66
 };
 
 /*-------------------------------------------------------------------------- 
@@ -1713,6 +1714,12 @@ void WDI_TraceHostFWCapabilities(tANI_U32 *capabilityBitmap)
                           snprintf(pCapStr, sizeof("SAP_OFFLOADS"),
                                          "%s", "SAP_OFFLOADS");
                           pCapStr += strlen("SAP_OFFLOADS");
+                          break;
+
+                     case SAP_BUFF_ALLOC:
+                          snprintf(pCapStr, sizeof("SAP_BUFF_ALLOC"),
+                                         "%s", "SAP_BUFF_ALLOC");
+                          pCapStr += strlen("SAP_BUFF_ALLOC");
                           break;
                  }
                  *pCapStr++ = ',';

@@ -6883,6 +6883,7 @@ typedef enum {
     PER_BASED_ROAMING      = 63,
     SAP_MODE_WOW           = 64,
     SAP_OFFLOADS           = 65,
+    SAP_BUFF_ALLOC         = 66,
     MAX_FEATURE_SUPPORTED  = 128,
 } placeHolderInCapBitmap;
 

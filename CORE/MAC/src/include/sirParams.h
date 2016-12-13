@@ -150,6 +150,7 @@ typedef enum {
     * SAP DNS offload.
     */
    SAP_OFFLOADS = 65,
+   SAP_BUFF_ALLOC = 66,
    //MAX_FEATURE_SUPPORTED = 128
 } placeHolderInCapBitmap;
 
