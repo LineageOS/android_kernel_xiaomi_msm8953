@@ -227,7 +227,7 @@ when        who    what, where, why
 #endif
 
 #define WDI_RXBD_MLME_STA_STATUS 0x1
-#define WDI_RXBD_SAP_TX_COMPL_STATS  0x2
+#define WDI_RXBD_SAP_TX_STATS  0x2
 /*--------------------------------------------------------------------------
    BD header macros - used by the data path to get or set various values
    inside the packet BD 

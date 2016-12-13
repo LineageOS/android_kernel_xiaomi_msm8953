@@ -668,7 +668,7 @@ wpt_status WDTS_RxPacket (void *pContext, wpt_packet *pFrame, WDTS_ChannelType c
   wpt_uint8                  isFcBd = 0;
   WDI_DS_LoggingSessionType *pLoggingSession;
   tPerPacketStats             rxStats = {0};
-  wpt_uint32 indType =0;
+  wpt_uint8 indType = 0;
 
   tpSirMacFrameCtl  pMacFrameCtl;
   // Do Sanity checks
@@ -725,6 +725,7 @@ wpt_status WDTS_RxPacket (void *pContext, wpt_packet *pFrame, WDTS_ChannelType c
   bFSF = WDI_RX_BD_GET_ESF(pBDHeader);
   bLSF = WDI_RX_BD_GET_LSF(pBDHeader);
   isFcBd = WDI_RX_FC_BD_GET_FC(pBDHeader);
+  indType = WDI_RX_BD_GET_PER_SAPOFFLOAD(pBDHeader);
 
   DTI_TRACE( DTI_TRACE_LEVEL_INFO,
       "WLAN TL:BD header processing data: HO %d DO %d Len %d HLen %d"
@@ -736,48 +737,50 @@ wpt_status WDTS_RxPacket (void *pContext, wpt_packet *pFrame, WDTS_ChannelType c
 
   if (WDTS_CHANNEL_RX_LOG == channel)
   {
-      indType       = (wpt_uint32)WDI_RX_BD_GET_PER_SAPOFFLOAD(pBDHeader);
+      if (VPKT_SIZE_BUFFER_ALIGNED < (usMPDULen+ucMPDUHOffset))
+      {
+          /* Size of the packet tranferred by the DMA engine is
+           * greater than the the memory allocated for the skb
+           * Recover the SKB  case of length is in same memory page
+           */
+          WPAL_TRACE(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_FATAL,
+                   "Invalid Frame size, might memory corrupted(%d+%d/%d)",
+                   usMPDULen, ucMPDUHOffset, VPKT_SIZE_BUFFER_ALIGNED);
+
+          // Store RXBD,  skb head, tail and skb lenght in circular buffer
+          WDTS_StoreMetaInfo(pFrame, pBDHeader);
+
+          if ((usMPDULen+ucMPDUHOffset) <= WDTS_MAX_PAGE_SIZE)
+          {
+              wpalRecoverTail(pFrame);
+              wpalPacketFree(pFrame);
+          } else {
+              //Recovery may cause adjoining buffer corruption
+              WPAL_BUG(0);
+          }
+
+          return eWLAN_PAL_STATUS_SUCCESS;
+      }
+
+      /* Firmware should send the Header offset as length
+       * of RxBd and data length should be populated to
+       * the length of total data being sent
+       */
+      wpalPacketSetRxLength(pFrame, usMPDULen+ucMPDUHOffset);
+      wpalPacketRawTrimHead(pFrame, ucMPDUHOffset);
+
       if(indType) {
           DTI_TRACE(DTI_TRACE_LEVEL_INFO, "indtype is %d size of pacekt is %lu",
                   indType, sizeof(WDI_RxBdType));
+         if (WDI_RXBD_SAP_TX_STATS == indType) {
+            pRxMetadata->fc = 1;
+            pClientData->receiveFrameCB(pClientData->pCallbackContext, pFrame);
+            return eWLAN_PAL_STATUS_SUCCESS;
+         }
       }
-      else
-      {
-          if (VPKT_SIZE_BUFFER_ALIGNED < (usMPDULen+ucMPDUHOffset))
-          {
-              /* Size of the packet tranferred by the DMA engine is
-               * greater than the the memory allocated for the skb
-               * Recover the SKB  case of length is in same memory page
-               */
-              WPAL_TRACE(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_FATAL,
-                      "Invalid Frame size, might memory corrupted(%d+%d/%d)",
-                      usMPDULen, ucMPDUHOffset, VPKT_SIZE_BUFFER_ALIGNED);
-
-              // Store RXBD,  skb head, tail and skb lenght in circular buffer
-              WDTS_StoreMetaInfo(pFrame, pBDHeader);
-
-              if ((usMPDULen+ucMPDUHOffset) <= WDTS_MAX_PAGE_SIZE)
-              {
-                  wpalRecoverTail(pFrame);
-                  wpalPacketFree(pFrame);
-              } else {
-                  //Recovery may cause adjoining buffer corruption
-                  WPAL_BUG(0);
-              }
-
-              return eWLAN_PAL_STATUS_SUCCESS;
-          }
-
-          /* Firmware should send the Header offset as length
-           * of RxBd and data length should be populated to
-           * the length of total data being sent
-           */
-          wpalPacketSetRxLength(pFrame, usMPDULen+ucMPDUHOffset);
-          wpalPacketRawTrimHead(pFrame, ucMPDUHOffset);
-
+      else {
           // Invoke Rx complete callback
           wpalLogPktSerialize(pFrame);
-
           return eWLAN_PAL_STATUS_SUCCESS;
       }
   }
