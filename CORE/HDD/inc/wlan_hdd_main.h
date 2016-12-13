@@ -540,8 +540,14 @@ typedef struct hdd_wapi_info_s hdd_wapi_info_t;
 #endif /* FEATURE_WLAN_WAPI */
 
 typedef struct beacon_data_s {
-    u8 *head, *tail;
-    int head_len, tail_len;
+    u8 *head;
+    u8 *tail;
+    u8 *proberesp_ies;
+    u8 *assocresp_ies;
+    int head_len;
+    int tail_len;
+    int proberesp_ies_len;
+    int assocresp_ies_len;
     int dtim_period;
 } beacon_data_t;
 
@@ -1450,6 +1456,11 @@ struct hdd_context_s
    
    /* Lock to avoid race condtion during start/stop bss*/
    struct mutex sap_lock;
+
+   struct work_struct  sap_start_work;
+   bool is_sap_restart_required;
+   bool is_ch_avoid_in_progress;
+   vos_spin_lock_t sap_update_info_lock;
 
    /* Lock to avoid race condtion between ROC timeout and
       cancel callbacks*/

@@ -3734,6 +3734,13 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                CFG_SAP_PROBE_RESP_OFFLOAD_DEFAULT,
                CFG_SAP_PROBE_RESP_OFFLOAD_MIN,
                CFG_SAP_PROBE_RESP_OFFLOAD_MAX),
+
+  REG_VARIABLE(CFG_CH_AVOID_SAP_RESTART_NAME, WLAN_PARAM_Integer,
+               hdd_config_t, sap_restrt_ch_avoid,
+               VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+               CFG_CH_AVOID_SAP_RESTART_DEFAULT,
+               CFG_CH_AVOID_SAP_RESTART_MIN,
+               CFG_CH_AVOID_SAP_RESTART_MAX),
 };
 
 /*
@@ -4291,6 +4298,9 @@ static void print_hdd_cfg(hdd_context_t *pHddCtx)
           "Name = [gPERRoamUpThresholdRate] Value = [%u] ",
           pHddCtx->cfg_ini->rateUpThreshold);
 #endif
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+        "Name = [sap_ch_avoid_restart] Value = [%u] ",
+         pHddCtx->cfg_ini->sap_restrt_ch_avoid);
 }
 
 
