@@ -4818,6 +4818,9 @@ void hdd_set_ap_ops( struct net_device *pWlanHostapdDev )
 VOS_STATUS hdd_init_ap_mode( hdd_adapter_t *pAdapter )
 {
     hdd_hostapd_state_t * phostapdBuf;
+#ifdef DHCP_SERVER_OFFLOAD
+    hdd_dhcp_state_t *dhcp_status;
+#endif /* DHCP_SERVER_OFFLOAD */
     struct net_device *dev = pAdapter->dev;
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
     VOS_STATUS status;
@@ -4841,6 +4844,9 @@ VOS_STATUS hdd_init_ap_mode( hdd_adapter_t *pAdapter )
 
     // Allocate the Wireless Extensions state structure
     phostapdBuf = WLAN_HDD_GET_HOSTAP_STATE_PTR( pAdapter );
+#ifdef DHCP_SERVER_OFFLOAD
+    dhcp_status = &pAdapter->dhcp_status;
+#endif /* DHCP_SERVER_OFFLOAD */
 
     spin_lock_init(&pAdapter->sta_hash_lock);
     pAdapter->is_sta_id_hash_initialized = VOS_FALSE;
@@ -4862,7 +4868,10 @@ VOS_STATUS hdd_init_ap_mode( hdd_adapter_t *pAdapter )
 
     // Zero the memory.  This zeros the profile structure.
     memset(phostapdBuf, 0,sizeof(hdd_hostapd_state_t));
-    
+#ifdef DHCP_SERVER_OFFLOAD
+    memset(dhcp_status, 0,sizeof(*dhcp_status));
+#endif /* DHCP_SERVER_OFFLOAD */
+
     // Set up the pointer to the Wireless Extensions state structure
     // NOP
     status = hdd_set_hostapd(pAdapter);
@@ -4877,8 +4886,13 @@ VOS_STATUS hdd_init_ap_mode( hdd_adapter_t *pAdapter )
          VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR, ("ERROR: Hostapd HDD vos event init failed!!"));
          return status;
     }
-    
-
+#ifdef DHCP_SERVER_OFFLOAD
+    status = vos_event_init(&dhcp_status->vos_event);
+    if (!VOS_IS_STATUS_SUCCESS(status)) {
+         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR, ("ERROR: Hostapd HDD vos event init failed!!"));
+         return status;
+    }
+#endif /* DHCP_SERVER_OFFLOAD */
     sema_init(&(WLAN_HDD_GET_AP_CTX_PTR(pAdapter))->semWpsPBCOverlapInd, 1);
  
      // Register as a wireless device

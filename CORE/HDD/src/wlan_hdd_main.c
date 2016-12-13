@@ -8964,6 +8964,15 @@ void wlan_hdd_reset_prob_rspies(hdd_adapter_t* pHostapdAdapter)
     }
 }
 
+VOS_STATUS hdd_cleanup_ap_events(hdd_adapter_t *adapter)
+{
+#ifdef DHCP_SERVER_OFFLOAD
+    vos_event_destroy(&adapter->dhcp_status.vos_event);
+#endif
+    return VOS_STATUS_SUCCESS;
+}
+
+
 VOS_STATUS hdd_stop_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter,
                              const v_BOOL_t bCloseSession )
 {
@@ -9134,6 +9143,7 @@ VOS_STATUS hdd_stop_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter,
           }
 
          //Any softap specific cleanup here...
+         hdd_cleanup_ap_events(pAdapter);
          if (pAdapter->device_mode == WLAN_HDD_P2P_GO) {
             while (pAdapter->is_roc_inprogress) {
                VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,

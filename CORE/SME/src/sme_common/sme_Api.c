@@ -14607,3 +14607,57 @@ eHalStatus sme_set_sap_auth_offload(tHalHandle hHal,
     return (status);
 }
 #endif
+
+#ifdef DHCP_SERVER_OFFLOAD
+/**
+ * sme_set_dhcp_srv_offload() - sme api to set dhcp server offload info
+ * @hal: handle to hal
+ * @dhcp_srv_info: pointer to dhcp server info
+ *
+ * Return: eHalStatus
+ *	eHAL_STATUS_SUCCESS - success or else failure code
+ */
+eHalStatus sme_set_dhcp_srv_offload(tHalHandle hal,
+				    sir_dhcp_srv_offload_info_t *dhcp_srv_info)
+{
+	vos_msg_t vos_msg;
+	eHalStatus status = eHAL_STATUS_SUCCESS;
+	tpAniSirGlobal mac = PMAC_STRUCT(hal);
+	sir_dhcp_srv_offload_info_t *dhcp_serv_info = NULL;
+
+	dhcp_serv_info =
+		vos_mem_malloc(sizeof(*dhcp_serv_info));
+	if (NULL == dhcp_serv_info) {
+		VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+			  "Failed to alloc memory");
+		return VOS_STATUS_E_NOMEM;
+	}
+
+	vos_mem_copy(dhcp_serv_info, dhcp_srv_info,
+		     sizeof(*dhcp_serv_info));
+
+	status = sme_AcquireGlobalLock(&mac->sme);
+	if (eHAL_STATUS_SUCCESS == status) {
+		/* serialize the req through MC thread */
+		vos_msg.type = WDA_SET_DHCP_SERVER_OFFLOAD_REQ;
+		vos_msg.bodyptr = dhcp_serv_info;
+
+		if (!VOS_IS_STATUS_SUCCESS(vos_mq_post_message
+					   (VOS_MODULE_ID_WDA, &vos_msg))) {
+			VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+				  "%s: Not able to post WDA_SET_DHCP_SERVER_OFFLOAD_REQ to WDA!",
+				  __func__);
+			vos_mem_free(dhcp_serv_info);
+			status = eHAL_STATUS_FAILURE;
+		}
+		sme_ReleaseGlobalLock(&mac->sme);
+	} else {
+		VOS_TRACE( VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+			   "%s: sme_AcquireGlobalLock error!",
+			   __func__);
+		vos_mem_free(dhcp_serv_info);
+	}
+
+	return status;
+}
+#endif /* DHCP_SERVER_OFFLOAD */

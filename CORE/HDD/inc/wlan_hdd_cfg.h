@@ -47,6 +47,12 @@
 #include <vos_types.h>
 #include <csrApi.h>
 
+#ifdef DHCP_SERVER_OFFLOAD
+#define IPADDR_NUM_ENTRIES     (4)
+#define IPADDR_STRING_LENGTH   (16)
+#define DHCP_START_POOL_ADDRESS 100
+#endif /* DHCP_SERVER_OFFLOAD */
+
 //Number of items that can be configured
 #define MAX_CFG_INI_ITEMS   512
 
@@ -2743,6 +2749,32 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_DISABLE_BAR_WAKEUP_HOST_MAX         1
 #define CFG_DISABLE_BAR_WAKEUP_HOST_DEFAULT     0
 
+#ifdef DHCP_SERVER_OFFLOAD
+/*
+ * Enable/Disable DHCP Server Offload
+ * Default: Disable
+ */
+#define CFG_DHCP_SERVER_OFFLOAD_SUPPORT_NAME      "gDHCPServerOffloadEnable"
+#define CFG_DHCP_SERVER_OFFLOAD_SUPPORT_MIN       ( 0 )
+#define CFG_DHCP_SERVER_OFFLOAD_SUPPORT_MAX       ( 1 )
+#define CFG_DHCP_SERVER_OFFLOAD_SUPPORT_DEFAULT   ( 1 )
+
+/* Max number of DHCP clients to be supported */
+#define CFG_DHCP_SERVER_OFFLOAD_NUM_CLIENT_NAME     "gDHCPMaxNumClients"
+#define CFG_DHCP_SERVER_OFFLOAD_NUM_CLIENT_MIN      ( 1 )
+#define CFG_DHCP_SERVER_OFFLOAD_NUM_CLIENT_MAX      ( 8 )
+#define CFG_DHCP_SERVER_OFFLOAD_NUM_CLIENT_DEFAULT  ( 8 )
+
+/* Start address of the pool */
+#define CFG_DHCP_SERVER_OFFLOAD_START_LSB_NAME     "gDHCPStartLsb"
+#define CFG_DHCP_SERVER_OFFLOAD_START_LSB_MIN      ( 100 )
+#define CFG_DHCP_SERVER_OFFLOAD_START_LSB_MAX      ( 255 )
+#define CFG_DHCP_SERVER_OFFLOAD_START_LSB_DEFAULT  ( 100 )
+
+/* DHCP Server IP*/
+#define CFG_DHCP_SERVER_IP_NAME     "gDHCPServerIP"
+#define CFG_DHCP_SERVER_IP_DEFAULT  "192,168,1,2"
+#endif /* DHCP_SERVER_OFFLOAD */
 
 /*
  * gExtScanConcMode is used to manage EXT Scan during concurrency
@@ -3465,6 +3497,12 @@ typedef struct
    v_U8_t                      max_chan_for_dwell_time_cfg;
    v_U16_t                     tdls_enable_defer_time;
    v_U8_t                      boffset_correction_enable;
+#ifdef DHCP_SERVER_OFFLOAD
+   v_BOOL_t                    enable_dhcp_srv_offload;
+   v_U32_t                     dhcp_max_num_clients;
+   v_U8_t                      dhcp_srv_ip[IPADDR_STRING_LENGTH];
+   v_U8_t                      dhcp_start_lsb;
+#endif  /* DHCP_SERVER_OFFLOAD */
    uint32_t                    enable_edca_params;
    uint32_t                    edca_vo_cwmin;
    uint32_t                    edca_vi_cwmin;
@@ -3498,6 +3536,9 @@ VOS_STATUS hdd_cfg_get_config(hdd_context_t *pHddCtx, char *pBuf, int buflen);
 eCsrPhyMode hdd_cfg_xlate_to_csr_phy_mode( eHddDot11Mode dot11Mode );
 VOS_STATUS hdd_execute_config_command(hdd_context_t *pHddCtx, char *command);
 tANI_BOOLEAN hdd_is_okc_mode_enabled(hdd_context_t *pHddCtx);
+
+VOS_STATUS hdd_string_to_u8_array(char *str, tANI_U8 *intArray, tANI_U8 *len,
+				  tANI_U8 intArrayMaxLen);
 
 #define VAR_OFFSET( _Struct, _Var ) (offsetof(_Struct, _Var))
 #define VAR_SIZE( _Struct, _Var ) (sizeof(((_Struct *)0)->_Var))

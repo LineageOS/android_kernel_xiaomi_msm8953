@@ -9173,6 +9173,114 @@ static int wlan_hdd_cfg80211_set_channel( struct wiphy *wiphy,
     return ret;
 }
 
+#ifdef DHCP_SERVER_OFFLOAD
+void hdd_dhcp_server_offload_done(void *fw_dhcp_srv_offload_cb_context,
+				  VOS_STATUS status)
+{
+	hdd_adapter_t* adapter = (hdd_adapter_t*)fw_dhcp_srv_offload_cb_context;
+
+	ENTER();
+
+	if (NULL == adapter)
+	{
+		hddLog(VOS_TRACE_LEVEL_ERROR,
+		       "%s: adapter is NULL",__func__);
+		return;
+	}
+
+	adapter->dhcp_status.dhcp_offload_status = status;
+	vos_event_set(&adapter->dhcp_status.vos_event);
+	return;
+}
+
+/**
+ * wlan_hdd_set_dhcp_server_offload() - set dhcp server offload
+ * @hostapd_adapter: pointer to hostapd adapter.
+ *
+ * Return: None
+ */
+static VOS_STATUS wlan_hdd_set_dhcp_server_offload(hdd_adapter_t *hostapd_adapter)
+{
+	hdd_context_t *hdd_ctx = WLAN_HDD_GET_CTX(hostapd_adapter);
+	sir_dhcp_srv_offload_info dhcp_srv_info;
+	tANI_U8 num_entries = 0;
+	tANI_U8 srv_ip[IPADDR_NUM_ENTRIES];
+	tANI_U8 num;
+	tANI_U32 temp;
+	VOS_STATUS ret;
+
+	ENTER();
+
+	ret = wlan_hdd_validate_context(hdd_ctx);
+	if (0 != ret)
+		return VOS_STATUS_E_INVAL;
+
+	/* Prepare the request to send to SME */
+	dhcp_srv_info = vos_mem_malloc(sizeof(*dhcp_srv_info));
+	if (NULL == dhcp_srv_info) {
+		hddLog(VOS_TRACE_LEVEL_ERROR,
+		       "%s: could not allocate tDhcpSrvOffloadInfo!", __func__);
+		return VOS_STATUS_E_NOMEM;
+	}
+
+	vos_mem_zero(dhcp_srv_info, sizeof(*dhcp_srv_info));
+
+	dhcp_srv_info->bssidx = hostapd_adapter->sessionId;
+	dhcp_srv_info->dhcp_srv_offload_enabled = TRUE;
+	dhcp_srv_info->dhcp_client_num = hdd_ctx->cfg_ini->dhcp_max_num_clients;
+	dhcp_srv_info->start_lsb = hdd_ctx->cfg_ini->dhcp_start_lsb;
+	dhcp_srv_info->dhcp_offload_callback = hdd_dhcp_server_offload_done;
+	dhcp_srv_info->dhcp_server_offload_cb_context = hostapd_adapter;
+
+	hdd_string_to_u8_array(hdd_ctx->cfg_ini->dhcp_srv_ip,
+			       srv_ip,
+			       &num_entries,
+			       IPADDR_NUM_ENTRIES);
+	if (num_entries != IPADDR_NUM_ENTRIES) {
+		hddLog(VOS_TRACE_LEVEL_ERROR,
+		       "%s: incorrect IP address (%s) assigned for DHCP server!",
+		       __func__, hdd_ctx->cfg_ini->dhcp_srv_ip);
+		vos_mem_free(dhcp_srv_info);
+		return VOS_STATUS_E_FAILURE;
+	}
+
+	if ((srv_ip[0] >= 224) && (srv_ip[0] <= 239)) {
+		hddLog(VOS_TRACE_LEVEL_ERROR,
+		       "%s: invalid IP address (%s)! It could NOT be multicast IP address!",
+		       __func__, hdd_ctx->cfg_ini->dhcp_srv_ip);
+		vos_mem_free(dhcp_srv_info);
+		return VOS_STATUS_E_FAILURE;
+	}
+
+	if (srv_ip[IPADDR_NUM_ENTRIES-1] >= DHCP_START_POOL_ADDRESS) {
+		hddLog(VOS_TRACE_LEVEL_ERROR,
+		       "%s: invalid IP address (%s)! The last field must be less than 100!",
+		       __func__, hdd_ctx->cfg_ini->dhcp_srv_ip);
+		vos_mem_free(dhcp_srv_info);
+		return VOS_STATUS_E_FAILURE;
+	}
+
+	for (num = 0; num < num_entries; num++) {
+		temp = srv_ip[num];
+		dhcp_srv_info->dhcp_srv_ip |= (temp << (8 * num));
+	}
+
+	if (eHAL_STATUS_SUCCESS !=
+	    sme_set_dhcp_srv_offload(hdd_ctx->hHal, dhcp_srv_info)) {
+		hddLog(VOS_TRACE_LEVEL_ERROR,
+		       "%s: sme_set_dhcp_srv_offload fail!", __func__);
+		vos_mem_free(dhcp_srv_info);
+		return VOS_STATUS_E_FAILURE;
+	}
+
+	hddLog(VOS_TRACE_LEVEL_INFO_HIGH,
+	       "%s: enable DHCP Server offload successfully!", __func__);
+
+	vos_mem_free(dhcp_srv_info);
+	return 0;
+}
+#endif /* DHCP_SERVER_OFFLOAD */
+
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3,4,0))
 static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
                             struct beacon_parameters *params)
@@ -9658,6 +9766,29 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
     /* Initialize WMM configuation */
     hdd_wmm_init(pHostapdAdapter);
     wlan_hdd_incr_active_session(pHddCtx, pHostapdAdapter->device_mode);
+
+#ifdef DHCP_SERVER_OFFLOAD
+    /* set dhcp server offload */
+    if (iniConfig->enable_dhcp_srv_offload &&
+        sme_IsFeatureSupportedByFW(SAP_OFFLOADS)) {
+        status = wlan_hdd_set_dhcp_server_offload(pHostapdAdapter);
+        if (!VOS_IS_STATUS_SUCCESS(status))
+        {
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                      ("HDD DHCP Server Offload Failed!!"));
+            return -EINVAL;
+        }
+        vos_event_reset(&pHostapdAdapter->dhcp_status.vos_event);
+        status = vos_wait_single_event(&pHostapdAdapter->dhcp_status.vos_event, 2000);
+        if (!VOS_IS_STATUS_SUCCESS(status) || pHostapdAdapter->dhcp_status.dhcp_offload_status)
+        {
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                     ("ERROR: DHCP HDD vos wait for single_event failed!! %d"),
+                     pHostapdAdapter->dhcp_status.dhcp_offload_status);
+            return -EINVAL;
+        }
+    }
+#endif /* DHCP_SERVER_OFFLOAD */
 
 #ifdef WLAN_FEATURE_P2P_DEBUG
     if (pHostapdAdapter->device_mode == WLAN_HDD_P2P_GO)

@@ -3793,6 +3793,9 @@ typedef void(*FWLoggingInitReqCb)(void *fwlogInitCbContext, tAniLoggingInitRsp *
 typedef void ( *tGetFrameLogCallback) (void *pContext);
 typedef void(*RssiMonitorReqCb)(void *rssiMonitorCbContext, VOS_STATUS status);
 typedef void(*pktFilterReqCb)(void *data, tANI_U32 status);
+typedef void(*dhcp_offload_req_cb)(void *rssiMonitorCbContext,
+				   VOS_STATUS status);
+
 
 typedef struct sAniGetFrameLogReq
 {
@@ -5566,6 +5569,26 @@ typedef PACKED_PRE struct PACKED_POST
     tSirWifiScanResult   bssHotlist[1];
 } tSirEXTScanHotlistMatch, *tpSirEXTScanHotlistMatch;
 
+#ifdef DHCP_SERVER_OFFLOAD
+/**
+ * sir_dhcp_srv_offload_info_t - dhcp server offload info
+ * @bssidx: bss index
+ * @dhcp_srv_offload_enabled: enable or disable
+ * @dhcp_client_num: number of clients supported
+ * @dhcp_srv_ip: server ip address
+ * @start_lsb: lsb of start address of dhcp pool
+ */
+typedef struct
+{
+    tANI_U8 bssidx;
+    tANI_U32 dhcp_srv_offload_enabled;
+    tANI_U32 dhcp_client_num;
+    tANI_U32 dhcp_srv_ip;
+    tANI_U32 start_lsb;
+    dhcp_offload_req_cb    dhcp_offload_callback;
+    void                   *dhcp_server_offload_cb_context;
+} sir_dhcp_srv_offload_info_t, *sir_dhcp_srv_offload_info;
+#endif /* DHCP_SERVER_OFFLOAD */
 
 typedef PACKED_PRE struct PACKED_POST
 {

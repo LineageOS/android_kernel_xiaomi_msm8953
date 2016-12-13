@@ -3980,4 +3980,9 @@ eHalStatus sme_set_sap_auth_offload(tHalHandle hHal,
         struct tSirSapOffloadInfo *sap_auth_offload_info);
 
 #endif /* SAP_AUTH_OFFLOAD */
+#ifdef DHCP_SERVER_OFFLOAD
+eHalStatus sme_set_dhcp_srv_offload(tHalHandle hal,
+				    sir_dhcp_srv_offload_info_t *dhcp_srv_info);
+#endif /* DHCP_SERVER_OFFLOAD */
+
 #endif //#if !defined( __SME_API_H )

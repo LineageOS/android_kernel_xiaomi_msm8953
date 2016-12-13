@@ -494,6 +494,8 @@ typedef enum
   WDI_PER_ROAM_SCAN_TRIGGER_REQ                  = 117,
 #endif
 
+  WDI_DHCP_SERVER_OFFLOAD_REQ                    = 118,
+
   WDI_MAX_REQ,
 
   /*Send a suspend Indication down to HAL*/
@@ -873,6 +875,7 @@ typedef enum
   WDI_PER_ROAM_SCAN_OFFLOAD_RSP                  = 116,
   WDI_PER_ROAM_SCAN_TRIGGER_RSP                  = 117,
 #endif
+  WDI_DHCP_SERVER_OFFLOAD_RSP                    = 118,
 
   /*-------------------------------------------------------------------------
     Indications
@@ -6695,5 +6698,22 @@ WDI_ProcessSapAuthOffloadInd
   WDI_EventInfoType*     pEventData
  );
 #endif
+
+#ifdef DHCP_SERVER_OFFLOAD
+WDI_Status
+wdi_dhcp_server_offload_req
+(
+  WDI_ControlBlockType *wdi_ctx,
+  WDI_EventInfoType *event_data
+);
+
+WDI_Status
+wdi_dhcp_server_offload_rsp
+(
+  WDI_ControlBlockType *wdi_ctx,
+  WDI_EventInfoType *event_data
+);
+#endif /* DHCP_SERVER_OFFLOAD */
+
 #endif /*WLAN_QCT_WDI_I_H*/
 

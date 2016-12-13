@@ -906,6 +906,9 @@ tANI_U8* macTraceGetWdaMsgString( tANI_U16 wdaMsg )
         CASE_RETURN_STRING(WDA_MON_STOP_REQ);
         CASE_RETURN_STRING(WDA_SPOOF_MAC_ADDR_REQ);
         CASE_RETURN_STRING(WDA_LOST_LINK_PARAMS_IND);
+#ifdef DHCP_SERVER_OFFLOAD
+        CASE_RETURN_STRING(WDA_SET_DHCP_SERVER_OFFLOAD_REQ);
+#endif /* DHCP_SERVER_OFFLOAD */
         default:
             return((tANI_U8*) "UNKNOWN" );
             break;
