@@ -2451,7 +2451,8 @@ eHalStatus pmcEnterWowl (
        return eHAL_STATUS_FAILURE;
    }
 
-   if (!(CSR_IS_INFRA_AP(pSession->pCurRoamProfile)))
+   if ((!(CSR_IS_INFRA_AP(pSession->pCurRoamProfile)))
+                 && !(vos_get_concurrency_mode()& VOS_STA_SAP))
    {
       /* Check if BMPS is enabled. */
       if (!pMac->pmc.bmpsEnabled)

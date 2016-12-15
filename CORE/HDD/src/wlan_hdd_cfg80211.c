@@ -9848,6 +9848,12 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
     }
 
     set_bit(SOFTAP_BSS_STARTED, &pHostapdAdapter->event_flags);
+    if (WLANSAP_get_sessionId(pVosContext, &pHostapdAdapter->sessionId) !=
+                         VOS_STATUS_SUCCESS)
+    {
+        hddLog(LOGE,FL("Fail to get Softap sessionID"));
+        VOS_ASSERT(0);
+    }
     /* Initialize WMM configuation */
     hdd_wmm_init(pHostapdAdapter);
     wlan_hdd_incr_active_session(pHddCtx, pHostapdAdapter->device_mode);
@@ -19740,8 +19746,7 @@ int __wlan_hdd_cfg80211_resume_wlan(struct wiphy *wiphy)
     MTRACE(vos_trace(VOS_MODULE_ID_HDD, TRACE_CODE_HDD_CFG80211_RESUME_WLAN,
                      NO_SESSION, pHddCtx->isWiphySuspended));
 
-    if ((VOS_STA_SAP_MODE == hdd_get_conparam()) &&
-        pHddCtx->is_ap_mode_wow_supported)
+    if (pHddCtx->is_ap_mode_wow_supported)
     {
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                   "%s: Resume SoftAP", __func__);
@@ -19832,8 +19837,7 @@ int __wlan_hdd_cfg80211_suspend_wlan(struct wiphy *wiphy,
         return ret;
     }
 
-   if ((VOS_STA_SAP_MODE == hdd_get_conparam()) &&
-       (pHddCtx->is_ap_mode_wow_supported)) {
+    if (pHddCtx->is_ap_mode_wow_supported) {
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                   "%s: Suspend SoftAP", __func__);
          hdd_set_wlan_suspend_mode(true);
