@@ -2951,6 +2951,25 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_DISABLE_SCAN_DURING_SCO_DEFAULT (0)
 
 
+/*
+ * maximum interval (in seconds) for a
+ * single scan plan supported by the device.
+ */
+#define CFG_MAX_SCHED_SCAN_PLAN_INT_NAME       "g_max_sched_scan_plan_int"
+#define CFG_MAX_SCHED_SCAN_PLAN_INT_MIN        (1)
+#define CFG_MAX_SCHED_SCAN_PLAN_INT_MAX        (7200)
+#define CFG_MAX_SCHED_SCAN_PLAN_INT_DEFAULT    (3600)
+
+/*
+ * maximum number of iterations for a single
+ * scan plan supported by the device.
+ */
+#define CFG_MAX_SCHED_SCAN_PLAN_ITRNS_NAME       "g_max_sched_scan_plan_itrns"
+#define CFG_MAX_SCHED_SCAN_PLAN_ITRNS_MIN        (1)
+#define CFG_MAX_SCHED_SCAN_PLAN_ITRNS_MAX        (100)
+#define CFG_MAX_SCHED_SCAN_PLAN_ITRNS_DEFAULT    (10)
+
+
 /*--------------------------------------------------------------------------- 
   Type declarations
   -------------------------------------------------------------------------*/ 
@@ -3524,6 +3543,8 @@ typedef struct
    uint32_t                    sap_auth_offload_sec_type;
    uint8_t                     sap_auth_offload_key[WLAN_PSK_STRING_LENGTH];
 #endif /* SAP_AUTH_OFFLOAD */
+   uint32_t                    max_sched_scan_plan_interval;
+   uint32_t                    max_sched_scan_plan_iterations;
 } hdd_config_t;
 
 /*--------------------------------------------------------------------------- 
