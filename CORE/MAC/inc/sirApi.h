@@ -3767,6 +3767,12 @@ typedef struct sSirWlanSetRxpFilters
     tANI_U8 setMcstBcstFilter;
 }tSirWlanSetRxpFilters,*tpSirWlanSetRxpFilters;
 
+
+typedef struct sSirUpdateCfgIntParam
+{
+    tANI_U32 cfgId;
+}tSirUpdateCfgIntParam,*tpSirUpdateCfgIntParam;
+
 typedef struct
 {
   //FW mail box address

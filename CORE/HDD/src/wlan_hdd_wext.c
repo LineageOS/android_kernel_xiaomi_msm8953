@@ -8663,6 +8663,8 @@ static int __iw_set_dynamic_mcbc_filter(struct net_device *dev,
                 pHddCtx->sus_res_mcastbcast_filter =
                          pRequest->mcastBcastFilterSetting;
             }
+            /* mc add list cfg item configuration in fwr */
+            hdd_mc_addr_list_cfg_config(pHddCtx, true);
         }
     }
 
@@ -8753,6 +8755,9 @@ static int __iw_clear_dynamic_mcbc_filter(struct net_device *dev,
             pHddCtx->sus_res_mcastbcast_filter =
                      pHddCtx->cfg_ini->mcastBcastFilterSetting;
         }
+
+        /* mc add list cfg item configuration in fwr */
+        hdd_mc_addr_list_cfg_config(pHddCtx, true);
 
     }
     EXIT();
