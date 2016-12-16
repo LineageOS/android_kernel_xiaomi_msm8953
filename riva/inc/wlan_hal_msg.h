@@ -608,7 +608,14 @@ typedef enum
    WLAN_HAL_DHCP_SERVER_OFFLOAD_REQ          = 339,
    WLAN_HAL_DHCP_SERVER_OFFLOAD_RSP          = 340,
    WLAN_HAL_SAP_AUTH_OFFLOAD_IND             = 341,
-
+   WLAN_HAL_MDNS_ENABLE_OFFLOAD_REQ          = 342,
+   WLAN_HAL_MDNS_ENABLE_OFFLOAD_RSP          = 343,
+   WLAN_HAL_MDNS_FQDN_OFFLOAD_REQ            = 344,
+   WLAN_HAL_MDNS_FQDN_OFFLOAD_RSP            = 345,
+   WLAN_HAL_MDNS_RESP_OFFLOAD_REQ            = 346,
+   WLAN_HAL_MDNS_RESP_OFFLOAD_RSP            = 347,
+   WLAN_HAL_MDNS_STATS_OFFLOAD_REQ           = 348,
+   WLAN_HAL_MDNS_STATS_OFFLOAD_RSP           = 349,
 
    WLAN_HAL_MSG_MAX = WLAN_HAL_MSG_TYPE_MAX_ENUM_SIZE
 }tHalHostMsgType;
@@ -9361,6 +9368,132 @@ typedef PACKED_PRE struct PACKED_POST
    tHalMsgHeader header;
    hal_dhcp_srv_offload_rsp_param_t dhcp_srv_offload_rsp_params;
 } hal_dhcp_srv_offload_rsp_msg_t, *hal_dhcp_srv_offload_rsp_msg;
+
+/*---------------------------------------------------------------------------
+ * WLAN_HAL_MDNS_ENABLE_OFFLOAD_REQ
+ *--------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U8 bss_idx;
+   tANI_U32 enable;
+} hal_mdns_enable_offload_req_param_t, *hal_mdns_enable_offload_req_params;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   hal_mdns_enable_offload_req_param_t mdns_enable_req_params;
+} hal_mdns_enable_offload_req_msg_t;
+
+/*---------------------------------------------------------------------------
+ * WLAN_HAL_MDNS_ENABLE_OFFLOAD_RSP
+ *--------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U32 status;
+} hal_mdns_enable_offload_rsp_param_t, *hal_mdns_enable_offload_rsp_params;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   hal_mdns_enable_offload_rsp_param_t mdns_enable_rsp_params;
+} hal_mdns_enable_offload_rsp_msg_t, *hal_mdns_enable_offload_rsp_msg;
+
+/*---------------------------------------------------------------------------
+ * WLAN_HAL_MDNS_FQDN_OFFLOAD_REQ
+ *--------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U8 bss_idx;
+   tANI_U32 type;
+   tANI_U32 fqdn_len;
+   tANI_U8 fqdn_data[1];
+} hal_mdns_fqdn_offload_req_param_t, *hal_mdns_fqdn_offload_req_params;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   hal_mdns_fqdn_offload_req_param_t mdns_fqdn_req_params;
+} hal_mdns_fqdn_offload_req_msg_t;
+
+/*---------------------------------------------------------------------------
+ * WLAN_HAL_MDNS_FQDN_OFFLOAD_RSP
+ *--------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U32 status;
+} hal_mdns_fqdn_offload_rsp_param_t, *hal_mdns_fqdn_offload_rsp_params;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   hal_mdns_fqdn_offload_rsp_param_t mdns_fqdn_rsp_params;
+} hal_mdns_fqdn_offload_rsp_msg_t, *hal_mdns_fqdn_offload_rsp_msg;
+
+/*---------------------------------------------------------------------------
+ * WLAN_HAL_MDNS_RESP_OFFLOAD_REQ
+ *--------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U8 bss_idx;
+   tANI_U32 ar_count;
+   tANI_U32 resp_len;
+   tANI_U8 resp_data[1];
+} hal_mdns_resp_offload_req_param_t, *hal_mdns_resp_offload_req_params;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   hal_mdns_resp_offload_req_param_t mdns_resp_req_params;
+} hal_mdns_resp_offload_req_msg_t;
+
+/*---------------------------------------------------------------------------
+ * WLAN_HAL_MDNS_RESP_OFFLOAD_RSP
+ *--------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U32 status;
+} hal_mdns_resp_offload_rsp_param_t, *hal_mdns_resp_offload_rsp_params;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   hal_mdns_resp_offload_rsp_param_t mdns_rsp_params;
+} hal_mdns_resp_offload_rsp_msg_t, *hal_mdns_resp_offload_rsp_msg;
+
+/*---------------------------------------------------------------------------
+ * WLAN_HAL_MDNS_STATS_OFFLOAD_REQ
+ *--------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U8 bss_idx;
+} hal_mdns_stats_offload_req_param_t, *hal_mdns_stats_offload_req_params;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   hal_mdns_stats_offload_req_param_t mdns_stats_req_params;
+} hal_mdns_stats_offload_req_msg_t;
+
+/*---------------------------------------------------------------------------
+ * WLAN_HAL_MDNS_STATS_OFFLOAD_RSP
+ *--------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U8 bss_idx;
+   tANI_U32 current_ts;
+   tANI_U32 last_query_ts;
+   tANI_U32 last_rsp_ts;
+   tANI_U32 tot_queries;
+   tANI_U32 tot_matches;
+   tANI_U32 tot_rsp;
+   tANI_U32 status;
+} hal_mdns_stats_offload_rsp_param_t, *hal_mdns_stats_offload_rsp_params;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   hal_mdns_stats_offload_rsp_param_t mdns_stats_rsp_params;
+} hal_mdns_stats_offload_rsp_msg_t, *hal_mdns_stats_offload_rsp_msg;
 
 #if defined(__ANI_COMPILER_PRAGMA_PACK_STACK)
 #pragma pack(pop)
