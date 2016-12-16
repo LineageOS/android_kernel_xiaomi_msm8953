@@ -3793,6 +3793,9 @@ typedef void(*FWLoggingInitReqCb)(void *fwlogInitCbContext, tAniLoggingInitRsp *
 typedef void ( *tGetFrameLogCallback) (void *pContext);
 typedef void(*RssiMonitorReqCb)(void *rssiMonitorCbContext, VOS_STATUS status);
 typedef void(*pktFilterReqCb)(void *data, tANI_U32 status);
+typedef void(*dhcp_offload_req_cb)(void *rssiMonitorCbContext,
+				   VOS_STATUS status);
+
 
 typedef struct sAniGetFrameLogReq
 {
@@ -5566,6 +5569,26 @@ typedef PACKED_PRE struct PACKED_POST
     tSirWifiScanResult   bssHotlist[1];
 } tSirEXTScanHotlistMatch, *tpSirEXTScanHotlistMatch;
 
+#ifdef DHCP_SERVER_OFFLOAD
+/**
+ * sir_dhcp_srv_offload_info_t - dhcp server offload info
+ * @bssidx: bss index
+ * @dhcp_srv_offload_enabled: enable or disable
+ * @dhcp_client_num: number of clients supported
+ * @dhcp_srv_ip: server ip address
+ * @start_lsb: lsb of start address of dhcp pool
+ */
+typedef struct
+{
+    tANI_U8 bssidx;
+    tANI_U32 dhcp_srv_offload_enabled;
+    tANI_U32 dhcp_client_num;
+    tANI_U32 dhcp_srv_ip;
+    tANI_U32 start_lsb;
+    dhcp_offload_req_cb    dhcp_offload_callback;
+    void                   *dhcp_server_offload_cb_context;
+} sir_dhcp_srv_offload_info_t, *sir_dhcp_srv_offload_info;
+#endif /* DHCP_SERVER_OFFLOAD */
 
 typedef PACKED_PRE struct PACKED_POST
 {
@@ -6063,5 +6086,119 @@ typedef struct {
    tANI_U32  value;
 } tModifyRoamParamsReqParams, * tpModifyRoamParamsReqParams;
 
+#ifdef SAP_AUTH_OFFLOAD
+/* 80211 Pre-Share Key length */
+#define SIR_PSK_MAX_LEN   64
+
+/**
+ * enum tSirSecurityType - definition for Software AP Auth Offload
+ *                         Security Type
+ * @eSIR_OFFLOAD_NONE: None type security
+ * @eSIR_OFFLOAD_WPA2PSK_CCMP: WPA2-PSK
+ */
+enum tSirSecurityType
+{
+    eSIR_OFFLOAD_NONE,
+    eSIR_OFFLOAD_WPA2PSK_CCMP,
+};
+
+/**
+ * struct tSirSapOffloadInfo - Structure to store sap offload related params.
+ * @macAddr: Self mac address
+ * @sap_auth_offload_enable: tell if sap auth offload is enabled or not.
+ * @sap_auth_offload_sec_type: tells security type
+ *        0 - none
+ *        1 - WPA1-PSK
+ * @key_len: psk key length
+ * @key: psk key.
+ */
+struct tSirSapOffloadInfo
+{
+    tSirMacAddr macAddr;
+    bool sap_auth_offload_enable;
+    uint32_t sap_auth_offload_sec_type;
+    uint32_t key_len;
+    uint8_t key[SIR_PSK_MAX_LEN];
+};
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    /** staId returned from firmware for each STA association to SAP */
+    tANI_U8 staIdx;
+    /** bssIdx on which the STA is added */
+    tANI_U8 bssIdx;
+    /** DPU desc index of this station */
+    tANI_U8 dpuIndex;
+    /** Bcast DPU index of this station */
+    tANI_U8 bcastDpuIndex;
+    /** Bcast DPU Management index of this station */
+    tANI_U8 bcastMgmtDpuIdx;
+
+    tANI_U8 ucUcastSig;
+
+    tANI_U8 ucBcastSig;
+
+    tANI_U8 ucMgmtSig;
+    /** aid (association id) of this station */
+    tANI_U32 assoc_id;
+    /** peer station's mac addr */
+    tSirMacAddr peer_macaddr;
+    /** length of association request frame */
+    tANI_U32 data_len;
+    /* Following this structure is the byte stream of a whole
+     * association request frame of length data_len
+     */
+    tANI_U8 bufp[1];
+} tSapOfldAddStaIndMsg, *tpSapOfldAddStaIndMsg;
+
+typedef enum
+{
+    SAP_OFL_DEL_STA_FLAG_NONE       = 0x00,
+    SAP_OFL_DEL_STA_FLAG_RECONNECT  = 0x01,
+} eSapOfldDelStaFlags;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tANI_U32 staIdx;
+    /** bssIdx on which the STA is added */
+    tANI_U32 bssIdx;
+    /** aid (association id) of this station */
+    tANI_U32 assoc_id;
+    /** peer station's mac addr */
+    tSirMacAddr peer_macaddr;
+    /** disassociation reason */
+    tANI_U32 reason;
+    /** flags - wmi_sap_ofl_del_sta_flags */
+    tANI_U32 flags;
+} tSapOfldDelStaIndMsg, *tpSapOfldDelStaIndMsg;
+
+typedef enum
+{
+    SAP_OFFLOAD_ADD_STA_IND       = 0x00,
+    SAP_OFFLOAD_DEL_STA_IND       = 0x01,
+} eSapOfldIndType;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    /* indType will be from eSapOfldIndType */
+    tANI_U32 indType;
+    /* size of this array will be depend on the indication type.
+     * Indication type can be either ADD_STA_IND or DEL_STA_IND.
+     * If indication type is ADD_STA_IND, size of this indication
+     * array will be sizeof(tSapOfldDelStaIndMsg)
+     * and if indication type is DEL_STA_IND, size of this indication
+     * arrary will be sizeof(tSapOfldAddStaIndMsg)
+     */
+    tANI_U8         indication[1];
+} tSapOfldInd;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tANI_U32 num_indications;
+    /* size of this array will be depend on the number of indications.*/
+    tSapOfldInd indications[1];
+}tSapOfldIndications;
+
+#endif /* SAP_AUTH_OFFLOAD */
 
 #endif /* __SIR_API_H */

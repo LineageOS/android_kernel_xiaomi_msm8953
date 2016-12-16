@@ -494,6 +494,8 @@ typedef enum
   WDI_PER_ROAM_SCAN_TRIGGER_REQ                  = 117,
 #endif
 
+  WDI_DHCP_SERVER_OFFLOAD_REQ                    = 118,
+
   WDI_MAX_REQ,
 
   /*Send a suspend Indication down to HAL*/
@@ -557,8 +559,11 @@ typedef enum
   WDI_ANTENNA_DIVERSITY_SELECTION_REQ = WDI_MAX_REQ + 21,
   WDI_MODIFY_ROAM_PARAMS_IND = WDI_MAX_REQ + 22,
   WDI_SET_ALLOWED_ACTION_FRAMES_IND = WDI_MAX_REQ + 23,
+#ifdef SAP_AUTH_OFFLOAD
+  WDI_PROCESS_SAP_AUTH_OFFLOAD_IND = WDI_MAX_REQ +24,
+#endif
 
-  WDI_MAX_UMAC_IND = WDI_MAX_REQ + 24
+  WDI_MAX_UMAC_IND = WDI_MAX_REQ + 25
 
 }WDI_RequestEnumType;
 
@@ -870,6 +875,7 @@ typedef enum
   WDI_PER_ROAM_SCAN_OFFLOAD_RSP                  = 116,
   WDI_PER_ROAM_SCAN_TRIGGER_RSP                  = 117,
 #endif
+  WDI_DHCP_SERVER_OFFLOAD_RSP                    = 118,
 
   /*-------------------------------------------------------------------------
     Indications
@@ -6676,5 +6682,38 @@ WDI_ProcessSetAllowedActionFramesInd
   WDI_ControlBlockType*  pWDICtx,
   WDI_EventInfoType*     pEventData
 );
+#ifdef SAP_AUTH_OFFLOAD
+/**
+ *  WDI_ProcessSapAuthOffloadInd - Process Set sap offload enable
+ *                                         command
+ *
+ *  @pWDICtx: pointer to the WLAN DAL context
+ *  @pEventData: pointer to the event information structure
+ *
+ */
+WDI_Status
+WDI_ProcessSapAuthOffloadInd
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+ );
+#endif
+
+#ifdef DHCP_SERVER_OFFLOAD
+WDI_Status
+wdi_dhcp_server_offload_req
+(
+  WDI_ControlBlockType *wdi_ctx,
+  WDI_EventInfoType *event_data
+);
+
+WDI_Status
+wdi_dhcp_server_offload_rsp
+(
+  WDI_ControlBlockType *wdi_ctx,
+  WDI_EventInfoType *event_data
+);
+#endif /* DHCP_SERVER_OFFLOAD */
+
 #endif /*WLAN_QCT_WDI_I_H*/
 

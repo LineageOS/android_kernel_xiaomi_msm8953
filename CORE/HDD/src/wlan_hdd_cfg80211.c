@@ -9173,6 +9173,114 @@ static int wlan_hdd_cfg80211_set_channel( struct wiphy *wiphy,
     return ret;
 }
 
+#ifdef DHCP_SERVER_OFFLOAD
+void hdd_dhcp_server_offload_done(void *fw_dhcp_srv_offload_cb_context,
+				  VOS_STATUS status)
+{
+	hdd_adapter_t* adapter = (hdd_adapter_t*)fw_dhcp_srv_offload_cb_context;
+
+	ENTER();
+
+	if (NULL == adapter)
+	{
+		hddLog(VOS_TRACE_LEVEL_ERROR,
+		       "%s: adapter is NULL",__func__);
+		return;
+	}
+
+	adapter->dhcp_status.dhcp_offload_status = status;
+	vos_event_set(&adapter->dhcp_status.vos_event);
+	return;
+}
+
+/**
+ * wlan_hdd_set_dhcp_server_offload() - set dhcp server offload
+ * @hostapd_adapter: pointer to hostapd adapter.
+ *
+ * Return: None
+ */
+static VOS_STATUS wlan_hdd_set_dhcp_server_offload(hdd_adapter_t *hostapd_adapter)
+{
+	hdd_context_t *hdd_ctx = WLAN_HDD_GET_CTX(hostapd_adapter);
+	sir_dhcp_srv_offload_info dhcp_srv_info;
+	tANI_U8 num_entries = 0;
+	tANI_U8 srv_ip[IPADDR_NUM_ENTRIES];
+	tANI_U8 num;
+	tANI_U32 temp;
+	VOS_STATUS ret;
+
+	ENTER();
+
+	ret = wlan_hdd_validate_context(hdd_ctx);
+	if (0 != ret)
+		return VOS_STATUS_E_INVAL;
+
+	/* Prepare the request to send to SME */
+	dhcp_srv_info = vos_mem_malloc(sizeof(*dhcp_srv_info));
+	if (NULL == dhcp_srv_info) {
+		hddLog(VOS_TRACE_LEVEL_ERROR,
+		       "%s: could not allocate tDhcpSrvOffloadInfo!", __func__);
+		return VOS_STATUS_E_NOMEM;
+	}
+
+	vos_mem_zero(dhcp_srv_info, sizeof(*dhcp_srv_info));
+
+	dhcp_srv_info->bssidx = hostapd_adapter->sessionId;
+	dhcp_srv_info->dhcp_srv_offload_enabled = TRUE;
+	dhcp_srv_info->dhcp_client_num = hdd_ctx->cfg_ini->dhcp_max_num_clients;
+	dhcp_srv_info->start_lsb = hdd_ctx->cfg_ini->dhcp_start_lsb;
+	dhcp_srv_info->dhcp_offload_callback = hdd_dhcp_server_offload_done;
+	dhcp_srv_info->dhcp_server_offload_cb_context = hostapd_adapter;
+
+	hdd_string_to_u8_array(hdd_ctx->cfg_ini->dhcp_srv_ip,
+			       srv_ip,
+			       &num_entries,
+			       IPADDR_NUM_ENTRIES, ".");
+	if (num_entries != IPADDR_NUM_ENTRIES) {
+		hddLog(VOS_TRACE_LEVEL_ERROR,
+		       "%s: incorrect IP address (%s) assigned for DHCP server!",
+		       __func__, hdd_ctx->cfg_ini->dhcp_srv_ip);
+		vos_mem_free(dhcp_srv_info);
+		return VOS_STATUS_E_FAILURE;
+	}
+
+	if ((srv_ip[0] >= 224) && (srv_ip[0] <= 239)) {
+		hddLog(VOS_TRACE_LEVEL_ERROR,
+		       "%s: invalid IP address (%s)! It could NOT be multicast IP address!",
+		       __func__, hdd_ctx->cfg_ini->dhcp_srv_ip);
+		vos_mem_free(dhcp_srv_info);
+		return VOS_STATUS_E_FAILURE;
+	}
+
+	if (srv_ip[IPADDR_NUM_ENTRIES-1] >= DHCP_START_POOL_ADDRESS) {
+		hddLog(VOS_TRACE_LEVEL_ERROR,
+		       "%s: invalid IP address (%s)! The last field must be less than 100!",
+		       __func__, hdd_ctx->cfg_ini->dhcp_srv_ip);
+		vos_mem_free(dhcp_srv_info);
+		return VOS_STATUS_E_FAILURE;
+	}
+
+	for (num = 0; num < num_entries; num++) {
+		temp = srv_ip[num];
+		dhcp_srv_info->dhcp_srv_ip |= (temp << (8 * num));
+	}
+
+	if (eHAL_STATUS_SUCCESS !=
+	    sme_set_dhcp_srv_offload(hdd_ctx->hHal, dhcp_srv_info)) {
+		hddLog(VOS_TRACE_LEVEL_ERROR,
+		       "%s: sme_set_dhcp_srv_offload fail!", __func__);
+		vos_mem_free(dhcp_srv_info);
+		return VOS_STATUS_E_FAILURE;
+	}
+
+	hddLog(VOS_TRACE_LEVEL_INFO_HIGH,
+	       "%s: enable DHCP Server offload successfully!", __func__);
+
+	vos_mem_free(dhcp_srv_info);
+	return 0;
+}
+#endif /* DHCP_SERVER_OFFLOAD */
+
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3,4,0))
 static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
                             struct beacon_parameters *params)
@@ -9306,6 +9414,19 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
 
     pConfig->privacy = (pMgmt_frame->u.beacon.capab_info &
                         WLAN_CAPABILITY_PRIVACY) ? VOS_TRUE : VOS_FALSE;
+#ifdef SAP_AUTH_OFFLOAD
+    /* In case of sap offload, hostapd.conf is configuted with open mode and
+     * security is configured from ini file. Due to open mode in hostapd.conf
+     * privacy bit is set to false which will result in not sending,
+     * data packets as encrypted.
+     * If enable_sap_auth_offload is enabled in ini and
+     * sap_auth_offload_sec_type is type of WPA2-PSK,
+     * driver will set privacy bit to 1.
+     */
+    if (pHddCtx->cfg_ini->enable_sap_auth_offload &&
+            pHddCtx->cfg_ini->sap_auth_offload_sec_type)
+        pConfig->privacy = VOS_TRUE;
+#endif
 
     (WLAN_HDD_GET_AP_CTX_PTR(pHostapdAdapter))->uPrivacy = pConfig->privacy;
 
@@ -9645,6 +9766,29 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
     /* Initialize WMM configuation */
     hdd_wmm_init(pHostapdAdapter);
     wlan_hdd_incr_active_session(pHddCtx, pHostapdAdapter->device_mode);
+
+#ifdef DHCP_SERVER_OFFLOAD
+    /* set dhcp server offload */
+    if (iniConfig->enable_dhcp_srv_offload &&
+        sme_IsFeatureSupportedByFW(SAP_OFFLOADS)) {
+        status = wlan_hdd_set_dhcp_server_offload(pHostapdAdapter);
+        if (!VOS_IS_STATUS_SUCCESS(status))
+        {
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                      ("HDD DHCP Server Offload Failed!!"));
+            return -EINVAL;
+        }
+        vos_event_reset(&pHostapdAdapter->dhcp_status.vos_event);
+        status = vos_wait_single_event(&pHostapdAdapter->dhcp_status.vos_event, 2000);
+        if (!VOS_IS_STATUS_SUCCESS(status) || pHostapdAdapter->dhcp_status.dhcp_offload_status)
+        {
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                     ("ERROR: DHCP HDD vos wait for single_event failed!! %d"),
+                     pHostapdAdapter->dhcp_status.dhcp_offload_status);
+            return -EINVAL;
+        }
+    }
+#endif /* DHCP_SERVER_OFFLOAD */
 
 #ifdef WLAN_FEATURE_P2P_DEBUG
     if (pHostapdAdapter->device_mode == WLAN_HDD_P2P_GO)
@@ -12123,15 +12267,9 @@ struct cfg80211_bss* wlan_hdd_cfg80211_update_bss_list(
     struct wiphy *wiphy = wdev->wiphy;
     struct cfg80211_bss *bss = NULL;
 
-    bss = cfg80211_get_bss(wiphy, NULL, bssid,
-                           NULL,
-                           0,
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 1, 0)) && !defined(WITH_BACKPORTS) \
-     && !defined(IEEE80211_PRIVACY)
-                           WLAN_CAPABILITY_ESS, WLAN_CAPABILITY_ESS);
-#else
-                           IEEE80211_BSS_TYPE_ESS, IEEE80211_PRIVACY_ANY);
-#endif
+    bss = hdd_get_bss_entry(wiphy,
+          NULL, bssid,
+          NULL, 0);
     if (bss == NULL) {
         hddLog(LOGE, FL("BSS not present"));
     } else {
@@ -13156,10 +13294,10 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
         {
             pHddCtx->last_scan_reject_session_id = curr_session_id;
             pHddCtx->last_scan_reject_reason = curr_reason;
-            pHddCtx->last_scan_reject_timestamp = vos_timer_get_system_time();
+            pHddCtx->last_scan_reject_timestamp = jiffies_to_msecs(jiffies);
         }
         else {
-            if ((vos_timer_get_system_time() -
+            if ((jiffies_to_msecs(jiffies) -
                  pHddCtx->last_scan_reject_timestamp) >=
                 SCAN_REJECT_THRESHOLD_TIME)
             {
@@ -14868,6 +15006,7 @@ int wlan_hdd_disconnect( hdd_adapter_t *pAdapter, u16 reason )
     hdd_station_ctx_t *pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
     long ret;
+    eConnectionState prev_conn_state;
 
     ENTER();
 
@@ -14887,6 +15026,8 @@ int wlan_hdd_disconnect( hdd_adapter_t *pAdapter, u16 reason )
      * as there can be chance for double decrement if context switch
      * Calls  hdd_DisConnectHandler.
      */
+
+    prev_conn_state = pHddStaCtx->conn_info.connState;
 
     spin_lock_bh(&pAdapter->lock_for_active_session);
     if (eConnectionState_Associated ==  pHddStaCtx->conn_info.connState)
@@ -14914,7 +15055,21 @@ int wlan_hdd_disconnect( hdd_adapter_t *pAdapter, u16 reason )
     /*issue disconnect*/
     status = sme_RoamDisconnect( WLAN_HDD_GET_HAL_CTX(pAdapter),
                                  pAdapter->sessionId, reason);
-    if(eHAL_STATUS_CMD_NOT_QUEUED == status)
+    if((eHAL_STATUS_CMD_NOT_QUEUED == status) &&
+             prev_conn_state != eConnectionState_Connecting)
+    {
+        hddLog(LOG1,
+            FL("status = %d, already disconnected"), status);
+        result = 0;
+        goto disconnected;
+    }
+    /*
+     * Wait here instead of returning directly, this will block the next
+     * connect command and allow processing of the scan for ssid and
+     * the previous connect command in CSR. Else we might hit some
+     * race conditions leading to SME and HDD out of sync.
+     */
+    else if(eHAL_STATUS_CMD_NOT_QUEUED == status)
     {
         hddLog(LOG1,
             FL("Already disconnected or connect was in sme/roam pending list and removed by disconnect"));
@@ -15069,7 +15224,10 @@ static int __wlan_hdd_cfg80211_disconnect( struct wiphy *wiphy,
                 }
             }
 #endif
-           hddLog(LOG1, FL("Disconnecting with reasoncode:%u"), reasonCode);
+
+            hddLog(LOG1, FL("Disconnecting with reasoncode:%u connState %d"),
+                   reasonCode,
+                   pHddStaCtx->conn_info.connState);
             status = wlan_hdd_disconnect(pAdapter, reasonCode);
             if ( 0 != status )
             {

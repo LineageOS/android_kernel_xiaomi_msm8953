@@ -3376,4 +3376,16 @@ void WLANTL_ResetRxSSN(v_PVOID_t pvosGCtx, uint8_t ucSTAId);
  * Return: none
  */
 void WLANTL_SetDataPktFilter(v_PVOID_t pvosGCtx, uint8_t ucSTAId, bool flag);
+
+/**
+ * WLANTL_SampleTx() - collect tx samples
+ * @data: TL context pointer
+ *
+ * This function records the frames fetched from stations
+ * during TX sample interval
+ *
+ * Return: void
+ */
+void WLANTL_SampleTx(void *data);
+
 #endif /* #ifndef WLAN_QCT_WLANTL_H */

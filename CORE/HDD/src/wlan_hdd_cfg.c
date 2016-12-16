@@ -3631,6 +3631,7 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                CFG_SAR_BOFFSET_SET_CORRECTION_MIN,
                CFG_SAR_BOFFSET_SET_CORRECTION_MAX),
 
+
   REG_VARIABLE(CFG_ENABLE_EDCA_INI_NAME, WLAN_PARAM_Integer,
                hdd_config_t, enable_edca_params,
                VAR_FLAGS_OPTIONAL |
@@ -3755,6 +3756,53 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                CFG_DISABLE_SCAN_DURING_SCO_DEFAULT,
                CFG_DISABLE_SCAN_DURING_SCO_MIN,
                CFG_DISABLE_SCAN_DURING_SCO_MAX ),
+#ifdef SAP_AUTH_OFFLOAD
+  REG_VARIABLE(CFG_ENABLE_SAP_AUTH_OFL_NAME, WLAN_PARAM_Integer,
+               hdd_config_t, enable_sap_auth_offload,
+               VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+               CFG_ENABLE_SAP_AUTH_OFL_DEFAULT,
+               CFG_ENABLE_SAP_AUTH_OFL_MIN,
+               CFG_ENABLE_SAP_AUTH_OFL_MAX ),
+
+  REG_VARIABLE(CFG_SAP_AUTH_OFL_SECURITY_TYPE_NAME, WLAN_PARAM_Integer,
+               hdd_config_t, sap_auth_offload_sec_type,
+               VAR_FLAGS_OPTIONAL | CFG_SAP_AUTH_OFL_SECURITY_TYPE_DEFAULT,
+               CFG_SAP_AUTH_OFL_SECURITY_TYPE_DEFAULT,
+               CFG_SAP_AUTH_OFL_SECURITY_TYPE_MIN,
+               CFG_SAP_AUTH_OFL_SECURITY_TYPE_MAX ),
+
+  REG_VARIABLE_STRING(CFG_SAP_AUTH_OFL_KEY_NAME, WLAN_PARAM_String,
+                      hdd_config_t, sap_auth_offload_key,
+                      VAR_FLAGS_OPTIONAL,
+                      (void *) CFG_SAP_AUTH_OFL_KEY_DEFAULT ),
+#endif
+#ifdef DHCP_SERVER_OFFLOAD
+  REG_VARIABLE(CFG_DHCP_SERVER_OFFLOAD_SUPPORT_NAME, WLAN_PARAM_Integer,
+               hdd_config_t, enable_dhcp_srv_offload,
+               VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+               CFG_DHCP_SERVER_OFFLOAD_SUPPORT_DEFAULT,
+               CFG_DHCP_SERVER_OFFLOAD_SUPPORT_MIN,
+               CFG_DHCP_SERVER_OFFLOAD_SUPPORT_MAX),
+
+  REG_VARIABLE(CFG_DHCP_SERVER_OFFLOAD_NUM_CLIENT_NAME, WLAN_PARAM_Integer,
+               hdd_config_t, dhcp_max_num_clients,
+               VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+               CFG_DHCP_SERVER_OFFLOAD_NUM_CLIENT_DEFAULT,
+               CFG_DHCP_SERVER_OFFLOAD_NUM_CLIENT_MIN,
+               CFG_DHCP_SERVER_OFFLOAD_NUM_CLIENT_MAX),
+
+  REG_VARIABLE_STRING(CFG_DHCP_SERVER_IP_NAME, WLAN_PARAM_String,
+               hdd_config_t, dhcp_srv_ip,
+               VAR_FLAGS_OPTIONAL,
+               (void *) CFG_DHCP_SERVER_IP_DEFAULT),
+
+  REG_VARIABLE(CFG_DHCP_SERVER_OFFLOAD_START_LSB_NAME, WLAN_PARAM_Integer,
+               hdd_config_t, dhcp_start_lsb,
+               VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+               CFG_DHCP_SERVER_OFFLOAD_START_LSB_DEFAULT,
+               CFG_DHCP_SERVER_OFFLOAD_START_LSB_MIN,
+               CFG_DHCP_SERVER_OFFLOAD_START_LSB_MAX),
+#endif /* DHCP_SERVER_OFFLOAD */
 };
 
 /*
@@ -4292,6 +4340,21 @@ static void print_hdd_cfg(hdd_context_t *pHddCtx)
           "Name = [gPERRoamCCAEnabled] Value = [%u] ",
           pHddCtx->cfg_ini->isPERRoamCCAEnabled);
 
+#ifdef DHCP_SERVER_OFFLOAD
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+           "Name = [gDHCPServerOffloadEnable] Value = [%u]",
+                   pHddCtx->cfg_ini->enable_dhcp_srv_offload);
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+           "Name = [gDHCPMaxNumClients] Value = [%u]",
+                   pHddCtx->cfg_ini->dhcp_max_num_clients);
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+           "Name = [gDHCPServerIP] Value = [%s]",
+                   pHddCtx->cfg_ini->dhcp_srv_ip);
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+           "Name = [gDHCPStartLsb] Value = [%u]",
+                   pHddCtx->cfg_ini->dhcp_start_lsb);
+#endif /* DHCP_SERVER_OFFLOAD */
+
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
           "Name = [gPERRoamFullScanThreshold] Value = [%u] ",
           pHddCtx->cfg_ini->PERRoamFullScanThreshold);
@@ -4319,7 +4382,11 @@ static void print_hdd_cfg(hdd_context_t *pHddCtx)
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
         "Name = [gDisableScanDuringSco] Value = [%u] ",
          pHddCtx->cfg_ini->disable_scan_during_sco);
-
+#endif
+#ifdef SAP_AUTH_OFFLOAD
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+          "Name = [gEnableSAPAuthOffload] Value = [%u] ",
+          pHddCtx->cfg_ini->enable_sap_auth_offload);
 #endif
 }
 
@@ -4841,8 +4908,9 @@ static void hdd_set_power_save_config(hdd_context_t *pHddCtx, tSmeConfigParams *
 
 }
 
-#ifdef WLAN_FEATURE_NEIGHBOR_ROAMING
-static VOS_STATUS hdd_string_to_u8_array( char *str, tANI_U8 *intArray, tANI_U8 *len, tANI_U8 intArrayMaxLen )
+VOS_STATUS hdd_string_to_u8_array(char *str, tANI_U8 *intArray,
+				   tANI_U8 *len, tANI_U8 intArrayMaxLen,
+				   char *seperator)
 {
    char *s = str;
 
@@ -4859,10 +4927,12 @@ static VOS_STATUS hdd_string_to_u8_array( char *str, tANI_U8 *intArray, tANI_U8 
       //Any other return value means error. Ignore it.
       if( sscanf(s, "%d", &val ) == 1 )
       {
+         if (val > 255 || val < 0)
+             return VOS_STATUS_E_FAILURE;
          intArray[*len] = (tANI_U8) val;
          *len += 1;
       }
-      s = strpbrk( s, "," );
+      s = strpbrk( s, seperator);
       if( s )
          s++;
    }
@@ -4870,7 +4940,6 @@ static VOS_STATUS hdd_string_to_u8_array( char *str, tANI_U8 *intArray, tANI_U8 
    return VOS_STATUS_SUCCESS;
 
 }
-#endif
 
 
 v_BOOL_t hdd_update_config_dat( hdd_context_t *pHddCtx )
@@ -6186,7 +6255,7 @@ VOS_STATUS hdd_set_sme_config( hdd_context_t *pHddCtx )
    hdd_string_to_u8_array( pConfig->neighborScanChanList,
                                         smeConfig->csrConfig.neighborRoamConfig.neighborScanChanList.channelList,
                                         &smeConfig->csrConfig.neighborRoamConfig.neighborScanChanList.numChannels,
-                                        WNI_CFG_VALID_CHANNEL_LIST_LEN );
+                                        WNI_CFG_VALID_CHANNEL_LIST_LEN, "," );
 #endif
 
    smeConfig->csrConfig.addTSWhenACMIsOff = pConfig->AddTSWhenACMIsOff;

@@ -605,6 +605,11 @@ typedef enum
    WLAN_HAL_PER_ROAM_SCAN_TRIGGER_REQ        = 336,
    WLAN_HAL_PER_ROAM_SCAN_TRIGGER_RSP        = 337,
 
+   WLAN_HAL_DHCP_SERVER_OFFLOAD_REQ          = 339,
+   WLAN_HAL_DHCP_SERVER_OFFLOAD_RSP          = 340,
+   WLAN_HAL_SAP_AUTH_OFFLOAD_IND             = 341,
+
+
    WLAN_HAL_MSG_MAX = WLAN_HAL_MSG_TYPE_MAX_ENUM_SIZE
 }tHalHostMsgType;
 
@@ -6876,6 +6881,9 @@ typedef enum {
     WIFI_CONFIG            = 61,
     ANTENNA_DIVERSITY_SELECTION  = 62,
     PER_BASED_ROAMING      = 63,
+    SAP_MODE_WOW           = 64,
+    SAP_OFFLOADS           = 65,
+    SAP_BUFF_ALLOC         = 66,
     MAX_FEATURE_SUPPORTED  = 128,
 } placeHolderInCapBitmap;
 
@@ -9301,6 +9309,58 @@ typedef PACKED_PRE struct PACKED_POST
    tHalMsgHeader header;
    tHalModifyRoamParamsIndParams  modifyRoamParamsReqParams;
 } tHalModifyRoamParamsInd, *tpHalModifyRoamParamsInd;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tSirMacAddr selfMacAddr;
+    tANI_U32 enable;
+    tSirMacSSid ssId;
+    tANI_U32 rsn_authmode;
+    tANI_U32 rsn_ucastcipherset;
+    tANI_U32 rsn_mcastcipherset;
+    tANI_U32 rsn_mcastmgmtcipherset;
+    tANI_U32 channel;
+    tANI_U32 psk_len;
+    tANI_U8 psk[1];
+} tSapOffloadEnableMsg, *tpSapOffloadEnableMsg;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tHalMsgHeader header;
+    tSapOffloadEnableMsg SapOffloadEnableMsg;
+} tHalSapoffloadEnable, *tpHalSapoffloadEnable;
+
+/*---------------------------------------------------------------------------
+ * WLAN_HAL_DHCP_SERVER_OFFLOAD_REQ
+ *--------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U8 bss_idx;
+   tANI_U32 enable;
+   tANI_U32 srv_ipv4; /* server IP */
+   tANI_U32 start_lsb; /* starting address assigned to client */
+   tANI_U32 num_client; /* number of clients we support */
+} hal_dhcp_srv_offload_req_param_t, *hal_dhcp_srv_offload_req_params;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   hal_dhcp_srv_offload_req_param_t dhcp_srv_offload_req_params;
+} hal_dhcp_srv_offload_req_msg_t;
+
+/*---------------------------------------------------------------------------
+ * WLAN_HAL_DHCP_SERVER_OFFLOAD_RSP
+ *--------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U32 status;
+} hal_dhcp_srv_offload_rsp_param_t, *hal_dhcp_srv_offload_rsp_params;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   hal_dhcp_srv_offload_rsp_param_t dhcp_srv_offload_rsp_params;
+} hal_dhcp_srv_offload_rsp_msg_t, *hal_dhcp_srv_offload_rsp_msg;
 
 #if defined(__ANI_COMPILER_PRAGMA_PACK_STACK)
 #pragma pack(pop)

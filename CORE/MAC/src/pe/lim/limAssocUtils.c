@@ -2421,7 +2421,15 @@ limAddSta(
     }
     else
 #endif
-        pAddStaParams->staIdx = HAL_STA_INVALID_IDX;
+#ifdef SAP_AUTH_OFFLOAD
+        if (!pMac->sap_auth_offload)
+            pAddStaParams->staIdx = HAL_STA_INVALID_IDX;
+        else
+            pAddStaParams->staIdx = pStaDs->staIndex;
+#else
+            pAddStaParams->staIdx = HAL_STA_INVALID_IDX;
+#endif
+
     pAddStaParams->staType = pStaDs->staType;
 
     pAddStaParams->updateSta = updateEntry;
@@ -2593,11 +2601,29 @@ limAddSta(
     "p2pCapableSta: %d"), pAddStaParams->htLdpcCapable,
     pAddStaParams->vhtLdpcCapable, pAddStaParams->p2pCapableSta);
 
+#ifdef SAP_AUTH_OFFLOAD
+    if (pMac->sap_auth_offload) {
+        pAddStaParams->dpuIndex =  pStaDs->dpuIndex;
+        pAddStaParams->bcastDpuIndex = pStaDs->bcastDpuIndex;
+        pAddStaParams->bcastMgmtDpuIdx = pStaDs->bcastMgmtDpuIdx;
+        pAddStaParams->ucUcastSig = pStaDs->ucUcastSig;
+        pAddStaParams->ucBcastSig = pStaDs->ucBcastSig;
+        pAddStaParams->ucMgmtSig = pStaDs->ucMgmtSig;
+    }
+#endif
+
     //we need to defer the message until we get the response back from HAL.
     if (pAddStaParams->respReqd)
         SET_LIM_PROCESS_DEFD_MESGS(pMac, false);
 
-    msgQ.type = WDA_ADD_STA_REQ;
+#ifdef SAP_AUTH_OFFLOAD
+    if (pMac->sap_auth_offload)
+        msgQ.type = WDA_SAP_OFL_ADD_STA;
+    else
+        msgQ.type = WDA_ADD_STA_REQ;
+#else
+        msgQ.type = WDA_ADD_STA_REQ;
+#endif
 
     msgQ.reserved = 0;
     msgQ.bodyptr = pAddStaParams;
@@ -2723,7 +2749,14 @@ limDelSta(
     pDelStaParams->sessionId = psessionEntry->peSessionId;
     
     pDelStaParams->status  = eHAL_STATUS_SUCCESS;
+#ifdef SAP_AUTH_OFFLOAD
+    if (pMac->sap_auth_offload)
+        msgQ.type = WDA_SAP_OFL_DEL_STA;
+    else
+        msgQ.type = WDA_DELETE_STA_REQ;
+#else
     msgQ.type = WDA_DELETE_STA_REQ;
+#endif
     msgQ.reserved = 0;
     msgQ.bodyptr = pDelStaParams;
     msgQ.bodyval = 0;

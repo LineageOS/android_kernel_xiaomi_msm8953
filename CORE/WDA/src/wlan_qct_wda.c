@@ -2491,6 +2491,74 @@ handle_failure:
    vos_mem_free(configParam);
    return VOS_STATUS_E_FAILURE;
 }
+
+#ifdef DHCP_SERVER_OFFLOAD
+/**
+ * wda_dhcp_server_offload_rsp_callback() - response to the dhcp server offload
+ * @wdi_rsp: pointer to the dhcp server offload response
+ * @user_data: pointer to user data
+ *
+ * Return: None
+ */
+void wda_dhcp_server_offload_rsp_callback(wdi_dhcp_server_offload_rsp_param_t*
+					  wdi_rsp,
+					  void* user_data)
+{
+	tWDA_ReqParams *wda_params = (tWDA_ReqParams *)user_data;
+	sir_dhcp_srv_offload_info_t *dhcp_srv_offload_info;
+	VOS_STATUS status;
+
+	VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+		   "<------ %s " ,__func__);
+
+	if(NULL == wda_params)
+	{
+		VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+			  "%s: pWdaParams received NULL", __func__);
+		VOS_ASSERT(0);
+		return;
+	}
+
+	if(NULL == wda_params->wdaMsgParam)
+	{
+		VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+			  "%s: pWdaParams->wdaMsgParam is NULL", __func__);
+		VOS_ASSERT(0);
+		vos_mem_free(wda_params->wdaWdiApiMsgParam);
+		vos_mem_free(wda_params);
+		return;
+	}
+
+	dhcp_srv_offload_info = (sir_dhcp_srv_offload_info_t *)
+		wda_params->wdaMsgParam;
+
+	if(dhcp_srv_offload_info->dhcp_offload_callback)
+	{
+	   dhcp_srv_offload_info->dhcp_offload_callback(
+				    dhcp_srv_offload_info->dhcp_server_offload_cb_context,
+				    CONVERT_WDI2VOS_STATUS(wdi_rsp->status));
+	}
+	else
+	{
+	   VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+		   "%s: pFWLoggingInitParams callback is NULL", __func__);
+	}
+
+	status = CONVERT_WDI2VOS_STATUS(wdi_rsp->status);
+	if (status)
+	{
+		VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+			  "%s: DHCP server offload failed with status=%d", __func__, status);
+		VOS_ASSERT(0);
+	}
+
+	vos_mem_free(wda_params->wdaWdiApiMsgParam);
+	vos_mem_free(wda_params->wdaMsgParam);
+	vos_mem_free(wda_params);
+	return;
+}
+#endif /* DHCP_SERVER_OFFLOAD */
+
 /*
  * FUNCTION: WDA_wdiCompleteCB
  * call the voss call back function
@@ -4382,7 +4450,90 @@ VOS_STATUS WDA_ProcessAddStaReq(tWDA_CbContext *pWDA,
    }
    return CONVERT_WDI2VOS_STATUS(status) ;
 }
+#ifdef SAP_AUTH_OFFLOAD
 
+/**
+ * WDA_ProcessSapAuthOffloadAddStaReq():  process add sta command.
+ *
+ * @pWDA: WDA Call back context
+ * @addStaReqParam: Add sta request params
+ *
+ * This function process sta params and store them to WDA layer.
+ * It will register station entry to mempool as well.
+ * As station is already in associated state in firmware this
+ * function doesnt send any request to firmware and wait for response,
+ * instead of that this function will send response from here.
+ *
+ * Return: Return VOS_STATUS
+ */
+VOS_STATUS WDA_ProcessSapAuthOffloadAddStaReq(tWDA_CbContext *pWDA,
+                                    tAddStaParams *addStaReqParam)
+{
+    WDI_Status status = WDI_STATUS_SUCCESS ;
+    WDI_AddStaParams   wdiAddSTAParam = {0};
+    WDI_ConfigSTAReqParamsType *wdiConfigStaReqParam =
+        (WDI_ConfigSTAReqParamsType *)vos_mem_malloc(
+                sizeof(WDI_ConfigSTAReqParamsType)) ;
+
+    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+            "------> %s " ,__func__);
+
+    if (NULL == wdiConfigStaReqParam)
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                "%s: VOS MEM Alloc Failure", __func__);
+        VOS_ASSERT(0);
+        return VOS_STATUS_E_NOMEM;
+    }
+
+    vos_mem_set(wdiConfigStaReqParam, sizeof(WDI_ConfigSTAReqParamsType), 0);
+    /* update STA params into WDI structure */
+    WDA_UpdateSTAParams(pWDA, &wdiConfigStaReqParam->wdiReqInfo,
+            addStaReqParam);
+    wdiAddSTAParam.ucSTAIdx = wdiConfigStaReqParam->wdiReqInfo.staIdx;
+    wdiAddSTAParam.ucStaType    = WDI_STA_ENTRY_PEER;
+    /* MAC Address of STA */
+    wpalMemoryCopy(wdiAddSTAParam.staMacAddr,
+            wdiConfigStaReqParam->wdiReqInfo.macSTA,
+            WDI_MAC_ADDR_LEN);
+
+    wpalMemoryCopy(wdiAddSTAParam.macBSSID,
+            wdiConfigStaReqParam->wdiReqInfo.macBSSID,
+            WDI_MAC_ADDR_LEN);
+
+    wdiAddSTAParam.dpuIndex = addStaReqParam->dpuIndex;
+    wdiAddSTAParam.dpuSig   = addStaReqParam->ucUcastSig;
+    wdiAddSTAParam.bcastDpuIndex     = addStaReqParam->bcastDpuIndex;
+    wdiAddSTAParam.bcastDpuSignature = addStaReqParam->ucBcastSig;
+    wdiAddSTAParam.bcastMgmtDpuIndex         = addStaReqParam->bcastMgmtDpuIdx;
+    wdiAddSTAParam.bcastMgmtDpuSignature     = addStaReqParam->ucMgmtSig;
+
+    WDI_STATableAddSta(pWDA->pWdiContext, &wdiAddSTAParam);
+    pWDA->wdaStaInfo[wdiConfigStaReqParam->wdiReqInfo.staIdx].ucValidStaIndex =
+        WDA_VALID_STA_INDEX;
+    pWDA->wdaStaInfo[wdiConfigStaReqParam->wdiReqInfo.staIdx].currentOperChan =
+        addStaReqParam->currentOperChan;
+
+    if (WDI_STATUS_SUCCESS !=
+            WDI_STATableFindStaidByAddr(pWDA->pWdiContext,
+                wdiConfigStaReqParam->wdiReqInfo.macSTA,
+                (wpt_uint8 *)&wdiConfigStaReqParam->wdiReqInfo.staIdx))
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                "%s: Failed to get selfStaIdx!", __func__);
+    }
+    if (WDI_DS_AddSTAMemPool(pWDA->pWdiContext,
+                wdiConfigStaReqParam->wdiReqInfo.staIdx))
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                "%s: add STA into mempool fail", __func__);
+        VOS_ASSERT(0) ;
+    }
+    vos_mem_free(wdiConfigStaReqParam);
+    WDA_SendMsg(pWDA, WDA_ADD_STA_RSP, (void *)addStaReqParam, 0) ;
+    return status;
+}
+#endif
 /*
  * FUNCTION: WDA_DelBSSRspCallback
  * Dens DEL BSS RSP back to PE
@@ -4647,6 +4798,43 @@ void WDA_DelSTAReqCallback(WDI_Status   wdiStatus,
 
    return ;
 }
+
+#ifdef SAP_AUTH_OFFLOAD
+/**
+ * WDA_ProcessSapAuthOffloadDelStaReq():  process del sta command.
+ *
+ * @pWDA: WDA Call back context
+ * @delStaParam: Del sta request params
+ *
+ * This function process sta params and remove entry from WDA layer.
+ * It will unregister station entry from mempool as well.
+ * As station is already in disassociated state in firmware this
+ * function doesn't send any request to firmware and wait for response,
+ * instead of that this function will send response from here.
+ *
+ * Return: Return VOS_STATUS
+ */
+void WDA_ProcessSapAuthOffloadDelStaReq(tWDA_CbContext *pWDA,
+        tDeleteStaParams *delStaParam)
+
+{
+    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+            "------> %s " ,__func__);
+
+    if (WDI_DS_DelSTAMemPool(pWDA->pWdiContext, delStaParam->staIdx))
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                "%s: DEL STA from MemPool Fail", __func__);
+        //   VOS_ASSERT(0) ;
+    }
+    WDI_STATableDelSta(pWDA->pWdiContext, delStaParam->staIdx);
+    pWDA->wdaStaInfo[delStaParam->staIdx].ucValidStaIndex =
+        WDA_INVALID_STA_INDEX;
+    pWDA->wdaStaInfo[delStaParam->staIdx].currentOperChan = 0;
+    WDA_SendMsg(pWDA, WDA_DELETE_STA_RSP, (void *)delStaParam, 0);
+    return ;
+}
+#endif
 
 /*
  * FUNCTION: WDA_ProcessDelStaReq
@@ -15291,6 +15479,74 @@ VOS_STATUS wda_process_set_allowed_action_frames_ind(tWDA_CbContext *pWDA,
     return CONVERT_WDI2VOS_STATUS(status) ;
 }
 
+#ifdef SAP_AUTH_OFFLOAD
+VOS_STATUS wda_process_sap_auth_offload(tWDA_CbContext *pWDA,
+        struct tSirSapOffloadInfo *sap_auth_offload_info)
+{
+    WDI_Status status = WDI_STATUS_SUCCESS;
+    struct WDI_sap_ofl_enable_params *sap_ofl_enable_cmd;
+    v_U16_t psk_len, psk_len_padded;
+
+    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+            "------> %s " ,__func__);
+
+    if(NULL == sap_auth_offload_info)
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                "%s: sap_auth_offload_info received NULL", __func__);
+        VOS_ASSERT(0) ;
+        return VOS_STATUS_E_FAULT;
+    }
+    psk_len = sap_auth_offload_info->key_len;
+    psk_len_padded = roundup(psk_len, sizeof(v_U32_t));
+
+    sap_ofl_enable_cmd = (struct WDI_sap_ofl_enable_params*)
+        vos_mem_malloc(sizeof
+                (*sap_ofl_enable_cmd));
+    if (!sap_ofl_enable_cmd) {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                "%s: VOS MEM Alloc Failure", __func__);
+        vos_mem_free(sap_auth_offload_info);
+        return VOS_STATUS_E_NOMEM;
+    }
+    vos_mem_zero(sap_ofl_enable_cmd, sizeof(*sap_ofl_enable_cmd));
+    vos_mem_copy(sap_ofl_enable_cmd->macAddr,
+            sap_auth_offload_info->macAddr, VOS_MAC_ADDRESS_LEN);
+
+    sap_ofl_enable_cmd->enable = sap_auth_offload_info->sap_auth_offload_enable;
+    sap_ofl_enable_cmd->psk_len = psk_len;
+    switch (sap_auth_offload_info->sap_auth_offload_sec_type) {
+        case eSIR_OFFLOAD_WPA2PSK_CCMP:
+            sap_ofl_enable_cmd->rsn_authmode = WDI_AUTH_TYPE_RSN_PSK;
+            sap_ofl_enable_cmd->rsn_mcastcipherset = WDI_ED_CCMP;
+            sap_ofl_enable_cmd->rsn_ucastcipherset = WDI_ED_CCMP;
+            break;
+        case eSIR_OFFLOAD_NONE:
+        default:
+            VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                  "Set SAP AP Auth offload with none support security type\n");
+            break;
+    }
+    vos_mem_copy(sap_ofl_enable_cmd->key, sap_auth_offload_info->key, psk_len);
+
+    status = WDI_process_sap_auth_offload(sap_ofl_enable_cmd);
+
+    if (WDI_STATUS_PENDING == status) {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                FL("pending status received"));
+    } else if (WDI_STATUS_SUCCESS_SYNC != status &&
+            (WDI_STATUS_SUCCESS != status)) {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                FL("Failure in process_sap_auth_offload API %d"), status);
+    }
+
+    vos_mem_free(sap_ofl_enable_cmd);
+    vos_mem_free(sap_auth_offload_info);
+    return CONVERT_WDI2VOS_STATUS(status) ;
+
+}
+#endif
+
 /*
  * FUNCTION: WDA_ProcessBcnMissPenaltyCount
  * Request to WDI.
@@ -15317,6 +15573,90 @@ VOS_STATUS WDA_ProcessTLPauseInd(tWDA_CbContext *pWDA, v_U32_t params)
     /* Pause TL for Sta ID */
     return WLANTL_SuspendDataTx(pWDA->pVosContext, &staId, NULL);
 }
+
+#ifdef DHCP_SERVER_OFFLOAD
+/**
+ * wda_process_dhcpserver_offload_req() - wda api to set dhcp server offload
+ * @wda_handle: pointer to wda handle
+ * @dhcp_server_offload_info: dhcp server offload info
+ *
+ * Return: status
+ *	0 - success or else failure
+ */
+static int wda_process_dhcpserver_offload_req(tWDA_CbContext *wda_handle,
+					  sir_dhcp_srv_offload_info_t
+					  *dhcp_server_offload_info)
+{
+	wdi_set_dhcp_server_offload_t *dhcp_info;
+	tWDA_ReqParams *wda_params;
+	WDI_Status wstatus;
+	VOS_STATUS status = VOS_STATUS_SUCCESS;
+
+	VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+		  FL("---> %s"), __func__);
+
+	if(NULL == dhcp_server_offload_info)
+	{
+		VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+			  "%s: dhcp_server_offload_info received NULL",
+			  __func__);
+		VOS_ASSERT(0) ;
+		return VOS_STATUS_E_FAULT;
+	}
+
+	dhcp_info = (wdi_set_dhcp_server_offload_t *)
+		vos_mem_malloc(sizeof(*dhcp_info));
+	if (!dhcp_info) {
+		VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+			  "Failed to allocate buffer to send "
+			  "set_dhcp_server_offload cmd");
+		vos_mem_free(dhcp_server_offload_info);
+		return VOS_STATUS_E_NOMEM;
+	}
+
+	vos_mem_zero(dhcp_info, sizeof(*dhcp_info));
+
+	wda_params = (tWDA_ReqParams *)vos_mem_malloc(sizeof(tWDA_ReqParams)) ;
+	if(NULL == wda_params)
+	{
+		VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+			  "%s: VOS MEM Alloc Failure", __func__);
+		VOS_ASSERT(0);
+		vos_mem_free(dhcp_info);
+		vos_mem_free(dhcp_server_offload_info);
+		return VOS_STATUS_E_NOMEM;
+	}
+
+	dhcp_info->bssidx = dhcp_server_offload_info->bssidx;
+	dhcp_info->enable = dhcp_server_offload_info->dhcp_srv_offload_enabled;
+	dhcp_info->num_client = dhcp_server_offload_info->dhcp_client_num;
+	dhcp_info->srv_ipv4 = dhcp_server_offload_info->dhcp_srv_ip;
+	dhcp_info->start_lsb = dhcp_server_offload_info->start_lsb;
+
+	wda_params->pWdaContext = wda_handle;
+	wda_params->wdaMsgParam = dhcp_server_offload_info;
+	wda_params->wdaWdiApiMsgParam = (void *)dhcp_info;
+
+	wstatus = wdi_process_dhcpserver_offload_req(dhcp_info,
+					(wdi_dhcp_srv_offload_rsp_cb)
+					 wda_dhcp_server_offload_rsp_callback,
+					 wda_params);
+	if(IS_WDI_STATUS_FAILURE(wstatus))
+	{
+		VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+			   "Failed to send set_dhcp_server_offload cmd" );
+		status = CONVERT_WDI2VOS_STATUS(wstatus);
+		vos_mem_free(wda_params->wdaWdiApiMsgParam) ;
+		vos_mem_free(wda_params->wdaMsgParam);
+		vos_mem_free(wda_params);
+	}
+
+	VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+		  "Set dhcp server offload");
+	return status;
+}
+#endif /* DHCP_SERVER_OFFLOAD */
+
 
 /*
  * FUNCTION: WDA_McProcessMsg
@@ -16243,6 +16583,15 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
          WDA_ProcessEncryptMsgReq(pWDA, (u8 *)pMsg->bodyptr);
          break;
       }
+#ifdef DHCP_SERVER_OFFLOAD
+      case WDA_SET_DHCP_SERVER_OFFLOAD_REQ:
+      {
+         wda_process_dhcpserver_offload_req(pWDA,
+              (sir_dhcp_srv_offload_info_t *)pMsg->bodyptr);
+         break;
+      }
+#endif /* DHCP_SERVER_OFFLOAD */
+
 
       case WDA_NAN_REQUEST:
       {
@@ -16306,6 +16655,26 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
          WDA_ProcessTLPauseInd(pWDA, pMsg->bodyval);
          break;
       }
+#ifdef SAP_AUTH_OFFLOAD
+      case WDA_SET_SAP_AUTH_OFL:
+      {
+          wda_process_sap_auth_offload(pWDA,
+                  (struct tSirSapOffloadInfo*)pMsg->bodyptr);
+          break;
+      }
+      case WDA_SAP_OFL_ADD_STA:
+      {
+          WDA_ProcessSapAuthOffloadAddStaReq(pWDA,
+                  (tAddStaParams *)pMsg->bodyptr);
+          break;
+      }
+      case WDA_SAP_OFL_DEL_STA:
+      {
+          WDA_ProcessSapAuthOffloadDelStaReq(pWDA,
+                  (tDeleteStaParams *)pMsg->bodyptr);
+          break;
+      }
+#endif
       default:
       {
          VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,

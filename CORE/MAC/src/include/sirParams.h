@@ -145,6 +145,12 @@ typedef enum {
    PER_BASED_ROAMING = 63,
 #endif
    SAP_MODE_WOW = 64,
+   /* SAP_OFFLOADS flag will be used for
+    * SAP auth offload, SAP DHCP offload and
+    * SAP DNS offload.
+    */
+   SAP_OFFLOADS = 65,
+   SAP_BUFF_ALLOC = 66,
    //MAX_FEATURE_SUPPORTED = 128
 } placeHolderInCapBitmap;
 
@@ -766,6 +772,15 @@ typedef struct sSirMbMsgP2p
 #define SIR_HAL_PER_ROAM_SCAN_TRIGGER_RSP  (SIR_HAL_ITC_MSG_TYPES_BEGIN + 289)
 #endif
 #define SIR_HAL_UPDATE_CFG_INT_PARAM       (SIR_HAL_ITC_MSG_TYPES_BEGIN + 290)
+
+#ifdef SAP_AUTH_OFFLOAD
+#define SIR_HAL_SET_SAP_AUTH_OFL           (SIR_HAL_ITC_MSG_TYPES_BEGIN + 291)
+#define SIR_HAL_SAP_OFL_ADD_STA            (SIR_HAL_ITC_MSG_TYPES_BEGIN + 292)
+#define SIR_HAL_SAP_OFL_DEL_STA            (SIR_HAL_ITC_MSG_TYPES_BEGIN + 293)
+#endif
+#ifdef DHCP_SERVER_OFFLOAD
+#define SIR_HAL_SET_DHCP_SERVER_OFFLOAD_REQ (SIR_HAL_ITC_MSG_TYPES_BEGIN + 294)
+#endif /* DHCP_SERVER_OFFLOAD */
 #define SIR_HAL_MSG_TYPES_END              (SIR_HAL_MSG_TYPES_BEGIN + 0x1FF)
 
 // CFG message types

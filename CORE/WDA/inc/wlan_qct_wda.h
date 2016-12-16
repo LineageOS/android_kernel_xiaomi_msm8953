@@ -816,6 +816,11 @@ tBssSystemRole wdaGetGlobalSystemRole(tpAniSirGlobal pMac);
 #ifdef WLAN_FEATURE_EXTSCAN
 #define WDA_GET_EXTSCANFULLSCANRESIND(pRxMeta) (((WDI_DS_RxMetaInfoType*)(pRxMeta))->extscanBuffer)
 #endif
+
+#ifdef SAP_AUTH_OFFLOAD
+#define WDA_GET_SAP_AUTHOFFLOADIND(pRxMeta)  (((WDI_DS_RxMetaInfoType*)(pRxMeta))->indType)
+#endif
+
 /* WDA_GET_RX_RSSI_DB ********************************************************/
 // Volans RF
 #  define WDA_RSSI_OFFSET             100
@@ -1291,6 +1296,10 @@ tSirRetStatus uMacPostCtrlMsg(void* pSirGlobal, tSirMbMsg* pMb);
 #define WDA_START_RSSI_MONITOR_REQ             SIR_HAL_RSSI_MON_START_REQ
 #define WDA_STOP_RSSI_MONITOR_REQ              SIR_HAL_RSSI_MON_STOP_REQ
 
+#ifdef DHCP_SERVER_OFFLOAD
+#define WDA_SET_DHCP_SERVER_OFFLOAD_REQ     SIR_HAL_SET_DHCP_SERVER_OFFLOAD_REQ
+#endif /* DHCP_SERVER_OFFLOAD */
+
 tSirRetStatus wdaPostCtrlMsg(tpAniSirGlobal pMac, tSirMsgQ *pMsg);
 
 eHalStatus WDA_SetRegDomain(void * clientCtxt, v_REGDOMAIN_t regId,
@@ -1351,6 +1360,12 @@ eHalStatus WDA_SetRegDomain(void * clientCtxt, v_REGDOMAIN_t regId,
 #define WDA_SET_ALLOWED_ACTION_FRAMES_IND      SIR_HAL_SET_ALLOWED_ACTION_FRAMES
 
 #define WDA_PAUSE_TL_IND                       SIR_HAL_PAUSE_TL_IND
+
+#ifdef SAP_AUTH_OFFLOAD
+#define WDA_SAP_OFL_ADD_STA                   SIR_HAL_SAP_OFL_ADD_STA
+#define WDA_SAP_OFL_DEL_STA                   SIR_HAL_SAP_OFL_DEL_STA
+#define WDA_SET_SAP_AUTH_OFL                  SIR_HAL_SET_SAP_AUTH_OFL
+#endif /* SAP_AUTH_OFFLOAD */
 
 #define HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME 0x40 // Bit 6 will be used to control BD rate for Management frames
 

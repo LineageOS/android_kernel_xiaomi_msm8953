@@ -6441,6 +6441,34 @@ typedef struct
    wpt_macAddr  bssId;
 }WDI_WifiConfigSetReqType;
 
+#ifdef DHCP_SERVER_OFFLOAD
+/**
+ * wdi_set_dhcp_server_offload_t - dhcp server offload info
+ * @bssidx: bss index
+ * @enable: enable od disable
+ * @srv_ipv4: server ip address
+ * @start_lsb: starting lsb addredd of pool
+ * @num_client: number of clients supported
+ */
+typedef struct {
+   wpt_uint8 bssidx;
+   wpt_uint32 enable;
+   wpt_uint32 srv_ipv4; /* server IP */
+   wpt_uint32 start_lsb; /* starting address assigned to client */
+   wpt_uint32 num_client; /* number of clients we support */
+} wdi_set_dhcp_server_offload_t;
+
+/**
+ * wdi_dhcp_server_offload_rsp_param_t - dhcp server offload response
+ * @status: status for the command success or failure
+ */
+typedef struct
+{
+   /* wdi status */
+   wpt_uint32   status;
+} wdi_dhcp_server_offload_rsp_param_t;
+#endif /* DHCP_SERVER_OFFLOAD */
+
 /**
  * struct WDI_FwrMemDumpReqType - firmware memory dump request details.
 .*.@FWMemDumpReqCb - Associated Callback
@@ -6489,6 +6517,28 @@ struct WDI_AllowedActionFramesInd {
    wpt_uint32 bitmask;
    wpt_uint32 reserved;
 };
+
+struct WDI_sap_ofl_enable_params{
+
+    wpt_macAddr macAddr;
+    /** enable/disable sap auth offload */
+    wpt_uint32 enable;
+    /** authentication mode (defined above) */
+    wpt_uint32 rsn_authmode;
+    /** unicast cipher set */
+    wpt_uint32 rsn_ucastcipherset;
+    /** mcast/group cipher set */
+    wpt_uint32 rsn_mcastcipherset;
+    /** mcast/group management frames cipher set */
+    wpt_uint32 rsn_mcastmgmtcipherset;
+    /** sap channel */
+    wpt_uint32 channel;
+    /** length of psk */
+    wpt_uint32 psk_len;
+    wpt_uint8 key[64];
+};
+
+
 /*----------------------------------------------------------------------------
  *   WDI callback types
  *--------------------------------------------------------------------------*/
@@ -8448,6 +8498,10 @@ typedef void  (*WDI_WifiConfigSetRspCb) (WDI_WifconfigSetRsp *wdiRsp, void *pUse
 
 typedef void (*WDI_AntennaDivSelRspCb)(WDI_Status status,
               void *resp, void *pUserData);
+
+#ifdef DHCP_SERVER_OFFLOAD
+typedef void (*wdi_dhcp_srv_offload_rsp_cb)(void *event_data,void *user_data);
+#endif /* DHCP_SERVER_OFFLOAD */
 
 /*========================================================================
  *     Function Declarations and Documentation
@@ -12237,4 +12291,19 @@ WDI_SetAllowedActionFramesInd(
 );
 
 void WDI_SetMgmtPktViaWQ5(wpt_boolean sendMgmtPktViaWQ5);
+WDI_Status
+WDI_process_sap_auth_offload(
+   struct WDI_sap_ofl_enable_params *sap_ofl_enable_cmd
+);
+
+#ifdef DHCP_SERVER_OFFLOAD
+WDI_Status
+wdi_process_dhcpserver_offload_req
+(
+   wdi_set_dhcp_server_offload_t *dhcp_info,
+   wdi_dhcp_srv_offload_rsp_cb wdi_dhcp_srv_offload_rsp_callback,
+   void *user_data
+);
+#endif /* DHCP_SERVER_OFFLOAD */
+
 #endif /* #ifndef WLAN_QCT_WDI_H */
