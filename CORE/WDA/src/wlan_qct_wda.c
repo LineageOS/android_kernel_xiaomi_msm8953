@@ -5088,10 +5088,12 @@ void WDA_ProcessSapAuthOffloadDelStaReq(tWDA_CbContext *pWDA,
                 "%s: DEL STA from MemPool Fail", __func__);
         //   VOS_ASSERT(0) ;
     }
+    WLANTL_StartForwarding(delStaParam->staIdx, 0, 0);
     WDI_STATableDelSta(pWDA->pWdiContext, delStaParam->staIdx);
     pWDA->wdaStaInfo[delStaParam->staIdx].ucValidStaIndex =
         WDA_INVALID_STA_INDEX;
     pWDA->wdaStaInfo[delStaParam->staIdx].currentOperChan = 0;
+    pWDA->wdaStaInfo[delStaParam->staIdx].ucUseBaBitmap = 0;
     WDA_SendMsg(pWDA, WDA_DELETE_STA_RSP, (void *)delStaParam, 0);
     return ;
 }
