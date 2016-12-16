@@ -495,6 +495,10 @@ typedef enum
 #endif
 
   WDI_DHCP_SERVER_OFFLOAD_REQ                    = 118,
+  WDI_MDNS_ENABLE_OFFLOAD_REQ                    = 119,
+  WDI_MDNS_FQDN_OFFLOAD_REQ                      = 120,
+  WDI_MDNS_RESP_OFFLOAD_REQ                      = 121,
+  WDI_MDNS_STATS_OFFLOAD_REQ                     = 122,
 
   WDI_MAX_REQ,
 
@@ -876,6 +880,10 @@ typedef enum
   WDI_PER_ROAM_SCAN_TRIGGER_RSP                  = 117,
 #endif
   WDI_DHCP_SERVER_OFFLOAD_RSP                    = 118,
+  WDI_MDNS_ENABLE_OFFLOAD_RSP                    = 119,
+  WDI_MDNS_FQDN_OFFLOAD_RSP                      = 120,
+  WDI_MDNS_RESP_OFFLOAD_RSP                      = 121,
+  WDI_MDNS_STATS_OFFLOAD_RSP                     = 122,
 
   /*-------------------------------------------------------------------------
     Indications
@@ -6714,6 +6722,64 @@ wdi_dhcp_server_offload_rsp
   WDI_EventInfoType *event_data
 );
 #endif /* DHCP_SERVER_OFFLOAD */
+
+#ifdef MDNS_OFFLOAD
+WDI_Status
+wdi_mdns_enable_offload_req
+(
+  WDI_ControlBlockType *wdi_ctx,
+  WDI_EventInfoType *event_data
+);
+
+WDI_Status
+wdi_mdns_enable_offload_rsp
+(
+  WDI_ControlBlockType *wdi_ctx,
+  WDI_EventInfoType *event_data
+);
+
+WDI_Status
+wdi_mdns_fqdn_offload_req
+(
+  WDI_ControlBlockType *wdi_ctx,
+  WDI_EventInfoType *event_data
+);
+
+WDI_Status
+wdi_mdns_fqdn_offload_rsp
+(
+  WDI_ControlBlockType *wdi_ctx,
+  WDI_EventInfoType *event_data
+);
+
+WDI_Status
+wdi_mdns_resp_offload_req
+(
+  WDI_ControlBlockType *wdi_ctx,
+  WDI_EventInfoType *event_data
+);
+
+WDI_Status
+wdi_mdns_resp_offload_rsp
+(
+  WDI_ControlBlockType *wdi_ctx,
+  WDI_EventInfoType *event_data
+);
+
+WDI_Status
+wdi_get_mdns_stats_offload_req
+(
+  WDI_ControlBlockType *wdi_ctx,
+  WDI_EventInfoType *event_data
+);
+
+WDI_Status
+wdi_get_mdns_stats_offload_rsp
+(
+  WDI_ControlBlockType *wdi_ctx,
+  WDI_EventInfoType *event_data
+);
+#endif /* MDNS_OFFLOAD */
 
 #endif /*WLAN_QCT_WDI_I_H*/
 

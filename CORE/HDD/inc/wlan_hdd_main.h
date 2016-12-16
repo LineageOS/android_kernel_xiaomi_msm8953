@@ -245,6 +245,23 @@ typedef v_U8_t tWlanHddMacAddr[HDD_MAC_ADDR_LEN];
 
 #define HDD_MAX_STA_COUNT (HAL_NUM_STA)
 
+#ifdef MDNS_OFFLOAD
+#define MDNS_HEADER_LEN                           12
+#define MDNS_FQDN_TYPE_GENERAL                    0
+#define MDNS_FQDN_TYPE_UNIQUE                     1
+#define MAX_NUM_FIELD_DOMAINNAME                  6
+#define MAX_LEN_DOMAINNAME_FIELD                  64
+#define MAX_MDNS_RESP_TYPE                        6
+#define MDNS_TYPE_A                               1
+#define MDNS_TYPE_TXT                             16
+#define MDNS_TYPE_PTR                             12
+#define MDNS_TYPE_PTR_DNAME                       13
+#define MDNS_TYPE_SRV                             33
+#define MDNS_TYPE_SRV_TARGET                      34
+#define MDNS_CLASS                                1
+#define MDNS_TTL                                  5
+#endif /* MDNS_OFFLOAD */
+
 /*
  * Generic asynchronous request/response support
  *
@@ -784,6 +801,15 @@ typedef struct hdd_dhcp_state_s
 } hdd_dhcp_state_t;
 #endif /* DHCP_SERVER_OFFLOAD */
 
+#ifdef MDNS_OFFLOAD
+typedef struct hdd_mdns_state_s
+{
+    VOS_STATUS mdns_enable_status;
+    VOS_STATUS mdns_fqdn_status;
+    VOS_STATUS mdns_resp_status;
+    vos_event_t vos_event;
+} hdd_mdns_state_t;
+#endif /* MDNS_OFFLOAD */
 
 /*
  * Per station structure kept in HDD for multiple station support for SoftAP
@@ -1223,6 +1249,9 @@ struct hdd_adapter_s
 #ifdef DHCP_SERVER_OFFLOAD
    hdd_dhcp_state_t dhcp_status;
 #endif /* DHCP_SERVER_OFFLOAD */
+#ifdef MDNS_OFFLOAD
+    hdd_mdns_state_t mdns_status;
+#endif /* MDNS_OFFLOAD */
 };
 
 #define WLAN_HDD_GET_STATION_CTX_PTR(pAdapter) (&(pAdapter)->sessionCtx.station)
@@ -1709,6 +1738,20 @@ typedef enum
    WLAN_FW_MEM_DUMP_EN = 1<<6,
 } WLAN_ENABLE_HW_FW_LOG_TYPE;
 
+#ifdef MDNS_OFFLOAD
+/* Offload struct */
+struct hdd_mdns_resp_info {
+    uint8_t num_entries;
+    uint8_t *data;
+    uint16_t *offset;
+};
+
+struct hdd_mdns_resp_matched {
+    uint8_t num_matched;
+    uint8_t type;
+};
+#endif /* MDNS_OFFLOAD */
+
 /*--------------------------------------------------------------------------- 
   Function declarations and documenation
   -------------------------------------------------------------------------*/
@@ -1979,4 +2022,12 @@ void wlan_hdd_defer_scan_init_work(hdd_context_t *pHddCtx,
                                 unsigned long delay);
 int hdd_reassoc(hdd_adapter_t *pAdapter, const tANI_U8 *bssid,
 			const tANI_U8 channel, const handoff_src src);
+#ifdef MDNS_OFFLOAD
+bool wlan_hdd_set_mdns_offload(hdd_adapter_t *adapter);
+#else
+static inline bool wlan_hdd_set_mdns_offload(hdd_adapter_t *adapter)
+{
+    return FALSE;
+}
+#endif /* MDNS_OFFLOAD */
 #endif    // end #if !defined( WLAN_HDD_MAIN_H )

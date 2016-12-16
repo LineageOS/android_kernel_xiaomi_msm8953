@@ -29,6 +29,9 @@ ifeq ($(KERNEL_BUILD), 0)
 # JB kernel has CPU enablement patches, so enable
     CONFIG_PRIMA_WLAN_11AC_HIGH_TP := y
 
+#Flag to enable mDNS feature
+    CONFIG_MDNS_OFFLOAD_SUPPORT := y
+
 #Flag to enable TDLS feature
     CONFIG_QCOM_TDLS := y
 
@@ -686,6 +689,10 @@ EXTRA_CFLAGS += -Wno-maybe-uninitialized -Wno-unused-function
 
 ifeq ($(CONFIG_WLAN_OFFLOAD_PACKETS),y)
 CDEFINES += -DWLAN_FEATURE_OFFLOAD_PACKETS
+endif
+
+ifeq ($(CONFIG_MDNS_OFFLOAD_SUPPORT), y)
+CDEFINES += -DMDNS_OFFLOAD
 endif
 
 KBUILD_CPPFLAGS += $(CDEFINES)

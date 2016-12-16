@@ -4828,6 +4828,9 @@ VOS_STATUS hdd_init_ap_mode( hdd_adapter_t *pAdapter )
 #ifdef DHCP_SERVER_OFFLOAD
     hdd_dhcp_state_t *dhcp_status;
 #endif /* DHCP_SERVER_OFFLOAD */
+#ifdef MDNS_OFFLOAD
+    hdd_mdns_state_t *mdns_status;
+#endif /* MDNS_OFFLOAD */
     struct net_device *dev = pAdapter->dev;
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
     VOS_STATUS status;
@@ -4854,6 +4857,9 @@ VOS_STATUS hdd_init_ap_mode( hdd_adapter_t *pAdapter )
 #ifdef DHCP_SERVER_OFFLOAD
     dhcp_status = &pAdapter->dhcp_status;
 #endif /* DHCP_SERVER_OFFLOAD */
+#ifdef MDNS_OFFLOAD
+    mdns_status = &pAdapter->mdns_status;
+#endif /* MDNS_OFFLOAD */
 
     spin_lock_init(&pAdapter->sta_hash_lock);
     pAdapter->is_sta_id_hash_initialized = VOS_FALSE;
@@ -4878,6 +4884,9 @@ VOS_STATUS hdd_init_ap_mode( hdd_adapter_t *pAdapter )
 #ifdef DHCP_SERVER_OFFLOAD
     memset(dhcp_status, 0,sizeof(*dhcp_status));
 #endif /* DHCP_SERVER_OFFLOAD */
+#ifdef MDNS_OFFLOAD
+    memset(mdns_status, 0,sizeof(*mdns_status));
+#endif /* MDNS_OFFLOAD */
 
     // Set up the pointer to the Wireless Extensions state structure
     // NOP
@@ -4900,6 +4909,15 @@ VOS_STATUS hdd_init_ap_mode( hdd_adapter_t *pAdapter )
          return status;
     }
 #endif /* DHCP_SERVER_OFFLOAD */
+#ifdef MDNS_OFFLOAD
+    status = vos_event_init(&mdns_status->vos_event);
+    if (!VOS_IS_STATUS_SUCCESS(status)) {
+         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                   ("Hostapd HDD vos event init failed!!"));
+         return status;
+    }
+#endif /* MDNS_OFFLOAD */
+
     sema_init(&(WLAN_HDD_GET_AP_CTX_PTR(pAdapter))->semWpsPBCOverlapInd, 1);
  
      // Register as a wireless device

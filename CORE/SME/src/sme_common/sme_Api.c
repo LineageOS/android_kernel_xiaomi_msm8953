@@ -14661,3 +14661,161 @@ eHalStatus sme_set_dhcp_srv_offload(tHalHandle hal,
 	return status;
 }
 #endif /* DHCP_SERVER_OFFLOAD */
+
+#ifdef MDNS_OFFLOAD
+/**
+ * sme_set_mdns_offload() - sme API to set mdns offload enable/disable
+ * @hal: handle to hal pointer
+ * @mdns_info: pointer to mdns offload info
+ *
+ * Return - eHalStatus
+ */
+eHalStatus sme_set_mdns_offload(tHalHandle hal,
+                                sir_mdns_offload_info_t *mdns_info)
+{
+    vos_msg_t vos_msg;
+    sir_mdns_offload_info_t *mdns_offload;
+    eHalStatus status = eHAL_STATUS_SUCCESS;
+    tpAniSirGlobal mac = PMAC_STRUCT(hal);
+
+    mdns_offload = vos_mem_malloc(sizeof(*mdns_offload));
+
+    if (!mdns_offload) {
+        VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+              "%s: Not able to allocate memory for WDA_SET_MDNS_OFFLOAD_CMD",
+              __func__);
+        return eHAL_STATUS_E_MALLOC_FAILED;
+    }
+
+    vos_mem_copy(mdns_offload, mdns_info, sizeof(*mdns_offload));
+
+    status = sme_AcquireGlobalLock(&mac->sme);
+    if (eHAL_STATUS_SUCCESS == status) {
+        /* serialize the req through MC thread */
+        vos_msg.type     = WDA_SET_MDNS_OFFLOAD_CMD;
+        vos_msg.bodyptr  = mdns_offload;
+
+        if (!VOS_IS_STATUS_SUCCESS(
+                    vos_mq_post_message(VOS_MODULE_ID_WDA,
+                                &vos_msg))) {
+            VOS_TRACE( VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+                   "%s: Not able to post WDA_SET_MDNS_OFFLOAD_CMD to WDA!",
+                   __func__);
+            vos_mem_free(mdns_offload);
+            status = eHAL_STATUS_FAILURE;
+        }
+        sme_ReleaseGlobalLock(&mac->sme);
+    } else {
+        VOS_TRACE( VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+               "%s: sme_AcquireGlobalLock error!",
+               __func__);
+        vos_mem_free(mdns_offload);
+    }
+
+    return (status);
+}
+
+/**
+ * sme_set_mdns_fqdn() - SME API to set mDNS Fqdn info
+ * @hal: hal handle
+ * @mdns_fqdn: mDNS Fqdn info struct
+ *
+ * Return - return eHalStatus
+ */
+eHalStatus sme_set_mdns_fqdn(tHalHandle hal,
+                 sir_mdns_fqdn_info_t *mdns_fqdn)
+{
+    vos_msg_t vos_msg;
+    sir_mdns_fqdn_info_t *fqdn_info;
+    eHalStatus status = eHAL_STATUS_SUCCESS;
+    tpAniSirGlobal mac = PMAC_STRUCT(hal);
+
+    fqdn_info = vos_mem_malloc(sizeof(*fqdn_info));
+
+    if (!fqdn_info) {
+        VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+              "%s: Not able to allocate memory for WDA_SET_MDNS_FQDN_CMD",
+              __func__);
+        return eHAL_STATUS_E_MALLOC_FAILED;
+    }
+
+    vos_mem_copy(fqdn_info, mdns_fqdn, sizeof(*fqdn_info));
+
+    status = sme_AcquireGlobalLock(&mac->sme);
+    if (eHAL_STATUS_SUCCESS == status) {
+        /* serialize the req through MC thread */
+        vos_msg.type     = WDA_SET_MDNS_FQDN_CMD;
+        vos_msg.bodyptr  = fqdn_info;
+
+        if (!VOS_IS_STATUS_SUCCESS(
+                    vos_mq_post_message(VOS_MODULE_ID_WDA,
+                                &vos_msg))) {
+            VOS_TRACE( VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+                   "%s: Not able to post WDA_SET_MDNS_FQDN_CMD to WDA!",
+                   __func__);
+            vos_mem_free(fqdn_info);
+            status = eHAL_STATUS_FAILURE;
+        }
+        sme_ReleaseGlobalLock(&mac->sme);
+    } else {
+        VOS_TRACE( VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+               "%s: sme_AcquireGlobalLock error!",
+               __func__);
+        vos_mem_free(fqdn_info);
+    }
+
+    return (status);
+}
+
+/**
+ * sme_set_mdns_resp() - SME API to set mDNS response info
+ * @hal: hal handle
+ * @mdns_resp : mDNS response info struct
+ *
+ * Return - eHalStatus
+ */
+eHalStatus sme_set_mdns_resp(tHalHandle hal,
+                 sir_mdns_resp_info_t *mdns_resp)
+{
+    vos_msg_t vos_msg;
+    sir_mdns_resp_info_t *resp_info;
+    eHalStatus status = eHAL_STATUS_SUCCESS;
+    tpAniSirGlobal mac = PMAC_STRUCT(hal);
+
+    resp_info = vos_mem_malloc(sizeof(*resp_info));
+
+    if (!resp_info) {
+        VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+              "%s: Not able to allocate memory for WDA_SET_MDNS_RESPONSE_CMD",
+              __func__);
+        return eHAL_STATUS_E_MALLOC_FAILED;
+    }
+
+    vos_mem_copy(resp_info, mdns_resp, sizeof(*resp_info));
+
+    status = sme_AcquireGlobalLock(&mac->sme);
+    if (eHAL_STATUS_SUCCESS == status) {
+        /* serialize the req through MC thread */
+        vos_msg.type     = WDA_SET_MDNS_RESPONSE_CMD;
+        vos_msg.bodyptr  = resp_info;
+
+        if (!VOS_IS_STATUS_SUCCESS(
+                    vos_mq_post_message(VOS_MODULE_ID_WDA,
+                                &vos_msg))) {
+            VOS_TRACE( VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+                   "%s: Not able to post WDA_SET_MDNS_RESPONSE_CMD to WDA!",
+                   __func__);
+            vos_mem_free(resp_info);
+            status = eHAL_STATUS_FAILURE;
+        }
+        sme_ReleaseGlobalLock(&mac->sme);
+    } else {
+        VOS_TRACE( VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+               "%s: sme_AcquireGlobalLock error!",
+               __func__);
+        vos_mem_free(resp_info);
+    }
+
+    return (status);
+}
+#endif /* MDNS_OFFLOAD */

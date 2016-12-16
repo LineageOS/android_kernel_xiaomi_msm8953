@@ -9820,6 +9820,37 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
                      pHostapdAdapter->dhcp_status.dhcp_offload_status);
             return -EINVAL;
         }
+#ifdef MDNS_OFFLOAD
+        if (iniConfig->enable_mdns_offload) {
+            status = wlan_hdd_set_mdns_offload(pHostapdAdapter);
+            if (VOS_IS_STATUS_SUCCESS(status))
+            {
+                VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                          ("HDD MDNS Server Offload Failed!!"));
+                return -EINVAL;
+            }
+            vos_event_reset(&pHostapdAdapter->mdns_status.vos_event);
+            status = vos_wait_single_event(&pHostapdAdapter->
+                                           mdns_status.vos_event, 2000);
+            if (!VOS_IS_STATUS_SUCCESS(status) ||
+                pHostapdAdapter->mdns_status.mdns_enable_status ||
+                pHostapdAdapter->mdns_status.mdns_fqdn_status ||
+                pHostapdAdapter->mdns_status.mdns_resp_status)
+            {
+                VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                          ("MDNS HDD vos wait for single_event failed!! enable %d fqdn %d resp %d"),
+                          pHostapdAdapter->mdns_status.mdns_enable_status,
+                          pHostapdAdapter->mdns_status.mdns_fqdn_status,
+                          pHostapdAdapter->mdns_status.mdns_resp_status);
+                return -EINVAL;
+            }
+        }
+#endif /* MDNS_OFFLOAD */
+    } else {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                  ("DHCP Disabled ini %d, FW %d"),
+                  iniConfig->enable_dhcp_srv_offload,
+                  sme_IsFeatureSupportedByFW(SAP_OFFLOADS));
     }
 #endif /* DHCP_SERVER_OFFLOAD */
 

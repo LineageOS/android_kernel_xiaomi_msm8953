@@ -1299,6 +1299,12 @@ tSirRetStatus uMacPostCtrlMsg(void* pSirGlobal, tSirMbMsg* pMb);
 #ifdef DHCP_SERVER_OFFLOAD
 #define WDA_SET_DHCP_SERVER_OFFLOAD_REQ     SIR_HAL_SET_DHCP_SERVER_OFFLOAD_REQ
 #endif /* DHCP_SERVER_OFFLOAD */
+#ifdef MDNS_OFFLOAD
+#define WDA_SET_MDNS_OFFLOAD_CMD              SIR_HAL_SET_MDNS_OFFLOAD
+#define WDA_SET_MDNS_FQDN_CMD                 SIR_HAL_SET_MDNS_FQDN
+#define WDA_SET_MDNS_RESPONSE_CMD             SIR_HAL_SET_MDNS_RESPONSE
+#define WDA_GET_MDNS_STATUS_CMD               SIR_HAL_GET_MDNS_STATUS
+#endif /* MDNS_OFFLOAD */
 
 tSirRetStatus wdaPostCtrlMsg(tpAniSirGlobal pMac, tSirMsgQ *pMsg);
 

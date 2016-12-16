@@ -2559,10 +2559,271 @@ void wda_dhcp_server_offload_rsp_callback(wdi_dhcp_server_offload_rsp_param_t*
 }
 #endif /* DHCP_SERVER_OFFLOAD */
 
+#ifdef MDNS_OFFLOAD
+/**
+ * wda_mdns_enable_rsp_callback() - response to the mdns enable server offload
+ * @wdi_rsp: pointer to the mdns enable offload response
+ * @user_data: pointer to user data
+ *
+ * Return: None
+ */
+void wda_mdns_enable_rsp_callback(wdi_mdns_enable_offload_rsp_param_t*
+                  wdi_rsp,
+                  void* user_data)
+{
+    tWDA_ReqParams *wda_params = (tWDA_ReqParams *)user_data;
+    sir_mdns_offload_info_t *mdns_offload_info;
+    VOS_STATUS status;
+
+    VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+          "<------ %s " ,__func__);
+
+    if(NULL == wda_params)
+    {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: pWdaParams received NULL", __func__);
+        VOS_ASSERT(0);
+        return ;
+    }
+
+    if(NULL == wda_params->wdaMsgParam)
+    {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: pWdaParams->wdaMsgParam is NULL", __func__);
+        VOS_ASSERT(0);
+        vos_mem_free(wda_params->wdaWdiApiMsgParam);
+        vos_mem_free(wda_params);
+        return ;
+    }
+
+    mdns_offload_info = (sir_mdns_offload_info_t *)
+        wda_params->wdaMsgParam;
+
+    if(mdns_offload_info->mdns_enable_callback)
+    {
+        mdns_offload_info->mdns_enable_callback(mdns_offload_info->
+                         mdns_enable_cb_context,
+                         CONVERT_WDI2VOS_STATUS(wdi_rsp->
+                                    status));
+    }
+    else
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               "%s: mdns_enable callback is NULL", __func__);
+    }
+
+    status = CONVERT_WDI2VOS_STATUS(wdi_rsp->status);
+    if (status)
+    {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: MDNS offload failed with status=%d", __func__, status);
+        VOS_ASSERT(0);
+    }
+
+    vos_mem_free(wda_params->wdaWdiApiMsgParam);
+    vos_mem_free(wda_params->wdaMsgParam);
+    vos_mem_free(wda_params);
+
+    return;
+}
+
+/**
+ * wda_mdns_fqdn_rsp_callback() - response to the mdns fqdn offload
+ * @wdi_rsp: pointer to the mdns fqdn offload response
+ * @user_data: pointer to user data
+ *
+ * Return: None
+ */
+void wda_mdns_fqdn_rsp_callback(wdi_mdns_set_fqdn_rsp_param_t*
+                wdi_rsp,
+                void* user_data)
+{
+    tWDA_ReqParams *wda_params = (tWDA_ReqParams *)user_data;
+    sir_mdns_fqdn_info_t *mdns_fqdn_info;
+    VOS_STATUS status;
+
+    VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+          "<------ %s " ,__func__);
+
+    if(NULL == wda_params)
+    {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: pWdaParams received NULL", __func__);
+        VOS_ASSERT(0);
+        return ;
+    }
+
+    if(NULL == wda_params->wdaMsgParam)
+    {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: pWdaParams->wdaMsgParam is NULL", __func__);
+        VOS_ASSERT(0);
+        vos_mem_free(wda_params->wdaWdiApiMsgParam);
+        vos_mem_free(wda_params);
+        return ;
+    }
+
+    mdns_fqdn_info = (sir_mdns_fqdn_info_t *)
+        wda_params->wdaMsgParam;
+
+    if(mdns_fqdn_info->mdns_fqdn_callback)
+    {
+        mdns_fqdn_info->mdns_fqdn_callback(mdns_fqdn_info->
+                       mdns_fqdn_cb_context,
+                       CONVERT_WDI2VOS_STATUS(wdi_rsp->
+                                  status));
+    }
+    else
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               "%s: mdns_fqdn callback is NULL", __func__);
+    }
+
+    status = CONVERT_WDI2VOS_STATUS(wdi_rsp->status);
+    if (status)
+    {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: MDNS FQDN offload failed with status=%d", __func__, status);
+        VOS_ASSERT(0);
+    }
+
+    vos_mem_free(wda_params->wdaWdiApiMsgParam);
+    vos_mem_free(wda_params->wdaMsgParam);
+    vos_mem_free(wda_params);
+
+    return;
+}
+
+/**
+ * wda_mdns_resp_rsp_callback() - response to the mdns resp offload
+ * @wdi_rsp: pointer to the mdns fqdn offload response
+ * @user_data: pointer to user data
+ *
+ * Return: None
+ */
+void wda_mdns_resp_rsp_callback
+(
+ wdi_mdns_set_rsp_param_t*
+ wdi_rsp,
+ void* user_data)
+{
+    tWDA_ReqParams *wda_params = (tWDA_ReqParams *)user_data;
+    sir_mdns_resp_info_t *mdns_resp_info;
+    VOS_STATUS status;
+
+    VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+          "<------ %s " ,__func__);
+
+    if(NULL == wda_params)
+    {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: pWdaParams received NULL", __func__);
+        VOS_ASSERT(0);
+        return ;
+    }
+
+    if(NULL == wda_params->wdaMsgParam)
+    {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: pWdaParams->wdaMsgParam is NULL", __func__);
+        VOS_ASSERT(0);
+        vos_mem_free(wda_params->wdaWdiApiMsgParam);
+        vos_mem_free(wda_params);
+        return ;
+    }
+
+    mdns_resp_info = (sir_mdns_resp_info_t *)
+        wda_params->wdaMsgParam;
+
+    if(mdns_resp_info->mdns_resp_callback)
+    {
+        mdns_resp_info->mdns_resp_callback(mdns_resp_info->
+                       mdns_resp_cb_context,
+                       CONVERT_WDI2VOS_STATUS(wdi_rsp->
+                                  status));
+    }
+    else
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               "%s: mdns_fqdn callback is NULL", __func__);
+    }
+
+    status = CONVERT_WDI2VOS_STATUS(wdi_rsp->status);
+    if (status)
+    {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: MDNS FQDN offload failed with status=%d", __func__, status);
+        VOS_ASSERT(0);
+    }
+
+    vos_mem_free(wda_params->wdaWdiApiMsgParam);
+    vos_mem_free(wda_params->wdaMsgParam);
+    vos_mem_free(wda_params);
+
+    return;
+}
+
+/**
+ * wda_get_stats_rsp_callback() - response to the mdns stats offload
+ * @wdi_rsp: pointer to the mdns fqdn offload response
+ * @user_data: pointer to user data
+ *
+ * Return: None
+ */
+void wda_get_stats_rsp_callback
+(
+ wdi_mdns_stats_rsp_param_t*
+ wdi_rsp,
+ void* user_data)
+{
+    tWDA_ReqParams *wda_params = (tWDA_ReqParams *)user_data;
+    sir_get_mdns_stats_info_t *mdns_stats_info;
+    VOS_STATUS status;
+
+    VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+          "<------ %s " ,__func__);
+
+    if(NULL == wda_params)
+    {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: pWdaParams received NULL", __func__);
+        VOS_ASSERT(0);
+        return ;
+    }
+
+    if(NULL == wda_params->wdaMsgParam)
+    {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: pWdaParams->wdaMsgParam is NULL", __func__);
+        VOS_ASSERT(0);
+        vos_mem_free(wda_params->wdaWdiApiMsgParam);
+        vos_mem_free(wda_params);
+        return ;
+    }
+
+    mdns_stats_info = (sir_get_mdns_stats_info_t *)
+        wda_params->wdaMsgParam;
+
+    status = CONVERT_WDI2VOS_STATUS(wdi_rsp->status);
+    if (status)
+    {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: MDNS FQDN offload failed with status=%d", __func__, status);
+        VOS_ASSERT(0);
+    }
+
+    vos_mem_free(wda_params->wdaWdiApiMsgParam);
+    vos_mem_free(wda_params->wdaMsgParam);
+    vos_mem_free(wda_params);
+
+    return;
+}
+#endif /* MDNS_OFFLOAD */
+
 /*
  * FUNCTION: WDA_wdiCompleteCB
  * call the voss call back function
- */ 
+ */
 void WDA_stopCallback(WDI_Status status, void* pUserData)
 {
    tWDA_ReqParams *pWdaParams = (tWDA_ReqParams *)pUserData;
@@ -15657,6 +15918,324 @@ static int wda_process_dhcpserver_offload_req(tWDA_CbContext *wda_handle,
 }
 #endif /* DHCP_SERVER_OFFLOAD */
 
+#ifdef MDNS_OFFLOAD
+/**
+ * wda_set_mdns_offload_req() - wda api to set mdns offload
+ * @wda_handle: wda handle
+ * @mdns_offload_info: mdns offload info
+ *
+ * Return - 0 for success or else failure
+ */
+static int
+wda_set_mdns_offload_req(tWDA_CbContext *wda_handle,
+             sir_mdns_offload_info_t *mdns_offload_info)
+{
+    wdi_mdns_enable_offload_cmd_req *mdns_info;
+    tWDA_ReqParams *wda_params;
+    WDI_Status wstatus;
+    VOS_STATUS status = VOS_STATUS_SUCCESS;
+
+    VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+          FL("---> %s"), __func__);
+
+    if(NULL == mdns_offload_info)
+    {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: set_mdns_offload received NULL",
+              __func__);
+        VOS_ASSERT(0) ;
+        return VOS_STATUS_E_FAULT;
+    }
+
+    mdns_info = (wdi_mdns_enable_offload_cmd_req *)
+        vos_mem_malloc(sizeof(*mdns_info));
+    if (!mdns_info) {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "Failed to allocate buffer to send "
+              "set_mdns_offload cmd");
+        vos_mem_free(mdns_offload_info);
+        return VOS_STATUS_E_NOMEM;
+    }
+
+    vos_mem_zero(mdns_info, sizeof(*mdns_info));
+
+    wda_params = (tWDA_ReqParams *)vos_mem_malloc(sizeof(tWDA_ReqParams)) ;
+    if(NULL == wda_params)
+    {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: VOS MEM Alloc Failure", __func__);
+        VOS_ASSERT(0);
+        vos_mem_free(mdns_info);
+        vos_mem_free(mdns_offload_info);
+        return VOS_STATUS_E_NOMEM;
+    }
+
+    mdns_info->bss_idx = mdns_offload_info->bss_idx;
+    mdns_info->enable = mdns_offload_info->enable;
+
+    wda_params->pWdaContext = wda_handle;
+    wda_params->wdaMsgParam = mdns_offload_info;
+    wda_params->wdaWdiApiMsgParam = (void *)mdns_info;
+
+    wstatus = wdi_set_mdns_offload_req(mdns_info,
+                    (wdi_mdns_enable_rsp_cb)
+                     wda_mdns_enable_rsp_callback,
+                     wda_params);
+    if(IS_WDI_STATUS_FAILURE(wstatus))
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               "Failed to send wdi_set_mdns_offload_req cmd" );
+        status = CONVERT_WDI2VOS_STATUS(wstatus);
+        vos_mem_free(wda_params->wdaWdiApiMsgParam) ;
+        vos_mem_free(wda_params->wdaMsgParam);
+        vos_mem_free(wda_params);
+    }
+
+    VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+          "mdns enabled!");
+    return status;
+
+}
+
+/**
+ * wda_set_mdns_fqdn_req() - wda api to set mdns fqdn offload
+ * @wda_handle: wda handle
+ * @mdns_fqdn_info: mdns fqdn offload info
+ *
+ * Return - 0 for success or else failure
+ */
+static int
+wda_set_mdns_fqdn_req(tWDA_CbContext *wda_handle,
+              sir_mdns_fqdn_info_t *mdns_fqdn_info)
+{
+    wdi_mdns_set_fqdn_cmd_req *fqdn_info;
+    tWDA_ReqParams *wda_params;
+    WDI_Status wstatus;
+    VOS_STATUS status = VOS_STATUS_SUCCESS;
+
+    VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+          FL("---> %s"), __func__);
+
+    if(NULL == mdns_fqdn_info)
+    {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: set_mdns_fqdn received NULL",
+              __func__);
+        VOS_ASSERT(0) ;
+        return VOS_STATUS_E_FAULT;
+    }
+
+    fqdn_info = (wdi_mdns_set_fqdn_cmd_req *)
+        vos_mem_malloc(sizeof(*fqdn_info));
+    if (!fqdn_info) {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "Failed to allocate buffer to send "
+              "set_mdns_fqdn cmd");
+        vos_mem_free(mdns_fqdn_info);
+        return VOS_STATUS_E_NOMEM;
+    }
+
+    vos_mem_zero(fqdn_info, sizeof(*fqdn_info));
+
+    wda_params = (tWDA_ReqParams *)vos_mem_malloc(sizeof(tWDA_ReqParams));
+    if(NULL == wda_params)
+    {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: VOS MEM Alloc Failure", __func__);
+        VOS_ASSERT(0);
+        vos_mem_free(fqdn_info);
+        vos_mem_free(mdns_fqdn_info);
+        return VOS_STATUS_E_NOMEM;
+    }
+
+    fqdn_info->bss_idx = mdns_fqdn_info->bss_idx;
+    fqdn_info->type = mdns_fqdn_info->fqdn_type;
+    fqdn_info->fqdn_len = mdns_fqdn_info->fqdn_len;
+    vos_mem_copy(fqdn_info->fqdn_data, mdns_fqdn_info->fqdn_data,
+             mdns_fqdn_info->fqdn_len);
+    fqdn_info->fqdn_data[mdns_fqdn_info->fqdn_len] = '\0';
+
+    wda_params->pWdaContext = wda_handle;
+    wda_params->wdaMsgParam = mdns_fqdn_info;
+    wda_params->wdaWdiApiMsgParam = (void *)fqdn_info;
+
+    wstatus = wdi_set_mdns_fqdn_req(fqdn_info,
+                    (wdi_mdns_fqdn_rsp_cb)
+                     wda_mdns_fqdn_rsp_callback,
+                     wda_params);
+    if(IS_WDI_STATUS_FAILURE(wstatus))
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               "Failed to send wdi_set_mdns_fqdn_req cmd" );
+        status = CONVERT_WDI2VOS_STATUS(wstatus);
+        vos_mem_free(wda_params->wdaWdiApiMsgParam) ;
+        vos_mem_free(wda_params->wdaMsgParam);
+        vos_mem_free(wda_params);
+    }
+
+    VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+          "mDNS FQDN set");
+    return status;
+}
+
+/**
+ * wda_set_mdns_response_req() - wda api to set mdns resp offload
+ * @wda_handle: wda handle
+ * @mdns_rsp_info: mdns resp offload info
+ *
+ * Return - 0 for success or else failure
+ */
+static int
+wda_set_mdns_response_req(tWDA_CbContext *wda_handle,
+              sir_mdns_resp_info_t *mdns_rsp_info)
+{
+    wdi_mdns_set_resp_req *rsp_info;
+    tWDA_ReqParams *wda_params;
+    WDI_Status wstatus;
+    VOS_STATUS status = VOS_STATUS_SUCCESS;
+
+    VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+          FL("---> %s"), __func__);
+
+    if(NULL == mdns_rsp_info)
+    {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: dhcp_server_offload_info received NULL",
+              __func__);
+        VOS_ASSERT(0) ;
+        return VOS_STATUS_E_FAULT;
+    }
+
+    rsp_info = (wdi_mdns_set_resp_req *)
+        vos_mem_malloc(sizeof(*rsp_info));
+    if (!rsp_info) {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "Failed to allocate buffer to send "
+              "wdi_set_mdns_response_req cmd");
+        vos_mem_free(mdns_rsp_info);
+        return VOS_STATUS_E_NOMEM;
+    }
+
+    vos_mem_zero(rsp_info, sizeof(*rsp_info));
+
+    wda_params = (tWDA_ReqParams *)vos_mem_malloc(sizeof(tWDA_ReqParams)) ;
+    if(NULL == wda_params)
+    {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: VOS MEM Alloc Failure", __func__);
+        VOS_ASSERT(0);
+        vos_mem_free(rsp_info);
+        vos_mem_free(mdns_rsp_info);
+        return VOS_STATUS_E_NOMEM;
+    }
+
+    rsp_info->bss_idx = mdns_rsp_info->bss_idx;
+    rsp_info->ar_count = mdns_rsp_info->resourceRecord_count;
+    rsp_info->resp_len = mdns_rsp_info->resp_len;
+    vos_mem_copy(rsp_info->resp_data, mdns_rsp_info->resp_data,
+             mdns_rsp_info->resp_len);
+    rsp_info->resp_data[mdns_rsp_info->resp_len] = '\0';
+
+    wda_params->pWdaContext = wda_handle;
+    wda_params->wdaMsgParam = mdns_rsp_info;
+    wda_params->wdaWdiApiMsgParam = (void *)rsp_info;
+
+    wstatus = wdi_set_mdns_response_req(rsp_info,
+                    (wdi_mdns_resp_rsp_cb)
+                     wda_mdns_resp_rsp_callback,
+                     wda_params);
+    if(IS_WDI_STATUS_FAILURE(wstatus))
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               "Failed to send wdi_set_mdns_response_req cmd" );
+        status = CONVERT_WDI2VOS_STATUS(wstatus);
+        vos_mem_free(wda_params->wdaWdiApiMsgParam) ;
+        vos_mem_free(wda_params->wdaMsgParam);
+        vos_mem_free(wda_params);
+    }
+
+    VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+          "mDNS Response set!");
+    return status;
+}
+
+/**
+ * wda_get_mdns_stats_req() - wda api to get mdns stats
+ * @wda_handle: wda handle
+ * @mdns_info: mdns info
+ *
+ * Return - 0 for success or else failure
+ */
+static int
+wda_get_mdns_stats_req(tWDA_CbContext *wda_handle,
+               sir_get_mdns_stats_info_t *mdns_info)
+{
+    wdi_mdns_get_stats_req *status_info;
+    tWDA_ReqParams *wda_params;
+    WDI_Status wstatus;
+
+    VOS_STATUS status = VOS_STATUS_SUCCESS;
+
+    VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+          FL("---> %s"), __func__);
+
+    if(NULL == mdns_info)
+    {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: dhcp_server_offload_info received NULL",
+              __func__);
+        VOS_ASSERT(0) ;
+        return VOS_STATUS_E_FAULT;
+    }
+
+    status_info = (wdi_mdns_get_stats_req *)
+        vos_mem_malloc(sizeof(*status_info));
+    if (!status_info) {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "Failed to allocate buffer to send "
+              "wdi_set_mdns_response_req cmd");
+        vos_mem_free(mdns_info);
+        return VOS_STATUS_E_NOMEM;
+    }
+
+    vos_mem_zero(status_info, sizeof(*status_info));
+
+    wda_params = (tWDA_ReqParams *)vos_mem_malloc(sizeof(tWDA_ReqParams)) ;
+    if(NULL == wda_params)
+    {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+              "%s: VOS MEM Alloc Failure", __func__);
+        VOS_ASSERT(0);
+        vos_mem_free(status_info);
+        vos_mem_free(mdns_info);
+        return VOS_STATUS_E_NOMEM;
+    }
+
+    status_info->bss_idx = mdns_info->bss_idx;
+
+    wda_params->pWdaContext = wda_handle;
+    wda_params->wdaMsgParam = mdns_info;
+    wda_params->wdaWdiApiMsgParam = (void *)status_info;
+
+    wstatus = wdi_get_mdns_stats_req(status_info,
+                    (wdi_get_stats_rsp_cb)
+                     wda_get_stats_rsp_callback,
+                     wda_params);
+    if(IS_WDI_STATUS_FAILURE(wstatus))
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               "Failed to send wdi_set_mdns_response_req cmd" );
+        status = CONVERT_WDI2VOS_STATUS(wstatus);
+        vos_mem_free(wda_params->wdaWdiApiMsgParam) ;
+        vos_mem_free(wda_params->wdaMsgParam);
+        vos_mem_free(wda_params);
+    }
+
+    VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+          "Get mDNS stats");
+    return status;
+}
+#endif /* MDNS_OFFLOAD */
 
 /*
  * FUNCTION: WDA_McProcessMsg
@@ -16591,8 +17170,24 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
          break;
       }
 #endif /* DHCP_SERVER_OFFLOAD */
-
-
+#ifdef MDNS_OFFLOAD
+      case WDA_SET_MDNS_OFFLOAD_CMD:
+         wda_set_mdns_offload_req(pWDA,
+              (sir_mdns_offload_info_t *)pMsg->bodyptr);
+      break;
+      case WDA_SET_MDNS_FQDN_CMD:
+         wda_set_mdns_fqdn_req(pWDA,
+              (sir_mdns_fqdn_info_t *)pMsg->bodyptr);
+      break;
+      case WDA_SET_MDNS_RESPONSE_CMD:
+         wda_set_mdns_response_req(pWDA,
+              (sir_mdns_resp_info_t *)pMsg->bodyptr);
+      break;
+      case WDA_GET_MDNS_STATUS_CMD:
+         wda_get_mdns_stats_req(pWDA,
+              (sir_get_mdns_stats_info_t *) pMsg->bodyptr);
+      break;
+#endif /* MDNS_OFFLOAD */
       case WDA_NAN_REQUEST:
       {
          WDA_ProcessNanRequest( pWDA, (tNanRequest *)pMsg->bodyptr);
