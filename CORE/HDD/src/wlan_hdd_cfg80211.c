@@ -17251,11 +17251,19 @@ static eHalStatus wlan_hdd_is_pno_allowed(hdd_adapter_t *pAdapter)
    hdd_station_ctx_t *pStaCtx;
    hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
    int status = 0;
+
+   if (WLAN_HDD_INFRA_STATION != pAdapter->device_mode)
+   {
+       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+            "%s: PNO is allowed only in STA interface", __func__);
+       return eHAL_STATUS_FAILURE;
+   }
+
    status = hdd_get_front_adapter(pHddCtx, &pAdapterNode);
 
    /* The current firmware design does not allow PNO during any
-    * active sessions. Hence, determine the active sessions
-    * and return a failure.
+    * active sessions. PNO is allowed only in case when sap session
+    * is present and sapo auth offload feature enabled in firmare.
     */
    while ((NULL != pAdapterNode) && (VOS_STATUS_SUCCESS == status))
    {
@@ -17266,7 +17274,8 @@ static eHalStatus wlan_hdd_is_pno_allowed(hdd_adapter_t *pAdapter)
           && (eConnectionState_NotConnected != pStaCtx->conn_info.connState))
           || (WLAN_HDD_P2P_CLIENT == pTempAdapter->device_mode)
           || (WLAN_HDD_P2P_GO == pTempAdapter->device_mode)
-          || (WLAN_HDD_SOFTAP == pTempAdapter->device_mode)
+          || (WLAN_HDD_SOFTAP == pTempAdapter->device_mode &&
+                 !pHddCtx->cfg_ini->enable_sap_auth_offload)
           || (WLAN_HDD_TM_LEVEL_4 == pHddCtx->tmInfo.currentTmLevel)
           )
         {

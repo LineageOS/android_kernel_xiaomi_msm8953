@@ -27000,17 +27000,18 @@ WDI_ProcessSetPreferredNetworkReq
       WDI_ASSERT(0);
       return WDI_STATUS_E_FAILURE;
    }
-
    /*----------------------------------------------------------------------
      Avoid Enable PNO during any active session or an ongoing session
-   ----------------------------------------------------------------------*/
-   if ( (pwdiPNOScanReqParams->wdiPNOScanInfo.bEnable &&
-        WDI_GetActiveSessionsCount(pWDICtx, NULL, eWLAN_PAL_FALSE)) )
+     Allow only if SAP auth offload feature is enabled
+     ----------------------------------------------------------------------*/
+   if ((pwdiPNOScanReqParams->wdiPNOScanInfo.bEnable &&
+         WDI_GetActiveSessionsCount(pWDICtx, NULL, eWLAN_PAL_FALSE)) &&
+         !WDI_getFwWlanFeatCaps(SAP_OFFLOADS))
    {
-     WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+      WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
                "%s:(Active/Ongoing Session) - Fail request", __func__);
 
-     return WDI_STATUS_E_FAILURE;
+      return WDI_STATUS_E_FAILURE;
    }
 
    /*-------------------------------------------------------------------------
