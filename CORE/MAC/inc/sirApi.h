@@ -3794,8 +3794,11 @@ typedef void ( *tGetFrameLogCallback) (void *pContext);
 typedef void(*RssiMonitorReqCb)(void *rssiMonitorCbContext, VOS_STATUS status);
 typedef void(*pktFilterReqCb)(void *data, tANI_U32 status);
 typedef void(*dhcp_offload_req_cb)(void *rssiMonitorCbContext,
-				   VOS_STATUS status);
-
+                                   VOS_STATUS status);
+typedef void(*mdns_enable_req_cb)(void *mdns_enable_cb_context,
+                                  VOS_STATUS status);
+typedef void(*mdns_fqdn_req_cb)(void *mdns_fqdn_cb_context, VOS_STATUS status);
+typedef void(*mdns_resp_req_cb)(void *mdns_resp_cb_context, VOS_STATUS status);
 
 typedef struct sAniGetFrameLogReq
 {
@@ -5589,6 +5592,45 @@ typedef struct
     void                   *dhcp_server_offload_cb_context;
 } sir_dhcp_srv_offload_info_t, *sir_dhcp_srv_offload_info;
 #endif /* DHCP_SERVER_OFFLOAD */
+
+#ifdef MDNS_OFFLOAD
+#define MAX_MDNS_FQDN_LEN                         64
+#define MAX_MDNS_RESP_LEN                         512
+
+typedef struct
+{
+    tANI_U8 bss_idx;
+    tANI_U32 enable;
+    mdns_enable_req_cb    mdns_enable_callback;
+    void                   *mdns_enable_cb_context;
+} sir_mdns_offload_info_t, *sir_mdns_offload_info;
+
+typedef struct
+{
+    tANI_U8 bss_idx;
+    tANI_U32 fqdn_type;
+    tANI_U32 fqdn_len;
+    tANI_U8 fqdn_data[MAX_MDNS_FQDN_LEN];
+    mdns_fqdn_req_cb    mdns_fqdn_callback;
+    void                *mdns_fqdn_cb_context;
+
+} sir_mdns_fqdn_info_t, *sir_mdns_fqdn_info;
+
+typedef struct
+{
+    tANI_U8 bss_idx;
+    tANI_U32 resourceRecord_count;
+    tANI_U32 resp_len;
+    tANI_U8 resp_data[MAX_MDNS_RESP_LEN];
+    mdns_resp_req_cb    mdns_resp_callback;
+    void                *mdns_resp_cb_context;
+} sir_mdns_resp_info_t, *sir_mdns_resp_info;
+
+typedef struct
+{
+    tANI_U8 bss_idx;
+} sir_get_mdns_stats_info_t, *sir_get_mdns_stats_info;
+#endif /* MDNS_OFFLOAD */
 
 typedef PACKED_PRE struct PACKED_POST
 {

@@ -183,6 +183,10 @@
 #define MAC_ADDR_SPOOFING_FW_ENABLE_HOST_DISABLE    2
 #define MAC_ADDR_SPOOFING_DEFER_INTERVAL            10 //in ms
 
+/*
+ * max_sched_scan_plans defined to 10
+ */
+#define MAX_SCHED_SCAN_PLANS 10
 
 static const u32 hdd_cipher_suites[] =
 {
@@ -7254,6 +7258,10 @@ static int wlan_hdd_cfg80211_get_link_properties(struct wiphy *wiphy,
     return cfg80211_vendor_cmd_reply(reply_skb);
 }
 
+#define BEACON_MISS_THRESH_2_4 \
+        QCA_WLAN_VENDOR_ATTR_CONFIG_BEACON_MISS_THRESHOLD_24
+#define BEACON_MISS_THRESH_5_0 \
+        QCA_WLAN_VENDOR_ATTR_CONFIG_BEACON_MISS_THRESHOLD_5
 #define PARAM_WIFICONFIG_MAX QCA_WLAN_VENDOR_ATTR_CONFIG_MAX
 #define PARAM_MODULATED_DTIM QCA_WLAN_VENDOR_ATTR_CONFIG_MODULATED_DTIM
 #define PARAM_STATS_AVG_FACTOR QCA_WLAN_VENDOR_ATTR_CONFIG_STATS_AVG_FACTOR
@@ -7289,12 +7297,16 @@ static int __wlan_hdd_cfg80211_wifi_configuration_set(struct wiphy *wiphy,
     tModifyRoamParamsReqParams modifyRoamParamsReq;
     eHalStatus status;
     int ret_val;
+    uint8_t hb_thresh_val;
+
     static const struct nla_policy policy[PARAM_WIFICONFIG_MAX + 1] = {
                         [PARAM_STATS_AVG_FACTOR] = { .type = NLA_U16 },
                         [PARAM_MODULATED_DTIM] = { .type = NLA_U32 },
                         [PARAM_GUARD_TIME] = { .type = NLA_U32},
                         [PARAM_BCNMISS_PENALTY_PARAM_COUNT] =
                                              { .type = NLA_U32},
+                        [BEACON_MISS_THRESH_2_4] = { .type = NLA_U8 },
+                        [BEACON_MISS_THRESH_5_0] = { .type = NLA_U8 },
     };
 
     ENTER();
@@ -7415,6 +7427,50 @@ static int __wlan_hdd_cfg80211_wifi_configuration_set(struct wiphy *wiphy,
             return ret_val;
         }
 
+    }
+
+    if (tb[QCA_WLAN_VENDOR_ATTR_CONFIG_BEACON_MISS_THRESHOLD_24]) {
+       hb_thresh_val = nla_get_u8(
+                      tb[QCA_WLAN_VENDOR_ATTR_CONFIG_BEACON_MISS_THRESHOLD_24]);
+
+       hddLog(LOG1, "WLAN set heartbeat threshold for 2.4Ghz %d",
+                                              hb_thresh_val);
+       ccmCfgSetInt((WLAN_HDD_GET_CTX(pAdapter))->hHal,
+                     WNI_CFG_HEART_BEAT_THRESHOLD, hb_thresh_val,
+                     NULL, eANI_BOOLEAN_FALSE);
+
+       status = sme_update_hb_threshold(
+                        (WLAN_HDD_GET_CTX(pAdapter))->hHal,
+                         WNI_CFG_HEART_BEAT_THRESHOLD,
+                         hb_thresh_val, eCSR_BAND_24);
+       if (eHAL_STATUS_SUCCESS != status) {
+           hddLog(LOGE, "WLAN set heartbeat threshold FAILED %d", status);
+           vos_mem_free(pReq);
+           pReq = NULL;
+           return -EPERM;
+       }
+    }
+
+    if (tb[QCA_WLAN_VENDOR_ATTR_CONFIG_BEACON_MISS_THRESHOLD_5]) {
+       hb_thresh_val = nla_get_u8(
+                     tb[QCA_WLAN_VENDOR_ATTR_CONFIG_BEACON_MISS_THRESHOLD_5]);
+
+       hddLog(LOG1, "WLAN set heartbeat threshold for 5Ghz %d",
+                                            hb_thresh_val);
+       ccmCfgSetInt((WLAN_HDD_GET_CTX(pAdapter))->hHal,
+                     WNI_CFG_HEART_BEAT_THRESHOLD, hb_thresh_val,
+                     NULL, eANI_BOOLEAN_FALSE);
+
+       status = sme_update_hb_threshold(
+                        (WLAN_HDD_GET_CTX(pAdapter))->hHal,
+                         WNI_CFG_HEART_BEAT_THRESHOLD,
+                         hb_thresh_val, eCSR_BAND_5G);
+       if (eHAL_STATUS_SUCCESS != status) {
+           hddLog(LOGE, "WLAN set heartbeat threshold FAILED %d", status);
+           vos_mem_free(pReq);
+           pReq = NULL;
+           return -EPERM;
+       }
     }
 
     EXIT();
@@ -7853,6 +7909,33 @@ struct wiphy *wlan_hdd_cfg80211_wiphy_alloc(int priv_size)
     return wiphy;
 }
 
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(4,4,0)) || \
+    defined (CFG80211_MULTI_SCAN_PLAN_BACKPORT)
+/**
+ * hdd_config_sched_scan_plans_to_wiphy() - configure sched scan plans to wiphy
+ * @wiphy: pointer to wiphy
+ * @config: pointer to config
+ *
+ * Return: None
+ */
+static void hdd_config_sched_scan_plans_to_wiphy(struct wiphy *wiphy,
+                                                 hdd_config_t *config)
+{
+    wiphy->max_sched_scan_plans = MAX_SCHED_SCAN_PLANS;
+    if (config->max_sched_scan_plan_interval)
+        wiphy->max_sched_scan_plan_interval =
+            config->max_sched_scan_plan_interval;
+    if (config->max_sched_scan_plan_iterations)
+        wiphy->max_sched_scan_plan_iterations =
+               config->max_sched_scan_plan_iterations;
+}
+#else
+static void hdd_config_sched_scan_plans_to_wiphy(struct wiphy *wiphy,
+                                                 hdd_config_t *config)
+{
+}
+#endif
+
 /*
  * FUNCTION: wlan_hdd_cfg80211_update_band
  * This function is called from the supplicant through a
@@ -8143,6 +8226,8 @@ int wlan_hdd_cfg80211_init(struct device *dev,
     wiphy->vendor_commands = hdd_wiphy_vendor_commands;
     wiphy->vendor_events = wlan_hdd_cfg80211_vendor_events;
     wiphy->n_vendor_events = ARRAY_SIZE(wlan_hdd_cfg80211_vendor_events);
+
+    hdd_config_sched_scan_plans_to_wiphy(wiphy, pCfg);
 
     EXIT();
     return 0;
@@ -9787,6 +9872,37 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
                      pHostapdAdapter->dhcp_status.dhcp_offload_status);
             return -EINVAL;
         }
+#ifdef MDNS_OFFLOAD
+        if (iniConfig->enable_mdns_offload) {
+            status = wlan_hdd_set_mdns_offload(pHostapdAdapter);
+            if (VOS_IS_STATUS_SUCCESS(status))
+            {
+                VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                          ("HDD MDNS Server Offload Failed!!"));
+                return -EINVAL;
+            }
+            vos_event_reset(&pHostapdAdapter->mdns_status.vos_event);
+            status = vos_wait_single_event(&pHostapdAdapter->
+                                           mdns_status.vos_event, 2000);
+            if (!VOS_IS_STATUS_SUCCESS(status) ||
+                pHostapdAdapter->mdns_status.mdns_enable_status ||
+                pHostapdAdapter->mdns_status.mdns_fqdn_status ||
+                pHostapdAdapter->mdns_status.mdns_resp_status)
+            {
+                VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                          ("MDNS HDD vos wait for single_event failed!! enable %d fqdn %d resp %d"),
+                          pHostapdAdapter->mdns_status.mdns_enable_status,
+                          pHostapdAdapter->mdns_status.mdns_fqdn_status,
+                          pHostapdAdapter->mdns_status.mdns_resp_status);
+                return -EINVAL;
+            }
+        }
+#endif /* MDNS_OFFLOAD */
+    } else {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                  ("DHCP Disabled ini %d, FW %d"),
+                  iniConfig->enable_dhcp_srv_offload,
+                  sme_IsFeatureSupportedByFW(SAP_OFFLOADS));
     }
 #endif /* DHCP_SERVER_OFFLOAD */
 
@@ -17188,6 +17304,69 @@ void hdd_cfg80211_sched_scan_start_status_cb(void *callbackContext, VOS_STATUS s
     EXIT();
 }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0)) || \
+   defined (CFG80211_MULTI_SCAN_PLAN_BACKPORT)
+/**
+ * hdd_config_sched_scan_plan() - configures the sched scan plans
+ *    from the framework.
+ * @pno_req: pointer to PNO scan request
+ * @request: pointer to scan request from framework
+ *
+ * Return: None
+ */
+static void hdd_config_sched_scan_plan(tpSirPNOScanReq pno_req,
+                                  struct cfg80211_sched_scan_request *request,
+                                  hdd_context_t *hdd_ctx)
+{
+    v_U32_t i = 0;
+
+    pno_req.scanTimers.ucScanTimersCount = n_scan_plans;
+    for (i = 0; i < request->n_scan_plans; i++)
+    {
+        pno_req.scanTimers.aTimerValues[i].uTimerRepeat =
+            request->scan_plans[i]->iterations;
+        pno_req.scanTimers.aTimerValues[i].uTimerValue =
+            request->scan_plans[i]->interval;
+    }
+}
+#else
+static void hdd_config_sched_scan_plan(tSirPNOScanReq pno_req,
+                                  struct cfg80211_sched_scan_request *request,
+                                  hdd_context_t *hdd_ctx)
+{
+    v_U32_t i, temp_int;
+    /* Driver gets only one time interval which is hardcoded in
+     * supplicant for 10000ms. Taking power consumption into account 6
+     * timers will be used, Timervalue is increased exponentially
+     * i.e 10,20,40, 80,160,320 secs. And number of scan cycle for each
+     * timer is configurable through INI param gPNOScanTimerRepeatValue.
+     * If it is set to 0 only one timer will be used and PNO scan cycle
+     * will be repeated after each interval specified by supplicant
+     * till PNO is disabled.
+     */
+    if (0 == hdd_ctx->cfg_ini->configPNOScanTimerRepeatValue)
+        pno_req.scanTimers.ucScanTimersCount =
+            HDD_PNO_SCAN_TIMERS_SET_ONE;
+    else
+        pno_req.scanTimers.ucScanTimersCount =
+            HDD_PNO_SCAN_TIMERS_SET_MULTIPLE;
+
+    temp_int = (request->interval)/1000;
+    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+              "Base scan interval = %d PNOScanTimerRepeatValue = %d",
+              temp_int, hdd_ctx->cfg_ini->configPNOScanTimerRepeatValue);
+    for ( i = 0; i < pno_req.scanTimers.ucScanTimersCount; i++)
+    {
+        pno_req.scanTimers.aTimerValues[i].uTimerRepeat =
+            hdd_ctx->cfg_ini->configPNOScanTimerRepeatValue;
+        pno_req.scanTimers.aTimerValues[i].uTimerValue = temp_int;
+        temp_int *= 2;
+    }
+    //Repeat last timer until pno disabled.
+    pno_req.scanTimers.aTimerValues[i-1].uTimerRepeat = 0;
+}
+#endif
+
 /*
  * FUNCTION: __wlan_hdd_cfg80211_sched_scan_start
  * Function to enable PNO
@@ -17199,7 +17378,7 @@ static int __wlan_hdd_cfg80211_sched_scan_start(struct wiphy *wiphy,
     tSirPNOScanReq pnoRequest = {0};
     hdd_context_t *pHddCtx;
     tHalHandle hHal;
-    v_U32_t i, indx, num_ch, tempInterval, j;
+    v_U32_t i, indx, num_ch, j;
     u8 valid_ch[WNI_CFG_VALID_CHANNEL_LIST_LEN] = {0};
     u8 channels_allowed[WNI_CFG_VALID_CHANNEL_LIST_LEN] = {0};
     v_U32_t num_channels_allowed = WNI_CFG_VALID_CHANNEL_LIST_LEN;
@@ -17443,34 +17622,7 @@ static int __wlan_hdd_cfg80211_sched_scan_start(struct wiphy *wiphy,
                 pnoRequest.us5GProbeTemplateLen);
     }
 
-    /* Driver gets only one time interval which is hardcoded in
-     * supplicant for 10000ms. Taking power consumption into account 6 timers
-     * will be used, Timervalue is increased exponentially i.e 10,20,40,
-     * 80,160,320 secs. And number of scan cycle for each timer
-     * is configurable through INI param gPNOScanTimerRepeatValue.
-     * If it is set to 0 only one timer will be used and PNO scan cycle
-     * will be repeated after each interval specified by supplicant
-     * till PNO is disabled.
-     */
-    if (0 == pHddCtx->cfg_ini->configPNOScanTimerRepeatValue)
-        pnoRequest.scanTimers.ucScanTimersCount = HDD_PNO_SCAN_TIMERS_SET_ONE;
-    else
-        pnoRequest.scanTimers.ucScanTimersCount =
-                                               HDD_PNO_SCAN_TIMERS_SET_MULTIPLE;
-
-    tempInterval = (request->interval)/1000;
-    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-              "Base scan interval = %d PNOScanTimerRepeatValue = %d",
-              tempInterval, pHddCtx->cfg_ini->configPNOScanTimerRepeatValue);
-    for ( i = 0; i < pnoRequest.scanTimers.ucScanTimersCount; i++)
-    {
-        pnoRequest.scanTimers.aTimerValues[i].uTimerRepeat =
-                                 pHddCtx->cfg_ini->configPNOScanTimerRepeatValue;
-        pnoRequest.scanTimers.aTimerValues[i].uTimerValue = tempInterval;
-        tempInterval *= 2;
-    }
-    //Repeat last timer until pno disabled.
-    pnoRequest.scanTimers.aTimerValues[i-1].uTimerRepeat = 0;
+    hdd_config_sched_scan_plan(pnoRequest, request, pHddCtx);
 
     pnoRequest.modePNO = SIR_PNO_MODE_IMMEDIATE;
 

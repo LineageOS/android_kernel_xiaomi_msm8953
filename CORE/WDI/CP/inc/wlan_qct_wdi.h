@@ -6469,6 +6469,121 @@ typedef struct
 } wdi_dhcp_server_offload_rsp_param_t;
 #endif /* DHCP_SERVER_OFFLOAD */
 
+#ifdef MDNS_OFFLOAD
+/**
+ * The purpose of the multicast Domain Name System (mDNS) is to resolve host
+ * names to IP addresses within small networks that do not include a local
+ * name server. It utilizes essentially the same programming interfaces, packet
+ * formats and operating semantics as the unicast DNS, and the advantage is
+ * zero configuration service while no need for central or global server.
+ * Based on mDNS, the DNS-SD (Service Discovery) allows clients to discover a
+ * named list of services by type in a specified domain using standard
+ * DNS queries. Here, we provide the ability to advertise the available
+ * services by responding to mDNS queries.
+ */
+
+/**
+ * wdi_mdns_enable_offload_cmd_req - mdns enable request
+ * @bss_idx: bss index
+ * @enable: enable
+ */
+typedef struct {
+    wpt_uint8 bss_idx;
+    wpt_uint32 enable;
+} wdi_mdns_enable_offload_cmd_req;
+
+/**
+ * wdi_mdns_enable_offload_rsp_param_t - mDNS enable offload response
+ * @status: status for the command success or failure
+ */
+typedef struct
+{
+    wpt_uint32   status;
+} wdi_mdns_enable_offload_rsp_param_t;
+
+#define WMI_MAX_MDNS_FQDN_LEN         64
+#define WMI_MAX_MDNS_RESP_LEN         512
+#define WMI_MDNS_FQDN_TYPE_GENERAL    0
+#define WMI_MDNS_FQDN_TYPE_UNIQUE     1
+
+/**
+ * wdi_mdns_set_fqdn_cmd_req - set fqdn request
+ * @bss_idx: bss index
+ * @type: type of fqdn, general or unique
+ * @fqdn_len: length of fqdn
+ * @fqdn_data: TLV byte stream of fqdn data of length fqdn_len fully-qualified
+ *	domain name to check if match with the received queries
+ */
+typedef struct {
+    wpt_uint8 bss_idx;
+    wpt_uint32 type;
+    wpt_uint32 fqdn_len;
+    wpt_uint8 fqdn_data[WMI_MAX_MDNS_FQDN_LEN];
+} wdi_mdns_set_fqdn_cmd_req;
+
+/**
+ * wdi_mdns_set_fqdn_rsp_param_t - mDNS set fqdn response
+ * @status: status for the command success or failure
+ */
+typedef struct
+{
+    wpt_uint32   status;
+} wdi_mdns_set_fqdn_rsp_param_t;
+
+/**
+ * wdi_mdns_set_resp_req - mDNS response request
+ * @bss_idx: bss index
+ * @ar_count: Answer Resource Record count
+ * @resp_len: length of response
+ * @resp_data: TLV byte stream of resp data of length resp_len responses consisits of Resource Records
+ */
+typedef struct {
+    wpt_uint8 bss_idx;
+    wpt_uint32 ar_count;
+    wpt_uint32 resp_len;
+    wpt_uint8 resp_data[WMI_MAX_MDNS_RESP_LEN];
+} wdi_mdns_set_resp_req;
+
+/**
+ * wdi_mdns_set_rsp_param_t - mDNS set response rsp
+ * @status: status for the command success or failure
+ */
+typedef struct
+{
+    wpt_uint32   status;
+} wdi_mdns_set_rsp_param_t;
+
+/**
+ * wdi_mdns_get_stats_req - get mdns stats request
+ * @bss_idx: bss index
+ */
+typedef struct {
+    wpt_uint8 bss_idx;
+} wdi_mdns_get_stats_req;
+
+/**
+ * wdi_mdns_stats_rsp_t - mdns stats
+ * @bss_idx: bss index
+ * @current_ts: curTimestamp in milliseconds
+ * @last_querry_ts: last received Query in milliseconds
+ * @last_resp_ts: last sent Response in milliseconds
+ * @tot_queries: stats of received queries
+ * @tot_matches: stats of macth queries
+ * @tot_rsp: stats of responses
+ * @status: indicate the current status of mDNS offload
+ */
+typedef struct {
+    wpt_uint8 bss_idx;
+    wpt_uint32 current_ts;
+    wpt_uint32 last_querry_ts;
+    wpt_uint32 last_resp_ts;
+    wpt_uint32 tot_queries;
+    wpt_uint32 tot_matches;
+    wpt_uint32 tot_rsp;
+    wpt_uint32 status;
+} wdi_mdns_stats_rsp_param_t;
+#endif /* MDNS_OFFLOAD */
+
 /**
  * struct WDI_FwrMemDumpReqType - firmware memory dump request details.
 .*.@FWMemDumpReqCb - Associated Callback
@@ -8502,6 +8617,13 @@ typedef void (*WDI_AntennaDivSelRspCb)(WDI_Status status,
 #ifdef DHCP_SERVER_OFFLOAD
 typedef void (*wdi_dhcp_srv_offload_rsp_cb)(void *event_data,void *user_data);
 #endif /* DHCP_SERVER_OFFLOAD */
+#ifdef MDNS_OFFLOAD
+typedef void (*wdi_mdns_enable_rsp_cb)(void *event_data,void *user_data);
+typedef void (*wdi_mdns_fqdn_rsp_cb)(void *event_data,void *user_data);
+typedef void (*wdi_mdns_resp_rsp_cb)(void *event_data,void *user_data);
+typedef void (*wdi_get_stats_rsp_cb)(void *event_data,void *user_data);
+#endif /* MDNS_OFFLOAD */
+
 
 /*========================================================================
  *     Function Declarations and Documentation
@@ -12305,5 +12427,39 @@ wdi_process_dhcpserver_offload_req
    void *user_data
 );
 #endif /* DHCP_SERVER_OFFLOAD */
+
+#ifdef MDNS_OFFLOAD
+WDI_Status
+wdi_set_mdns_offload_req
+(
+   wdi_mdns_enable_offload_cmd_req *mdns_info,
+   wdi_mdns_enable_rsp_cb wdi_mdns_enable_rsp_callback,
+   void *user_data
+);
+
+WDI_Status
+wdi_set_mdns_fqdn_req
+(
+   wdi_mdns_set_fqdn_cmd_req *mdns_info,
+   wdi_mdns_fqdn_rsp_cb wdi_mdns_fqdn_rsp_callback,
+   void *user_data
+);
+
+WDI_Status
+wdi_set_mdns_response_req
+(
+   wdi_mdns_set_resp_req *mdns_info,
+   wdi_mdns_resp_rsp_cb wdi_mdns_resp_rsp_callback,
+   void *user_data
+);
+
+WDI_Status
+wdi_get_mdns_stats_req
+(
+   wdi_mdns_get_stats_req *mdns_info,
+   wdi_get_stats_rsp_cb wdi_get_stats_rsp_callback,
+   void *user_data
+);
+#endif /* MDNS_OFFLOAD */
 
 #endif /* #ifndef WLAN_QCT_WDI_H */

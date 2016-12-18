@@ -3982,7 +3982,20 @@ eHalStatus sme_set_sap_auth_offload(tHalHandle hHal,
 #endif /* SAP_AUTH_OFFLOAD */
 #ifdef DHCP_SERVER_OFFLOAD
 eHalStatus sme_set_dhcp_srv_offload(tHalHandle hal,
-				    sir_dhcp_srv_offload_info_t *dhcp_srv_info);
+                                   sir_dhcp_srv_offload_info_t *dhcp_srv_info);
 #endif /* DHCP_SERVER_OFFLOAD */
 
+#ifdef MDNS_OFFLOAD
+eHalStatus sme_set_mdns_offload(tHalHandle hal,
+                                 sir_mdns_offload_info_t *mdns_info);
+
+eHalStatus sme_set_mdns_fqdn(tHalHandle hal,
+                             sir_mdns_fqdn_info_t *mdns_fqdn);
+
+eHalStatus sme_set_mdns_resp(tHalHandle hal,
+                             sir_mdns_resp_info_t *mdns_resp);
+#endif /* MDNS_OFFLOAD */
+
+eHalStatus sme_update_hb_threshold(tHalHandle hHal, tANI_U32 cfgId,
+                       tANI_U8 hbThresh, eCsrBand eBand);
 #endif //#if !defined( __SME_API_H )
