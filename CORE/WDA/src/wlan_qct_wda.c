@@ -4768,6 +4768,11 @@ VOS_STATUS WDA_ProcessSapAuthOffloadAddStaReq(tWDA_CbContext *pWDA,
     wdiAddSTAParam.bcastDpuSignature = addStaReqParam->ucBcastSig;
     wdiAddSTAParam.bcastMgmtDpuIndex         = addStaReqParam->bcastMgmtDpuIdx;
     wdiAddSTAParam.bcastMgmtDpuSignature     = addStaReqParam->ucMgmtSig;
+    wdiAddSTAParam.ucWmmEnabled = addStaReqParam->wmmEnabled;
+    wdiAddSTAParam.ucRmfEnabled = addStaReqParam->rmfEnabled;
+    wdiAddSTAParam.ucBSSIdx = addStaReqParam->bssIdx;
+    wdiAddSTAParam.ucHTCapable = addStaReqParam->htCapable;
+
 
     WDI_STATableAddSta(pWDA->pWdiContext, &wdiAddSTAParam);
     pWDA->wdaStaInfo[wdiConfigStaReqParam->wdiReqInfo.staIdx].ucValidStaIndex =
