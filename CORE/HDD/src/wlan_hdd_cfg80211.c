@@ -9848,6 +9848,12 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
     }
 
     set_bit(SOFTAP_BSS_STARTED, &pHostapdAdapter->event_flags);
+    if (WLANSAP_get_sessionId(pVosContext, &pHostapdAdapter->sessionId) !=
+                         VOS_STATUS_SUCCESS)
+    {
+        hddLog(LOGE,FL("Fail to get Softap sessionID"));
+        VOS_ASSERT(0);
+    }
     /* Initialize WMM configuation */
     hdd_wmm_init(pHostapdAdapter);
     wlan_hdd_incr_active_session(pHddCtx, pHostapdAdapter->device_mode);
@@ -17245,11 +17251,19 @@ static eHalStatus wlan_hdd_is_pno_allowed(hdd_adapter_t *pAdapter)
    hdd_station_ctx_t *pStaCtx;
    hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
    int status = 0;
+
+   if (WLAN_HDD_INFRA_STATION != pAdapter->device_mode)
+   {
+       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+            "%s: PNO is allowed only in STA interface", __func__);
+       return eHAL_STATUS_FAILURE;
+   }
+
    status = hdd_get_front_adapter(pHddCtx, &pAdapterNode);
 
    /* The current firmware design does not allow PNO during any
-    * active sessions. Hence, determine the active sessions
-    * and return a failure.
+    * active sessions. PNO is allowed only in case when sap session
+    * is present and sapo auth offload feature enabled in firmare.
     */
    while ((NULL != pAdapterNode) && (VOS_STATUS_SUCCESS == status))
    {
@@ -17260,7 +17274,8 @@ static eHalStatus wlan_hdd_is_pno_allowed(hdd_adapter_t *pAdapter)
           && (eConnectionState_NotConnected != pStaCtx->conn_info.connState))
           || (WLAN_HDD_P2P_CLIENT == pTempAdapter->device_mode)
           || (WLAN_HDD_P2P_GO == pTempAdapter->device_mode)
-          || (WLAN_HDD_SOFTAP == pTempAdapter->device_mode)
+          || (WLAN_HDD_SOFTAP == pTempAdapter->device_mode &&
+                 !pHddCtx->cfg_ini->enable_sap_auth_offload)
           || (WLAN_HDD_TM_LEVEL_4 == pHddCtx->tmInfo.currentTmLevel)
           )
         {
@@ -19740,8 +19755,7 @@ int __wlan_hdd_cfg80211_resume_wlan(struct wiphy *wiphy)
     MTRACE(vos_trace(VOS_MODULE_ID_HDD, TRACE_CODE_HDD_CFG80211_RESUME_WLAN,
                      NO_SESSION, pHddCtx->isWiphySuspended));
 
-    if ((VOS_STA_SAP_MODE == hdd_get_conparam()) &&
-        pHddCtx->is_ap_mode_wow_supported)
+    if (pHddCtx->is_ap_mode_wow_supported)
     {
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                   "%s: Resume SoftAP", __func__);
@@ -19832,8 +19846,7 @@ int __wlan_hdd_cfg80211_suspend_wlan(struct wiphy *wiphy,
         return ret;
     }
 
-   if ((VOS_STA_SAP_MODE == hdd_get_conparam()) &&
-       (pHddCtx->is_ap_mode_wow_supported)) {
+    if (pHddCtx->is_ap_mode_wow_supported) {
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                   "%s: Suspend SoftAP", __func__);
          hdd_set_wlan_suspend_mode(true);

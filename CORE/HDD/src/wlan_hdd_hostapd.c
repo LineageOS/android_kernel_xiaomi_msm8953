@@ -4941,8 +4941,6 @@ VOS_STATUS hdd_init_ap_mode( hdd_adapter_t *pAdapter )
 
     set_bit(WMM_INIT_DONE, &pAdapter->event_flags);
 
-    pHddCtx->is_ap_mode_wow_supported =
-              sme_IsFeatureSupportedByFW(SAP_MODE_WOW);
     return status;
 
 error_wmm_init:
