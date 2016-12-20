@@ -1375,6 +1375,7 @@ eHalStatus WDA_SetRegDomain(void * clientCtxt, v_REGDOMAIN_t regId,
 
 #ifdef WLAN_FEATURE_APFIND
 #define WDA_APFIND_SET_CMD                    SIR_HAL_APFIND_SET_CMD
+#define WDA_AP_FIND_IND                       SIR_HAL_AP_FIND_IND
 #endif /* WLAN_FEATURE_APFIND */
 
 #define HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME 0x40 // Bit 6 will be used to control BD rate for Management frames

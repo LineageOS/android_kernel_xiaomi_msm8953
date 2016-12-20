@@ -984,6 +984,11 @@ WDI_RspProcFuncType  pfnRspProcTbl[WDI_MAX_RESP] =
   NULL,
 #endif
   WDI_ProcessGetCurrentAntennaIndexRsp,     /* WDI_ANTENNA_DIVERSITY_SELECTION_RSP */
+#ifdef WLAN_FEATURE_APFIND
+  WDI_ProcessQRFPrefNetworkFoundInd,   /* WDI_HAL_QRF_PREF_NETWORK_FOUND_IND */
+#else
+  NULL,
+#endif
 };
 
 
@@ -25417,6 +25422,10 @@ case WLAN_HAL_DEL_STA_SELF_RSP:
   case WLAN_HAL_MDNS_STATS_OFFLOAD_RSP:
        return WDI_MDNS_STATS_OFFLOAD_RSP;
 #endif /* MDNS_OFFLOAD */
+#ifdef WLAN_FEATURE_APFIND
+  case WLAN_HAL_QRF_PREF_NETW_FOUND_IND:
+    return WDI_HAL_QRF_PREF_NETWORK_FOUND_IND;
+#endif
   default:
     return eDRIVER_TYPE_MAX;
   }
@@ -27702,6 +27711,51 @@ WDI_ProcessPERRoamScanTriggerRsp
 
    return WDI_STATUS_SUCCESS;
 }/* WDI_ProcessPERRoamScanTriggerRsp  */
+#endif
+
+#ifdef WLAN_FEATURE_APFIND
+/**
+ @brief Process QRF Preferred Network Found Indication function
+
+ @param  pWDICtx:         pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+WDI_Status
+WDI_ProcessQRFPrefNetworkFoundInd
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+)
+{
+  WDI_LowLevelIndType   wdiInd;
+
+  WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+  "%s:%d Enter", __func__, __LINE__);
+
+  /*-------------------------------------------------------------------------
+    Sanity check
+  -------------------------------------------------------------------------*/
+  if (NULL == pWDICtx)
+  {
+     WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
+                 "%s: Invalid parameters", __func__);
+     WDI_ASSERT( 0 );
+     return WDI_STATUS_E_FAILURE;
+  }
+
+  /*Fill in the indication parameters*/
+  wdiInd.wdiIndicationType = WDI_AP_FOUND_IND;
+  if ( pWDICtx->wdiLowLevelIndCB )
+  {
+    /*Notify UMAC*/
+    pWDICtx->wdiLowLevelIndCB( &wdiInd, pWDICtx->pIndUserData );
+  }
+
+  return WDI_STATUS_SUCCESS;
+}
 #endif
 
 /**

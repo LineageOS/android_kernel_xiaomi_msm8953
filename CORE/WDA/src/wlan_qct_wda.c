@@ -17415,6 +17415,13 @@ void WDA_lowLevelIndCallback(WDI_LowLevelIndType *wdiLowLevelInd,
          WDA_SendMsg(pWDA, WDA_MISSED_BEACON_IND, (void *)pMissBeacInd , 0) ;
          break ;
       }
+#ifdef WLAN_FEATURE_APFIND
+      case WDI_AP_FOUND_IND:
+      {
+         WDA_SendMsg(pWDA, WDA_AP_FIND_IND, NULL, 0) ;
+         break ;
+      }
+#endif
       case WDI_UNKNOWN_ADDR2_FRAME_RX_IND:
       {
          /* TODO: Decode Ind and send Ind to PE */

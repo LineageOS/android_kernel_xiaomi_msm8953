@@ -431,6 +431,9 @@ typedef enum
 #ifdef FEATURE_OEM_DATA_SUPPORT
   WDI_START_OEM_DATA_RSP_IND_NEW,
 #endif
+#ifdef WLAN_FEATURE_APFIND
+  WDI_AP_FOUND_IND,
+#endif
   WDI_MAX_IND
 }WDI_LowLevelIndEnumType;
 

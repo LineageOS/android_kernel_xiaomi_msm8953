@@ -977,6 +977,9 @@ typedef enum
   WDI_HAL_RSSI_BREACHED_IND          = WDI_HAL_IND_MIN + 32,
   WDI_HAL_START_OEM_DATA_RSP_IND_NEW = WDI_HAL_IND_MIN + 33,
   WDI_ANTENNA_DIVERSITY_SELECTION_RSP = WDI_HAL_IND_MIN + 34,
+#ifdef WLAN_FEATURE_APFIND
+  WDI_HAL_QRF_PREF_NETWORK_FOUND_IND = WDI_HAL_IND_MIN + 35,
+#endif
   WDI_MAX_RESP
 }WDI_ResponseEnumType; 
 
@@ -5928,6 +5931,15 @@ WDI_Status WDI_ProcessLphbCfgRsp
   WDI_EventInfoType*     pEventData
 );
 #endif /* FEATURE_WLAN_LPHB */
+
+#ifdef WLAN_FEATURE_APFIND
+WDI_Status
+WDI_ProcessQRFPrefNetworkFoundInd
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+#endif
 
 /**
  @brief Process Rate Update Indication and post it to HAL
