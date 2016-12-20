@@ -567,7 +567,8 @@ typedef enum
   WDI_PROCESS_SAP_AUTH_OFFLOAD_IND = WDI_MAX_REQ +24,
 #endif
 
-  WDI_MAX_UMAC_IND = WDI_MAX_REQ + 25
+  WDI_SET_AP_FIND_IND = WDI_MAX_REQ + 25,
+  WDI_MAX_UMAC_IND = WDI_MAX_REQ + 26
 
 }WDI_RequestEnumType;
 
@@ -6780,6 +6781,20 @@ wdi_get_mdns_stats_offload_rsp
   WDI_EventInfoType *event_data
 );
 #endif /* MDNS_OFFLOAD */
-
+#ifdef WLAN_FEATURE_APFIND
+/**
+ *  WDI_ProcessApFindInd - Process AP find command command
+ *
+ *  @pWDICtx: pointer to the WLAN DAL context
+ *  @pEventData: pointer to the event information structure
+ *
+ */
+WDI_Status
+WDI_ProcessApFindInd
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+#endif
 #endif /*WLAN_QCT_WDI_I_H*/
 

@@ -1373,6 +1373,10 @@ eHalStatus WDA_SetRegDomain(void * clientCtxt, v_REGDOMAIN_t regId,
 #define WDA_SET_SAP_AUTH_OFL                  SIR_HAL_SET_SAP_AUTH_OFL
 #endif /* SAP_AUTH_OFFLOAD */
 
+#ifdef WLAN_FEATURE_APFIND
+#define WDA_APFIND_SET_CMD                    SIR_HAL_APFIND_SET_CMD
+#endif /* WLAN_FEATURE_APFIND */
+
 #define HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME 0x40 // Bit 6 will be used to control BD rate for Management frames
 
 #define halTxFrame(hHal, pFrmBuf, frmLen, frmType, txDir, tid, pCompFunc, pData, txFlag) \

@@ -787,6 +787,10 @@ typedef struct sSirMbMsgP2p
 #define SIR_HAL_SET_MDNS_RESPONSE          (SIR_HAL_ITC_MSG_TYPES_BEGIN + 297)
 #define SIR_HAL_GET_MDNS_STATUS            (SIR_HAL_ITC_MSG_TYPES_BEGIN + 298)
 #endif /* MDNS_OFFLOAD */
+#ifdef WLAN_FEATURE_APFIND
+#define SIR_HAL_APFIND_SET_CMD             (SIR_HAL_ITC_MSG_TYPES_BEGIN + 299)
+#endif/* WLAN_FEATURE_APFIND */
+
 #define SIR_HAL_MSG_TYPES_END              (SIR_HAL_MSG_TYPES_BEGIN + 0x1FF)
 
 // CFG message types
