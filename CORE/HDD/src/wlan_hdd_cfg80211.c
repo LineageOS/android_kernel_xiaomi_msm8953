@@ -17375,17 +17375,17 @@ static void hdd_config_sched_scan_plan(tpSirPNOScanReq pno_req,
 {
     v_U32_t i = 0;
 
-    pno_req.scanTimers.ucScanTimersCount = n_scan_plans;
+    pno_req->scanTimers.ucScanTimersCount = request->n_scan_plans;
     for (i = 0; i < request->n_scan_plans; i++)
     {
-        pno_req.scanTimers.aTimerValues[i].uTimerRepeat =
-            request->scan_plans[i]->iterations;
-        pno_req.scanTimers.aTimerValues[i].uTimerValue =
-            request->scan_plans[i]->interval;
+        pno_req->scanTimers.aTimerValues[i].uTimerRepeat =
+            request->scan_plans[i].iterations;
+        pno_req->scanTimers.aTimerValues[i].uTimerValue =
+            request->scan_plans[i].interval;
     }
 }
 #else
-static void hdd_config_sched_scan_plan(tSirPNOScanReq pno_req,
+static void hdd_config_sched_scan_plan(tpSirPNOScanReq pno_req,
                                   struct cfg80211_sched_scan_request *request,
                                   hdd_context_t *hdd_ctx)
 {
@@ -17400,25 +17400,25 @@ static void hdd_config_sched_scan_plan(tSirPNOScanReq pno_req,
      * till PNO is disabled.
      */
     if (0 == hdd_ctx->cfg_ini->configPNOScanTimerRepeatValue)
-        pno_req.scanTimers.ucScanTimersCount =
+        pno_req->scanTimers.ucScanTimersCount =
             HDD_PNO_SCAN_TIMERS_SET_ONE;
     else
-        pno_req.scanTimers.ucScanTimersCount =
+        pno_req->scanTimers.ucScanTimersCount =
             HDD_PNO_SCAN_TIMERS_SET_MULTIPLE;
 
     temp_int = (request->interval)/1000;
     VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
               "Base scan interval = %d PNOScanTimerRepeatValue = %d",
               temp_int, hdd_ctx->cfg_ini->configPNOScanTimerRepeatValue);
-    for ( i = 0; i < pno_req.scanTimers.ucScanTimersCount; i++)
+    for ( i = 0; i < pno_req->scanTimers.ucScanTimersCount; i++)
     {
-        pno_req.scanTimers.aTimerValues[i].uTimerRepeat =
+        pno_req->scanTimers.aTimerValues[i].uTimerRepeat =
             hdd_ctx->cfg_ini->configPNOScanTimerRepeatValue;
-        pno_req.scanTimers.aTimerValues[i].uTimerValue = temp_int;
+        pno_req->scanTimers.aTimerValues[i].uTimerValue = temp_int;
         temp_int *= 2;
     }
     //Repeat last timer until pno disabled.
-    pno_req.scanTimers.aTimerValues[i-1].uTimerRepeat = 0;
+    pno_req->scanTimers.aTimerValues[i-1].uTimerRepeat = 0;
 }
 #endif
 
@@ -17677,7 +17677,7 @@ static int __wlan_hdd_cfg80211_sched_scan_start(struct wiphy *wiphy,
                 pnoRequest.us5GProbeTemplateLen);
     }
 
-    hdd_config_sched_scan_plan(pnoRequest, request, pHddCtx);
+    hdd_config_sched_scan_plan(&pnoRequest, request, pHddCtx);
 
     pnoRequest.modePNO = SIR_PNO_MODE_IMMEDIATE;
 
