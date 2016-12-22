@@ -2160,6 +2160,21 @@ void limHandleBmpsStatusInd(tpAniSirGlobal pMac)
     return;
 }
 
+#ifdef WLAN_FEATURE_APFIND
+void limHandleAPFindInd(tpAniSirGlobal pMac)
+{
+    tANI_S8 pe_sessionid = -1;
+    /* Find STA connection session */
+    pe_sessionid = limGetInfraSessionId(pMac);
+    if (pe_sessionid != -1)
+        limTearDownLinkWithAp(pMac,
+                              pe_sessionid,
+                              eSIR_BEACON_MISSED);
+    else
+         limLog(pMac, LOGE,
+               FL("session id doesn't exist for infra"));
+}
+#endif
 
 /** -----------------------------------------------------------------
   \brief limHandleMissedBeaconInd() - handles missed beacon indication

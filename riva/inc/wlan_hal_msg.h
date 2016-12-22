@@ -617,6 +617,10 @@ typedef enum
    WLAN_HAL_MDNS_STATS_OFFLOAD_REQ           = 348,
    WLAN_HAL_MDNS_STATS_OFFLOAD_RSP           = 349,
 
+   /* QRF Support */
+   WLAN_HAL_QRF_AP_FIND_COMMAND              = 350,
+   WLAN_HAL_QRF_PREF_NETW_FOUND_IND          = 351,
+
    WLAN_HAL_MSG_MAX = WLAN_HAL_MSG_TYPE_MAX_ENUM_SIZE
 }tHalHostMsgType;
 
@@ -9116,6 +9120,75 @@ typedef PACKED_PRE struct PACKED_POST
     tHalMsgHeader         header;
     tFWLoggingDxeDoneInd    tFWLoggingDxeDoneIndParams;
 }  tFWLoggingDxeDoneIndMsg,  * tpFWLoggingDxeDoneIndMsg;
+
+/*---------------------------------------------------------------------------
+ *     WLAN_HAL_APFIND_CMDID
+ * ---------------------------------------------------------------------------*/
+
+#define MAX_ARRAY_SIZE 1000
+typedef PACKED_PRE struct PACKED_POST
+{
+    tANI_U16 msg_version:4;
+    tANI_U16 msg_id:12;
+    tANI_U16 msg_len:16;
+    tANI_U16 handle;
+    tANI_U16 transaction_id;
+} tApfindMsgHeader, *tpApfindMsgHeader;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tANI_U16 type;
+    tANI_U16 length;
+    tANI_U8* value;
+} tApfindTlv, *tpApfindTlv;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tApfindMsgHeader apFindHeader;
+    tANI_U8 ptlv[MAX_ARRAY_SIZE];
+} tQRFPrefNetwListParams, *tpQRFPrefNetwListParams;
+
+typedef enum
+{
+    APFIND_MSG_ID_ERROR_RSP    = 0,
+    APFIND_MSG_ID_ENABLE_REQ   = 1,
+    APFIND_MSG_ID_SET_SSID     = 2,
+    APFIND_MSG_ID_SET_MAC      = 3,
+    APFIND_MSG_ID_SET_PARAMS   = 4,
+} tApfindMsgId;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tHalMsgHeader header;
+    tQRFPrefNetwListParams qRFprefNetwListParams;
+} tQRFSetPrefNetwListReq, *tpQRFSetPrefNetwListReq;
+
+#define QRF_MAX_SUPPORTED_NETWORKS  10
+
+typedef PACKED_PRE struct PACKED_POST {
+    /*Network that was found with the highest RSSI*/
+    tSirMacSSid ssId;
+    /*Indicates the RSSI */
+    tANI_U8     rssi;
+    /* The MPDU frame length of a beacon or probe rsp.
+     * data is the start of the frame
+     */
+    tANI_U16    frameLength;
+} tQrfNetwFoundParam, *tpQrfNetwFoundParam;
+
+typedef PACKED_PRE struct PACKED_POST {
+    uint8 netwCount;
+    tQrfNetwFoundParam qrfNetwParams[QRF_MAX_SUPPORTED_NETWORKS];
+} tQrfPrefNetwFoundParams, * tpQrfPrefNetwFoundParams;
+
+/*
+ * Preferred network found indication
+ */
+typedef PACKED_PRE struct PACKED_POST {
+    tHalMsgHeader header;
+    tQrfPrefNetwFoundParams   qrfPrefNetwFoundParams;
+} tQrfPrefNetwFoundInd, *tpQrfPrefNetwFoundInd;
+
 
 /*---------------------------------------------------------------------------
  * Logging mail box structure

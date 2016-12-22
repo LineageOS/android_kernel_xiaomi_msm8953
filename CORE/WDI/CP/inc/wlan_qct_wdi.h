@@ -431,6 +431,9 @@ typedef enum
 #ifdef FEATURE_OEM_DATA_SUPPORT
   WDI_START_OEM_DATA_RSP_IND_NEW,
 #endif
+#ifdef WLAN_FEATURE_APFIND
+  WDI_AP_FOUND_IND,
+#endif
   WDI_MAX_IND
 }WDI_LowLevelIndEnumType;
 
@@ -6584,6 +6587,14 @@ typedef struct {
 } wdi_mdns_stats_rsp_param_t;
 #endif /* MDNS_OFFLOAD */
 
+#ifdef WLAN_FEATURE_APFIND
+struct WDI_APFind_cmd
+{
+    wpt_uint32 data_len;
+    wpt_uint8 data[];
+};
+#endif
+
 /**
  * struct WDI_FwrMemDumpReqType - firmware memory dump request details.
 .*.@FWMemDumpReqCb - Associated Callback
@@ -12417,7 +12428,9 @@ WDI_Status
 WDI_process_sap_auth_offload(
    struct WDI_sap_ofl_enable_params *sap_ofl_enable_cmd
 );
-
+#ifdef WLAN_FEATURE_APFIND
+WDI_Status WDI_process_ap_find_cmd(struct WDI_APFind_cmd *params);
+#endif
 #ifdef DHCP_SERVER_OFFLOAD
 WDI_Status
 wdi_process_dhcpserver_offload_req

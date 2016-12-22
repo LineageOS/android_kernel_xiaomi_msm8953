@@ -358,6 +358,15 @@ typedef enum
     eSME_ROAM_TRIGGER_MAX
 } tSmeFastRoamTrigger;
 
+#ifdef WLAN_FEATURE_APFIND
+struct sme_ap_find_request_req
+{
+    u_int16_t request_data_len;
+    const u_int8_t* request_data;
+};
+#endif /* WLAN_FEATURE_APFIND */
+
+
 /*------------------------------------------------------------------------- 
   Function declarations and documentation.
   ------------------------------------------------------------------------*/
@@ -3965,6 +3974,11 @@ eHalStatus sme_remove_bssid_from_scan_list(tHalHandle hal,
 void sme_set_mgmt_frm_via_wq5(tHalHandle hHal,
         tANI_BOOLEAN sendMgmtPktViaWQ5);
 eHalStatus sme_update_cfg_int_param(tHalHandle hHal, tANI_U32 cfg_id);
+
+#ifdef WLAN_FEATURE_APFIND
+VOS_STATUS sme_apfind_set_cmd(struct sme_ap_find_request_req *input);
+#endif /* WLAN_FEATURE_APFIND */
+
 #ifdef SAP_AUTH_OFFLOAD
 /**
  * sme_set_sap_auth_offload() enable/disable SAP Auth Offload

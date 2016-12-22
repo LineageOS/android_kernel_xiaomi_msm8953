@@ -2445,7 +2445,7 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_RA_RATE_LIMIT_INTERVAL_NAME         "gRARateLimitInterval"
 #define CFG_RA_RATE_LIMIT_INTERVAL_DEFAULT      (60)
 #define CFG_RA_RATE_LIMIT_INTERVAL_MIN          (0)
-#define CFG_RA_RATE_LIMIT_INTERVAL_MAX          (60)
+#define CFG_RA_RATE_LIMIT_INTERVAL_MAX          (3600)
 
 #define CFG_ROAMING_DFS_CHANNEL_NAME                "gAllowDFSChannelRoam"
 #define CFG_ROAMING_DFS_CHANNEL_MIN                 (0)
@@ -3020,6 +3020,10 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_DISABLE_SCAN_DURING_SCO_MAX     (1)
 #define CFG_DISABLE_SCAN_DURING_SCO_DEFAULT (0)
 
+#define CFG_CH_AVOID_SAP_RESTART_NAME    "sap_ch_avoid_restart"
+#define CFG_CH_AVOID_SAP_RESTART_MIN     (0)
+#define CFG_CH_AVOID_SAP_RESTART_MAX     (1)
+#define CFG_CH_AVOID_SAP_RESTART_DEFAULT (1)
 
 /*
  * maximum interval (in seconds) for a
@@ -3624,6 +3628,7 @@ typedef struct
    v_BOOL_t                    sendMgmtPktViaWQ5;
    v_BOOL_t                    sap_probe_resp_offload;
    v_BOOL_t                    disable_scan_during_sco;
+   v_BOOL_t                    sap_restrt_ch_avoid;
 #ifdef SAP_AUTH_OFFLOAD
    bool                        enable_sap_auth_offload;
    uint32_t                    sap_auth_offload_sec_type;

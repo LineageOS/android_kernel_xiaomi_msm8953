@@ -757,6 +757,13 @@ typedef struct sSirSmeStartBssRsp
     tSirBssDescription  bssDescription;//Peer BSS description
 } tSirSmeStartBssRsp, *tpSirSmeStartBssRsp;
 
+#ifdef WLAN_FEATURE_APFIND
+struct hal_apfind_request
+{
+    tANI_U16 request_data_len;
+    tANI_U8 request_data[];
+};
+#endif
 
 typedef struct sSirChannelList
 {

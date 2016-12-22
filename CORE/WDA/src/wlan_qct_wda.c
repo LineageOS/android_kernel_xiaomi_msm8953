@@ -4768,6 +4768,11 @@ VOS_STATUS WDA_ProcessSapAuthOffloadAddStaReq(tWDA_CbContext *pWDA,
     wdiAddSTAParam.bcastDpuSignature = addStaReqParam->ucBcastSig;
     wdiAddSTAParam.bcastMgmtDpuIndex         = addStaReqParam->bcastMgmtDpuIdx;
     wdiAddSTAParam.bcastMgmtDpuSignature     = addStaReqParam->ucMgmtSig;
+    wdiAddSTAParam.ucWmmEnabled = addStaReqParam->wmmEnabled;
+    wdiAddSTAParam.ucRmfEnabled = addStaReqParam->rmfEnabled;
+    wdiAddSTAParam.ucBSSIdx = addStaReqParam->bssIdx;
+    wdiAddSTAParam.ucHTCapable = addStaReqParam->htCapable;
+
 
     WDI_STATableAddSta(pWDA->pWdiContext, &wdiAddSTAParam);
     pWDA->wdaStaInfo[wdiConfigStaReqParam->wdiReqInfo.staIdx].ucValidStaIndex =
@@ -15393,6 +15398,50 @@ WDA_ProcessIbssPeerInfoReq(tWDA_CbContext *pWDA,
 
 }
 
+#ifdef WLAN_FEATURE_APFIND
+/*
+ * FUNCTION: WDA_Process_apfind_set_cmd
+ * Forward AP find config request to WDI
+ */
+VOS_STATUS  WDA_Process_apfind_set_cmd(tWDA_CbContext *pWDA,
+        struct hal_apfind_request *ap_find_req)
+{
+    WDI_Status status;
+    struct WDI_APFind_cmd *wdi_ap_find_cmd;
+
+    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+            "------> %s " ,__func__);
+    if (NULL == ap_find_req)
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                "%s: apfind_req info received NULL", __func__);
+        VOS_ASSERT(0) ;
+        return VOS_STATUS_E_FAULT;
+    }
+
+    wdi_ap_find_cmd = (struct WDI_APFind_cmd *)vos_mem_malloc(
+            sizeof(struct hal_apfind_request) + ap_find_req->request_data_len);
+
+    wdi_ap_find_cmd->data_len = ap_find_req->request_data_len;
+    vos_mem_copy(wdi_ap_find_cmd->data, ap_find_req->request_data,
+            ap_find_req->request_data_len);
+
+    status = WDI_process_ap_find_cmd(wdi_ap_find_cmd);
+    if (WDI_STATUS_PENDING == status) {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                FL("pending status received"));
+    } else if (WDI_STATUS_SUCCESS_SYNC != status &&
+            (WDI_STATUS_SUCCESS != status)) {
+
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                FL("Failure in process_sap_auth_offload API %d"), status);
+
+    }
+    vos_mem_free(wdi_ap_find_cmd);
+    return CONVERT_WDI2VOS_STATUS(status) ;
+}
+#endif
+
 /*
  * FUNCTION: WDA_ProcessTXFailMonitorInd
  * Forward TX Fail Monitor to WDI
@@ -17255,6 +17304,13 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
          WDA_ProcessTLPauseInd(pWDA, pMsg->bodyval);
          break;
       }
+#ifdef WLAN_FEATURE_APFIND
+      case WDA_APFIND_SET_CMD:
+      {
+          WDA_Process_apfind_set_cmd(pWDA,
+                  (struct hal_apfind_request *)pMsg->bodyptr);
+      }
+#endif
 #ifdef SAP_AUTH_OFFLOAD
       case WDA_SET_SAP_AUTH_OFL:
       {
@@ -17359,6 +17415,13 @@ void WDA_lowLevelIndCallback(WDI_LowLevelIndType *wdiLowLevelInd,
          WDA_SendMsg(pWDA, WDA_MISSED_BEACON_IND, (void *)pMissBeacInd , 0) ;
          break ;
       }
+#ifdef WLAN_FEATURE_APFIND
+      case WDI_AP_FOUND_IND:
+      {
+         WDA_SendMsg(pWDA, WDA_AP_FIND_IND, NULL, 0) ;
+         break ;
+      }
+#endif
       case WDI_UNKNOWN_ADDR2_FRAME_RX_IND:
       {
          /* TODO: Decode Ind and send Ind to PE */

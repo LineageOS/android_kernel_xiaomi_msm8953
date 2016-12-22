@@ -567,7 +567,8 @@ typedef enum
   WDI_PROCESS_SAP_AUTH_OFFLOAD_IND = WDI_MAX_REQ +24,
 #endif
 
-  WDI_MAX_UMAC_IND = WDI_MAX_REQ + 25
+  WDI_SET_AP_FIND_IND = WDI_MAX_REQ + 25,
+  WDI_MAX_UMAC_IND = WDI_MAX_REQ + 26
 
 }WDI_RequestEnumType;
 
@@ -976,6 +977,9 @@ typedef enum
   WDI_HAL_RSSI_BREACHED_IND          = WDI_HAL_IND_MIN + 32,
   WDI_HAL_START_OEM_DATA_RSP_IND_NEW = WDI_HAL_IND_MIN + 33,
   WDI_ANTENNA_DIVERSITY_SELECTION_RSP = WDI_HAL_IND_MIN + 34,
+#ifdef WLAN_FEATURE_APFIND
+  WDI_HAL_QRF_PREF_NETWORK_FOUND_IND = WDI_HAL_IND_MIN + 35,
+#endif
   WDI_MAX_RESP
 }WDI_ResponseEnumType; 
 
@@ -5928,6 +5932,15 @@ WDI_Status WDI_ProcessLphbCfgRsp
 );
 #endif /* FEATURE_WLAN_LPHB */
 
+#ifdef WLAN_FEATURE_APFIND
+WDI_Status
+WDI_ProcessQRFPrefNetworkFoundInd
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+#endif
+
 /**
  @brief Process Rate Update Indication and post it to HAL
 
@@ -6780,6 +6793,20 @@ wdi_get_mdns_stats_offload_rsp
   WDI_EventInfoType *event_data
 );
 #endif /* MDNS_OFFLOAD */
-
+#ifdef WLAN_FEATURE_APFIND
+/**
+ *  WDI_ProcessApFindInd - Process AP find command command
+ *
+ *  @pWDICtx: pointer to the WLAN DAL context
+ *  @pEventData: pointer to the event information structure
+ *
+ */
+WDI_Status
+WDI_ProcessApFindInd
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+#endif
 #endif /*WLAN_QCT_WDI_I_H*/
 

@@ -421,6 +421,7 @@ tpPESession peFindSessionByBssid(tpAniSirGlobal pMac,  tANI_U8*  bssid,    tANI_
 tpPESession peFindSessionByBssIdx(tpAniSirGlobal pMac,  tANI_U8 bssIdx);
 
 
+tANI_S8 limGetInfraSessionId(tpAniSirGlobal pMac);
 
 
 /*--------------------------------------------------------------------------

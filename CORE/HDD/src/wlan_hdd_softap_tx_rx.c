@@ -1007,6 +1007,9 @@ static VOS_STATUS hdd_softap_flush_tx_queues_sta( hdd_adapter_t *pAdapter, v_U8_
       spin_unlock_bh(&pSapCtx->aStaInfo[STAId].wmm_tx_queue[i].lock);
    }
 
+   VOS_TRACE(VOS_MODULE_ID_HDD_SAP_DATA, VOS_TRACE_LEVEL_INFO,
+            "%s: flushed the TX queues of sta:%d", __func__, STAId);
+
    return VOS_STATUS_SUCCESS;
 }
 

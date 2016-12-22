@@ -1895,6 +1895,11 @@ limProcessMessages(tpAniSirGlobal pMac, tpSirMsgQ  limMsg)
             limHandleBmpsStatusInd(pMac);
             break;
 
+#ifdef WLAN_FEATURE_APFIND
+        case WDA_AP_FIND_IND:
+            limHandleAPFindInd(pMac);
+            break;
+#endif
         case WDA_MISSED_BEACON_IND:
             limHandleMissedBeaconInd(pMac, limMsg);
             vos_mem_free(limMsg->bodyptr);

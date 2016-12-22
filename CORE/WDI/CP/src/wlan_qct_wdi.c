@@ -599,6 +599,9 @@ WDI_ReqProcFuncType  pfnReqProcTbl[WDI_MAX_UMAC_IND] =
 #ifdef SAP_AUTH_OFFLOAD
   WDI_ProcessSapAuthOffloadInd,          /* WDI_PROCESS_SAP_AUTH_OFFLOAD_IND */
 #endif
+#ifdef WLAN_FEATURE_APFIND
+  WDI_ProcessApFindInd,                 /* WDI_SET_AP_FIND_IND */
+#endif
 };
 
 
@@ -981,6 +984,11 @@ WDI_RspProcFuncType  pfnRspProcTbl[WDI_MAX_RESP] =
   NULL,
 #endif
   WDI_ProcessGetCurrentAntennaIndexRsp,     /* WDI_ANTENNA_DIVERSITY_SELECTION_RSP */
+#ifdef WLAN_FEATURE_APFIND
+  WDI_ProcessQRFPrefNetworkFoundInd,   /* WDI_HAL_QRF_PREF_NETWORK_FOUND_IND */
+#else
+  NULL,
+#endif
 };
 
 
@@ -1348,6 +1356,9 @@ static char *WDI_getReqMsgString(wpt_uint16 wdiReqMsgId)
     CASE_RETURN_STRING( WDI_MDNS_RESP_OFFLOAD_REQ );
     CASE_RETURN_STRING( WDI_MDNS_STATS_OFFLOAD_REQ );
 #endif /* MDNS_OFFLOAD */
+#ifdef WLAN_FEATURE_APFIND
+    CASE_RETURN_STRING( WDI_SET_AP_FIND_IND );
+#endif
     default:
         return "Unknown WDI MessageId";
   }
@@ -25002,6 +25013,8 @@ WDI_2_HAL_REQ_TYPE
        return WLAN_HAL_MODIFY_ROAM_PARAMS_IND;
   case WDI_SET_ALLOWED_ACTION_FRAMES_IND:
        return WLAN_HAL_SET_ALLOWED_ACTION_FRAMES_IND;
+  case WDI_SET_AP_FIND_IND:
+       return WLAN_HAL_QRF_AP_FIND_COMMAND;
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
   case WDI_PER_ROAM_SCAN_OFFLOAD_REQ:
       return WLAN_HAL_SET_PER_ROAM_CONFIG_REQ;
@@ -25409,6 +25422,10 @@ case WLAN_HAL_DEL_STA_SELF_RSP:
   case WLAN_HAL_MDNS_STATS_OFFLOAD_RSP:
        return WDI_MDNS_STATS_OFFLOAD_RSP;
 #endif /* MDNS_OFFLOAD */
+#ifdef WLAN_FEATURE_APFIND
+  case WLAN_HAL_QRF_PREF_NETW_FOUND_IND:
+    return WDI_HAL_QRF_PREF_NETWORK_FOUND_IND;
+#endif
   default:
     return eDRIVER_TYPE_MAX;
   }
@@ -27694,6 +27711,51 @@ WDI_ProcessPERRoamScanTriggerRsp
 
    return WDI_STATUS_SUCCESS;
 }/* WDI_ProcessPERRoamScanTriggerRsp  */
+#endif
+
+#ifdef WLAN_FEATURE_APFIND
+/**
+ @brief Process QRF Preferred Network Found Indication function
+
+ @param  pWDICtx:         pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+WDI_Status
+WDI_ProcessQRFPrefNetworkFoundInd
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+)
+{
+  WDI_LowLevelIndType   wdiInd;
+
+  WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+  "%s:%d Enter", __func__, __LINE__);
+
+  /*-------------------------------------------------------------------------
+    Sanity check
+  -------------------------------------------------------------------------*/
+  if (NULL == pWDICtx)
+  {
+     WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
+                 "%s: Invalid parameters", __func__);
+     WDI_ASSERT( 0 );
+     return WDI_STATUS_E_FAILURE;
+  }
+
+  /*Fill in the indication parameters*/
+  wdiInd.wdiIndicationType = WDI_AP_FOUND_IND;
+  if ( pWDICtx->wdiLowLevelIndCB )
+  {
+    /*Notify UMAC*/
+    pWDICtx->wdiLowLevelIndCB( &wdiInd, pWDICtx->pIndUserData );
+  }
+
+  return WDI_STATUS_SUCCESS;
+}
 #endif
 
 /**
@@ -39052,6 +39114,92 @@ WDI_SetBcnMissPenaltyCount
 
 } /* WDI_SetBcnMissPenaltyCount */
 
+#endif
+
+#ifdef WLAN_FEATURE_APFIND
+WDI_Status WDI_ProcessApFindInd(WDI_ControlBlockType *pWDICtx,
+                                WDI_EventInfoType *pEventData)
+{
+  wpt_uint8*  pSendBuffer = NULL;
+  wpt_uint16  usDataOffset = 0;
+  wpt_uint16  usSendSize = 0;
+  struct WDI_APFind_cmd *pwdiapFindRequestInd;
+  tQRFPrefNetwListParams *phalAPFindRequestParam;
+  WDI_Status wdiStatus = WDI_STATUS_SUCCESS;
+  wpt_uint16 buffer_len = 0;
+
+  /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+  WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+          "%s", __func__);
+
+  /*-------------------------------------------------------------------------
+    Sanity check
+    ------------------------------------------------------------------------*/
+  if (( NULL == pEventData ) || ( NULL == pEventData->pEventData ))
+  {
+      WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_FATAL,
+              "%s: Invalid parameters", __func__);
+      WDI_ASSERT(0);
+      return WDI_STATUS_E_FAILURE;
+  }
+  pwdiapFindRequestInd = (struct WDI_APFind_cmd *)pEventData->pEventData;
+  if (pwdiapFindRequestInd->data_len)
+      buffer_len = sizeof(tQRFPrefNetwListParams);
+  /*-----------------------------------------------------------------------
+    Get message buffer
+    -----------------------------------------------------------------------*/
+  if (( WDI_STATUS_SUCCESS != WDI_GetMessageBuffer(pWDICtx,
+                  WDI_SET_AP_FIND_IND,
+                  buffer_len,
+                  &pSendBuffer, &usDataOffset, &usSendSize))||
+          ( usSendSize < (usDataOffset + sizeof(tQRFPrefNetwListParams) )))
+  {
+      WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_FATAL,
+              "Unable to get send buffer in QRF command %p ",
+              pEventData);
+      WDI_ASSERT(0);
+      return WDI_STATUS_E_FAILURE;
+  }
+  phalAPFindRequestParam =
+      (tQRFPrefNetwListParams *)(pSendBuffer + usDataOffset);
+
+  wpalMemoryCopy(phalAPFindRequestParam,
+                 &pwdiapFindRequestInd->data[0],
+                 pwdiapFindRequestInd->data_len);
+
+  pWDICtx->pReqStatusUserData = NULL;
+  pWDICtx->pfncRspCB = NULL;
+  /*-------------------------------------------------------------------------
+    Send WDI_SET_AP_FIND_IND Indication to HAL
+   -------------------------------------------------------------------------*/
+
+  wdiStatus =  WDI_SendIndication( pWDICtx, pSendBuffer, usSendSize);
+
+  return (wdiStatus != WDI_STATUS_SUCCESS) ? wdiStatus:WDI_STATUS_SUCCESS_SYNC;
+
+}
+
+WDI_Status WDI_process_ap_find_cmd(struct WDI_APFind_cmd *params)
+{
+  WDI_EventInfoType wdiEventData;
+
+  if (eWLAN_PAL_FALSE == gWDIInitialized)
+  {
+      WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+              "WDI API call before module is initialized - Fail req");
+      return WDI_STATUS_E_NOT_ALLOWED;
+  }
+
+  wdiEventData.wdiRequest = WDI_SET_AP_FIND_IND;
+  wdiEventData.pEventData = params;
+  wdiEventData.uEventDataSize  = sizeof(*params);
+  wdiEventData.pCBfnc = NULL;
+  wdiEventData.pUserData = NULL;
+
+  return WDI_PostMainEvent(&gWDICb, WDI_REQUEST_EVENT, &wdiEventData);
+
+}
 #endif
 
 /**
