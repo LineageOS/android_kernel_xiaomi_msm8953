@@ -140,5 +140,6 @@ void hdd_wlan_suspend_resume_event(uint8_t state)
 }
 #endif /* FEATURE_WLAN_DIAG_SUPPORT */
 
+void hdd_ReConfigSuspendDataClearedDuringRoaming(hdd_context_t* pHddCtx);
 
 #endif // if !defined __WLAN_QCT_DRIVER_H
