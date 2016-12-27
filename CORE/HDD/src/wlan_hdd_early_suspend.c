@@ -1325,6 +1325,116 @@ void hdd_conf_mcastbcast_filter(hdd_context_t* pHddCtx, v_BOOL_t setfilter)
         vos_mem_free(wlanRxpFilterParam);
 }
 
+/*
+ * Enable/Disable McAddrList cfg item in fwr.
+ */
+eHalStatus hdd_set_mc_list_cfg_item(hdd_context_t* pHddCtx,
+                bool value)
+{
+    eHalStatus ret_val;
+
+    if (ccmCfgSetInt(pHddCtx->hHal, WNI_CFG_ENABLE_MC_ADDR_LIST,
+        value, NULL, eANI_BOOLEAN_FALSE) == eHAL_STATUS_FAILURE)
+    {
+       ret_val = eHAL_STATUS_FAILURE;
+       hddLog(LOGE, "Could not pass on WNI_CFG_ENABLE_MC_ADDR_LIST to CCM");
+       return ret_val;
+    }
+
+    ret_val = sme_update_cfg_int_param(pHddCtx->hHal,
+                  WNI_CFG_ENABLE_MC_ADDR_LIST);
+    if (!HAL_STATUS_SUCCESS(ret_val))
+    {
+        hddLog(VOS_TRACE_LEVEL_ERROR,
+               FL("Failed to toggle MC_ADDR_LIST_INI %d "),
+               ret_val);
+        return ret_val;
+    }
+    /* cache the value configured in fwr */
+    pHddCtx->mc_list_cfg_in_fwr = value;
+
+    return eHAL_STATUS_SUCCESS;
+}
+
+bool is_mc_list_cfg_disable_required(hdd_context_t* pHddCtx)
+{
+    /*
+     * If MCAddrList is enabled in ini and MCBC filter is set to
+     * Either Filter None or Filter all BC then, Fwr need to push
+     * all MC to host. This can be achieved by disabling cfg MCAddrList
+     * in fwr. As in driver load, firmware have this value to 1 we
+     * need to set it to 0. Same needs to be reverted on resume.
+     */
+    if (pHddCtx->cfg_ini->fEnableMCAddrList &&
+         WDA_IS_MCAST_FLT_ENABLE_IN_FW &&
+         ((VOS_TRUE == pHddCtx->sus_res_mcastbcast_filter_valid)&&
+            ((HDD_MCASTBCASTFILTER_FILTER_NONE ==
+                 pHddCtx->sus_res_mcastbcast_filter) ||
+              (HDD_MCASTBCASTFILTER_FILTER_ALL_BROADCAST ==
+                 pHddCtx->sus_res_mcastbcast_filter)))
+       )
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+/**
+ * hdd_mc_addr_list_cfg_config() - To set mc list cfg configuration in fwr
+ * @pHddCtx: hdd context handle
+ * @action: true to disable MCAddrList  in fwr to get all MC pkt to host
+ *          false to set ini value of MCAddrList in fwr if it was toggled
+ * Return: none
+ *
+ * Ensure Below API is invoked always post modification
+ * of sus_res_mcastbcast_filter.
+ */
+void hdd_mc_addr_list_cfg_config(hdd_context_t* pHddCtx, bool action)
+{
+    if (action)
+    {
+        /* check host need to disable mc list ini in fwr */
+        if (is_mc_list_cfg_disable_required(pHddCtx))
+        {
+            /*
+             * Yes Host should disable the mc list in fwr
+             * But Ensure host might already disable it
+             * This can happen when user issue set/clear MCBC
+             * ioctl with 2 to 0 or vice versa.
+             */
+            if (pHddCtx->cfg_ini->fEnableMCAddrList ==
+                   pHddCtx->mc_list_cfg_in_fwr)
+            {
+                hdd_set_mc_list_cfg_item(pHddCtx,
+                    !pHddCtx->cfg_ini->fEnableMCAddrList);
+            }
+        }
+        else
+        {
+           /* Host toggled mc list ini in fwr previosuly, set to ini value */
+           if (pHddCtx->cfg_ini->fEnableMCAddrList !=
+                  pHddCtx->mc_list_cfg_in_fwr)
+           {
+               hdd_set_mc_list_cfg_item(pHddCtx,
+                   pHddCtx->cfg_ini->fEnableMCAddrList);
+           }
+        }
+    }
+    else
+    {
+       /* Host toggled mc list ini in fwr previosuly, set to ini value */
+       if (pHddCtx->cfg_ini->fEnableMCAddrList !=
+              pHddCtx->mc_list_cfg_in_fwr)
+       {
+           hdd_set_mc_list_cfg_item(pHddCtx,
+               pHddCtx->cfg_ini->fEnableMCAddrList);
+       }
+    }
+}
+
 static void hdd_conf_suspend_ind(hdd_context_t* pHddCtx,
                                  hdd_adapter_t *pAdapter)
 {
@@ -1379,6 +1489,10 @@ static void hdd_conf_suspend_ind(hdd_context_t* pHddCtx,
 
         wlanSuspendParam->configuredMcstBcstFilterSetting =
             pHddCtx->configuredMcastBcastFilter;
+
+        /* mc add list cfg item configuration in fwr */
+        hdd_mc_addr_list_cfg_config(pHddCtx, true);
+
     }
 
     halStatus = sme_ConfigureSuspendInd(pHddCtx->hHal, wlanSuspendParam);
@@ -1424,6 +1538,8 @@ static void hdd_conf_resume_ind(hdd_adapter_t *pAdapter)
     }
 
     pHddCtx->hdd_mcastbcast_filter_set = FALSE;
+    /* mc add list cfg item configuration in fwr */
+    hdd_mc_addr_list_cfg_config(pHddCtx, false);
 
     if (VOS_TRUE == pHddCtx->sus_res_mcastbcast_filter_valid) {
         pHddCtx->configuredMcastBcastFilter =
