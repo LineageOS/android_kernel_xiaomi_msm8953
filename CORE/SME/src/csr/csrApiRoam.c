@@ -76,6 +76,11 @@
 #include "csrEse.h"
 #endif /* FEATURE_WLAN_ESE && !FEATURE_WLAN_ESE_UPLOAD */
 #include "vos_utils.h"
+#ifdef WLAN_FEATURE_LFR_MBB
+#include "csr_roam_mbb.h"
+#endif
+
+
 #define CSR_NUM_IBSS_START_CHANNELS_50      4
 #define CSR_NUM_IBSS_START_CHANNELS_24      3
 #define CSR_DEF_IBSS_START_CHANNEL_50       36
@@ -1976,6 +1981,11 @@ eHalStatus csrChangeDefaultConfigParam(tpAniSirGlobal pMac, tCsrConfigParam *pPa
                 pParam->PERMinRssiThresholdForRoam;
         pMac->PERroamTimeout = pParam->waitPeriodForNextPERScan;
 #endif
+
+#ifdef WLAN_FEATURE_LFR_MBB
+        pMac->roam.configParam.enable_lfr_mbb = pParam->enable_lfr_mbb;
+#endif
+
 #ifdef FEATURE_WLAN_LFR
         pMac->roam.configParam.isFastRoamIniFeatureEnabled = pParam->isFastRoamIniFeatureEnabled;
         pMac->roam.configParam.MAWCEnabled = pParam->MAWCEnabled;
@@ -2206,6 +2216,11 @@ eHalStatus csrGetConfigParam(tpAniSirGlobal pMac, tCsrConfigParam *pParam)
         pParam->PERMinRssiThresholdForRoam =
                 pMac->roam.configParam.PERMinRssiThresholdForRoam;
 #endif
+
+#ifdef WLAN_FEATURE_LFR_MBB
+        pParam->enable_lfr_mbb = pMac->roam.configParam.enable_lfr_mbb;
+#endif
+
 #ifdef FEATURE_WLAN_LFR
         pParam->isFastRoamIniFeatureEnabled = pMac->roam.configParam.isFastRoamIniFeatureEnabled;
 #endif
@@ -5064,6 +5079,14 @@ eHalStatus csrRoamProcessCommand( tpAniSirGlobal pMac, tSmeCmd *pCommand )
                 pCommand->u.roamCmd.pLastRoamBss);
         break;
 
+#ifdef WLAN_FEATURE_LFR_MBB
+    case ecsr_mbb_perform_preauth_reassoc:
+        smsLog(pMac, LOG1, FL("Attempting MBB PreAuth/Reassoc Req"));
+        status = csr_roam_issue_preauth_reassoc_req(pMac, sessionId,
+                pCommand->u.roamCmd.pLastRoamBss);
+        break;
+#endif
+
     default:
         csrRoamStateChange( pMac, eCSR_ROAMING_STATE_JOINING, sessionId );
 
@@ -7390,6 +7413,9 @@ eHalStatus csrRoamProcessDisassocDeauth( tpAniSirGlobal pMac, tSmeCmd *pCommand,
             {
                 csrNeighborRoamTranistionPreauthDoneToDisconnected(pMac);
             }
+#endif
+#ifdef WLAN_FEATURE_LFR_MBB
+            csr_stop_preauth_reassoc_mbb_timer(pMac);
 #endif
         }
 
@@ -10050,6 +10076,10 @@ void csrRoamCheckForLinkStatusChange( tpAniSirGlobal pMac, tSirSmeRsp *pSirMsg )
                         csrNeighborRoamTranistionPreauthDoneToDisconnected(pMac);
                     }
 #endif
+#ifdef WLAN_FEATURE_LFR_MBB
+                    csr_stop_preauth_reassoc_mbb_timer(pMac);
+#endif
+
                     pSession = CSR_GET_SESSION( pMac, sessionId );
 
                     if (!pSession)
@@ -10125,6 +10155,9 @@ void csrRoamCheckForLinkStatusChange( tpAniSirGlobal pMac, tSirSmeRsp *pSirMsg )
                 {
                     csrNeighborRoamTranistionPreauthDoneToDisconnected(pMac);
                 }
+#endif
+#ifdef WLAN_FEATURE_LFR_MBB
+                csr_stop_preauth_reassoc_mbb_timer(pMac);
 #endif
                 pSession = CSR_GET_SESSION( pMac, sessionId );
 
@@ -10918,6 +10951,13 @@ void csrRoamCheckForLinkStatusChange( tpAniSirGlobal pMac, tSirSmeRsp *pSirMsg )
             csrRoamFTPreAuthRspProcessor( pMac, (tpSirFTPreAuthRsp)pSirMsg );
             break;
 #endif
+#ifdef WLAN_FEATURE_LFR_MBB
+        case eWNI_SME_MBB_PRE_AUTH_REASSOC_RSP:
+             csr_roam_preauth_rsp_mbb_processor(pMac,
+                                           (tpSirFTPreAuthRsp)pSirMsg);
+             break;
+#endif
+
         case eWNI_SME_MAX_ASSOC_EXCEEDED:
             pSmeMaxAssocInd = (tSmeMaxAssocInd*)pSirMsg;
             smsLog( pMac, LOG1, FL("send indication that max assoc have been reached and the new peer cannot be accepted"));

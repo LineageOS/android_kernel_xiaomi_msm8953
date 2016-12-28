@@ -230,6 +230,10 @@ typedef struct sLimTimers
     TX_TIMER           gLimFTPreAuthRspTimer;
 #endif
 
+#ifdef WLAN_FEATURE_LFR_MBB
+    TX_TIMER           glim_pre_auth_mbb_rsp_timer;
+#endif
+
 #ifdef FEATURE_WLAN_ESE
     TX_TIMER           gLimEseTsmTimer;
 #endif

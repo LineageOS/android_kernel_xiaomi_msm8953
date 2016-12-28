@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -58,6 +58,9 @@
 #endif
 #ifdef FEATURE_WLAN_DIAG_SUPPORT_LIM
 #include "vos_diag_core_log.h"
+#endif
+#ifdef WLAN_FEATURE_LFR_MBB
+#include "lim_mbb.h"
 #endif
 
 
@@ -154,6 +157,11 @@ limProcessMlmReqMessages(tpAniSirGlobal pMac, tpSirMsgQ Msg)
         case SIR_LIM_ASSOC_FAIL_TIMEOUT:    limProcessAssocFailureTimeout(pMac, Msg->bodyval);  break;
 #ifdef WLAN_FEATURE_VOWIFI_11R
         case SIR_LIM_FT_PREAUTH_RSP_TIMEOUT:limProcessFTPreauthRspTimeout(pMac); break;
+#endif
+#ifdef WLAN_FEATURE_LFR_MBB
+        case SIR_LIM_PREAUTH_MBB_RSP_TIMEOUT:
+             lim_process_preauth_mbb_rsp_timeout(pMac);
+             break;
 #endif
         case SIR_LIM_REMAIN_CHN_TIMEOUT:    limProcessRemainOnChnTimeout(pMac); break;
         case SIR_LIM_INSERT_SINGLESHOT_NOA_TIMEOUT:   

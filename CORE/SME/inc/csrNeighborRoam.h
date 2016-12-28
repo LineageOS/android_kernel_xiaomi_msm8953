@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2014, 2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2014, 2016-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -55,6 +55,10 @@ typedef enum
     eCSR_NEIGHBOR_ROAM_STATE_PREAUTHENTICATING,
     eCSR_NEIGHBOR_ROAM_STATE_PREAUTH_DONE,
 #endif /* WLAN_FEATURE_VOWIFI_11R */    
+#ifdef WLAN_FEATURE_LFR_MBB
+    eCSR_NEIGHBOR_ROAM_STATE_MBB_PREAUTH_REASSOC,
+#endif
+
     eNEIGHBOR_STATE_MAX
 } eCsrNeighborRoamState;
 
@@ -206,6 +210,11 @@ typedef struct sCsrNeighborRoamControlInfo
     vos_timer_t                 forcedInitialRoamTo5GHTimer;
     tANI_U8                     isForcedInitialRoamTo5GH;
     tANI_U8                     lastSentCmd;
+
+#ifdef WLAN_FEATURE_LFR_MBB
+     bool is_pre_auth_reassoc_mbb_timer_started;
+#endif
+
 } tCsrNeighborRoamControlInfo, *tpCsrNeighborRoamControlInfo;
 
 
@@ -251,6 +260,15 @@ VOS_STATUS csrNeighborRoamMergeChannelLists(tpAniSirGlobal pMac,
                                             tANI_U8  *pOutputChannelList,
                                             tANI_U8  outputNumOfChannels,
                                             tANI_U8  *pMergedOutputNumOfChannels);
+tANI_BOOLEAN
+csrNeighborRoamRemoveRoamableAPListEntry(tpAniSirGlobal pMac,
+                 tDblLinkList *pList, tpCsrNeighborRoamBSSInfo pNeighborEntry);
+eHalStatus
+csrNeighborRoamAddBssIdToPreauthFailList(tpAniSirGlobal pMac,
+                                                          tSirMacAddr bssId);
+void csrNeighborRoamFreeNeighborRoamBSSNode(tpAniSirGlobal pMac,
+                              tpCsrNeighborRoamBSSInfo neighborRoamBSSNode);
+
 
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
 #define ROAM_SCAN_OFFLOAD_START                     1

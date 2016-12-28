@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -646,6 +646,11 @@ char *limMsgStr(tANI_U32 msgType)
 #ifdef WLAN_FEATURE_VOWIFI_11R
         case SIR_LIM_FT_PREAUTH_RSP_TIMEOUT:
             return "SIR_LIM_FT_PREAUTH_RSP_TIMEOUT";
+#endif
+
+#ifdef WLAN_FEATURE_LFR_MBB
+        case SIR_LIM_PREAUTH_MBB_RSP_TIMEOUT:
+            return "SIR_LIM_PREAUTH_MBB_RSP_TIMEOUT";
 #endif
 
         case SIR_HAL_APP_SETUP_NTF:

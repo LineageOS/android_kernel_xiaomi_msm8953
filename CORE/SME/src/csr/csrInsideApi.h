@@ -273,6 +273,10 @@ void csrRoamingStateMsgProcessor( tpAniSirGlobal pMac, void *pMsgBuf );
 void csrRoamJoinedStateMsgProcessor( tpAniSirGlobal pMac, void *pMsgBuf );
 tANI_BOOLEAN csrScanComplete( tpAniSirGlobal pMac, tSirSmeScanRsp *pScanRsp );
 void csrReleaseCommandRoam(tpAniSirGlobal pMac, tSmeCmd *pCommand);
+tpCsrNeighborRoamBSSInfo csrNeighborRoamGetRoamableAPListNextEntry(tpAniSirGlobal pMac,
+                                        tDblLinkList *pList, tpCsrNeighborRoamBSSInfo pNeighborEntry);
+v_U8_t *csrNeighborRoamStateToString(v_U8_t state);
+void csrReleaseCommandPreauth(tpAniSirGlobal pMac, tSmeCmd *pCommand);
 void csrReleaseCommandScan(tpAniSirGlobal pMac, tSmeCmd *pCommand);
 void csrReleaseCommandWmStatusChange(tpAniSirGlobal pMac, tSmeCmd *pCommand);
 //pIes2 can be NULL

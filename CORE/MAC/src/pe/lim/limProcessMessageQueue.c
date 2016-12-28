@@ -1681,6 +1681,9 @@ limProcessMessages(tpAniSirGlobal pMac, tpSirMsgQ  limMsg)
         case eWNI_SME_FT_PRE_AUTH_REQ:
         case eWNI_SME_FT_AGGR_QOS_REQ:
 #endif
+#ifdef WLAN_FEATURE_LFR_MBB
+        case eWNI_SME_MBB_PRE_AUTH_REASSOC_REQ:
+#endif
         case eWNI_SME_ADD_STA_SELF_REQ:
         case eWNI_SME_DEL_STA_SELF_REQ:
         case eWNI_SME_REGISTER_MGMT_FRAME_REQ:
@@ -1986,6 +1989,9 @@ limProcessMessages(tpAniSirGlobal pMac, tpSirMsgQ  limMsg)
         case SIR_LIM_DEAUTH_ACK_TIMEOUT:
         case SIR_LIM_CONVERT_ACTIVE_CHANNEL_TO_PASSIVE:
         case SIR_LIM_AUTH_RETRY_TIMEOUT:
+#ifdef WLAN_FEATURE_LFR_MBB
+        case SIR_LIM_PREAUTH_MBB_RSP_TIMEOUT:
+#endif
             // These timeout messages are handled by MLM sub module
 
             limProcessMlmReqMessages(pMac,

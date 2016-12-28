@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -71,6 +71,9 @@
 #include "macTrace.h"
 #if defined(FEATURE_WLAN_ESE) && !defined(FEATURE_WLAN_ESE_UPLOAD)
 #include "csrEse.h"
+#endif
+#ifdef WLAN_FEATURE_LFR_MBB
+#include "csr_roam_mbb.h"
 #endif
 
 #define WLAN_FEATURE_NEIGHBOR_ROAMING_DEBUG 1
@@ -253,6 +256,24 @@ static eHalStatus csrNeighborRoamTriggerHandoff(tpAniSirGlobal pMac,
                                           tpCsrNeighborRoamControlInfo pNeighborRoamInfo)
 {
     eHalStatus status = eHAL_STATUS_SUCCESS;
+
+    if (pMac->roam.configParam.enable_lfr_mbb
+#ifdef WLAN_FEATURE_LFR_MBB
+        && (!pNeighborRoamInfo->is11rAssoc)
+#ifdef FEATURE_WLAN_ESE
+        && (!pNeighborRoamInfo->isESEAssoc)
+#endif
+       )
+    {
+       smsLog(pMac, LOG1,
+              FL("Issuing preauth reassoc"));
+       status = csr_neighbor_roam_issue_preauth_reassoc(pMac);
+       return status;
+    }
+
+
+#endif
+
 #ifdef WLAN_FEATURE_VOWIFI_11R
     if ((pNeighborRoamInfo->is11rAssoc)
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
@@ -4441,6 +4462,10 @@ eHalStatus csrNeighborRoamIndicateDisconnect(tpAniSirGlobal pMac, tANI_U8 sessio
               csrNeighborRoamDeregAllRssiIndication(pMac);
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
             }
+#endif
+
+#ifdef WLAN_FEATURE_LFR_MBB
+            csr_stop_preauth_reassoc_mbb_timer(pMac);
 #endif
             break;
 

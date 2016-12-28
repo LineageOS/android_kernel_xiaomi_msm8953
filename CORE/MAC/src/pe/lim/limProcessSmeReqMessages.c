@@ -76,6 +76,10 @@
 #include <limFT.h>
 #endif
 
+#ifdef WLAN_FEATURE_LFR_MBB
+#include "lim_mbb.h"
+#endif
+
 
 #define JOIN_FAILURE_TIMEOUT   1000   // in msecs
 /* This overhead is time for sending NOA start to host in case of GO/sending NULL data & receiving ACK 
@@ -5905,6 +5909,13 @@ limProcessSmeReqMessages(tpAniSirGlobal pMac, tpSirMsgQ pMsg)
        case eWNI_SME_FT_AGGR_QOS_REQ:
             limProcessFTAggrQosReq(pMac, pMsgBuf);
             break;
+#endif
+
+#ifdef WLAN_FEATURE_LFR_MBB
+        case eWNI_SME_MBB_PRE_AUTH_REASSOC_REQ:
+             lim_process_pre_auth_reassoc_req(pMac, pMsg);
+             bufConsumed = FALSE;
+             break;
 #endif
 
 #if defined(FEATURE_WLAN_ESE) && !defined(FEATURE_WLAN_ESE_UPLOAD)

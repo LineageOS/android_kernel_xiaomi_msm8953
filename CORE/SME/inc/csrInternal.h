@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -206,7 +206,7 @@ typedef enum
     eCsrLostLink1Abort,
     eCsrLostLink2Abort,
     eCsrLostLink3Abort,
-
+    ecsr_mbb_perform_preauth_reassoc,
 }eCsrRoamReason;
 
 typedef enum
@@ -634,6 +634,10 @@ typedef struct tagCsrConfig
     tANI_U32     PERtimerThreshold;
     tANI_U32     PERroamTriggerPercent;
 #endif
+#endif
+
+#ifdef WLAN_FEATURE_LFR_MBB
+    tANI_BOOLEAN enable_lfr_mbb;
 #endif
 
 #ifdef FEATURE_WLAN_ESE

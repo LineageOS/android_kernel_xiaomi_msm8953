@@ -3043,6 +3043,15 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_MAX_SCHED_SCAN_PLAN_ITRNS_MAX        (100)
 #define CFG_MAX_SCHED_SCAN_PLAN_ITRNS_DEFAULT    (10)
 
+/*
+ * gEnableLFRMBB is used to disable/enable LFR Make before Break
+ * 1: Enable LFR Make before Break
+ * 0: Disable LFR Make before Break
+ */
+#define CFG_ENABLE_LFR_MBB         "gEnableLFRMBB"
+#define CFG_ENABLE_LFR_MBB_MIN     (0)
+#define CFG_ENABLE_LFR_MBB_MAX     (1)
+#define CFG_ENABLE_LFR_MBB_DEFAULT (0)
 
 /*--------------------------------------------------------------------------- 
   Type declarations
@@ -3274,6 +3283,11 @@ typedef struct
    v_U32_t                      PERtimerThreshold;
    v_U32_t                      PERroamRxPktsThreshold;
 #endif
+
+#ifdef WLAN_FEATURE_LFR_MBB
+   tANI_BOOLEAN enable_lfr_mbb;
+#endif
+
    hdd_wmm_classification_t     PktClassificationBasis; // DSCP or 802.1Q
    v_BOOL_t                     bImplicitQosEnabled;
 
