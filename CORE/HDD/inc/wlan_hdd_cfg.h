@@ -2762,8 +2762,8 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 /* Max number of DHCP clients to be supported */
 #define CFG_DHCP_SERVER_OFFLOAD_NUM_CLIENT_NAME     "gDHCPMaxNumClients"
 #define CFG_DHCP_SERVER_OFFLOAD_NUM_CLIENT_MIN      ( 1 )
-#define CFG_DHCP_SERVER_OFFLOAD_NUM_CLIENT_MAX      ( 8 )
-#define CFG_DHCP_SERVER_OFFLOAD_NUM_CLIENT_DEFAULT  ( 8 )
+#define CFG_DHCP_SERVER_OFFLOAD_NUM_CLIENT_MAX      ( 4 )
+#define CFG_DHCP_SERVER_OFFLOAD_NUM_CLIENT_DEFAULT  ( 4 )
 
 /* Start address of the pool */
 #define CFG_DHCP_SERVER_OFFLOAD_START_LSB_NAME     "gDHCPStartLsb"
@@ -2773,7 +2773,7 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 
 /* DHCP Server IP*/
 #define CFG_DHCP_SERVER_IP_NAME     "gDHCPServerIP"
-#define CFG_DHCP_SERVER_IP_DEFAULT  "192.168.1.2"
+#define CFG_DHCP_SERVER_IP_DEFAULT  "192.168.43.1"
 #endif /* DHCP_SERVER_OFFLOAD */
 
 #ifdef MDNS_OFFLOAD
