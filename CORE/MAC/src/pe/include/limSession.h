@@ -496,10 +496,5 @@ void peDeleteSession(tpAniSirGlobal pMac, tpPESession psessionEntry);
   \sa
   --------------------------------------------------------------------------*/
 
-
+int peFindBssIdxFromSmeSessionId(tpAniSirGlobal pMac, tANI_U8 sme_sessionId);
 #endif //#if !defined( __LIM_SESSION_H )
-
-
-
-
-
