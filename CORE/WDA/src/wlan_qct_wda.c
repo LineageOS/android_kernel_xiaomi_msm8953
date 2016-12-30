@@ -11519,6 +11519,55 @@ void WDA_WdiIndicationCallback( WDI_Status   wdiStatus,
    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
                                           "<------ %s " ,__func__);
 }
+
+/**
+ * WDA_ProcessWlanSuspendIndCallback: callback API for WDA_ProcessWlanSuspendInd
+ * @wdiStatus: wdi status
+ * @pUserData: suspend params
+ *
+ * Return: None
+ */
+void WDA_ProcessWlanSuspendIndCallback(WDI_Status wdiStatus, void* pUserData)
+{
+   tWDA_ReqParams *pWdaParams = (tWDA_ReqParams *)pUserData;
+   tSirWlanSuspendParam *pWlanSuspendParam;
+
+   VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+              "<------ %s, wdiStatus: %d", __func__, wdiStatus);
+
+   if(NULL == pWdaParams)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                 "%s: pWdaParams received NULL", __func__);
+      return;
+   }
+
+   pWlanSuspendParam = (tSirWlanSuspendParam *)pWdaParams->wdaMsgParam;
+   if (pWlanSuspendParam == NULL)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                 "%s: suspend params NULL", __func__);
+      vos_mem_free(pWdaParams);
+      return;
+   }
+   if (pWlanSuspendParam->wlan_sus_callback)
+   {
+      pWlanSuspendParam->wlan_sus_callback(pWlanSuspendParam->context,
+                                       CONVERT_WDI2VOS_STATUS(wdiStatus));
+   }
+   else
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+          "%s: wlan suspend callback is NULL", __func__);
+   }
+   if (pWdaParams->wdaMsgParam) {
+       vos_mem_free(pWdaParams->wdaMsgParam);
+       pWdaParams->wdaMsgParam = NULL;
+   }
+   vos_mem_free(pWdaParams);
+   return;
+}
+
 /*
  * FUNCTION: WDA_ProcessWlanSuspendInd
  * 
@@ -11528,12 +11577,22 @@ VOS_STATUS WDA_ProcessWlanSuspendInd(tWDA_CbContext *pWDA,
 {
    WDI_Status wdiStatus;
    WDI_SuspendParamsType wdiSuspendParams;
+   tWDA_ReqParams *pWdaParams;
+
    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
                                           "------> %s " ,__func__);
    wdiSuspendParams.wdiSuspendParams.ucConfiguredMcstBcstFilterSetting =
                           pWlanSuspendParam->configuredMcstBcstFilterSetting;
-   wdiSuspendParams.wdiReqStatusCB = WDA_WdiIndicationCallback;
-   wdiSuspendParams.pUserData = pWDA;
+   wdiSuspendParams.wdiReqStatusCB = WDA_ProcessWlanSuspendIndCallback;
+
+   pWdaParams = (tWDA_ReqParams *)vos_mem_malloc(sizeof(tWDA_ReqParams));
+   if (!pWdaParams)
+       VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                                          "%s memory allocation failed" ,__func__);
+   pWdaParams->pWdaContext = pWDA;
+   pWdaParams->wdaMsgParam = pWlanSuspendParam;
+   wdiSuspendParams.pUserData = pWdaParams;
+
    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO, "%s: %d" ,__func__, pWlanSuspendParam->configuredMcstBcstFilterSetting);
    wdiStatus = WDI_HostSuspendInd(&wdiSuspendParams);
    if(WDI_STATUS_PENDING == wdiStatus)
@@ -11546,7 +11605,6 @@ VOS_STATUS WDA_ProcessWlanSuspendInd(tWDA_CbContext *pWDA,
       VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
               "Failure in %s:%d ",__func__,__LINE__ );
    }
-   vos_mem_free(pWlanSuspendParam);
    return CONVERT_WDI2VOS_STATUS(wdiStatus) ;
 }
 

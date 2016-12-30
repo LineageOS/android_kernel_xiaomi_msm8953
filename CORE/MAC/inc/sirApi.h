@@ -3758,9 +3758,13 @@ typedef struct sSirNoAParam
     tANI_U8   psSelection;
 }tSirNoAParam, *tpSirNoAParam;
 
+typedef void(*wlan_suspend_req_cb)(void *ptr, VOS_STATUS status);
+
 typedef struct sSirWlanSuspendParam
 {
     tANI_U8 configuredMcstBcstFilterSetting;
+    wlan_suspend_req_cb wlan_sus_callback;
+    void *context;
 }tSirWlanSuspendParam,*tpSirWlanSuspendParam;
 
 typedef struct sSirWlanResumeParam
