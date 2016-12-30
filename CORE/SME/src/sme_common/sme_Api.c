@@ -73,6 +73,7 @@
 #include "sapApi.h"
 #include "macTrace.h"
 #include "vos_utils.h"
+#include "limSession.h"
 
 extern tSirRetStatus uMacPostCtrlMsg(void* pSirGlobal, tSirMbMsg* pMb);
 
@@ -14636,6 +14637,7 @@ eHalStatus sme_set_dhcp_srv_offload(tHalHandle hal,
 	vos_mem_copy(dhcp_serv_info, dhcp_srv_info,
 		     sizeof(*dhcp_serv_info));
 
+        dhcp_serv_info->bssidx = peFindBssIdxFromSmeSessionId(mac, dhcp_srv_info->bssidx);
 	status = sme_AcquireGlobalLock(&mac->sme);
 	if (eHAL_STATUS_SUCCESS == status) {
 		/* serialize the req through MC thread */
@@ -14688,7 +14690,8 @@ eHalStatus sme_set_mdns_offload(tHalHandle hal,
     }
 
     vos_mem_copy(mdns_offload, mdns_info, sizeof(*mdns_offload));
-
+    mdns_offload->bss_idx =
+                peFindBssIdxFromSmeSessionId(mac, mdns_info->bss_idx);
     status = sme_AcquireGlobalLock(&mac->sme);
     if (eHAL_STATUS_SUCCESS == status) {
         /* serialize the req through MC thread */
@@ -14740,7 +14743,7 @@ eHalStatus sme_set_mdns_fqdn(tHalHandle hal,
     }
 
     vos_mem_copy(fqdn_info, mdns_fqdn, sizeof(*fqdn_info));
-
+    fqdn_info->bss_idx = peFindBssIdxFromSmeSessionId(mac, mdns_fqdn->bss_idx);
     status = sme_AcquireGlobalLock(&mac->sme);
     if (eHAL_STATUS_SUCCESS == status) {
         /* serialize the req through MC thread */
@@ -14792,7 +14795,7 @@ eHalStatus sme_set_mdns_resp(tHalHandle hal,
     }
 
     vos_mem_copy(resp_info, mdns_resp, sizeof(*resp_info));
-
+    resp_info->bss_idx = peFindBssIdxFromSmeSessionId(mac, mdns_resp->bss_idx);
     status = sme_AcquireGlobalLock(&mac->sme);
     if (eHAL_STATUS_SUCCESS == status) {
         /* serialize the req through MC thread */

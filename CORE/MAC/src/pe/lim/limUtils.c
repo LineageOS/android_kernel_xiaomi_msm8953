@@ -9130,3 +9130,22 @@ error:
     return;
 }
 #endif /* SAP_AUTH_OFFLOAD */
+
+int peFindBssIdxFromSmeSessionId(tpAniSirGlobal pMac, tANI_U8 sme_sessionId)
+{
+    tANI_U8 i;
+    tpPESession psessionEntry = NULL;
+
+    for(i =0; i < pMac->lim.maxBssId; i++)
+    {
+        /* If BSSID matches return corresponding tables address*/
+        if( (pMac->lim.gpSession[i].valid) && (pMac->lim.gpSession[i].smeSessionId == sme_sessionId))
+        {
+            psessionEntry = (&pMac->lim.gpSession[i]);
+            return psessionEntry->bssIdx;
+        }
+    }
+
+    limLog(pMac, LOG4, FL("Session lookup fails for sme_sessionId: "));
+    return(0xFF);
+}
