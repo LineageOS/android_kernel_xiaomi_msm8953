@@ -33,6 +33,9 @@
 #include "smsDebug.h"
 #include "macTrace.h"
 #include "csrNeighborRoam.h"
+#include "csr_roam_mbb.h"
+
+eHalStatus csr_register_roaming_mbb_callback(tpAniSirGlobal mac);
 
 #define PREAUTH_REASSOC_MBB_TIMER_VALUE    60
 
@@ -83,6 +86,11 @@ eHalStatus csr_roam_issue_preauth_reassoc_req(tHalHandle hal,
 
     pre_auth_req->pbssDescription = (tpSirBssDescription)vos_mem_malloc(
             sizeof(bss_description->length) + bss_description->length);
+    if (NULL == pre_auth_req->pbssDescription) {
+        smsLog(mac, LOGE,
+               FL("Unable to allocate memory for preauth bss description"));
+        return eHAL_STATUS_RESOURCES;
+    }
 
     pre_auth_req->messageType =
                      pal_cpu_to_be16(eWNI_SME_MBB_PRE_AUTH_REASSOC_REQ);
@@ -105,6 +113,11 @@ eHalStatus csr_roam_issue_preauth_reassoc_req(tHalHandle hal,
     vos_mem_copy(pre_auth_req->pbssDescription, bss_description,
                  sizeof(bss_description->length) + bss_description->length);
     pre_auth_req->length = pal_cpu_to_be16(auth_req_len);
+
+    /* Register mbb callback */
+    smsLog(mac, LOG1, FL("Registering mbb callback"));
+    csr_register_roaming_mbb_callback(mac);
+
     return palSendMBMessage(mac->hHdd, pre_auth_req);
 }
 
@@ -300,11 +313,6 @@ csr_neighbor_roam_preauth_reassoc_rsp_handler(tpAniSirGlobal mac,
         tpCsrNeighborRoamBSSInfo    neighbor_bss_node = NULL;
         tListElem                   *entry;
 
-        smsLog(mac, LOG1,
-               FL("Pre-Auth failed BSSID "MAC_ADDRESS_STR" Ch:%d status = %d"),
-               MAC_ADDR_ARRAY(preauth_rsp_node->pBssDescription->bssId),
-               preauth_rsp_node->pBssDescription->channelId, lim_status);
-
         /*
         * Pre-auth failed. Add the bssId to the preAuth failed list MAC Address.
         * Also remove the AP from roamable AP list. The one in the head of the
@@ -321,6 +329,11 @@ csr_neighbor_roam_preauth_reassoc_rsp_handler(tpAniSirGlobal mac,
             */
            status = csrNeighborRoamAddBssIdToPreauthFailList(mac,
                                  neighbor_bss_node->pBssDescription->bssId);
+
+           smsLog(mac, LOG1,
+               FL("MBB reassoc failed BSSID "MAC_ADDRESS_STR" Ch:%d status %d"),
+               MAC_ADDR_ARRAY(neighbor_bss_node->pBssDescription->bssId),
+               neighbor_bss_node->pBssDescription->channelId, lim_status);
 
            /* Now we can free this node */
            csrNeighborRoamFreeNeighborRoamBSSNode(mac, neighbor_bss_node);
@@ -400,3 +413,98 @@ void csr_roam_preauth_rsp_mbb_processor(tHalHandle hal,
     CSR_NEIGHBOR_ROAM_STATE_TRANSITION(eCSR_NEIGHBOR_ROAM_STATE_CONNECTED)
 }
 
+/**
+ * csr_prepare_reassoc_req () - Prepares reassoc request
+ * @pmac: MAC context
+ * @session_id: session id
+ * @pbss_description: bss description
+ * @preassoc_req: pointer to reassociation request
+ *
+ *Return: None
+ */
+static void csr_prepare_reassoc_req(void* pmac, tANI_U32 session_id,
+       void* pbss_description, void *preassoc_req)
+{
+    tDot11fBeaconIEs *ies_local = NULL;
+    eHalStatus status;
+    tpAniSirGlobal mac = (tpAniSirGlobal)pmac;
+    tpSirBssDescription bss_description = (tpSirBssDescription)pbss_description;
+    tSirSmeJoinReq **reassoc_req = (tSirSmeJoinReq **)preassoc_req;
+
+    /* Get IE's */
+    status = csrGetParsedBssDescriptionIEs(mac, bss_description, &ies_local);
+    if (!HAL_STATUS_SUCCESS(status)) {
+        smsLog(mac, LOGE,
+               FL("csrGetParsedBssDescriptionIEs failed"));
+        return;
+    }
+    if(ies_local == NULL) {
+       smsLog(mac, LOGE,
+              FL("ies_local is NULL"));
+       return;
+    }
+
+    smsLog(mac, LOG1, FL("session_id %d"), session_id);
+
+    status = csr_fill_reassoc_req(mac, session_id, bss_description,
+                         ies_local, reassoc_req);
+    if (!HAL_STATUS_SUCCESS(status)) {
+        smsLog(mac, LOGE,
+               FL("Reassociation request filling failed"));
+        return;
+    }
+    smsLog(mac, LOG1, FL("status %d"), status);
+}
+
+/**
+ * csr_roaming_mbb_callback () - handles mbb callback
+ * @pmac: MAC context
+ * @session_id: session id
+ * @pbss_description: bss description
+ * @preassoc_req: pointer to reassociation request
+ * @csr_roam_op_code: callback opcode
+ *
+ *Return: None
+ */
+static void csr_roaming_mbb_callback(void* pmac, tANI_U32 session_id,
+       void* pbss_description, void *preassoc_req, tANI_U32 csr_roam_op_code)
+{
+    tpAniSirGlobal mac = (tpAniSirGlobal)pmac;
+
+    smsLog(mac, LOG1,
+           FL("csr_roam_op_code %d"), csr_roam_op_code);
+
+    switch(csr_roam_op_code) {
+    case SIR_ROAMING_DEREGISTER_STA:
+         csrRoamCallCallback(mac, session_id, NULL, 0,
+                              eCSR_ROAM_FT_START, eSIR_SME_SUCCESS);
+        break;
+    case SIR_STOP_ROAM_OFFLOAD_SCAN:
+         csrRoamOffloadScan(mac, ROAM_SCAN_OFFLOAD_STOP, REASON_DISCONNECTED);
+       break;
+    case SIR_PREPARE_REASSOC_REQ:
+         csr_prepare_reassoc_req(pmac, session_id, pbss_description,
+                         preassoc_req);
+         break;
+    }
+}
+
+/**
+ * csr_register_roaming_mbb_callback () - registers roaming callback
+ * @mac: MAC context
+ *
+ *Return: eHAL_STATUS_SUCCESS on success, otherwise  failure
+ */
+eHalStatus csr_register_roaming_mbb_callback(tpAniSirGlobal mac)
+{
+    eHalStatus status;
+
+    status = sme_AcquireGlobalLock(&mac->sme);
+    if (eHAL_STATUS_SUCCESS == status) {
+        mac->sme.roaming_mbb_callback = csr_roaming_mbb_callback;
+        sme_ReleaseGlobalLock(&mac->sme);
+    } else
+        smsLog(mac, LOGE,
+               FL("sme_AcquireGlobalLock error"));
+    return status;
+}

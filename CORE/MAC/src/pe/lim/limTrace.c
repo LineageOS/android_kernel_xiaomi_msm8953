@@ -94,6 +94,7 @@ static tANI_U8* __limTraceGetTimerString( tANI_U16 timerId )
         CASE_RETURN_STRING(eLIM_AUTH_RETRY_TIMER);
 #ifdef WLAN_FEATURE_LFR_MBB
         CASE_RETURN_STRING(eLIM_PREAUTH_MBB_RSP_TIMER);
+        CASE_RETURN_STRING(eLIM_REASSOC_MBB_RSP_TIMER);
 #endif
         default:
             return( "UNKNOWN" );

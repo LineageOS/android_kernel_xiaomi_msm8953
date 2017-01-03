@@ -257,18 +257,19 @@ static eHalStatus csrNeighborRoamTriggerHandoff(tpAniSirGlobal pMac,
 {
     eHalStatus status = eHAL_STATUS_SUCCESS;
 
-    if (pMac->roam.configParam.enable_lfr_mbb
 #ifdef WLAN_FEATURE_LFR_MBB
+    if (pMac->roam.configParam.enable_lfr_mbb
+#ifdef WLAN_FEATURE_VOWIFI_11R
         && (!pNeighborRoamInfo->is11rAssoc)
+#endif
 #ifdef FEATURE_WLAN_ESE
         && (!pNeighborRoamInfo->isESEAssoc)
 #endif
-       )
-    {
-       smsLog(pMac, LOG1,
-              FL("Issuing preauth reassoc"));
-       status = csr_neighbor_roam_issue_preauth_reassoc(pMac);
-       return status;
+    ) {
+        smsLog(pMac, LOG1,
+               FL("Issuing preauth reassoc"));
+        status = csr_neighbor_roam_issue_preauth_reassoc(pMac);
+        return status;
     }
 
 

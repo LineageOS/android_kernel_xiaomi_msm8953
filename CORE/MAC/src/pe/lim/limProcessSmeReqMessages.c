@@ -247,7 +247,7 @@ __limIsSmeAssocCnfValid(tpSirSmeAssocCnf pAssocCnf)
  * @return    Total IE length
  */
 
-static tANI_U16
+tANI_U16
 __limGetSmeJoinReqSizeForAlloc(tANI_U8 *pBuf)
 {
     tANI_U16 len = 0;

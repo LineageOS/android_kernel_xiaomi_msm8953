@@ -1991,6 +1991,7 @@ limProcessMessages(tpAniSirGlobal pMac, tpSirMsgQ  limMsg)
         case SIR_LIM_AUTH_RETRY_TIMEOUT:
 #ifdef WLAN_FEATURE_LFR_MBB
         case SIR_LIM_PREAUTH_MBB_RSP_TIMEOUT:
+        case SIR_LIM_REASSOC_MBB_RSP_TIMEOUT:
 #endif
             // These timeout messages are handled by MLM sub module
 

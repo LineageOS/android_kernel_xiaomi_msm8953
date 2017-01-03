@@ -162,6 +162,9 @@ limProcessMlmReqMessages(tpAniSirGlobal pMac, tpSirMsgQ Msg)
         case SIR_LIM_PREAUTH_MBB_RSP_TIMEOUT:
              lim_process_preauth_mbb_rsp_timeout(pMac);
              break;
+        case SIR_LIM_REASSOC_MBB_RSP_TIMEOUT:
+             lim_process_reassoc_mbb_rsp_timeout(pMac);
+             break;
 #endif
         case SIR_LIM_REMAIN_CHN_TIMEOUT:    limProcessRemainOnChnTimeout(pMac); break;
         case SIR_LIM_INSERT_SINGLESHOT_NOA_TIMEOUT:   

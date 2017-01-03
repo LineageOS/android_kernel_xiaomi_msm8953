@@ -641,6 +641,19 @@ limCreateTimers(tpAniSirGlobal pMac)
         limLog(pMac, LOGP, FL("could not create PREAUTH_MBB_RSP timer"));
         goto err_timer;
     }
+
+    cfgValue = PREAUTH_REASSOC_TIMEOUT;
+    cfgValue = SYS_MS_TO_TICKS(cfgValue);
+
+    if (tx_timer_create(&pMac->lim.limTimers.glim_reassoc_mbb_rsp_timer,
+                        "REASSOC MBB RSP TIMEOUT",
+                        limTimerHandler, SIR_LIM_REASSOC_MBB_RSP_TIMEOUT,
+                        cfgValue, 0,
+                        TX_NO_ACTIVATE) != TX_SUCCESS)
+    {
+        limLog(pMac, LOGP, FL("could not create REASSOC_MBB_RSP timer"));
+        goto err_timer;
+    }
 #endif
 
 #if defined(FEATURE_WLAN_ESE) && !defined(FEATURE_WLAN_ESE_UPLOAD)
@@ -733,6 +746,7 @@ limCreateTimers(tpAniSirGlobal pMac)
         tx_timer_delete(&pMac->lim.limTimers.gLimFTPreAuthRspTimer);
 #ifdef WLAN_FEATURE_LFR_MBB
         tx_timer_delete(&pMac->lim.limTimers.glim_pre_auth_mbb_rsp_timer);
+        tx_timer_delete(&pMac->lim.limTimers.glim_reassoc_mbb_rsp_timer);
 #endif
         tx_timer_delete(&pMac->lim.limTimers.gLimUpdateOlbcCacheTimer);
         while(((tANI_S32)--i) >= 0)
@@ -1759,6 +1773,14 @@ limDeactivateAndChangeTimer(tpAniSirGlobal pMac, tANI_U32 timerId)
                           glim_pre_auth_mbb_rsp_timer) != TX_SUCCESS) {
                 limLog(pMac, LOGP,
                        FL("Unable to deactivate preauth response mbb timer"));
+                return;
+            }
+            break;
+        case eLIM_REASSOC_MBB_RSP_TIMER:
+            if (tx_timer_deactivate(&pMac->lim.limTimers.
+                          glim_reassoc_mbb_rsp_timer) != TX_SUCCESS) {
+                limLog(pMac, LOGP,
+                       FL("Unable to deactivate reassoc response mbb timer"));
                 return;
             }
             break;

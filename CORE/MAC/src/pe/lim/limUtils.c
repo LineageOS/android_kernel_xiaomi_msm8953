@@ -651,6 +651,8 @@ char *limMsgStr(tANI_U32 msgType)
 #ifdef WLAN_FEATURE_LFR_MBB
         case SIR_LIM_PREAUTH_MBB_RSP_TIMEOUT:
             return "SIR_LIM_PREAUTH_MBB_RSP_TIMEOUT";
+        case SIR_LIM_REASSOC_MBB_RSP_TIMEOUT:
+            return "SIR_LIM_REASSOC_MBB_RSP_TIMEOUT";
 #endif
 
         case SIR_HAL_APP_SETUP_NTF:

@@ -31,4 +31,8 @@ void lim_process_preauth_mbb_rsp_timeout(tpAniSirGlobal mac);
 void lim_process_pre_auth_reassoc_req(tpAniSirGlobal mac, tpSirMsgQ msg);
 void lim_handle_pre_auth_mbb_rsp(tpAniSirGlobal mac,
      tSirRetStatus status, tpPESession session_entry);
-
+void lim_process_reassoc_mbb_rsp_timeout(tpAniSirGlobal mac);
+void lim_handle_reassoc_mbb_fail(tpAniSirGlobal mac,
+     tpPESession session_entry);
+void lim_handle_reassoc_mbb_success(tpAniSirGlobal mac,
+     tpPESession session_entry, tpSirAssocRsp  assoc_rsp, tpDphHashNode sta_ds);

@@ -232,6 +232,7 @@ typedef struct sLimTimers
 
 #ifdef WLAN_FEATURE_LFR_MBB
     TX_TIMER           glim_pre_auth_mbb_rsp_timer;
+    TX_TIMER           glim_reassoc_mbb_rsp_timer;
 #endif
 
 #ifdef FEATURE_WLAN_ESE

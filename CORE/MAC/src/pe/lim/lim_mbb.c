@@ -32,6 +32,13 @@
 #include "limUtils.h"
 #include "limFT.h"
 #include "limSendMessages.h"
+#include "limAssocUtils.h"
+#include "limSerDesUtils.h"
+#include "limSmeReqUtils.h"
+
+
+#define PREAUTH_REASSOC_TIMEOUT 500
+
 
 /**
  * lim_post_pre_auth_reassoc_rsp() -Posts preauth_reassoc response to SME
@@ -83,6 +90,105 @@ void lim_post_pre_auth_reassoc_rsp(tpAniSirGlobal mac,
 }
 
 /*
+ * lim_reassoc_fail_cleanup() -handles cleanup during reassoc failure
+ * @mac: MAC context
+ * @status: status
+ * @data: pointer to data
+ *
+ * This function handles cleanup during reassoc failure
+ */
+void lim_reassoc_fail_cleanup(tpAniSirGlobal mac,
+     eHalStatus status, tANI_U32 *data)
+{
+    tpPESession session_entry;
+
+    session_entry = (tpPESession)data;
+
+    if (!mac->ft.ftPEContext.pFTPreAuthReq) {
+        limLog(mac, LOGE, FL("pFTPreAuthReq is NULL"));
+        return;
+    }
+
+    if (dphDeleteHashEntry(mac,
+               mac->ft.ftPEContext.pFTPreAuthReq->preAuthbssId,
+               DPH_STA_HASH_INDEX_PEER,
+               &session_entry->dph.dphHashTable) != eSIR_SUCCESS) {
+        limLog(mac, LOGE, FL("error deleting hash entry"));
+    }
+
+    /* Delete session as session was created during preauth success */
+    peDeleteSession(mac, session_entry);
+
+    /* Add bss parameter cleanup happens as part of this processing*/
+    lim_post_pre_auth_reassoc_rsp(mac,
+                eSIR_FAILURE, NULL);
+}
+
+/*
+ * lim_perform_post_reassoc_mbb_channel_change() -invokes resume callback
+ * @mac: MAC context
+ * @status: status
+ * @data: pointer to data
+ * @session_entry: session entry
+ *
+ * This function invokes resume callback
+ */
+void lim_perform_post_reassoc_mbb_channel_change(tpAniSirGlobal mac,
+     eHalStatus status, tANI_U32 *data, tpPESession session_entry)
+{
+    peSetResumeChannel(mac, 0, 0);
+    limResumeLink(mac, lim_reassoc_fail_cleanup,
+                                (tANI_U32 *)session_entry);
+}
+
+/*
+ * lim_handle_reassoc_mbb_fail() -handles reassoc failure
+ * @mac: MAC context
+ * @session_entry: session entry
+ *
+ * This function handles reassoc failure
+ */
+void lim_handle_reassoc_mbb_fail(tpAniSirGlobal mac,
+     tpPESession session_entry)
+{
+    /* Change channel if required as channel might be changed during preauth */
+    if (session_entry->currentOperChannel !=
+            mac->ft.ftPEContext.pFTPreAuthReq->preAuthchannelNum) {
+        limChangeChannelWithCallback(mac, session_entry->currentOperChannel,
+           lim_perform_post_reassoc_mbb_channel_change, NULL, session_entry);
+    } else {
+       /*
+        * Link needs to be resumed as link was suspended
+        * for same channel during preauth.
+        */
+       peSetResumeChannel(mac, 0, 0);
+       limResumeLink(mac, lim_reassoc_fail_cleanup,
+                     (tANI_U32 *)session_entry);
+    }
+}
+
+/*
+ * lim_handle_reassoc_mbb_success() -handles reassoc success
+ * @mac: MAC context
+ * @session_entry: session entry
+ * @assoc_rsp: pointer to assoc response
+ * @sta_ds : station entry
+ *
+ * This function handles reassoc success
+ */
+void lim_handle_reassoc_mbb_success(tpAniSirGlobal mac,
+     tpPESession session_entry, tpSirAssocRsp  assoc_rsp, tpDphHashNode sta_ds)
+{
+
+    limUpdateAssocStaDatas(mac, sta_ds, assoc_rsp, session_entry);
+
+    /* Store assigned AID for TIM processing */
+    session_entry->limAID = assoc_rsp->aid & 0x3FFF;
+
+}
+
+
+/*
  * lim_process_preauth_mbb_result() -process pre auth result
  * @mac: MAC context
  * @status: status
@@ -93,24 +199,133 @@ void lim_post_pre_auth_reassoc_rsp(tpAniSirGlobal mac,
 static inline void lim_process_preauth_mbb_result(tpAniSirGlobal mac,
      eHalStatus status, tANI_U32 *data)
 {
-    tpPESession session_entry;
+    tpPESession session_entry, ft_session_entry;
+    tpDphHashNode sta_ds;
+    tAddBssParams *add_bss_params;
+    tSirSmeJoinReq *reassoc_req;
+    tLimMlmReassocReq *mlm_reassoc_req;
+    tANI_U16 caps;
+    tANI_U16 nSize;
+    tpSirSmeJoinReq pReassocReq = NULL;
 
     if (!mac->ft.ftPEContext.pFTPreAuthReq) {
         limLog(mac, LOG1, "Pre-Auth request is NULL!");
-        return;
+        goto end;
     }
 
     session_entry = (tpPESession)data;
 
     /* Post the FT Pre Auth Response to SME in case of failure*/
-    if (mac->ft.ftPEContext.ftPreAuthStatus == eSIR_FAILURE) {
-        lim_post_pre_auth_reassoc_rsp(mac,
-                  mac->ft.ftPEContext.ftPreAuthStatus, session_entry);
-        return;
-    }
+    if (mac->ft.ftPEContext.ftPreAuthStatus == eSIR_FAILURE)
+        goto end;
 
     /* Flow for preauth success */
     limFTSetupAuthSession(mac, session_entry);
+
+    /*
+     * Prepare reassoc request. Memory allocated for tSirSmeJoinReq
+     *reassoc_req in csr_fill_reassoc_req. Free that memory here.
+     */
+    mac->sme.roaming_mbb_callback(mac, mac->ft.ftSmeContext.smeSessionId,
+                            mac->ft.ftPEContext.pFTPreAuthReq->pbssDescription,
+                            &reassoc_req, SIR_PREPARE_REASSOC_REQ);
+    if (reassoc_req  == NULL) {
+        limLog(mac, LOGE,
+               FL("reassoc req is NULL"));
+        goto end;
+    }
+
+    nSize = __limGetSmeJoinReqSizeForAlloc((tANI_U8 *) reassoc_req);
+    pReassocReq = vos_mem_malloc(nSize);
+    if ( NULL == pReassocReq )
+    {
+        limLog(mac, LOGE,
+               FL("call to AllocateMemory failed for pReassocReq"));
+        goto end;
+    }
+    vos_mem_set((void *) pReassocReq, nSize, 0);
+    if ((limJoinReqSerDes(mac, (tpSirSmeJoinReq) pReassocReq,
+                          (tANI_U8 *) reassoc_req) == eSIR_FAILURE) ||
+        (!limIsSmeJoinReqValid(mac,
+                               (tpSirSmeJoinReq) pReassocReq)))
+    {
+        limLog(mac, LOGE,
+               FL("received SME_REASSOC_REQ with invalid data"));
+        goto end;
+    }
+
+    ft_session_entry = mac->ft.ftPEContext.pftSessionEntry;
+
+    ft_session_entry->pLimReAssocReq = pReassocReq;
+    vos_mem_free(reassoc_req);
+
+    add_bss_params = mac->ft.ftPEContext.pAddBssReq;
+
+    mlm_reassoc_req = vos_mem_malloc(sizeof(tLimMlmReassocReq));
+    if (NULL == mlm_reassoc_req) {
+        limLog(mac, LOGE,
+               FL("call to AllocateMemory failed for mlmReassocReq"));
+        goto end;
+    }
+
+    vos_mem_copy(mlm_reassoc_req->peerMacAddr,
+                 ft_session_entry->limReAssocbssId,
+                 sizeof(tSirMacAddr));
+    mlm_reassoc_req->reassocFailureTimeout = PREAUTH_REASSOC_TIMEOUT;
+
+    if (cfgGetCapabilityInfo(mac, &caps, ft_session_entry) != eSIR_SUCCESS) {
+        limLog(mac, LOGE, FL("could not retrieve Capabilities value"));
+        vos_mem_free(mlm_reassoc_req);
+        goto end;
+    }
+
+    lim_update_caps_info_for_bss(mac, &caps,
+                        reassoc_req->bssDescription.capabilityInfo);
+
+    limLog(mac, LOG1, FL("Capabilities info Reassoc: 0x%X"), caps);
+
+    mlm_reassoc_req->capabilityInfo = caps;
+    mlm_reassoc_req->sessionId = ft_session_entry->peSessionId;
+    mlm_reassoc_req->listenInterval = WNI_CFG_LISTEN_INTERVAL_STADEF;
+
+    if ((sta_ds = dphAddHashEntry(mac, add_bss_params->bssId,
+                  DPH_STA_HASH_INDEX_PEER,
+                  &ft_session_entry->dph.dphHashTable)) == NULL) {
+        limLog(mac, LOGE, FL("could not add hash entry at DPH"));
+        limPrintMacAddr(mac, add_bss_params->bssId, LOGE);
+        vos_mem_free(mlm_reassoc_req);
+        goto end;
+    }
+
+    /* Start timer here to handle reassoc timeout */
+    mac->lim.limTimers.glim_reassoc_mbb_rsp_timer.sessionId =
+                                                ft_session_entry->peSessionId;
+
+    if(TX_SUCCESS !=
+          tx_timer_activate(&mac->lim.limTimers.glim_reassoc_mbb_rsp_timer)) {
+       limLog(mac, LOGE, FL("Reassoc MBB Rsp Timer Start Failed"));
+
+       if (ft_session_entry->pLimReAssocReq) {
+           vos_mem_free(ft_session_entry->pLimReAssocReq);
+           ft_session_entry->pLimReAssocReq = NULL;
+       }
+
+       vos_mem_free(mlm_reassoc_req);
+       goto end;
+    }
+
+    /* To do: Add changes for reassoc fail timer */
+    limSendReassocReqWithFTIEsMgmtFrame(mac,
+                     mlm_reassoc_req, ft_session_entry);
+
+    ft_session_entry->limMlmState = eLIM_MLM_WT_REASSOC_RSP_STATE;
+
+    limLog(mac, LOG1,  FL("Set the mlm state to %d session=%d"),
+           ft_session_entry->limMlmState, ft_session_entry->peSessionId);
+    return;
+
+end:
+    lim_handle_reassoc_mbb_fail(mac, ft_session_entry);
 }
 
 /*
@@ -182,8 +397,14 @@ void lim_handle_pre_auth_mbb_rsp(tpAniSirGlobal mac,
         /* Update the ReAssoc BSSID of the current session */
         sirCopyMacAddr(session_entry->limReAssocbssId, bss_description->bssId);
         limPrintMacAddr(mac, session_entry->limReAssocbssId, LOG1);
+
+        /* Prepare session for roamable AP */
+        lim_process_preauth_mbb_result(mac,
+               mac->ft.ftPEContext.ftPreAuthStatus, (tANI_U32 *)session_entry);
+        return;
     }
 out:
+    /* This sequence needs to be executed in case of failure*/
     if (session_entry->currentOperChannel !=
         mac->ft.ftPEContext.pFTPreAuthReq->preAuthchannelNum) {
         limChangeChannelWithCallback(mac, session_entry->currentOperChannel,
@@ -255,6 +476,42 @@ void lim_process_preauth_mbb_rsp_timeout(tpAniSirGlobal mac)
       */
      lim_handle_pre_auth_mbb_rsp(mac, eSIR_FAILURE, session_entry);
  }
+
+/**
+ * lim_process_reassoc_mbb_rsp_timeout() -Process reassoc response timeout
+ * @mac: MAC context
+ *
+ * This function is called if preauth response is not received from the
+ * AP within timeout
+ */
+void lim_process_reassoc_mbb_rsp_timeout(tpAniSirGlobal mac)
+{
+    tpPESession session_entry, ft_session_entry;
+    tANI_U8 session_id;
+
+    if((ft_session_entry = peFindSessionBySessionId(mac,
+        mac->lim.limTimers.glim_reassoc_mbb_rsp_timer.sessionId))== NULL) {
+        limLog(mac, LOGE,
+               FL("ft session does not exist for given session id %d"),
+               mac->lim.limTimers.glim_reassoc_mbb_rsp_timer.sessionId);
+        return;
+    }
+
+    limLog(mac, LOG1, FL("Reassoc timeout happened in state %d"),
+                         ft_session_entry->limMlmState);
+
+    if((session_entry = peFindSessionByBssid(mac,
+          mac->ft.ftPEContext.pFTPreAuthReq->currbssId, &session_id))== NULL) {
+        limLog(mac, LOGE,
+               FL("session does not exist for given BSSID" MAC_ADDRESS_STR),
+               MAC_ADDR_ARRAY(mac->ft.ftPEContext.pFTPreAuthReq->currbssId));
+        return;
+    }
+
+    lim_handle_reassoc_mbb_fail(mac, ft_session_entry);
+
+}
+
 
 /**
  * lim_perform_pre_auth_reassoc() -Sends preauth request
@@ -407,3 +664,4 @@ void lim_process_pre_auth_reassoc_req(tpAniSirGlobal mac, tpSirMsgQ msg)
                    pre_auth_mbb_suspend_link_handler,
                   (tANI_U32 *)session_entry);
 }
+
