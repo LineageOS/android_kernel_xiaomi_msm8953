@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -11551,6 +11551,8 @@ WLAN_TLAPGetNextTxIds
   uint8           ucACMask; 
   uint8           i = 0;
   uint8           j;
+  uint8           minWeightSta;
+  uint32_t        sta_bitmask = 0;
   /*------------------------------------------------------------------------
     Extract TL control block
   ------------------------------------------------------------------------*/
@@ -11616,6 +11618,7 @@ WLAN_TLAPGetNextTxIds
   } //( WLAN_MAX_STA_COUNT == ucNextSTA )
 
   ucTempSTA = ucNextSTA;
+  minWeightSta = ucNextSTA;
 
   //decide how many loops to go. if current loop is partial, do one extra to make sure
   //we cover every station
@@ -11682,7 +11685,15 @@ WLAN_TLAPGetNextTxIds
          */
         if (pTLCb->atlSTAClients[ucNextSTA]->weight > WLANTL_GOOD_STA_WEIGHT) {
            if (pTLCb->atlSTAClients[ucNextSTA]->weight_count <=
-               pTLCb->atlSTAClients[ucNextSTA]->weight) {
+               pTLCb->atlSTAClients[ucNextSTA]->weight)
+           {
+              if (pTLCb->atlSTAClients[minWeightSta]->weight <= 1)
+                  minWeightSta = ucNextSTA;
+              else if (pTLCb->atlSTAClients[ucNextSTA]->weight <
+                  pTLCb->atlSTAClients[minWeightSta]->weight) {
+                 minWeightSta = ucNextSTA;
+              }
+              sta_bitmask |= (1 << ucNextSTA);
               pTLCb->atlSTAClients[ucNextSTA]->weight_count++;
               continue;
            }
@@ -11728,7 +11739,15 @@ WLAN_TLAPGetNextTxIds
 
          if (pTLCb->atlSTAClients[j]->weight > WLANTL_GOOD_STA_WEIGHT) {
             if (pTLCb->atlSTAClients[j]->weight_count <=
-                pTLCb->atlSTAClients[j]->weight) {
+                pTLCb->atlSTAClients[j]->weight)
+            {
+               if (pTLCb->atlSTAClients[minWeightSta]->weight <= 1)
+                  minWeightSta = j;
+               else if (pTLCb->atlSTAClients[j]->weight <
+                   pTLCb->atlSTAClients[minWeightSta]->weight) {
+                  minWeightSta = j;
+               }
+               sta_bitmask |= (1 << j);
                pTLCb->atlSTAClients[j]->weight_count++;
                continue;
             }
@@ -11739,6 +11758,34 @@ WLAN_TLAPGetNextTxIds
          *pucSTAId = j;
          pTLCb->ucCurrentSTA = j;
          pTLCb->atlSTAClients[*pucSTAId]->ucCurrentAC = pTLCb->uCurServedAC;
+
+         TLLOG4(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO_LOW,
+                    " TL serve one station AC: %d  W: %d StaId: %d",
+                   pTLCb->uCurServedAC, pTLCb->ucCurLeftWeight, pTLCb->ucCurrentSTA ));
+         return VOS_STATUS_SUCCESS;
+      }
+
+      /* Fecth packet from the stations with minimum weight among them */
+      if (pTLCb->atlSTAClients[minWeightSta] &&
+          pTLCb->atlSTAClients[minWeightSta]->ucPktPending)
+      {
+         *pucSTAId = minWeightSta;
+         pTLCb->ucCurrentSTA = minWeightSta;
+         pTLCb->atlSTAClients[*pucSTAId]->ucCurrentAC = pTLCb->uCurServedAC;
+
+         for (j = 0; sta_bitmask != 0; sta_bitmask >>= 1, j++)
+         {
+            if (0 == (sta_bitmask & 0x1))
+               continue;
+
+            if (minWeightSta == j)
+               continue;
+            /* To ensure fairness between stations */
+            pTLCb->atlSTAClients[j]->weight_count +=
+                             pTLCb->atlSTAClients[minWeightSta]->weight -
+                             pTLCb->atlSTAClients[minWeightSta]->weight_count;
+         }
+         pTLCb->atlSTAClients[minWeightSta]->weight_count = 0;
 
          TLLOG4(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO_LOW,
                     " TL serve one station AC: %d  W: %d StaId: %d",
