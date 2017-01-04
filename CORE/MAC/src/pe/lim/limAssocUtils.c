@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -2617,7 +2617,7 @@ limAddSta(
         SET_LIM_PROCESS_DEFD_MESGS(pMac, false);
 
 #ifdef SAP_AUTH_OFFLOAD
-    if (pMac->sap_auth_offload)
+    if (pMac->sap_auth_offload && LIM_IS_AP_ROLE(psessionEntry))
         msgQ.type = WDA_SAP_OFL_ADD_STA;
     else
         msgQ.type = WDA_ADD_STA_REQ;
@@ -2750,7 +2750,7 @@ limDelSta(
     
     pDelStaParams->status  = eHAL_STATUS_SUCCESS;
 #ifdef SAP_AUTH_OFFLOAD
-    if (pMac->sap_auth_offload)
+    if (pMac->sap_auth_offload && LIM_IS_AP_ROLE(psessionEntry))
         msgQ.type = WDA_SAP_OFL_DEL_STA;
     else
         msgQ.type = WDA_DELETE_STA_REQ;
