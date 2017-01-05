@@ -2609,6 +2609,7 @@ limAddSta(
         pAddStaParams->ucUcastSig = pStaDs->ucUcastSig;
         pAddStaParams->ucBcastSig = pStaDs->ucBcastSig;
         pAddStaParams->ucMgmtSig = pStaDs->ucMgmtSig;
+        pAddStaParams->bssIdx =  pStaDs->bssId;
     }
 #endif
 

@@ -9051,7 +9051,18 @@ void lim_sap_offload_add_sta(tpAniSirGlobal pmac,
     sta_ds->ucUcastSig = add_sta_req->ucUcastSig;
     sta_ds->ucBcastSig = add_sta_req->ucBcastSig;
     sta_ds->ucMgmtSig = add_sta_req->ucMgmtSig;
+    sta_ds->bssId     = add_sta_req->bssIdx;
 
+    limLog(pmac, LOG1, FL("StaIndex %d BssIDx %d dpuIndex %d bcastDpuIndex %d bcastMgmtDpuIdx %d ucUcastSig %d ucBcastSig %d ucMgmtSig %d AssocId %d"),
+       sta_ds->staIndex,
+       sta_ds->bssId,
+       sta_ds->dpuIndex,
+       sta_ds->bcastDpuIndex,
+       sta_ds->bcastMgmtDpuIdx,
+       sta_ds->ucUcastSig,
+       sta_ds->ucBcastSig,
+       sta_ds->ucMgmtSig,
+       sta_ds->assocId);
 
     if (limAddSta(pmac, sta_ds, false, session_entry) != eSIR_SUCCESS) {
         limLog(pmac, LOGE, FL("could not Add STA with assocId=%d"),
