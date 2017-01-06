@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -788,7 +788,7 @@ static int hdd_stop_bss_link(hdd_adapter_t *pHostapdAdapter,v_PVOID_t usrDataFor
 }
 
 #ifdef SAP_AUTH_OFFLOAD
-void hdd_set_sap_auth_offload(hdd_adapter_t *pHostapdAdapter,
+bool hdd_set_sap_auth_offload(hdd_adapter_t *pHostapdAdapter,
         bool enabled)
 {
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pHostapdAdapter);
@@ -812,7 +812,7 @@ void hdd_set_sap_auth_offload(hdd_adapter_t *pHostapdAdapter,
             hddLog(VOS_TRACE_LEVEL_ERROR,
                     "%s: invalid key length(%d) of WPA security!", __func__,
                     sap_offload_info.key_len);
-            return;
+            return false;
         }
     }
     if (sap_offload_info.key_len)
@@ -826,12 +826,12 @@ void hdd_set_sap_auth_offload(hdd_adapter_t *pHostapdAdapter,
     {
         hddLog(VOS_TRACE_LEVEL_ERROR,
                 "%s: sme_set_sap_auth_offload fail!", __func__);
-        return;
+        return false;
     }
 
     hddLog(VOS_TRACE_LEVEL_INFO_HIGH,
             "%s: sme_set_sap_auth_offload successfully!", __func__);
-    return;
+    return true;
 }
 #endif
 
@@ -4910,7 +4910,14 @@ VOS_STATUS hdd_init_ap_mode( hdd_adapter_t *pAdapter )
 
 #ifdef SAP_AUTH_OFFLOAD
     if (pHddCtx->cfg_ini->enable_sap_auth_offload)
-        hdd_set_sap_auth_offload(pAdapter, TRUE);
+    {
+        if (!hdd_set_sap_auth_offload(pAdapter, TRUE))
+        {
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+             FL("SAP AUTH OFFLOAD is not enabled successfully, Don't start SAP"));
+            return VOS_STATUS_E_FAILURE;
+        }
+    }
 #endif
 
     // Allocate the Wireless Extensions state structure

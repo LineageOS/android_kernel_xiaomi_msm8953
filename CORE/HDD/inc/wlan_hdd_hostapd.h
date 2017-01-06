@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -117,10 +117,10 @@ void hdd_hostapd_ch_avoid_cb(void *pAdapter, void *indParam);
 #endif /* FEATURE_WLAN_CH_AVOID */
 int hdd_del_all_sta(hdd_adapter_t *pAdapter);
 #ifdef SAP_AUTH_OFFLOAD
-void hdd_set_sap_auth_offload(hdd_adapter_t *pHostapdAdapter,
+bool  hdd_set_sap_auth_offload(hdd_adapter_t *pHostapdAdapter,
         bool enabled);
 #else
-static inline void
+static inline bool
 hdd_set_sap_auth_offload(hdd_adapter_t *pHostapdAdapter, bool enabled)
 {
 }
