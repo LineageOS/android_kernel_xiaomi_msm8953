@@ -13802,6 +13802,22 @@ int hdd_wlan_startup(struct device *dev )
    {
       eHalStatus halStatus;
 
+      /* Overwrite the Mac address if config file exist */
+      if (VOS_STATUS_SUCCESS != hdd_update_mac_config(pHddCtx))
+      {
+         hddLog(VOS_TRACE_LEVEL_WARN,
+                "%s: Didn't overwrite MAC from config file",
+                __func__);
+      } else {
+         pr_info("%s: WLAN Mac Addr from config: %02X:%02X:%02X:%02X:%02X:%02X\n", WLAN_MODULE_NAME,
+                 pHddCtx->cfg_ini->intfMacAddr[0].bytes[0],
+                 pHddCtx->cfg_ini->intfMacAddr[0].bytes[1],
+                 pHddCtx->cfg_ini->intfMacAddr[0].bytes[2],
+                 pHddCtx->cfg_ini->intfMacAddr[0].bytes[3],
+                 pHddCtx->cfg_ini->intfMacAddr[0].bytes[4],
+                 pHddCtx->cfg_ini->intfMacAddr[0].bytes[5]);
+      }
+
       /* Set the MAC Address Currently this is used by HAL to
        * add self sta. Remove this once self sta is added as
        * part of session open.
