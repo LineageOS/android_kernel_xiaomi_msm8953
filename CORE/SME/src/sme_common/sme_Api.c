@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1159,6 +1159,7 @@ sme_process_cmd:
                             {
                                csrReleaseCommand(pMac, pCommand);
                             }
+                            pMac->max_power_cmd_pending = false;
                             break;
                         case eSmeCommandSetMaxTxPowerPerBand:
                             csrLLUnlock(&pMac->sme.smeCmdActiveList);
@@ -1171,6 +1172,7 @@ sme_process_cmd:
                                         &pCommand->Link, LL_ACCESS_LOCK)) {
                                csrReleaseCommand(pMac, pCommand);
                             }
+                            pMac->max_power_cmd_pending = false;
                             break;
 
                         case eSmeCommandUpdateChannelList:
@@ -9685,6 +9687,13 @@ eHalStatus sme_SetMaxTxPower(tHalHandle hHal, tSirMacAddr bssid,
    eHalStatus status = eHAL_STATUS_SUCCESS;
    tSmeCmd *set_max_tx_pwr;
 
+   if (pMac->max_power_cmd_pending)
+   {
+      smsLog(pMac, LOG1,
+        FL("set max tx power already in progress"));
+      return eHAL_STATUS_RESOURCES;
+   }
+
    MTRACE(vos_trace(VOS_MODULE_ID_SME,
        TRACE_CODE_SME_RX_HDD_SET_MAXTXPOW, NO_SESSION, 0));
    smsLog(pMac, LOG1,
@@ -9703,11 +9712,13 @@ eHalStatus sme_SetMaxTxPower(tHalHandle hHal, tSirMacAddr bssid,
            vos_mem_copy(set_max_tx_pwr->u.set_tx_max_pwr.self_sta_mac_addr,
                  self_mac_addr, SIR_MAC_ADDR_LENGTH);
            set_max_tx_pwr->u.set_tx_max_pwr.power = db;
+           pMac->max_power_cmd_pending = true;
            status = csrQueueSmeCommand(pMac, set_max_tx_pwr, eANI_BOOLEAN_TRUE);
            if ( !HAL_STATUS_SUCCESS( status ) )
            {
                smsLog( pMac, LOGE, FL("fail to send msg status = %d"), status );
                csrReleaseCommandScan(pMac, set_max_tx_pwr);
+               pMac->max_power_cmd_pending = false;
            }
        }
        else
@@ -9739,6 +9750,13 @@ eHalStatus sme_SetMaxTxPowerPerBand(eCsrBand band, v_S7_t dB,
     tSmeCmd *set_max_tx_pwr_per_band;
     tpAniSirGlobal mac_ctx = PMAC_STRUCT(hal);
 
+   if (mac_ctx->max_power_cmd_pending)
+   {
+      smsLog(mac_ctx, LOG1,
+        FL("set max tx power already in progress"));
+      return eHAL_STATUS_RESOURCES;
+   }
+
    smsLog(mac_ctx, LOG1,
           FL("band : %d power %d dB"),
           band, dB);
@@ -9753,11 +9771,13 @@ eHalStatus sme_SetMaxTxPowerPerBand(eCsrBand band, v_S7_t dB,
            set_max_tx_pwr_per_band->command = eSmeCommandSetMaxTxPowerPerBand;
            set_max_tx_pwr_per_band->u.set_tx_max_pwr_per_band.band = band;
            set_max_tx_pwr_per_band->u.set_tx_max_pwr_per_band.power = dB;
+           mac_ctx->max_power_cmd_pending = true;
            status = csrQueueSmeCommand(mac_ctx, set_max_tx_pwr_per_band,
                                                            eANI_BOOLEAN_TRUE);
            if (!HAL_STATUS_SUCCESS(status)) {
                smsLog(mac_ctx, LOGE, FL("fail to send msg status = %d"), status);
                csrReleaseCommand(mac_ctx, set_max_tx_pwr_per_band);
+               mac_ctx->max_power_cmd_pending = false;
            }
        } else {
            smsLog(mac_ctx, LOGE, FL("can not obtain a common buffer"));
