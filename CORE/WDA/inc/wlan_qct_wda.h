@@ -385,6 +385,8 @@ typedef eHalStatus (*pWDAAckFnTxComp)(tpAniSirGlobal, void *pData);
 typedef void (*WDA_txFailIndCallback)(tANI_U8 *, tANI_U8);
 #endif /* WLAN_FEATURE_RMC */
 
+typedef void (*WDA_suspend_req_callback)(tANI_U8 *, tANI_U8);
+
 typedef struct
 {
    tANI_U16 ucValidStaIndex ;

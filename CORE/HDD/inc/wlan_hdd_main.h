@@ -1113,6 +1113,9 @@ struct hdd_adapter_s
    struct completion ibss_peer_info_comp;
 #endif /* WLAN_FEATURE_RMC */
 
+   /* completion variable for wlan suspend */
+   struct completion wlan_suspend_comp_var;
+
    /* Track whether the linkup handling is needed  */
    v_BOOL_t isLinkUpSvcNeeded;
 

@@ -1472,6 +1472,26 @@ void hdd_mc_addr_list_cfg_config(hdd_context_t* pHddCtx, bool action)
     }
 }
 
+/**
+ * hdd_suspend_ind_callback: This API will set completion event for suspend
+ * @pAdapter: hdd_adapter_t
+ * @status: suspend status
+ *
+ * Return: none
+ */
+static void hdd_suspend_ind_callback(void *context, VOS_STATUS status)
+{
+    hdd_adapter_t *adapter = (hdd_adapter_t *)context;
+    if (NULL == adapter)
+    {
+        hddLog(VOS_TRACE_LEVEL_ERROR,
+               "%s: HDD adapter is NULL",__func__);
+        return;
+    }
+    hddLog(VOS_TRACE_LEVEL_INFO, FL("suspend status %d"), status);
+    complete(&adapter->wlan_suspend_comp_var);
+}
+
 static void hdd_conf_suspend_ind(hdd_context_t* pHddCtx,
                                  hdd_adapter_t *pAdapter)
 {
@@ -1517,6 +1537,8 @@ static void hdd_conf_suspend_ind(hdd_context_t* pHddCtx,
         wlanSuspendParam->configuredMcstBcstFilterSetting =
             pHddCtx->configuredMcastBcastFilter;
 
+        wlanSuspendParam->wlan_sus_callback = hdd_suspend_ind_callback;
+        wlanSuspendParam->context = pAdapter;
         /* mc add list cfg item configuration in fwr */
         hdd_mc_addr_list_cfg_config(pHddCtx, true);
 
@@ -1593,7 +1615,7 @@ void hdd_suspend_wlan(void)
 {
    hdd_context_t *pHddCtx = NULL;
    v_CONTEXT_t pVosContext = NULL;
-
+   long ret;
    VOS_STATUS status;
    hdd_adapter_t *pAdapter = NULL;
    hdd_adapter_list_node_t *pAdapterNode = NULL, *pNext = NULL;
@@ -1677,9 +1699,17 @@ void hdd_suspend_wlan(void)
        }
 #endif
 
+       INIT_COMPLETION(pAdapter->wlan_suspend_comp_var);
        /*Suspend notification sent down to driver*/
        hdd_conf_suspend_ind(pHddCtx, pAdapter);
-
+       ret = wait_for_completion_interruptible_timeout(
+                   &pAdapter->wlan_suspend_comp_var,
+                   msecs_to_jiffies(WLAN_WAIT_TIME_FULL_PWR));
+       if (0 >= ret)
+       {
+          hddLog(VOS_TRACE_LEVEL_ERROR, "%s:wait on suspend failed %ld",
+                 __func__, ret);
+       }
        status = hdd_get_next_adapter ( pHddCtx, pAdapterNode, &pNext );
        pAdapterNode = pNext;
    }

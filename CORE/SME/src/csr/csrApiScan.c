@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -2700,6 +2700,14 @@ eHalStatus csrScanGetResult(tpAniSirGlobal pMac, tCsrScanResultFilter *pFilter, 
                                         LL_ACCESS_NOLOCK);
                     }
                 }
+                /* bssid hint AP should be on head */
+                else if (pFilter &&
+                     vos_mem_compare(pResult->Result.BssDescriptor.bssId,
+                     pFilter->bssid_hint, VOS_MAC_ADDR_SIZE))
+                {
+                     csrLLInsertHead(&pRetList->List,
+                            &pResult->Link, LL_ACCESS_NOLOCK);
+                }
                 else
                 {
                     //To sort the list
@@ -2710,6 +2718,14 @@ eHalStatus csrScanGetResult(tpAniSirGlobal pMac, tCsrScanResultFilter *pFilter, 
                     while(pTmpEntry)
                     {
                         pTmpResult = GET_BASE_ADDR( pTmpEntry, tCsrScanResult, Link );
+                        /* Skip the bssid hint AP, as it should be on head */
+                        if (pFilter &&
+                           vos_mem_compare(pResult->Result.BssDescriptor.bssId,
+                           pFilter->bssid_hint, VOS_MAC_ADDR_SIZE)) {
+                           pTmpEntry = csrLLNext(&pRetList->List,
+                                                  pTmpEntry, LL_ACCESS_NOLOCK);
+                           continue;
+                        }
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
                         if (pFilter && pFilter->isPERRoamScan) {
                             csrFindCongestionScore(pMac, pResult);

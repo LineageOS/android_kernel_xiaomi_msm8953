@@ -23270,6 +23270,7 @@ WDI_SendIndication
        */
       pWDICtx->wdiReqStatusCB( ((uStatus != eWLAN_PAL_STATUS_SUCCESS) && (uStatus != eWLAN_PAL_STATUS_E_RESOURCES)) ? WDI_STATUS_E_FAILURE: WDI_STATUS_SUCCESS,
                                pWDICtx->pReqStatusUserData);
+      pWDICtx->wdiReqStatusCB = NULL;
    }
 
    /*If sending of the message failed - it is considered catastrophic and
