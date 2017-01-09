@@ -36,3 +36,7 @@ void lim_handle_reassoc_mbb_fail(tpAniSirGlobal mac,
      tpPESession session_entry);
 void lim_handle_reassoc_mbb_success(tpAniSirGlobal mac,
      tpPESession session_entry, tpSirAssocRsp  assoc_rsp, tpDphHashNode sta_ds);
+void lim_process_sta_mlm_del_sta_rsp_mbb(tpAniSirGlobal mac,
+     tpSirMsgQ lim_msg, tpPESession session_entry);
+void lim_process_sta_mlm_del_bss_rsp_mbb(tpAniSirGlobal mac,
+     tpSirMsgQ lim_msg, tpPESession session_entry);

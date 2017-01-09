@@ -6351,6 +6351,17 @@ enum csr_roam_op_code {
     SIR_STOP_ROAM_OFFLOAD_SCAN,
     SIR_PREPARE_REASSOC_REQ,
 };
+
+/**
+ * enum sir_roam_cleanup_type - Type of cleanup needs to be performed.
+ * @SIR_MBB_DISCONNECTED: Entire CSR cleanup for connected AP
+ * needs to be performed
+ * @SIR_MBB_CONNECTED: No need to perform CSR cleanup for connected AP.
+ */
+enum sir_roam_cleanup_type {
+    SIR_MBB_DISCONNECTED,
+    SIR_MBB_CONNECTED,
+};
 #endif
 
 #endif /* __SIR_API_H */

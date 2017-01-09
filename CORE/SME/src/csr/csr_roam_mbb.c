@@ -381,10 +381,26 @@ void csr_roam_preauth_rsp_mbb_processor(tHalHandle hal,
 {
     tpAniSirGlobal mac = PMAC_STRUCT(hal);
     eHalStatus  status;
+    tCsrRoamInfo roam_info;
 
     mac->ft.ftSmeContext.is_preauth_lfr_mbb = false;
     smsLog(mac, LOG1, FL("is_preauth_lfr_mbb %d"),
                          mac->ft.ftSmeContext.is_preauth_lfr_mbb);
+
+    /*
+    * When reason is SIR_MBB_DISCONNECTED, cleanup CSR info
+    * of connected AP.
+    */
+    if (pre_auth_rsp->reason == SIR_MBB_DISCONNECTED) {
+        /* Dequeue ecsr_perform_preauth_reassoc */
+        csr_roam_dequeue_preauth_reassoc(mac);
+
+        vos_mem_zero(&roam_info, sizeof(tCsrRoamInfo));
+        csrRoamCallCallback(mac, pre_auth_rsp->smeSessionId, &roam_info, 0,
+                               eCSR_ROAM_FT_REASSOC_FAILED, eSIR_SME_SUCCESS);
+
+        csrRoamComplete(mac, eCsrJoinFailure, NULL);
+    }
 
     status = csr_neighbor_roam_preauth_reassoc_rsp_handler(mac,
                                                 pre_auth_rsp->status);

@@ -800,7 +800,7 @@ limProcessAssocRspFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tANI_U8 sub
             limLog(pMac, LOG1, FL("Reassoc success for LFR MBB in state %d"),
                    psessionEntry->limMlmState);
             if (psessionEntry->limMlmState ==
-                             eLIM_MLM_WT_FT_REASSOC_RSP_STATE) {
+                             eLIM_MLM_WT_REASSOC_RSP_STATE) {
                 lim_handle_reassoc_mbb_success(pMac, psessionEntry,
                                                pAssocRsp, pStaDs);
                 return;
