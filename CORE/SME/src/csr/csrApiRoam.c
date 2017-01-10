@@ -17749,6 +17749,10 @@ eHalStatus csrIsFullPowerNeeded( tpAniSirGlobal pMac, tSmeCmd *pCommand,
             case eCsrCapsChange:
                 fNeedFullPower = eANI_BOOLEAN_TRUE;
                 break;
+            case eCsrForcedDisassocSta:
+            case eCsrForcedDeauthSta:
+                fNeedFullPower = eANI_BOOLEAN_FALSE;
+                break;
             default:
                 //Check whether the profile is already connected. If so, no need for full power
                 //Note: IBSS is ignored for now because we don't support powersave in IBSS
