@@ -9133,7 +9133,6 @@ lim_sap_offload_del_sta(tpAniSirGlobal pmac, tSapOfldDelStaIndMsg *lim_msgq)
     sta_ds->mlmStaContext.cleanupTrigger = eLIM_PEER_ENTITY_DISASSOC;
     sta_ds->mlmStaContext.disassocReason =
         (tSirMacReasonCodes) del_sta_req->reason;
-    sta_ds->mlmStaContext.updateContext = 1;
 
     limSendSmeDisassocInd(pmac, sta_ds, psession_entry);
 

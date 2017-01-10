@@ -4129,6 +4129,11 @@ __lim_process_sme_assoc_offload_cnf(tpAniSirGlobal pmac,
                 eLIM_CNF_WAIT_TIMER,
                 aid);
     }
+    if (assoc_cnf.statusCode == eSIR_SME_SUCCESS)
+    {
+      sta_ds->mlmStaContext.mlmState = eLIM_MLM_LINK_ESTABLISHED_STATE;
+      limLog(pmac, LOG1, FL("Set mlmState to eLIM_MLM_LINK_ESTABLISHED_STATE"));
+    }
 
 end:
     if((psession_entry != NULL) && (sta_ds != NULL))
