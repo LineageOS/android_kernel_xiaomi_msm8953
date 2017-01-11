@@ -17403,6 +17403,17 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
           break;
       }
 #endif
+      case WDA_CAP_TSF_REQ:
+      {
+          WDA_ProcessCapTsfReq(pWDA, (tSirCapTsfParams *)
+                               pMsg->bodyptr);
+          break;
+      }
+      case WDA_GET_TSF_REQ:
+      {
+          WDA_ProcessGetTsfReq(pWDA, (tSirCapTsfParams *)pMsg->bodyptr);
+          break;
+      }
       default:
       {
          VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
@@ -23192,5 +23203,274 @@ VOS_STATUS WDA_ProcessBcnMissPenaltyCount(tWDA_CbContext *pWDA,
     vos_mem_free(params);
     return CONVERT_WDI2VOS_STATUS(status) ;
 }
-
 #endif
+/*
+ * WDA_CapTsfRspCb : handle response for tsf requests
+ * @wdi_rsp : Response from WDI for tsf requests
+ * @user_data: pointer to user data
+ * Returns: None
+ */
+void WDA_CapTsfRspCb (wdi_cap_tsf_rsp_t *wdi_rsp, void *user_data)
+{
+
+    tWDA_ReqParams *wda_params = (tWDA_ReqParams *)user_data;
+    tSirCapTsfParams *cap_tsf_params;
+    struct stsf *stsf_temp;
+    VOS_STATUS status;
+
+    VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+              "<------ %s " ,__func__);
+
+    if (NULL == wda_params) {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                  "%s: pWdaParams received NULL", __func__);
+        VOS_ASSERT(0);
+        return;
+    }
+
+    if (NULL == wda_params->wdaMsgParam) {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                  "%s: pWdaParams->wdaMsgParam is NULL", __func__);
+        VOS_ASSERT(0);
+        vos_mem_free(wda_params->wdaWdiApiMsgParam);
+        vos_mem_free(wda_params);
+        return;
+    }
+
+    stsf_temp = (struct stsf *)vos_mem_malloc(sizeof(*stsf_temp));
+    if (NULL == stsf_temp) {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                  "%s: Unable to allocate tsf struct", __func__);
+        VOS_ASSERT(0);
+        vos_mem_free(wda_params->wdaWdiApiMsgParam);
+        vos_mem_free(wda_params->wdaMsgParam);
+        vos_mem_free(wda_params);
+        return;
+    }
+    cap_tsf_params = (tSirCapTsfParams *)wda_params->wdaMsgParam;
+    stsf_temp->session_id = cap_tsf_params->bss_idx;
+    stsf_temp->set_tsf_req = true;
+    stsf_temp->tsf_req_status = wdi_rsp->status;
+
+    if (cap_tsf_params->tsf_rsp_cb_func) {
+        cap_tsf_params->tsf_rsp_cb_func (
+                        cap_tsf_params->tsf_rsp_cb_ctx, stsf_temp);
+    }
+    else {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                  "%s: tsf callback is NULL", __func__);
+        vos_mem_free(stsf_temp);
+    }
+    status = CONVERT_WDI2VOS_STATUS(wdi_rsp->status);
+    if (status) {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                  "%s: Capture TSF failed with status=%d", __func__,
+                   status);
+        VOS_ASSERT(0);
+    }
+    vos_mem_free(wda_params->wdaWdiApiMsgParam);
+    vos_mem_free(wda_params->wdaMsgParam);
+    vos_mem_free(wda_params);
+    return;
+}
+
+/*
+ * WDA_GetTsfRspCb : handle response for get tsf request
+ * @wdi_rsp : Response from WDI for tsf requests
+ * @user_data: pointer to user data
+ * Returns: None
+ */
+void WDA_GetTsfRspCb (wdi_cap_tsf_rsp_t *wdi_rsp, void *user_data)
+{
+
+    tWDA_ReqParams *wda_params = (tWDA_ReqParams *)user_data;
+    tSirCapTsfParams *cap_tsf_params;
+    struct stsf *stsf_temp;
+    VOS_STATUS status;
+
+    VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+              "<------ %s " ,__func__);
+
+    if (NULL == wda_params) {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                  "%s: pWdaParams received NULL", __func__);
+        VOS_ASSERT(0);
+        return;
+    }
+
+    if (NULL == wda_params->wdaMsgParam) {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                  "%s: pWdaParams->wdaMsgParam is NULL", __func__);
+        VOS_ASSERT(0);
+        vos_mem_free(wda_params->wdaWdiApiMsgParam);
+        vos_mem_free(wda_params);
+        return;
+    }
+
+    stsf_temp = (struct stsf *)vos_mem_malloc(sizeof(*stsf_temp));
+    if (NULL == stsf_temp) {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                  "%s: Unable to allocate tsf struct", __func__);
+        VOS_ASSERT(0);
+        vos_mem_free(wda_params->wdaWdiApiMsgParam);
+        vos_mem_free(wda_params->wdaMsgParam);
+        vos_mem_free(wda_params);
+        return;
+    }
+    cap_tsf_params = (tSirCapTsfParams *)wda_params->wdaMsgParam;
+    stsf_temp->session_id = cap_tsf_params->bss_idx;
+    /* Indicate to upper layer that this is a get request */
+    stsf_temp->set_tsf_req = false;
+    stsf_temp->tsf_low = wdi_rsp->tsf_lo;
+    stsf_temp->tsf_high = wdi_rsp->tsf_hi;
+    stsf_temp->tsf_req_status = wdi_rsp->status;
+
+    if (cap_tsf_params->tsf_rsp_cb_func) {
+        cap_tsf_params->tsf_rsp_cb_func (
+                        cap_tsf_params->tsf_rsp_cb_ctx, stsf_temp);
+    }
+    else {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                  "%s: tsf callback is NULL", __func__);
+        vos_mem_free(stsf_temp);
+    }
+    status = CONVERT_WDI2VOS_STATUS(wdi_rsp->status);
+    if (status) {
+        VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                  "%s: Capture TSF failed with status=%d", __func__,
+                   status);
+        VOS_ASSERT(0);
+    }
+    vos_mem_free(wda_params->wdaWdiApiMsgParam);
+    vos_mem_free(wda_params->wdaMsgParam);
+    vos_mem_free(wda_params);
+    return;
+}
+/*
+ * FUNCTION: WDA_ProcessCapTsfReq
+ * Send capture tsf request to FW.
+ */
+VOS_STATUS WDA_ProcessCapTsfReq(tWDA_CbContext *pWDA, tSirCapTsfParams *params)
+{
+    WDI_Status status = WDI_STATUS_SUCCESS;
+    wdi_cap_tsf_params_t  *pWDICapTsfReqType;
+    tWDA_ReqParams *pWdaParams ;
+
+    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                                           "<------ %s " ,__func__);
+    if(NULL == params)
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                "%s: cap tsf params NULL", __func__);
+        VOS_ASSERT(0) ;
+        return -EINVAL;
+    }
+
+    pWDICapTsfReqType = (wdi_cap_tsf_params_t *)vos_mem_malloc(
+                                       sizeof(*pWDICapTsfReqType));
+    if(NULL == pWDICapTsfReqType)
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                             "%s: VOS MEM Alloc Failure", __func__);
+        VOS_ASSERT(0);
+        vos_mem_free(params);
+        return VOS_STATUS_E_NOMEM;
+    }
+    pWdaParams = (tWDA_ReqParams *)vos_mem_malloc(sizeof(*pWdaParams)) ;
+    if(NULL == pWdaParams)
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                             "%s: VOS MEM Alloc Failure", __func__);
+        VOS_ASSERT(0);
+        vos_mem_free(pWDICapTsfReqType);
+        vos_mem_free(params);
+        return VOS_STATUS_E_NOMEM;
+    }
+
+    pWDICapTsfReqType->bss_idx = params->bss_idx;
+    pWDICapTsfReqType->capTSFget = CAP_TSF_REQUEST;
+
+    pWdaParams->pWdaContext = pWDA;
+    pWdaParams->wdaMsgParam = params;
+    pWdaParams->wdaWdiApiMsgParam = (void *)pWDICapTsfReqType;
+
+    status = wdi_process_cap_tsf_req(pWDICapTsfReqType,
+                                     (wdi_tsf_rsp_cb)WDA_CapTsfRspCb,
+                                      pWdaParams);
+
+    if(IS_WDI_STATUS_FAILURE(status))
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                "Failure in sendind WifiConfigReq, free all the memory" );
+        vos_mem_free(pWdaParams->wdaWdiApiMsgParam) ;
+        vos_mem_free(pWdaParams->wdaMsgParam);
+        vos_mem_free(pWdaParams);
+        vos_mem_free(params);
+    }
+    return CONVERT_WDI2VOS_STATUS(status) ;
+}
+
+/*
+ * FUNCTION: WDA_ProcessGetTsfReq
+ * Send capture tsf request to FW.
+ */
+VOS_STATUS WDA_ProcessGetTsfReq(tWDA_CbContext *pWDA, tSirCapTsfParams *params)
+{
+    WDI_Status status = WDI_STATUS_SUCCESS;
+    wdi_cap_tsf_params_t  *pWDIGetTsfReqType;
+    tWDA_ReqParams *pWdaParams ;
+
+    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                                           "<------ %s " ,__func__);
+    if(NULL == params)
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                "%s: cap tsf params NULL", __func__);
+        VOS_ASSERT(0) ;
+        return VOS_STATUS_E_INVAL;
+    }
+
+    pWDIGetTsfReqType = (wdi_cap_tsf_params_t *)vos_mem_malloc(
+                                       sizeof(wdi_cap_tsf_params_t));
+    if(NULL == pWDIGetTsfReqType)
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                             "%s: VOS MEM Alloc Failure", __func__);
+        VOS_ASSERT(0);
+        vos_mem_free(params);
+        return VOS_STATUS_E_INVAL;
+    }
+    pWdaParams = (tWDA_ReqParams *)vos_mem_malloc(sizeof(tWDA_ReqParams)) ;
+    if(NULL == pWdaParams)
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                             "%s: VOS MEM Alloc Failure", __func__);
+        VOS_ASSERT(0);
+        vos_mem_free(pWDIGetTsfReqType);
+        vos_mem_free(params);
+        return VOS_STATUS_E_NOMEM;
+    }
+
+    pWDIGetTsfReqType->bss_idx = params->bss_idx;
+    /* Indicate that this is a get request */
+    pWDIGetTsfReqType->capTSFget = GET_TSF_REQUEST;
+
+    pWdaParams->pWdaContext = pWDA;
+    pWdaParams->wdaMsgParam = params;
+    pWdaParams->wdaWdiApiMsgParam = (void *)pWDIGetTsfReqType;
+
+    status = wdi_process_get_tsf_req(pWDIGetTsfReqType,
+                                     (wdi_tsf_rsp_cb)WDA_GetTsfRspCb,
+                                      pWdaParams);
+
+    if(IS_WDI_STATUS_FAILURE(status))
+    {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                "Failure in sendind WifiConfigReq, free all the memory" );
+        vos_mem_free(pWdaParams->wdaWdiApiMsgParam) ;
+        vos_mem_free(pWdaParams->wdaMsgParam);
+        vos_mem_free(pWdaParams);
+        vos_mem_free(params);
+    }
+    return CONVERT_WDI2VOS_STATUS(status) ;
+}

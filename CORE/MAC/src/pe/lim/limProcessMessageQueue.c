@@ -2496,6 +2496,18 @@ send_chan_switch_resp:
          vos_mem_free((v_VOID_t*)limMsg->bodyptr);
          limMsg->bodyptr = NULL;
          break;
+
+    case eWNI_SME_CAP_TSF_REQ:
+        lim_process_sme_cap_tsf_req(pMac, limMsg->bodyptr);
+        vos_mem_free((v_VOID_t*)limMsg->bodyptr);
+        limMsg->bodyptr = NULL;
+        break;
+
+    case eWNI_SME_GET_TSF_REQ:
+        lim_process_sme_get_tsf_req(pMac, limMsg->bodyptr);
+        vos_mem_free((v_VOID_t*)limMsg->bodyptr);
+        limMsg->bodyptr = NULL;
+        break;
     default:
         vos_mem_free((v_VOID_t*)limMsg->bodyptr);
         limMsg->bodyptr = NULL;

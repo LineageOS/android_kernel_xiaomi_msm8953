@@ -817,6 +817,64 @@ typedef struct hdd_mdns_state_s
 } hdd_mdns_state_t;
 #endif /* MDNS_OFFLOAD */
 
+#ifdef WLAN_FEATURE_TSF
+
+#define HDD_TSF_CAP_REQ_TIMEOUT 2000
+#define HDD_TSF_GET_REQ_TIMEOUT 2000
+
+/**
+ * enum hdd_tsf_get_state - status of get tsf action
+ *
+ * TSF_RETURN:                   get tsf
+ * TSF_STA_NOT_CONNECTED_NO_TSF: sta not connected to ap
+ * TSF_NOT_RETURNED_BY_FW:       fw not returned tsf
+ * TSF_CURRENT_IN_CAP_STATE:     driver in capture state
+ * TSF_CAPTURE_FAIL:             capture fail
+ * TSF_GET_FAIL:                 get fail
+ * TSF_RESET_GPIO_FAIL:          GPIO reset fail
+ * TSF_SAP_NOT_STARTED_NO_TSF    SAP not started
+ */
+enum hdd_tsf_get_state {
+	TSF_RETURN = 0,
+	TSF_STA_NOT_CONNECTED_NO_TSF,
+	TSF_NOT_RETURNED_BY_FW,
+	TSF_CURRENT_IN_CAP_STATE,
+	TSF_CAPTURE_FAIL,
+	TSF_GET_FAIL,
+	TSF_RESET_GPIO_FAIL,
+	TSF_SAP_NOT_STARTED_NO_TSF
+};
+
+/**
+ * enum hdd_tsf_capture_state - status of capture
+ *
+ * TSF_IDLE:                     idle
+ * TSF__CAP_STATE:               current is in capture state
+ */
+enum hdd_tsf_capture_state {
+	TSF_IDLE = 0,
+	TSF_CAP_STATE
+};
+
+/**
+ * struct hdd_tsf_ctx_s - TSF capture ctx
+ * @tsf_get_state : tsf action enum
+ * @tsf_capture_state: tsf capture state enum
+ * @tsf_capture_done_event : Indicate tsf completion
+ * @tsf_high : Higher 32-bit for 64-bit tsf
+ * @tsf_lo : Lower 32-bit for 64-bit tsf
+ *
+ */
+struct hdd_tsf_ctx_s {
+    enum hdd_tsf_get_state tsf_get_state;
+    enum hdd_tsf_capture_state tsf_capture_state;
+    vos_event_t tsf_capture_done_event;
+    vos_spin_lock_t tsf_lock;
+    uint32_t tsf_high;
+    uint32_t tsf_low;
+};
+
+#endif /* WLAN_FEATURE_TSF */
 /*
  * Per station structure kept in HDD for multiple station support for SoftAP
 */
@@ -1261,6 +1319,10 @@ struct hdd_adapter_s
 #ifdef MDNS_OFFLOAD
     hdd_mdns_state_t mdns_status;
 #endif /* MDNS_OFFLOAD */
+
+#ifdef WLAN_FEATURE_TSF
+    struct hdd_tsf_ctx_s tsf_cap_ctx;
+#endif
 };
 
 #define WLAN_HDD_GET_STATION_CTX_PTR(pAdapter) (&(pAdapter)->sessionCtx.station)
@@ -2047,4 +2109,27 @@ static inline bool wlan_hdd_set_mdns_offload(hdd_adapter_t *adapter)
 
 void wlan_hdd_start_sap(hdd_adapter_t *ap_adapter);
 
+#ifdef WLAN_FEATURE_TSF
+void wlan_hdd_tsf_init(hdd_adapter_t *adapter);
+int hdd_capture_tsf(hdd_adapter_t *adapter, uint32_t *buf, int len);
+int hdd_indicate_tsf(hdd_adapter_t *adapter, uint32_t *buf, int len);
+#else
+static inline void
+wlan_hdd_tsf_init(hdd_adapter_t *adapter)
+{
+	return;
+}
+
+static inline int
+hdd_indicate_tsf(hdd_adapter_t *adapter, uint32_t *buf, int len)
+{
+	return -ENOTSUPP;
+}
+
+static inline int
+hdd_capture_tsf(hdd_adapter_t *adapter, uint32_t *buf, int len)
+{
+	return -ENOTSUPP;
+}
+#endif
 #endif    // end #if !defined( WLAN_HDD_MAIN_H )

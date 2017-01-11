@@ -8834,6 +8834,8 @@ hdd_adapter_t* hdd_open_adapter( hdd_context_t *pHddCtx, tANI_U8 session_type,
           hddLog(VOS_TRACE_LEVEL_FATAL,"%s: hdd_init_wowl failed",__func__);
           goto err_free_netdev;
       }
+      //Initialize the TSF capture data
+      wlan_hdd_tsf_init(pAdapter);
    }
    return pAdapter;
 
@@ -16324,6 +16326,8 @@ bool wlan_hdd_set_mdns_offload(hdd_adapter_t *hostapd_adapter)
            "%s: enable mDNS offload successfully!", __func__);
     return TRUE;
 }
+
+
 #endif /* MDNS_OFFLOAD */
 
 /**
@@ -16388,6 +16392,314 @@ end:
 	mutex_unlock(&hdd_ctx->sap_lock);
 	return;
 }
+
+#ifdef WLAN_FEATURE_TSF
+
+/**
+ * hdd_tsf_cb() - handle tsf request callback
+ *
+ * @pcb_cxt: pointer to the hdd_contex
+ * @ptsf: pointer to struct stsf
+ *
+ * Based on the request sent .
+ *
+ * Return: Describe the execute result of this routine
+ */
+static int hdd_tsf_cb(void *pcb_ctx, struct stsf *ptsf)
+{
+    hdd_context_t *hddctx;
+    int status;
+    hdd_adapter_t* adapter = (hdd_adapter_t*)pcb_ctx;
+
+    if (pcb_ctx == NULL || ptsf == NULL) {
+        hddLog(VOS_TRACE_LEVEL_ERROR,
+               FL("HDD context is not valid"));
+        return -EINVAL;
+    }
+
+    hddctx = (hdd_context_t *)pcb_ctx;
+    status = wlan_hdd_validate_context(hddctx);
+    if (0 != status)
+        return -EINVAL;
+
+    if (NULL == adapter) {
+        hddLog(VOS_TRACE_LEVEL_ERROR,
+               FL("failed to find adapter"));
+        return -EINVAL;
+    }
+
+    hddLog(VOS_TRACE_LEVEL_INFO,
+           FL("tsf cb handle event, device_mode is %d"),
+           adapter->device_mode);
+
+    /* copy the return value to hdd_tsf_ctx in adapter*/
+    if (ptsf->tsf_req_status) {
+
+        vos_spin_lock_acquire(&adapter->tsf_cap_ctx.tsf_lock);
+        adapter->tsf_cap_ctx.tsf_get_state = TSF_NOT_RETURNED_BY_FW;
+        adapter->tsf_cap_ctx.tsf_capture_state  = TSF_IDLE;
+        vos_event_set (&adapter->tsf_cap_ctx.tsf_capture_done_event);
+        vos_spin_lock_release(&adapter->tsf_cap_ctx.tsf_lock);
+
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("tsf req failure :%d"),
+               ptsf->tsf_req_status);
+        return ptsf->tsf_req_status;
+    }
+    /* If this is a get request.Store the tsf values in adapter. */
+    if (!ptsf->set_tsf_req) {
+        vos_spin_lock_acquire(&adapter->tsf_cap_ctx.tsf_lock);
+        adapter->tsf_cap_ctx.tsf_low  = ptsf->tsf_low;
+        adapter->tsf_cap_ctx.tsf_high = ptsf->tsf_high;
+        adapter->tsf_cap_ctx.tsf_get_state = TSF_RETURN;
+        adapter->tsf_cap_ctx.tsf_capture_state = TSF_IDLE;
+        vos_spin_lock_release(&adapter->tsf_cap_ctx.tsf_lock);
+
+        hddLog(VOS_TRACE_LEVEL_INFO,
+               FL("hdd_get_tsf_cb sta=%u, tsf_low=%u, tsf_high=%u"),
+                   adapter->sessionId, ptsf->tsf_low, ptsf->tsf_high);
+    }
+    else {
+        vos_spin_lock_acquire(&adapter->tsf_cap_ctx.tsf_lock);
+        adapter->tsf_cap_ctx.tsf_capture_state = TSF_CAP_STATE;
+        adapter->tsf_cap_ctx.tsf_get_state = TSF_CURRENT_IN_CAP_STATE;
+        vos_spin_lock_release(&adapter->tsf_cap_ctx.tsf_lock);
+    }
+    vos_spin_lock_acquire(&adapter->tsf_cap_ctx.tsf_lock);
+    vos_event_set (&adapter->tsf_cap_ctx.tsf_capture_done_event);
+    vos_spin_lock_release(&adapter->tsf_cap_ctx.tsf_lock);
+
+    /* free allocated mem */
+    vos_mem_free(ptsf);
+
+    return 0;
+}
+
+/**
+ * hdd_capture_tsf() - capture tsf
+ *
+ * @adapter: pointer to adapter
+ * @buf: pointer to upper layer buf
+ * @len : the length of buf
+ *
+ * This function returns tsf value to uplayer.
+ *
+ * Return: Describe the execute result of this routine
+ */
+int hdd_capture_tsf(hdd_adapter_t *adapter, uint32_t *buf, int len)
+{
+    int ret = 0;
+    hdd_station_ctx_t *hdd_sta_ctx;
+    hdd_context_t *hdd_ctx;
+    tSirCapTsfParams cap_tsf_params;
+    VOS_STATUS status;
+
+    if (adapter == NULL || buf == NULL) {
+        hddLog(VOS_TRACE_LEVEL_ERROR,
+               FL("invalid pointer"));
+        return -EINVAL;
+    }
+    if (len != 1)
+        return -EINVAL;
+
+    hdd_ctx = WLAN_HDD_GET_CTX(adapter);
+
+    if (wlan_hdd_validate_context(hdd_ctx)) {
+        hddLog(VOS_TRACE_LEVEL_ERROR,
+               FL("invalid hdd ctx"));
+        return -EINVAL;
+    }
+    if (adapter->device_mode == WLAN_HDD_INFRA_STATION ||
+        adapter->device_mode == WLAN_HDD_P2P_CLIENT) {
+        hdd_sta_ctx = WLAN_HDD_GET_STATION_CTX_PTR(adapter);
+        if (hdd_sta_ctx->conn_info.connState !=
+            eConnectionState_Associated) {
+
+            hddLog(VOS_TRACE_LEVEL_INFO,
+                   FL("failed to cap tsf, not connect with ap"));
+            buf[0] = TSF_STA_NOT_CONNECTED_NO_TSF;
+            return ret;
+        }
+    }
+    if ((adapter->device_mode == WLAN_HDD_SOFTAP ||
+         adapter->device_mode == WLAN_HDD_P2P_GO) &&
+         !(test_bit(SOFTAP_BSS_STARTED, &adapter->event_flags))) {
+         hddLog(VOS_TRACE_LEVEL_INFO,
+                FL("Soft AP / P2p GO not beaconing"));
+         buf[0] = TSF_SAP_NOT_STARTED_NO_TSF;
+         return ret;
+    }
+    if (adapter->tsf_cap_ctx.tsf_capture_state == TSF_CAP_STATE) {
+        hddLog(VOS_TRACE_LEVEL_INFO,
+               FL("current in capture state, pls reset"));
+        buf[0] = TSF_CURRENT_IN_CAP_STATE;
+    } else {
+        hddLog(VOS_TRACE_LEVEL_INFO, FL("ioctl issue cap tsf cmd"));
+        buf[0] = TSF_RETURN;
+        cap_tsf_params.session_id = adapter->sessionId;
+        cap_tsf_params.tsf_rsp_cb_func = hdd_tsf_cb;
+        cap_tsf_params.tsf_rsp_cb_ctx = adapter;
+
+        vos_spin_lock_acquire(&adapter->tsf_cap_ctx.tsf_lock);
+        adapter->tsf_cap_ctx.tsf_capture_state = TSF_CAP_STATE;
+        adapter->tsf_cap_ctx.tsf_get_state = TSF_CURRENT_IN_CAP_STATE;
+        vos_spin_lock_release(&adapter->tsf_cap_ctx.tsf_lock);
+
+        ret = sme_capture_tsf_req(hdd_ctx->hHal, cap_tsf_params);
+
+        if (ret != VOS_STATUS_SUCCESS) {
+            hddLog(VOS_TRACE_LEVEL_ERROR, FL("capture fail"));
+            buf[0] = TSF_CAPTURE_FAIL;
+            vos_spin_lock_acquire(&adapter->tsf_cap_ctx.tsf_lock);
+            adapter->tsf_cap_ctx.tsf_capture_state = TSF_IDLE;
+            vos_spin_lock_release(&adapter->tsf_cap_ctx.tsf_lock);
+            return -EINVAL;
+        }
+        /* wait till we get a response from fw */
+        status = vos_wait_single_event(&adapter->tsf_cap_ctx.
+                                       tsf_capture_done_event,
+                                       HDD_TSF_CAP_REQ_TIMEOUT);
+
+        if (!VOS_IS_STATUS_SUCCESS(status)) {
+             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                       ("capture tsf vos wait for single_event failed!! %d"),
+                       adapter->tsf_cap_ctx.tsf_get_state);
+
+              vos_spin_lock_acquire(&adapter->tsf_cap_ctx.tsf_lock);
+              adapter->tsf_cap_ctx.tsf_capture_state = TSF_IDLE;
+              vos_spin_lock_release(&adapter->tsf_cap_ctx.tsf_lock);
+
+             return -EINVAL;
+        }
+    }
+    buf[0] = TSF_RETURN;
+    hddLog(VOS_TRACE_LEVEL_INFO,
+           FL("ioctl return cap tsf cmd, ret = %d"), ret);
+    return ret;
+}
+
+/**
+ * hdd_indicate_tsf() - return tsf to uplayer
+ *
+ * @adapter: pointer to adapter
+ * @buf: pointer to uplayer buf
+ * @len : the length of buf
+ *
+ * This function returns tsf value to uplayer.
+ *
+ * Return: Describe the execute result of this routine
+ */
+int hdd_indicate_tsf(hdd_adapter_t *adapter, uint32_t *buf, int len)
+{
+    int ret = 0;
+    hdd_station_ctx_t *hdd_sta_ctx;
+    hdd_context_t *hdd_ctx;
+    tSirCapTsfParams cap_tsf_params;
+    VOS_STATUS status;
+
+    if (adapter == NULL || buf == NULL) {
+        hddLog(VOS_TRACE_LEVEL_ERROR,
+               FL("invalid pointer"));
+        return -EINVAL;
+    }
+    if (len != 3)
+        return -EINVAL;
+
+    buf [1] = 0;
+    buf [2] = 0;
+    hdd_ctx = WLAN_HDD_GET_CTX(adapter);
+
+    if (wlan_hdd_validate_context(hdd_ctx)) {
+        hddLog(VOS_TRACE_LEVEL_ERROR,
+               FL("invalid hdd ctx"));
+        return -EINVAL;
+    }
+    if (adapter->device_mode == WLAN_HDD_INFRA_STATION ||
+        adapter->device_mode == WLAN_HDD_P2P_CLIENT) {
+        hdd_sta_ctx = WLAN_HDD_GET_STATION_CTX_PTR(adapter);
+        if (hdd_sta_ctx->conn_info.connState !=
+            eConnectionState_Associated) {
+
+            hddLog(VOS_TRACE_LEVEL_INFO,
+                   FL("failed to cap tsf, not connect with ap"));
+            buf[0] = TSF_STA_NOT_CONNECTED_NO_TSF;
+            return ret;
+        }
+    }
+    if ((adapter->device_mode == WLAN_HDD_SOFTAP ||
+         adapter->device_mode == WLAN_HDD_P2P_GO) &&
+         !(test_bit(SOFTAP_BSS_STARTED, &adapter->event_flags))) {
+         hddLog(VOS_TRACE_LEVEL_INFO,
+                FL("Soft AP / P2p GO not beaconing"));
+         buf[0] = TSF_SAP_NOT_STARTED_NO_TSF;
+         return ret;
+    }
+
+    if (adapter->tsf_cap_ctx.tsf_capture_state != TSF_CAP_STATE ||
+        adapter->tsf_cap_ctx.tsf_get_state != TSF_CURRENT_IN_CAP_STATE ) {
+        hddLog(VOS_TRACE_LEVEL_INFO,
+        FL("Not in capture state,Enter capture state first"));
+        buf[0] = TSF_GET_FAIL;
+    } else {
+        hddLog(VOS_TRACE_LEVEL_INFO, FL("ioctl issue cap tsf cmd"));
+        cap_tsf_params.session_id = adapter->sessionId;
+        cap_tsf_params.tsf_rsp_cb_func = hdd_tsf_cb;
+        cap_tsf_params.tsf_rsp_cb_ctx = adapter;
+
+        ret = sme_get_tsf_req(hdd_ctx->hHal, cap_tsf_params);
+
+        if (ret != VOS_STATUS_SUCCESS) {
+            hddLog(VOS_TRACE_LEVEL_ERROR, FL("capture fail"));
+            buf[0] = TSF_CAPTURE_FAIL;
+            vos_spin_lock_acquire(&adapter->tsf_cap_ctx.tsf_lock);
+            adapter->tsf_cap_ctx.tsf_capture_state = TSF_IDLE;
+            vos_spin_lock_release(&adapter->tsf_cap_ctx.tsf_lock);
+            return -EINVAL;
+        }
+        /* wait till we get a response from fw */
+        status = vos_wait_single_event(&adapter->tsf_cap_ctx.
+                                        tsf_capture_done_event,
+                                        HDD_TSF_GET_REQ_TIMEOUT);
+
+        if (!VOS_IS_STATUS_SUCCESS(status)) {
+             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                       ("capture tsf vos wait for single_event failed!! %d"),
+                       status);
+
+             vos_spin_lock_acquire(&adapter->tsf_cap_ctx.tsf_lock);
+             adapter->tsf_cap_ctx.tsf_capture_state = TSF_IDLE;
+             vos_spin_lock_release(&adapter->tsf_cap_ctx.tsf_lock);
+             return status;
+        }
+        buf[1] = adapter->tsf_cap_ctx.tsf_low;
+        buf[2] = adapter->tsf_cap_ctx.tsf_high;
+
+        hddLog(VOS_TRACE_LEVEL_INFO,
+               FL("get tsf cmd,status=%u, tsf_low=%u, tsf_high=%u"),
+               buf[0], buf[1], buf[2]);
+    }
+    hddLog(VOS_TRACE_LEVEL_INFO,
+           FL("ioctl return cap tsf cmd, ret = %d"), ret);
+    return ret;
+}
+
+void wlan_hdd_tsf_init(hdd_adapter_t *adapter)
+{
+
+    if (adapter == NULL) {
+       hddLog(VOS_TRACE_LEVEL_ERROR,
+              FL("TSF init on a null adapter!"));
+       return;
+   }
+
+   adapter->tsf_cap_ctx.tsf_get_state = TSF_RETURN;
+   adapter->tsf_cap_ctx.tsf_capture_state = TSF_IDLE;
+   vos_event_init(&adapter->tsf_cap_ctx.tsf_capture_done_event);
+   vos_spin_lock_init(&adapter->tsf_cap_ctx.tsf_lock);
+   adapter->tsf_cap_ctx.tsf_high = 0;
+   adapter->tsf_cap_ctx.tsf_low = 0;
+}
+
+#endif
 
 //Register the module init/exit functions
 module_init(hdd_module_init);

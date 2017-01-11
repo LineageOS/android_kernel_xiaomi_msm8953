@@ -535,6 +535,8 @@ WDI_ReqProcFuncType  pfnReqProcTbl[WDI_MAX_UMAC_IND] =
     NULL,
     NULL,
 #endif /* MDNS_OFFLOAD */
+  wdi_cap_tsf_req,   /* WDI_CAP_TSF_REQ */
+  wdi_get_tsf_req,   /* WDI_GET_TSF_REQ */
 
   /*-------------------------------------------------------------------------
     Indications
@@ -878,7 +880,9 @@ WDI_RspProcFuncType  pfnRspProcTbl[WDI_MAX_RESP] =
     NULL,
     NULL,
     NULL,
-#endif /* MDNS_OFFLOAD */
+#endif  /* MDNS_OFFLOAD */
+   wdi_get_tsf_rsp, /* WDI_CAPTURE_GET_TSF_TSTAMP_RSP */
+
   /*---------------------------------------------------------------------
     Indications
   ---------------------------------------------------------------------*/
@@ -1710,6 +1714,7 @@ static char *WDI_getRespMsgString(wpt_uint16 wdiRespMsgId)
 #ifdef DHCP_SERVER_OFFLOAD
     CASE_RETURN_STRING (WDI_DHCP_SERVER_OFFLOAD_RSP);
 #endif /* DHCP_SERVER_OFFLOAD */
+    CASE_RETURN_STRING (WDI_CAPTURE_GET_TSF_TSTAMP_RSP);
     default:
         return "Unknown WDI MessageId";
   }
@@ -25041,6 +25046,10 @@ WDI_2_HAL_REQ_TYPE
   case WDI_MDNS_STATS_OFFLOAD_REQ:
       return WLAN_HAL_MDNS_STATS_OFFLOAD_REQ;
 #endif /* MDNS_OFFLOAD */
+  case WDI_CAP_TSF_REQ:
+     return WLAN_HAL_CAPTURE_GET_TSF_TSTAMP;
+  case WDI_GET_TSF_REQ:
+     return WLAN_HAL_CAPTURE_GET_TSF_TSTAMP;
   default:
     return WLAN_HAL_MSG_MAX;
   }
@@ -25428,6 +25437,8 @@ case WLAN_HAL_DEL_STA_SELF_RSP:
   case WLAN_HAL_QRF_PREF_NETW_FOUND_IND:
     return WDI_HAL_QRF_PREF_NETWORK_FOUND_IND;
 #endif
+  case WLAN_HAL_CAPTURE_GET_TSF_TSTAMP_RSP:
+    return WDI_CAPTURE_GET_TSF_TSTAMP_RSP;
   default:
     return eDRIVER_TYPE_MAX;
   }
@@ -39411,5 +39422,250 @@ WDI_Status WDI_process_sap_auth_offload(
     wdiEventData.pUserData = NULL;
 
     return WDI_PostMainEvent(&gWDICb, WDI_REQUEST_EVENT, &wdiEventData);
+}
+
+/**
+ *  wdi_process_cap_tsf_req() - Send Capture tsf request to FW.
+ *
+ *  @pWDICtx: pointer to the WLAN DAL context
+ *  @pEventData: pointer to the event information structure
+ *
+ *  Return: WDI_Status enumeration
+ */
+WDI_Status wdi_process_cap_tsf_req(wdi_cap_tsf_params_t *wdi_cap_tsf_req,
+                                   wdi_tsf_rsp_cb wdi_cap_tsf_rsp_callback,
+                                   void *user_data)
+{
+    WDI_EventInfoType wdiEventData;
+
+    if (eWLAN_PAL_FALSE == gWDIInitialized)
+    {
+        WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                "WDI API call before module is initialized - Fail req");
+        return WDI_STATUS_E_NOT_ALLOWED;
+    }
+
+    wdiEventData.wdiRequest = WDI_CAP_TSF_REQ;
+    wdiEventData.pEventData = wdi_cap_tsf_req;
+    wdiEventData.uEventDataSize  = sizeof(*wdi_cap_tsf_req);
+    wdiEventData.pCBfnc = wdi_cap_tsf_rsp_callback;
+    wdiEventData.pUserData = user_data;
+
+    return WDI_PostMainEvent(&gWDICb, WDI_REQUEST_EVENT, &wdiEventData);
+}
+/**
+ *  wdi_process_get_tsf_req() - Send Get tsf request to FW.
+ *
+ *  @pWDICtx: pointer to the WLAN DAL context
+ *  @pEventData: pointer to the event information structure
+ *
+ *  Return: WDI_Status enumeration
+ */
+WDI_Status wdi_process_get_tsf_req(wdi_cap_tsf_params_t *wdi_get_tsf_req,
+                                   wdi_tsf_rsp_cb wdi_tsf_rsp_callback,
+                                   void *user_data)
+{
+    WDI_EventInfoType wdiEventData;
+
+    if (eWLAN_PAL_FALSE == gWDIInitialized)
+    {
+        WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                "WDI API call before module is initialized - Fail req");
+        return WDI_STATUS_E_NOT_ALLOWED;
+    }
+
+    wdiEventData.wdiRequest = WDI_GET_TSF_REQ;
+    wdiEventData.pEventData = wdi_get_tsf_req;
+    wdiEventData.uEventDataSize  = sizeof(*wdi_get_tsf_req);
+    wdiEventData.pCBfnc = wdi_tsf_rsp_callback;
+    wdiEventData.pUserData = user_data;
+
+    return WDI_PostMainEvent(&gWDICb, WDI_REQUEST_EVENT, &wdiEventData);
+}
+
+/**
+ * wdi_cap_tsf_req() - wdi api for capture tsf request
+ * @wdi_ctx: pointer to wdi context
+ * @event_data: pointer to event data
+ *
+ * Return: WDI_Status
+ * WDI_STATUS_SUCCESS - success or else failure status
+ */
+WDI_Status wdi_cap_tsf_req (WDI_ControlBlockType *wdi_ctx,
+                            WDI_EventInfoType *event_data)
+{
+
+    wdi_cap_tsf_params_t *wdi_cap_tsf_req_info;
+    wpt_uint8 *buff  = NULL;
+    wpt_uint16 data_offset = 0;
+    wpt_uint16 size = 0;
+    WDI_Status wdi_status;
+    tHalCapTSFgetReqInd hal_cap_tsf_req;
+    wdi_tsf_rsp_cb wdi_tsf_rsp_callback;
+
+    VOS_TRACE(VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
+              "%s: Enter",__func__ );
+    /* Sanity check */
+    if ((NULL == wdi_ctx) || (NULL == event_data) ||
+        (NULL == event_data->pEventData)) {
+
+        WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
+                   "%s: Invalid parameters", __func__);
+        WDI_ASSERT(0);
+        return WDI_STATUS_E_FAILURE;
+    }
+
+    wdi_cap_tsf_req_info = (wdi_cap_tsf_params_t *)
+                            event_data->pEventData;
+
+    /* Get message buffer */
+    if (( WDI_STATUS_SUCCESS !=
+          WDI_GetMessageBuffer(wdi_ctx,
+                               WDI_CAP_TSF_REQ,
+                               sizeof(hal_cap_tsf_req.
+                                      capTSFget),
+                               &buff, &data_offset, &size))||
+          (size < (data_offset +
+                   sizeof(hal_cap_tsf_req.capTSFget))))
+    {
+        WPAL_TRACE(eWLAN_MODULE_DAL_CTRL,  eWLAN_PAL_TRACE_LEVEL_FATAL,
+                   "Unable to get send buffer in GetTsfFrame Req");
+        WDI_ASSERT(0);
+        return WDI_STATUS_E_FAILURE;
+    }
+    hal_cap_tsf_req.capTSFget.uBssIdx = wdi_cap_tsf_req_info->bss_idx;
+    hal_cap_tsf_req.capTSFget.capTSFget = wdi_cap_tsf_req_info->capTSFget;
+
+    wdi_tsf_rsp_callback = (wdi_tsf_rsp_cb)event_data->pCBfnc;
+
+    wpalMemoryCopy(buff+data_offset,
+                   &hal_cap_tsf_req.capTSFget,
+                   sizeof(hal_cap_tsf_req.capTSFget));
+
+    wdi_status = WDI_SendMsg(wdi_ctx, buff, size,
+                             wdi_tsf_rsp_callback,
+                             event_data->pUserData,
+                             WDI_CAPTURE_GET_TSF_TSTAMP_RSP);
+
+    VOS_TRACE(VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
+              "%s: Exit",__func__);
+
+    return wdi_status;
+}
+
+/**
+ * wdi_get_tsf_req() - wdi api for get tsf request
+ * @wdi_ctx: pointer to wdi context
+ * @event_data: pointer to event data
+ *
+ * Return: WDI_Status
+ * WDI_STATUS_SUCCESS - success or else failure status
+ */
+WDI_Status wdi_get_tsf_req (WDI_ControlBlockType *wdi_ctx,
+                            WDI_EventInfoType *event_data)
+{
+
+    wdi_cap_tsf_params_t *wdi_cap_tsf_req_info;
+    wpt_uint8 *buff  = NULL;
+    wpt_uint16 data_offset = 0;
+    wpt_uint16 size = 0;
+    WDI_Status wdi_status;
+    tHalCapTSFgetReqInd hal_cap_tsf_req;
+    wdi_tsf_rsp_cb wdi_tsf_rsp_callback;
+
+    VOS_TRACE(VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
+              "%s: Enter",__func__ );
+    /* Sanity check */
+    if ((NULL == wdi_ctx) || (NULL == event_data) ||
+        (NULL == event_data->pEventData)) {
+
+        WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
+                   "%s: Invalid parameters", __func__);
+        WDI_ASSERT(0);
+        return WDI_STATUS_E_FAILURE;
+    }
+
+    wdi_cap_tsf_req_info = (wdi_cap_tsf_params_t *)
+                            event_data->pEventData;
+
+    /* Get message buffer */
+    if (( WDI_STATUS_SUCCESS !=
+          WDI_GetMessageBuffer(wdi_ctx,
+                               WDI_CAP_TSF_REQ,
+                               sizeof(hal_cap_tsf_req.
+                                      capTSFget),
+                               &buff, &data_offset, &size))||
+          (size < (data_offset +
+                   sizeof(hal_cap_tsf_req.capTSFget))))
+    {
+        WPAL_TRACE(eWLAN_MODULE_DAL_CTRL,  eWLAN_PAL_TRACE_LEVEL_FATAL,
+                   "Unable to get send buffer in GetTsfFrame Req");
+        WDI_ASSERT(0);
+        return WDI_STATUS_E_FAILURE;
+    }
+    hal_cap_tsf_req.capTSFget.uBssIdx = wdi_cap_tsf_req_info->bss_idx;
+    hal_cap_tsf_req.capTSFget.capTSFget = wdi_cap_tsf_req_info->capTSFget;
+
+    wdi_tsf_rsp_callback = (wdi_tsf_rsp_cb)event_data->pCBfnc;
+
+    wpalMemoryCopy(buff+data_offset,
+                   &hal_cap_tsf_req.capTSFget,
+                   sizeof(hal_cap_tsf_req.capTSFget));
+
+    wdi_status = WDI_SendMsg(wdi_ctx, buff, size,
+                             wdi_tsf_rsp_callback,
+                             event_data->pUserData,
+                             WDI_CAPTURE_GET_TSF_TSTAMP_RSP);
+
+    VOS_TRACE(VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
+              "%s: Exit",__func__);
+
+    return wdi_status;
+}
+
+/**
+ * wdi_get_tsf_rsp() - wdi api for the get tsf response
+ * @wdi_ctx: pointer to the wdi context
+ * @event_data: pointer to the event data
+ *
+ * Return: WDI_Status
+ *      WDI_STATUS_SUCCESS - success or else failure status
+ */
+WDI_Status
+wdi_get_tsf_rsp
+(
+    WDI_ControlBlockType *wdi_ctx,
+    WDI_EventInfoType *event_data
+)
+{
+        wdi_tsf_rsp_cb wdi_tsf_rsp_callback;
+
+        WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
+                   "%s: Enter ", __func__);
+        /*-------------------------------------------------------------------
+          Sanity check
+          -----------------------------------------------------------------*/
+        if ((NULL == wdi_ctx) || (NULL == event_data) ||
+            (NULL == event_data->pEventData))
+        {
+                WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
+                           "%s: Invalid parameters", __func__);
+                WDI_ASSERT(0);
+                return WDI_STATUS_E_FAILURE;
+        }
+
+        wdi_tsf_rsp_callback =
+                (wdi_tsf_rsp_cb)wdi_ctx->pfncRspCB;
+
+        if (wdi_tsf_rsp_callback)
+            wdi_tsf_rsp_callback((void *) event_data->pEventData,
+                                          wdi_ctx->pRspCBUserData);
+        else {
+            VOS_TRACE(VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_ERROR,
+                      "wdi_tsf_rsp_callback is NULL!");
+            return WDI_STATUS_E_FAILURE;
+        }
+
+        return WDI_STATUS_SUCCESS;
 }
 #endif

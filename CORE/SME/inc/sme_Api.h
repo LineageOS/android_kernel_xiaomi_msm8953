@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -4012,4 +4012,15 @@ eHalStatus sme_set_mdns_resp(tHalHandle hal,
 
 eHalStatus sme_update_hb_threshold(tHalHandle hHal, tANI_U32 cfgId,
                        tANI_U8 hbThresh, eCsrBand eBand);
+
+eHalStatus sme_capture_tsf_req(tHalHandle hHal,
+                               tSirCapTsfParams capTsfParams);
+
+eHalStatus sme_get_tsf_req(tHalHandle hHal,
+                           tSirCapTsfParams capTsfParams);
+
+eHalStatus sme_set_tsfcb(tHalHandle hHal,
+                         tsf_rsp_cb rsp_cb, struct stsf *pTsf,
+                         void *pcallbackcontext);
+
 #endif //#if !defined( __SME_API_H )

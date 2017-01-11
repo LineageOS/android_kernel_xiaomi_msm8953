@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -2696,4 +2696,106 @@ eHalStatus pe_ReleaseGlobalLock( tAniSirLim *psPe)
         }
     }
     return (status);
+}
+/**
+ * lim_process_sme_cap_tsf_req()- send cap tsf request to WDA
+ * Get bss_idx from PE and fill in cap tsf request.
+ * @pMac:Mac ctx
+ * @pMsgBuf: message buffer from sme
+ * Returns success on post to WDA, otherwise failure
+ */
+
+tSirRetStatus lim_process_sme_cap_tsf_req(tpAniSirGlobal pMac,
+                                          tANI_U32 *pMsgBuf)
+{
+    tSirCapTsfParams *pMsg = NULL;
+    tpPESession psessionEntry = NULL;
+    uint8_t sessionId;
+    tSirMsgQ               msg;
+    tSirCapTsfParams      *cap_tsf_params;
+
+    pMsg = (tSirCapTsfParams*)pMsgBuf;
+    if (pMsg == NULL) {
+        limLog(pMac, LOGE, FL("NULL pMsg"));
+        return eSIR_FAILURE;
+    }
+
+    psessionEntry = peFindSessionByBssid(pMac, pMsg->bssid, &sessionId);
+    if (NULL == psessionEntry)
+    {
+        limLog(pMac, LOGE, FL("NULL psessionEntry"));
+        return eSIR_FAILURE;
+    }
+    cap_tsf_params = (tSirCapTsfParams *)
+                       vos_mem_malloc(sizeof(*cap_tsf_params));
+    if (!cap_tsf_params) {
+        limLog(pMac, LOGE, FL(" Unable to allocate memory for cap tsf params"));
+        return eSIR_MEM_ALLOC_FAILED;
+    }
+    vos_mem_copy (cap_tsf_params, pMsg, sizeof(*cap_tsf_params));
+    cap_tsf_params->bss_idx = psessionEntry->bssIdx;
+
+    msg.type = WDA_CAP_TSF_REQ;
+    msg.reserved = 0;
+    msg.bodyptr = cap_tsf_params;
+    msg.bodyval = 0;
+    if(eSIR_SUCCESS != wdaPostCtrlMsg(pMac, &msg))
+    {
+        limLog(pMac, LOGE, FL("lim_process_sme_cap_tsf_req failed\n"));
+        vos_mem_free(cap_tsf_params);
+        return eSIR_FAILURE;
+    }
+
+    return eSIR_SUCCESS;
+}
+
+/**
+ * lim_process_sme_get_tsf_req()- send get tsf request to WDA
+ * Get bss_idx from PE and fill in cap tsf request.
+ * @pMac:Mac ctx
+ * @pMsgBuf: message buffer from sme
+ * Returns success on post to WDA, otherwise failure
+ */
+tSirRetStatus lim_process_sme_get_tsf_req(tpAniSirGlobal pMac,
+                                          tANI_U32 *pMsgBuf)
+{
+    tSirCapTsfParams *pMsg = NULL;
+    tpPESession psessionEntry = NULL;
+    uint8_t sessionId;
+    tSirMsgQ               msg;
+    tSirCapTsfParams      *get_tsf_params;
+
+    pMsg = (tSirCapTsfParams*)pMsgBuf;
+    if (pMsg == NULL) {
+        limLog(pMac, LOGE, FL("NULL pMsg"));
+        return eSIR_FAILURE;
+    }
+
+    psessionEntry = peFindSessionByBssid(pMac, pMsg->bssid, &sessionId);
+    if (NULL == psessionEntry)
+    {
+        limLog(pMac, LOGE, FL("NULL psessionEntry"));
+        return eSIR_FAILURE;
+    }
+    get_tsf_params = (tSirCapTsfParams *)
+                    vos_mem_malloc(sizeof(*get_tsf_params));
+    if (!get_tsf_params) {
+        limLog(pMac, LOGE, FL(" Unable to allocate memory for cap tsf params"));
+        return eSIR_MEM_ALLOC_FAILED;
+    }
+    vos_mem_copy (get_tsf_params, pMsg, sizeof(*get_tsf_params));
+    get_tsf_params->bss_idx = psessionEntry->bssIdx;
+
+    msg.type = WDA_GET_TSF_REQ;
+    msg.reserved = 0;
+    msg.bodyptr = get_tsf_params;
+    msg.bodyval = 0;
+    if(eSIR_SUCCESS != wdaPostCtrlMsg(pMac, &msg))
+    {
+        limLog(pMac, LOGE, FL("lim_process_sme_cap_tsf_req failed\n"));
+        vos_mem_free(get_tsf_params);
+        return eSIR_FAILURE;
+    }
+
+    return eSIR_SUCCESS;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -6664,6 +6664,28 @@ struct WDI_sap_ofl_enable_params{
     wpt_uint8 key[64];
 };
 
+/**
+ * wdi_cap_tsf_params_t - wdi capture tsf params
+ * @bssidx: bss index
+ * @capTSFget: whether get/set request
+ *
+ */
+ typedef struct {
+   wpt_uint8 bss_idx;
+   wpt_uint8  capTSFget;
+} wdi_cap_tsf_params_t;
+
+/**
+ * wdi_cap_tsf_rsp_t - capture tsf response
+ * @bssidx: bss index
+ * @capTSFget: whether get/set request
+ *
+ */
+ typedef struct {
+    wpt_uint32 status;
+    wpt_uint32 tsf_lo;
+    wpt_uint32 tsf_hi;
+} wdi_cap_tsf_rsp_t;
 
 /*----------------------------------------------------------------------------
  *   WDI callback types
@@ -8634,6 +8656,8 @@ typedef void (*wdi_mdns_fqdn_rsp_cb)(void *event_data,void *user_data);
 typedef void (*wdi_mdns_resp_rsp_cb)(void *event_data,void *user_data);
 typedef void (*wdi_get_stats_rsp_cb)(void *event_data,void *user_data);
 #endif /* MDNS_OFFLOAD */
+
+typedef void (*wdi_tsf_rsp_cb)(void *event_data,void *user_data);
 
 
 /*========================================================================
@@ -12474,5 +12498,16 @@ wdi_get_mdns_stats_req
    void *user_data
 );
 #endif /* MDNS_OFFLOAD */
+
+WDI_Status
+wdi_process_cap_tsf_req (wdi_cap_tsf_params_t *wdi_cap_tsf_req,
+                         wdi_tsf_rsp_cb wdi_tsf_rsp_callback,
+                         void *user_data);
+
+WDI_Status
+wdi_process_get_tsf_req (wdi_cap_tsf_params_t *wdi_get_tsf_req,
+                         wdi_tsf_rsp_cb wdi_tsf_rsp_callback,
+                         void *user_data);
+
 
 #endif /* #ifndef WLAN_QCT_WDI_H */

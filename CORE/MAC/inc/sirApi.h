@@ -5837,7 +5837,7 @@ typedef struct
 typedef struct
 {
     tANI_U32 request_id;
-    tANI_U8 session_id;
+    tANI_U8  session_id;
     tANI_U32 lost_ssid_sample_size;
     tANI_U32 ssid_count;
     tSirSsidThresholdParam ssid[WLAN_EXTSCAN_MAX_HOTLIST_SSIDS];
@@ -6255,5 +6255,41 @@ typedef PACKED_PRE struct PACKED_POST
 }tSapOfldIndications;
 
 #endif /* SAP_AUTH_OFFLOAD */
+
+/**
+ * struct stsf - the basic stsf structure
+ *
+ * @session_id: session id from adapter
+ * @set_req: set/get request flag.
+ * @tsf_low: low 32bits of tsf
+ * @tsf_high: high 32bits of tsf
+ *
+ * driver use this struct to store the tsf info
+ */
+struct stsf {
+    uint32_t session_id;
+    bool     set_tsf_req;
+    uint32_t tsf_low;
+    uint32_t tsf_high;
+    bool tsf_req_status;
+};
+
+typedef int(*tsf_rsp_cb)(void *tsf_ctx, struct stsf *pTsf);
+
+/**
+ * struct tCapTsfParams - capture tsf request
+ * @bss_idx: bss index, SAP/STA
+ * @session_id: adapter session id
+ * @bssid: bssid for SAP/STA
+ * @tsf_rsp_cb_func : handler for tsf rsp from fw
+ * @tsf_rsp_cb_ctx : hdd ctx for tsf rsp handler
+ */
+typedef struct {
+    tANI_U8 bss_idx;
+    tANI_U8 session_id;
+    tSirMacAddr  bssid;
+    tsf_rsp_cb tsf_rsp_cb_func;
+    void * tsf_rsp_cb_ctx;
+}tSirCapTsfParams,*tpSirCapTsfParams;
 
 #endif /* __SIR_API_H */
