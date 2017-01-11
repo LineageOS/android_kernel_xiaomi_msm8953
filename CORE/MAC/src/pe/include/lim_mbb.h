@@ -40,3 +40,7 @@ void lim_process_sta_mlm_del_sta_rsp_mbb(tpAniSirGlobal mac,
      tpSirMsgQ lim_msg, tpPESession session_entry);
 void lim_process_sta_mlm_del_bss_rsp_mbb(tpAniSirGlobal mac,
      tpSirMsgQ lim_msg, tpPESession session_entry);
+void lim_process_sta_mlm_add_bss_rsp_mbb(tpAniSirGlobal mac,
+     tpSirMsgQ limMsgQ,tpPESession session_entry);
+void lim_process_sta_mlm_add_sta_rsp_mbb(tpAniSirGlobal mac,
+     tpSirMsgQ limMsgQ,tpPESession session_entry);

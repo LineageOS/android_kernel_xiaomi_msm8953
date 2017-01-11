@@ -34,6 +34,8 @@
 #include "macTrace.h"
 #include "csrNeighborRoam.h"
 #include "csr_roam_mbb.h"
+#include "csrInternal.h"
+#include "wlan_qct_wda.h"
 
 eHalStatus csr_register_roaming_mbb_callback(tpAniSirGlobal mac);
 
@@ -146,6 +148,8 @@ eHalStatus csr_neighbor_roam_issue_preauth_reassoc(tpAniSirGlobal mac)
     if (neighbor_bss_node == NULL)
     {
         smsLog(mac, LOGE, FL("Roamable AP list is empty"));
+        csrRoamOffloadScan(mac, ROAM_SCAN_OFFLOAD_RESTART,
+                            REASON_NO_CAND_FOUND_OR_NOT_ROAMING_NOW);
         return eHAL_STATUS_FAILURE;
     }
     else
@@ -201,6 +205,10 @@ void csr_preauth_reassoc_mbb_timer_callback(void *context)
     tpAniSirGlobal mac = (tpAniSirGlobal)context;
 
     mac->roam.neighborRoamInfo.is_pre_auth_reassoc_mbb_timer_started = 0;
+
+    smsLog(mac, LOG1, FL("is_pre_auth_reassoc_mbb_timer_started %d"),
+           mac->roam.neighborRoamInfo.is_pre_auth_reassoc_mbb_timer_started);
+
     csr_neighbor_roam_issue_preauth_reassoc(mac);
 }
 
@@ -247,6 +255,7 @@ eHalStatus csr_roam_dequeue_preauth_reassoc(tpAniSirGlobal mac)
  * reassoc response
  * @mac: MAC context
  * @lim_status: status of preauth reassoc response from lim
+ * @bss_description: bss description pointer
  *
  * This function handles preauth_reassoc response from PE. When
  * preauth_reassoc response failure is received, preauth reassoc
@@ -256,7 +265,7 @@ eHalStatus csr_roam_dequeue_preauth_reassoc(tpAniSirGlobal mac)
  */
 eHalStatus
 csr_neighbor_roam_preauth_reassoc_rsp_handler(tpAniSirGlobal mac,
-          tSirRetStatus lim_status)
+          tSirRetStatus lim_status, tSirBssDescription **bss_description)
 {
     tpCsrNeighborRoamControlInfo neighbor_roam_info =
                                       &mac->roam.neighborRoamInfo;
@@ -300,6 +309,20 @@ csr_neighbor_roam_preauth_reassoc_rsp_handler(tpAniSirGlobal mac,
         smsLog(mac, LOG1, FL("After MBB reassoc BSSID "MAC_ADDRESS_STR" Ch %d"),
                MAC_ADDR_ARRAY(preauth_rsp_node->pBssDescription->bssId),
                preauth_rsp_node->pBssDescription->channelId);
+
+        /* Memory will be freed in caller of this */
+        *bss_description = (tpSirBssDescription)vos_mem_malloc(
+                           sizeof(preauth_rsp_node->pBssDescription->length) +
+                           preauth_rsp_node->pBssDescription->length);
+        if (NULL == *bss_description) {
+            smsLog(mac, LOGE,
+                   FL("Unable to allocate memory for preauth bss description"));
+            return eHAL_STATUS_RESOURCES;
+        }
+
+        vos_mem_copy(*bss_description, preauth_rsp_node->pBssDescription,
+                     sizeof(preauth_rsp_node->pBssDescription->length) +
+                     preauth_rsp_node->pBssDescription->length);
 
         /*
         * MBB Reassoc competer successfully. Insert the preauthenticated
@@ -367,6 +390,230 @@ DEQ_PREAUTH:
     return preauth_processed;
 }
 
+void csr_update_roamed_info_mbb(tHalHandle hal,
+     tpSirBssDescription bss_description, tpSirFTPreAuthRsp pre_auth_rsp)
+{
+    eHalStatus status;
+    tpAniSirGlobal mac = PMAC_STRUCT(hal);
+    tDot11fBeaconIEs *ies_local = NULL;
+    tCsrRoamSession *session = NULL;
+    tCsrRoamProfile roam_profile, *profile;
+    tSirMacAddr broadcast_mac = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+    tANI_U32 key_timeout_interval;
+    tCsrRoamInfo roam_info;
+    sme_QosAssocInfo assoc_info;
+    tANI_U32 len;
+    tANI_U8 sme_session_id = pre_auth_rsp->smeSessionId;
+    tANI_U8 acm_mask = 0;
+
+    /* Get IE's */
+    status = csrGetParsedBssDescriptionIEs(mac, bss_description, &ies_local);
+    if (!HAL_STATUS_SUCCESS(status)) {
+        smsLog(mac, LOGE,
+               FL("csrGetParsedBssDescriptionIEs failed"));
+        return;
+    }
+    if(ies_local == NULL) {
+       smsLog(mac, LOGE,
+              FL("ies_local is NULL "));
+       return;
+    }
+
+    /* Get profile */
+    session = CSR_GET_SESSION(mac, sme_session_id);
+    vos_mem_set(&roam_info, sizeof(roam_info), 0);
+
+    status = csrRoamCopyProfile(mac, &roam_profile, session->pCurRoamProfile);
+    if(!HAL_STATUS_SUCCESS(status)) {
+       smsLog(mac, LOGE, FL("Profile copy failed"));
+       return;
+    }
+    profile = &roam_profile;
+
+    profile->negotiatedAuthType =
+       mac->roam.roamSession[sme_session_id].connectedProfile.AuthType;
+    profile->negotiatedUCEncryptionType =
+       mac->roam.roamSession[sme_session_id].connectedProfile.EncryptionType;
+    profile->mcEncryptionType =
+       mac->roam.roamSession[sme_session_id].connectedProfile.mcEncryptionInfo;
+    profile->negotiatedMCEncryptionType =
+       mac->roam.roamSession[sme_session_id].connectedProfile.mcEncryptionType;
+
+    smsLog(mac, LOG1,
+           FL("AuthType %d UCEType %d Entries %d encryptionType %d MCEType %d"),
+           profile->negotiatedAuthType,
+           profile->negotiatedUCEncryptionType,
+           profile->mcEncryptionType.numEntries,
+           profile->mcEncryptionType.encryptionType[0],
+           profile->negotiatedMCEncryptionType);
+
+    csrRoamStopNetwork(mac, sme_session_id, profile,
+                                          bss_description, ies_local);
+
+    session->connectState = eCSR_ASSOC_STATE_TYPE_INFRA_ASSOCIATED;
+
+    csrRoamSaveConnectedInfomation(mac, sme_session_id, profile,
+                                                  bss_description, ies_local);
+    csrRoamSaveSecurityRspIE(mac, sme_session_id,
+                             profile->negotiatedAuthType, bss_description,
+                             ies_local);
+
+    csrRoamStateChange(mac, eCSR_ROAMING_STATE_JOINED, sme_session_id);
+
+    if(CSR_IS_ENC_TYPE_STATIC(profile->negotiatedUCEncryptionType) &&
+                                        !profile->bWPSAssociation) {
+       /*
+        * Issue the set Context request to LIM to establish the
+        * Unicast STA context
+        */
+       if(!HAL_STATUS_SUCCESS(csrRoamIssueSetContextReq(mac,
+                 sme_session_id,
+                 profile->negotiatedUCEncryptionType,
+                 bss_description, &(bss_description->bssId), FALSE, TRUE,
+                 eSIR_TX_RX, 0, 0, NULL, 0))) {
+          smsLog(mac, LOGE, FL("Set context for unicast fail"));
+          csrRoamSubstateChange(mac, eCSR_ROAM_SUBSTATE_NONE,
+                                        sme_session_id);
+       }
+       /*
+        * Issue the set Context request to LIM to establish the
+        * Broadcast STA context
+        */
+       csrRoamIssueSetContextReq(mac, sme_session_id,
+                                 profile->negotiatedMCEncryptionType,
+                                 bss_description, &broadcast_mac,
+                                 FALSE, FALSE, eSIR_TX_RX, 0, 0, NULL, 0);
+    } else if (!session->abortConnection) {
+       /* Need to wait for supplicant authtication */
+       roam_info.fAuthRequired = eANI_BOOLEAN_TRUE;
+       /* Set the subestate to WaitForKey in case authentiation is needed */
+       csrRoamSubstateChange(mac, eCSR_ROAM_SUBSTATE_WAIT_FOR_KEY,
+                                            sme_session_id);
+
+       if(profile->bWPSAssociation)
+          key_timeout_interval = CSR_WAIT_FOR_WPS_KEY_TIMEOUT_PERIOD;
+       else
+          key_timeout_interval = CSR_WAIT_FOR_KEY_TIMEOUT_PERIOD;
+
+       /* Save sessionId in case of timeout */
+       mac->roam.WaitForKeyTimerInfo.sessionId = sme_session_id;
+       /*
+        * This time should be long enough for the rest of the
+        * process plus setting key
+        */
+       if(!HAL_STATUS_SUCCESS(csrRoamStartWaitForKeyTimer(mac,
+                                             key_timeout_interval))) {
+          /* Reset our state so nothting is blocked */
+          smsLog(mac, LOGE, FL("Failed to start pre-auth timer"));
+          csrRoamSubstateChange(mac, eCSR_ROAM_SUBSTATE_NONE,
+                                           sme_session_id);
+       }
+    }
+
+    csrRoamFreeConnectedInfo(mac, &session->connectedInfo);
+
+    assoc_info.pBssDesc = bss_description;
+    assoc_info.pProfile = profile;
+
+    len = pre_auth_rsp->roam_info->nBeaconLength +
+          pre_auth_rsp->roam_info->nAssocReqLength +
+          pre_auth_rsp->roam_info->nAssocRspLength;
+
+    if(len) {
+       session->connectedInfo.pbFrames = vos_mem_malloc(len);
+       if (session->connectedInfo.pbFrames != NULL ) {
+           vos_mem_copy(session->connectedInfo.pbFrames,
+                        pre_auth_rsp->roam_info->pbFrames, len);
+           session->connectedInfo.nAssocReqLength =
+                           pre_auth_rsp->roam_info->nAssocReqLength;
+           session->connectedInfo.nAssocRspLength =
+                           pre_auth_rsp->roam_info->nAssocRspLength;
+           session->connectedInfo.nBeaconLength =
+                           pre_auth_rsp->roam_info->nBeaconLength;
+
+           roam_info.nAssocReqLength = pre_auth_rsp->roam_info->nAssocReqLength;
+           roam_info.nAssocRspLength = pre_auth_rsp->roam_info->nAssocRspLength;
+           roam_info.nBeaconLength = pre_auth_rsp->roam_info->nBeaconLength;
+           roam_info.pbFrames = session->connectedInfo.pbFrames;
+       }
+       session->connectedInfo.staId = pre_auth_rsp->roam_info->staId;
+       roam_info.staId = pre_auth_rsp->roam_info->staId;
+       roam_info.ucastSig = pre_auth_rsp->roam_info->ucastSig;
+       roam_info.bcastSig = pre_auth_rsp->roam_info->bcastSig;
+       roam_info.maxRateFlags = pre_auth_rsp->roam_info->maxRateFlags;
+    }
+
+    roam_info.statusCode = eSIR_SME_SUCCESS;
+    roam_info.reasonCode = eSIR_SME_SUCCESS;
+    roam_info.pBssDesc = bss_description;
+
+    vos_mem_copy(&roam_info.bssid, &bss_description->bssId,
+                                     sizeof(tCsrBssid));
+
+    mac->roam.roamSession[sme_session_id].connectState =
+                                     eCSR_ASSOC_STATE_TYPE_NOT_CONNECTED;
+
+    sme_QosCsrEventInd(mac, sme_session_id,
+                            SME_QOS_CSR_HANDOFF_ASSOC_REQ, NULL);
+    sme_QosCsrEventInd(mac, sme_session_id, SME_QOS_CSR_REASSOC_REQ, NULL);
+    sme_QosCsrEventInd(mac, sme_session_id, SME_QOS_CSR_HANDOFF_COMPLETE, NULL);
+
+    mac->roam.roamSession[sme_session_id].connectState =
+                                    eCSR_ASSOC_STATE_TYPE_INFRA_ASSOCIATED;
+    sme_QosCsrEventInd(mac, sme_session_id,
+                              SME_QOS_CSR_REASSOC_COMPLETE, &assoc_info);
+
+
+    acm_mask = sme_QosGetACMMask(mac, bss_description, NULL);
+
+    session->connectedProfile.acm_mask = acm_mask;
+    if(session->connectedProfile.modifyProfileFields.uapsd_mask) {
+       smsLog(mac, LOGE, "uapsd_mask (0x%X) set, request UAPSD now",
+              session->connectedProfile.modifyProfileFields.uapsd_mask);
+              pmcStartUapsd(mac, NULL, NULL);
+    }
+    session->connectedProfile.dot11Mode = session->bssParams.uCfgDot11Mode;
+    roam_info.u.pConnectedProfile = &session->connectedProfile;
+
+    if(!IS_FEATURE_SUPPORTED_BY_FW(SLM_SESSIONIZATION) &&
+                      (csrIsConcurrentSessionRunning(mac)))
+       mac->roam.configParam.doBMPSWorkaround = 1;
+
+    csr_roam_dequeue_preauth_reassoc(mac);
+
+    csrRoamCallCallback(mac, sme_session_id, &roam_info, 0,
+             eCSR_ROAM_ASSOCIATION_COMPLETION, eCSR_ROAM_RESULT_ASSOCIATED);
+
+    csrResetPMKIDCandidateList(mac, sme_session_id);
+#ifdef FEATURE_WLAN_WAPI
+    csrResetBKIDCandidateList(mac, sme_session_id);
+#endif
+
+    if(!CSR_IS_WAIT_FOR_KEY(mac, sme_session_id)) {
+        smsLog(mac, LOG1, "NO CSR_IS_WAIT_FOR_KEY -> csr_roam_link_up");
+        csrRoamLinkUp(mac, session->connectedProfile.bssid);
+    }
+
+    if (pmcShouldBmpsTimerRun(mac)) {
+        if(eANI_BOOLEAN_TRUE == roam_info.fAuthRequired) {
+           mac->pmc.full_power_till_set_key = true;
+           smsLog(mac, LOG1,
+                  FL("full_power_till_set_key is made true"));
+        }
+
+        if (pmcStartTrafficTimer(mac, BMPS_TRAFFIC_TIMER_ALLOW_SECURITY_DHCP)
+                    != eHAL_STATUS_SUCCESS)
+            smsLog(mac, LOGE, FL("Cannot start BMPS Retry timer"));
+
+        smsLog(mac, LOG1, FL("BMPS Retry Timer already running or started"));
+    }
+
+    vos_mem_free(pre_auth_rsp->roam_info->pbFrames);
+    vos_mem_free(pre_auth_rsp->roam_info);
+
+}
+
+
 /**
  * csr_roam_preauth_rsp_mbb_processor() -handles
  * eWNI_SME_MBB_PRE_AUTH_REASSOC_RSP
@@ -382,6 +629,7 @@ void csr_roam_preauth_rsp_mbb_processor(tHalHandle hal,
     tpAniSirGlobal mac = PMAC_STRUCT(hal);
     eHalStatus  status;
     tCsrRoamInfo roam_info;
+    tpSirBssDescription  bss_description = NULL;
 
     mac->ft.ftSmeContext.is_preauth_lfr_mbb = false;
     smsLog(mac, LOG1, FL("is_preauth_lfr_mbb %d"),
@@ -403,7 +651,7 @@ void csr_roam_preauth_rsp_mbb_processor(tHalHandle hal,
     }
 
     status = csr_neighbor_roam_preauth_reassoc_rsp_handler(mac,
-                                                pre_auth_rsp->status);
+                                       pre_auth_rsp->status, &bss_description);
     if (status != eHAL_STATUS_SUCCESS) {
         smsLog(mac, LOGE,FL("Preauth was not processed: %d SessionID: %d"),
                             status, pre_auth_rsp->smeSessionId);
@@ -424,9 +672,19 @@ void csr_roam_preauth_rsp_mbb_processor(tHalHandle hal,
                  (void *)pre_auth_rsp->preAuthbssId, sizeof(tCsrBssid));
 
 
-    /* To Do: add code to update CSR for new connection */
+    /*
+     * bss_description is updated in
+     * csr_neighbor_roam_preauth_reassoc_rsp_handler
+     */
+    if (NULL == bss_description) {
+        smsLog(mac, LOGE,
+               FL("bss description is NULL"));
+        return;
+    }
 
-    CSR_NEIGHBOR_ROAM_STATE_TRANSITION(eCSR_NEIGHBOR_ROAM_STATE_CONNECTED)
+    /* Update CSR for new connection */
+    csr_update_roamed_info_mbb(hal, bss_description, pre_auth_rsp);
+
 }
 
 /**

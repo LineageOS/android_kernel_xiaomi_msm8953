@@ -2815,7 +2815,6 @@ void limHandleDeleteBssRsp(tpAniSirGlobal pMac,tpSirMsgQ MsgQ)
     {
          limProcessSmeDelBssRsp(pMac, MsgQ->bodyval,psessionEntry);
     }
-           
     else
          limProcessMlmDelBssRsp(pMac,MsgQ,psessionEntry);
 }

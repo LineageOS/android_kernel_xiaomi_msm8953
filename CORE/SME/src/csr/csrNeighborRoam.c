@@ -115,6 +115,9 @@ v_U8_t *csrNeighborRoamStateToString(v_U8_t state)
         CASE_RETURN_STRING( eCSR_NEIGHBOR_ROAM_STATE_REPORT_SCAN );
         CASE_RETURN_STRING( eCSR_NEIGHBOR_ROAM_STATE_PREAUTHENTICATING );
         CASE_RETURN_STRING( eCSR_NEIGHBOR_ROAM_STATE_PREAUTH_DONE );
+#ifdef WLAN_FEATURE_LFR_MBB
+        CASE_RETURN_STRING(eCSR_NEIGHBOR_ROAM_STATE_MBB_PREAUTH_REASSOC);
+#endif
             default:
         return "eCSR_NEIGHBOR_ROAM_STATE_UNKNOWN";
     }
@@ -4586,6 +4589,9 @@ eHalStatus csrNeighborRoamIndicateConnect(tpAniSirGlobal pMac, tANI_U8 sessionId
 
     switch (pNeighborRoamInfo->neighborRoamState)
     {
+#ifdef WLAN_FEATURE_LFR_MBB
+        case eCSR_NEIGHBOR_ROAM_STATE_MBB_PREAUTH_REASSOC:
+#endif
         case eCSR_NEIGHBOR_ROAM_STATE_REASSOCIATING:
             if (VOS_STATUS_SUCCESS != vosStatus)
             {

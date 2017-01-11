@@ -83,6 +83,7 @@ typedef struct sSirFTPreAuthRsp
    tANI_U8          ric_ies[MAX_FTIE_SIZE];
 #ifdef WLAN_FEATURE_LFR_MBB
    enum sir_roam_cleanup_type reason;
+   tCsrRoamInfo *roam_info;
 #endif
 } tSirFTPreAuthRsp, *tpSirFTPreAuthRsp;
 

@@ -41,6 +41,12 @@
 #ifdef WLAN_FEATURE_NEIGHBOR_ROAMING
 #include "sme_Api.h"
 
+/* 15 seconds, for WPA, WPA2, CCKM */
+#define CSR_WAIT_FOR_KEY_TIMEOUT_PERIOD     (15 * PAL_TIMER_TO_SEC_UNIT)
+/* 120 seconds, for WPS */
+#define CSR_WAIT_FOR_WPS_KEY_TIMEOUT_PERIOD (120 * PAL_TIMER_TO_SEC_UNIT)
+
+
 /* Enumeration of various states in neighbor roam algorithm */
 typedef enum
 {
@@ -300,6 +306,10 @@ eHalStatus csrNeighborRoamHandoffReqHdlr(tpAniSirGlobal pMac, void* pMsg);
 eHalStatus csrNeighborRoamProceedWithHandoffReq(tpAniSirGlobal pMac);
 eHalStatus csrNeighborRoamSssidScanDone(tpAniSirGlobal pMac, eHalStatus status);
 eHalStatus csrNeighborRoamStartLfrScan(tpAniSirGlobal pMac, tANI_U8 OffloadCmdStopReason);
+eHalStatus csrRoamStartWaitForKeyTimer(tpAniSirGlobal pMac,
+           tANI_U32 interval);
+void csrRoamLinkUp(tpAniSirGlobal pMac, tCsrBssid bssid);
+
 #endif
 
 #if defined(FEATURE_WLAN_ESE) && defined(FEATURE_WLAN_ESE_UPLOAD)
