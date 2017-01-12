@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -11267,6 +11267,7 @@ VOS_STATUS WDA_SetBeaconFilterReq(tWDA_CbContext *pWDA,
       vos_mem_free(wdiBeaconFilterInfo);
       return VOS_STATUS_E_NOMEM;
    }
+   vos_mem_zero(wdiBeaconFilterInfo, sizeof(WDI_BeaconFilterReqParamsType));
    wdiBeaconFilterInfo->wdiBeaconFilterInfo.usBeaconInterval = 
       pBeaconFilterInfo->beaconInterval;
    wdiBeaconFilterInfo->wdiBeaconFilterInfo.usCapabilityInfo = 
