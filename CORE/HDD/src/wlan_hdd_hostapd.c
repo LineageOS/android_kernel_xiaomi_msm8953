@@ -1059,8 +1059,12 @@ VOS_STATUS hdd_hostapd_SAPEventCB( tpSap_Event pSapEvent, v_PVOID_t usrDataForCa
             {
                 bAuthRequired = FALSE;
             }
-
-            if (bAuthRequired || bWPSState == eANI_BOOLEAN_TRUE )
+            /* fAuthRequiredshould should be false for sap offload */
+            if ((bAuthRequired || bWPSState)
+#ifdef SAP_AUTH_OFFLOAD
+               && !cfg_param->enable_sap_auth_offload
+#endif
+               )
             {
                 vos_status = hdd_softap_RegisterSTA( pHostapdAdapter,
                                        TRUE,
