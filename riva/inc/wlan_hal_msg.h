@@ -620,6 +620,8 @@ typedef enum
    /* QRF Support */
    WLAN_HAL_QRF_AP_FIND_COMMAND              = 350,
    WLAN_HAL_QRF_PREF_NETW_FOUND_IND          = 351,
+   WLAN_HAL_CAPTURE_GET_TSF_TSTAMP           = 352,
+   WLAN_HAL_CAPTURE_GET_TSF_TSTAMP_RSP       = 353,
 
    WLAN_HAL_MSG_MAX = WLAN_HAL_MSG_TYPE_MAX_ENUM_SIZE
 }tHalHostMsgType;
@@ -9084,6 +9086,39 @@ typedef PACKED_PRE struct PACKED_POST
    tHalMsgHeader header;
    tConfigRoamScanRspParams configRoamScanRspParams;
 }  tSetRoamScanConfigRsp, * tpSetRoamScanConfigRsp;
+
+/*---------------------------------------------------------------------------
+* WLAN_HAL_CAPTURE_GET_TSF_TSTAMP
+*-------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+   uint8    uBssIdx;
+   boolean  capTSFget;
+}tHalCapTSFget, *tptHalCapTSFget;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   tHalCapTSFget capTSFget;
+}tHalCapTSFgetReqInd, *tpHalCapTSFgetReqInd;
+
+/*---------------------------------------------------------------------------
+    WLAN_HAL_CAPTURE_GET_TSF_TSTAMP_RSP
+---------------------------------------------------------------------------*/
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    /* Success /Failure / Nil result */
+    tANI_U32   status;
+    tANI_U32   tsf_lo;
+    tANI_U32   tsf_hi;
+} tConfigcapTSFgetRspParams, * tptConfigcapTSFgetRspParams;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   tConfigcapTSFgetRspParams configcapTSFgetRspParams;
+}  tcapGetTSFConfigRsp, * tpcapGetTSFConfigRsp;
 
 
 #define PER_ROAM_MAX_AP_CNT 30
