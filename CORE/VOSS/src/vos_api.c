@@ -103,6 +103,9 @@
 /* Trace index for WDI Read/Write */
 #define VOS_TRACE_INDEX_MAX 256
 
+/* ARP Target IP offset */
+#define VOS_ARP_TARGET_IP_OFFSET 58
+
 /*---------------------------------------------------------------------------
  * Data definitions
  * ------------------------------------------------------------------------*/
@@ -3758,4 +3761,51 @@ void vos_dump_wdi_events(void)
             gvos_wdi_msg_trace[i].time,
             gvos_wdi_msg_trace[i].message);
   }
+}
+
+/**
+ * vos_check_arp_target_ip() - check if the Target IP is gateway IP
+ * @pPacket: pointer to vos packet
+ *
+ * Return: true if the IP is of gateway or false otherwise
+ */
+bool vos_check_arp_target_ip(vos_pkt_t *pPacket)
+{
+   v_CONTEXT_t pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+   hdd_context_t *pHddCtx = NULL;
+   struct sk_buff *skb;
+
+   if(!pVosContext)
+   {
+      hddLog(VOS_TRACE_LEVEL_FATAL,"%s: Global VOS context is Null", __func__);
+      return false;
+   }
+
+   pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD, pVosContext );
+   if(!pHddCtx) {
+      VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+               "%s: HDD context is Null", __func__);
+      return false;
+   }
+
+   if (unlikely(NULL == pPacket))
+   {
+      VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+                "%s: NULL pointer", __func__);
+      return false;
+   }
+
+   if ( VOS_STATUS_SUCCESS !=
+        vos_pkt_get_os_packet(pPacket, (void**)&skb, VOS_FALSE ))
+   {
+      VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+                "%s: OS PKT pointer is NULL", __func__);
+      return false;
+   }
+
+   if (pHddCtx->track_arp_ip ==
+       (v_U32_t)(*(v_U32_t *)(skb->data + VOS_ARP_TARGET_IP_OFFSET)))
+      return true;
+
+   return false;
 }

@@ -1006,6 +1006,10 @@ typedef struct
   bool preassoc_caching;
   vos_pkt_t* vosEapolCachedFrame;
   WLANTL_FwdEapolCBType pfnEapolFwd;
+
+  uint8_t track_arp;
+  uint32_t txbd_token;
+
 }WLANTL_CbType;
 
 

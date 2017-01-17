@@ -1634,6 +1634,7 @@ WDA_DS_FinishULA
     txFlag
     timeStamp
     ucIsEapol
+    ucIsArp
     ucUP
 
    OUT
@@ -1663,6 +1664,7 @@ WDA_DS_BuildTxPacketInfo
   v_U32_t          txFlag,
   v_U32_t         timeStamp,
   v_U8_t          ucIsEapol,
+  v_U8_t          ucIsArp,
   v_U8_t          ucUP,
   v_U32_t         ucTxBdToken
 );

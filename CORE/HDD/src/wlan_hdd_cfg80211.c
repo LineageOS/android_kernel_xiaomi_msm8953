@@ -7586,6 +7586,7 @@ static int __wlan_hdd_cfg80211_set_nud_stats(struct wiphy *wiphy,
     struct net_device   *dev = wdev->netdev;
     hdd_adapter_t       *adapter = WLAN_HDD_GET_PRIV_PTR(dev);
     hdd_context_t *hdd_ctx = wiphy_priv(wiphy);
+    v_CONTEXT_t pVosContext = (WLAN_HDD_GET_CTX(adapter))->pvosContext;
     setArpStatsParams arp_stats_params;
     int err = 0;
 
@@ -7629,6 +7630,19 @@ static int __wlan_hdd_cfg80211_set_nud_stats(struct wiphy *wiphy,
     }
 
     arp_stats_params.pkt_type = 1; // ARP packet type
+
+    if (arp_stats_params.flag) {
+       hdd_ctx->track_arp_ip = arp_stats_params.ip_addr;
+       WLANTL_SetARPFWDatapath(pVosContext, true);
+       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                 "%s Set FW in data path for ARP with tgt IP :%d",
+                 __func__,  hdd_ctx->track_arp_ip);
+    }
+    else {
+       WLANTL_SetARPFWDatapath(pVosContext, false);
+       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                 "%s Remove FW from data path", __func__);
+    }
 
     arp_stats_params.rsp_cb_fn = hdd_set_nud_stats_cb;
     arp_stats_params.data_ctx = adapter;

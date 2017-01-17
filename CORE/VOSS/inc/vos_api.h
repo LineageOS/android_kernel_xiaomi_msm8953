@@ -530,4 +530,6 @@ void vos_set_snoc_high_freq_voting(bool enable);
 void vos_smd_dump_stats(void);
 void vos_log_wdi_event(uint16 msg, vos_wdi_trace_event_type event);
 void vos_dump_wdi_events(void);
+
+bool vos_check_arp_target_ip(vos_pkt_t *pPacket);
 #endif // if !defined __VOS_NVITEM_H
