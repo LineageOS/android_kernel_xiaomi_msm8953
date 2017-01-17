@@ -10689,6 +10689,12 @@ void csrRoamCheckForLinkStatusChange( tpAniSirGlobal pMac, tSirSmeRsp *pSirMsg )
                                     {
                                        tpSirSetActiveModeSetBncFilterReq pMsg;
                                        pMsg = vos_mem_malloc(sizeof(tSirSetActiveModeSetBncFilterReq));
+                                       if (NULL == pMsg)
+                                       {
+                                           smsLog(pMac, LOGE, FL("vos_mem_malloc failed"));
+                                           return;
+                                       }
+
                                        pMsg->messageType = pal_cpu_to_be16((tANI_U16)eWNI_SME_SET_BCN_FILTER_REQ);
                                        pMsg->length = pal_cpu_to_be16(sizeof(
                                            tSirSetActiveModeSetBncFilterReq));
@@ -10712,6 +10718,12 @@ void csrRoamCheckForLinkStatusChange( tpAniSirGlobal pMac, tSirSmeRsp *pSirMsg )
                                     {
                                          tpSirSmeHT40OBSSScanInd pMsg;
                                          pMsg = vos_mem_malloc(sizeof(tSirSmeHT40OBSSScanInd));
+                                         if (NULL == pMsg)
+                                         {
+                                             smsLog(pMac, LOGE, FL("vos_mem_malloc failed"));
+                                             return;
+                                         }
+
                                          pMsg->messageType =
                                            pal_cpu_to_be16((tANI_U16)eWNI_SME_HT40_OBSS_SCAN_IND);
                                          pMsg->length =
