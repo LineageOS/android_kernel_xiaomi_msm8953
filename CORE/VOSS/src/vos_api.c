@@ -3809,3 +3809,85 @@ bool vos_check_arp_target_ip(vos_pkt_t *pPacket)
 
    return false;
 }
+
+/**
+ * vos_update_arp_fw_tx_delivered() - update the ARP stats host to FW deliver
+ *                                    count
+ *
+ * Return: None
+ */
+void vos_update_arp_fw_tx_delivered(void)
+{
+   v_CONTEXT_t pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+   hdd_context_t *pHddCtx = NULL;
+   hdd_adapter_t * pAdapter;
+   hdd_adapter_list_node_t *pAdapterNode = NULL, *pNext = NULL;
+   uint8_t status;
+
+   if(!pVosContext) {
+      hddLog(VOS_TRACE_LEVEL_FATAL,"%s: Global VOS context is Null", __func__);
+      return;
+   }
+
+   pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD, pVosContext );
+   if(!pHddCtx) {
+      VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+               "%s: HDD context is Null", __func__);
+      return;
+   }
+
+   status = hdd_get_front_adapter(pHddCtx, &pAdapterNode);
+
+   while (NULL != pAdapterNode && 0 == status)
+   {
+      pAdapter = pAdapterNode->pAdapter;
+      if (pAdapter->device_mode == WLAN_HDD_INFRA_STATION)
+         break;
+
+      status = hdd_get_next_adapter (pHddCtx, pAdapterNode, &pNext);
+      pAdapterNode = pNext;
+   }
+
+   pAdapter->hdd_stats.hddArpStats.tx_host_fw_sent++;
+}
+
+/**
+ * vos_update_arp_rx_drop_reorder() - update the RX ARP stats drop due
+ *                                    reorder logic at host
+ *
+ * Return: None
+ */
+void vos_update_arp_rx_drop_reorder(void)
+{
+   v_CONTEXT_t pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+   hdd_context_t *pHddCtx = NULL;
+   hdd_adapter_t * pAdapter;
+   hdd_adapter_list_node_t *pAdapterNode = NULL, *pNext = NULL;
+   uint8_t status;
+
+   if(!pVosContext) {
+      hddLog(VOS_TRACE_LEVEL_FATAL,"%s: Global VOS context is Null", __func__);
+      return;
+   }
+
+   pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD, pVosContext );
+   if(!pHddCtx) {
+      VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+               "%s: HDD context is Null", __func__);
+      return;
+   }
+
+   status = hdd_get_front_adapter(pHddCtx, &pAdapterNode);
+
+   while (NULL != pAdapterNode && 0 == status)
+   {
+      pAdapter = pAdapterNode->pAdapter;
+      if (pAdapter->device_mode == WLAN_HDD_INFRA_STATION)
+         break;
+
+      status = hdd_get_next_adapter (pHddCtx, pAdapterNode, &pNext);
+      pAdapterNode = pNext;
+   }
+
+   pAdapter->hdd_stats.hddArpStats.rx_host_drop_reorder++;
+}

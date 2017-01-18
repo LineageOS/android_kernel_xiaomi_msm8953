@@ -213,6 +213,13 @@ WDI_Status WDI_DS_TxPacket(void *pContext,
     WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
               "Packet Length is %d\n", pTxMetadata->fPktlen);
   }
+
+  if (pTxMetadata->isArp)
+  {
+    WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
+                "%s :Transmitting ARP packet",__func__);
+  }
+
   wdiStatus = WDI_FillTxBd(pContext, ucTypeSubtype, pSTAMACAddress, pAddr2MACAddress,
     &ucUP, 1, pvBDHeader, ucTxFlag /* No ACK */, ucProtMgmtFrame, 0, isEapol, isArp,
     &staId, pTxMetadata->txBdToken);

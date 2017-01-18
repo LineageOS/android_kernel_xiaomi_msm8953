@@ -532,4 +532,6 @@ void vos_log_wdi_event(uint16 msg, vos_wdi_trace_event_type event);
 void vos_dump_wdi_events(void);
 
 bool vos_check_arp_target_ip(vos_pkt_t *pPacket);
+void vos_update_arp_fw_tx_delivered(void);
+void vos_update_arp_rx_drop_reorder(void);
 #endif // if !defined __VOS_NVITEM_H
