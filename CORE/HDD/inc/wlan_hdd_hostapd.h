@@ -116,6 +116,9 @@ void hdd_restart_softap (hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter);
 void hdd_hostapd_ch_avoid_cb(void *pAdapter, void *indParam);
 #endif /* FEATURE_WLAN_CH_AVOID */
 int hdd_del_all_sta(hdd_adapter_t *pAdapter);
+void hdd_sap_indicate_disconnect_for_sta(hdd_adapter_t *adapter);
+void hdd_sap_destroy_events(hdd_adapter_t *adapter);
+
 #ifdef SAP_AUTH_OFFLOAD
 bool  hdd_set_sap_auth_offload(hdd_adapter_t *pHostapdAdapter,
         bool enabled);
