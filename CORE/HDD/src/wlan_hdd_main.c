@@ -3056,6 +3056,8 @@ static VOS_STATUS wlan_hdd_handle_fastreassoc(hdd_adapter_t *pAdapter,
 	hdd_station_ctx_t *pHddStaCtx = NULL;
 	hdd_context_t *pHddCtx = NULL;
 	int ret;
+	tCsrRoamModifyProfileFields mod_profile_fields;
+	uint32_t roam_id = 0;
 	pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
 	pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
 
@@ -3076,8 +3078,12 @@ static VOS_STATUS wlan_hdd_handle_fastreassoc(hdd_adapter_t *pAdapter,
 	if (vos_mem_compare(targetApBssid,
 				pHddStaCtx->conn_info.bssId,
 				sizeof(tSirMacAddr))) {
+		sme_GetModifyProfileFields(pHddCtx->hHal, pAdapter->sessionId,
+						&mod_profile_fields);
+		sme_RoamReassoc(pHddCtx->hHal, pAdapter->sessionId, NULL,
+				mod_profile_fields, &roam_id, 1);
 		hddLog(LOG1, FL("Reassoc BSSID is same as currently associated AP bssid"));
-		return eHAL_STATUS_FAILURE;
+		return eHAL_STATUS_SUCCESS;
 	}
 
 	/* Check channel number is a valid channel number */
