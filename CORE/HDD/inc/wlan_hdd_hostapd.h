@@ -125,4 +125,20 @@ hdd_set_sap_auth_offload(hdd_adapter_t *pHostapdAdapter, bool enabled)
 {
 }
 #endif
+
+/**
+ * hdd_check_for_unsafe_ch() - Check the current operating channel with
+ * unsafe channel list.
+ * @phostapd_adapter : Pointer to HDD adapter.
+ * @hdd_ctx: pointer to hdd context.
+ *
+ * Check the current operating chennel of SAP with unsafe channel list
+ * and Restart the SAP on safe channel if currently SAP is
+ * on unsafe channel.
+ *
+ * Return : None
+ */
+void hdd_check_for_unsafe_ch(hdd_adapter_t *phostapd_adapter,
+                                           hdd_context_t *hdd_ctx);
+
 #endif    // end #if !defined( WLAN_HDD_HOSTAPD_H )

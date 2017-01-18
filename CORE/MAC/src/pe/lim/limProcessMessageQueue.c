@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -715,20 +715,25 @@ static void lim_process_sap_offload_indication(tpAniSirGlobal pMac,
         if (sap_offload_ind->indType == SAP_OFFLOAD_ADD_STA_IND)
         {
             tSapOfldAddStaIndMsg *add_sta;
+            limLog( pMac, LOG1,
+                FL("Indication type is SAP_OFFLOAD_ADD_STA_IND"));
             add_sta = (tSapOfldAddStaIndMsg *)sap_offload_ind->indication;
             lim_sap_offload_add_sta(pMac, add_sta);
             if (sap_offload_indication_rx_buf->num_indications > 1)
                 sap_offload_ind =
                     (tSapOfldInd *)((tANI_U8 *)sap_offload_ind +
-                            sizeof(tSapOfldAddStaIndMsg));
+                        sizeof(tSapOfldAddStaIndMsg) - sizeof(tANI_U8)+
+                        add_sta->data_len + sizeof(tANI_U32));
         }
         else if (sap_offload_ind->indType == SAP_OFFLOAD_DEL_STA_IND)
         {
             tSapOfldDelStaIndMsg *del_sta;
+            limLog( pMac, LOG1,
+                FL("Indication type is SAP_OFFLOAD_DEL_STA_IND"));
             del_sta = (tSapOfldDelStaIndMsg *)sap_offload_ind->indication;
             lim_sap_offload_del_sta(pMac, del_sta);
             sap_offload_ind = (tSapOfldInd *)((tANI_U8 *)sap_offload_ind +
-                    sizeof(tSapOfldDelStaIndMsg));
+                    sizeof(tSapOfldDelStaIndMsg) + sizeof(tANI_U32));
         }
         else
         {

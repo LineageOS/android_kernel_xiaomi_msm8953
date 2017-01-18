@@ -1612,6 +1612,43 @@ static void hdd_unsafe_channel_restart_sap(hdd_adapter_t *adapter,
    return;
 }
 
+void hdd_check_for_unsafe_ch(hdd_adapter_t *phostapd_adapter,
+                                           hdd_context_t *hdd_ctxt)
+{
+    v_U16_t    channelLoop;
+    v_U16_t    unsafeChannelCount = 0;
+    v_U16_t    unsafeChannelList[NUM_20MHZ_RF_CHANNELS];
+
+    /* Get unsafe channel list */
+    vos_get_wlan_unsafe_channel(unsafeChannelList, sizeof(unsafeChannelList),
+                                &unsafeChannelCount);
+    for (channelLoop = 0; channelLoop < unsafeChannelCount; channelLoop++)
+    {
+        if ((unsafeChannelList[channelLoop] ==
+             phostapd_adapter->sessionCtx.ap.operatingChannel)) {
+            if ((AUTO_CHANNEL_SELECT ==
+                phostapd_adapter->sessionCtx.ap.sapConfig.channel)
+                && (WLAN_HDD_SOFTAP == phostapd_adapter->device_mode)) {
+               /*
+                * current operating channel is un-safe channel
+                * restart driver
+                */
+                hdd_unsafe_channel_restart_sap(phostapd_adapter, hdd_ctxt);
+               /*
+                * On LE, this event is handled by wlan-services to
+                * restart SAP. On android, this event would be
+                * ignored.
+                */
+                wlan_hdd_send_svc_nlink_msg(WLAN_SVC_SAP_RESTART_IND,
+                                                                NULL, 0);
+            }
+            break;
+        }
+    }
+    return;
+}
+
+
 
 /**---------------------------------------------------------------------------
 
@@ -1776,28 +1813,9 @@ void hdd_hostapd_ch_avoid_cb
                 "%s : Current operation channel %d",
                 __func__,
                 pHostapdAdapter->sessionCtx.ap.operatingChannel);
-      for (channelLoop = 0; channelLoop < unsafeChannelCount; channelLoop++)
-      {
-          if ((unsafeChannelList[channelLoop] ==
-                pHostapdAdapter->sessionCtx.ap.operatingChannel))
-          {
-              if ((AUTO_CHANNEL_SELECT ==
-                     pHostapdAdapter->sessionCtx.ap.sapConfig.channel)
-                && (WLAN_HDD_SOFTAP == pHostapdAdapter->device_mode))
-              {
-                  /* current operating channel is un-safe channel
-                   * restart driver */
-                   hdd_unsafe_channel_restart_sap(pHostapdAdapter, hddCtxt);
-                   /* On LE, this event is handled by wlan-services to
-                    * restart SAP. On android, this event would be
-                    * ignored.
-                    */
-                   wlan_hdd_send_svc_nlink_msg(WLAN_SVC_SAP_RESTART_IND,
-                                                                  NULL, 0);
-              }
-              return;
-          }
-      }
+      /* Check and Restart the SAP if it is on unsafe channel */
+      hdd_check_for_unsafe_ch(pHostapdAdapter, hddCtxt);
+
    }
 
 #ifdef WLAN_FEATURE_AP_HT40_24G

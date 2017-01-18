@@ -10046,6 +10046,8 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
          }
     }
 #endif
+    /* Check and restart SAP if it is on Unsafe channel */
+    hdd_check_for_unsafe_ch(pHostapdAdapter, pHddCtx);
 
     pHostapdState->bCommit = TRUE;
     EXIT();
@@ -16865,6 +16867,12 @@ static int __wlan_hdd_cfg80211_del_station(struct wiphy *wiphy,
             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                  FL("psapCtx is NULL"));
             return -ENOENT;
+        }
+        if (pHddCtx->cfg_ini->enable_sap_auth_offload)
+        {
+            VOS_TRACE(VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO,
+              "Change reason code to eSIR_MAC_DISASSOC_LEAVING_BSS_REASON in sap auth offload");
+            pDelStaParams->reason_code = eSIR_MAC_DISASSOC_LEAVING_BSS_REASON;
         }
         if (vos_is_macaddr_broadcast((v_MACADDR_t *)pDelStaParams->peerMacAddr))
         {
