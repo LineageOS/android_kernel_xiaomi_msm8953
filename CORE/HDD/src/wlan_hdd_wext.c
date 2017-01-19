@@ -9820,7 +9820,6 @@ VOS_STATUS iw_set_pno(struct net_device *dev, struct iw_request_info *info,
   }
   vos_mem_zero(data, len);
   vos_mem_copy(data, &extra[nOffset], (len-1));
-  data[len] = '\0';
   ptr = data;
 
   if (1 != sscanf(ptr," %hhu%n", &(pnoRequest.enable), &nOffset))
