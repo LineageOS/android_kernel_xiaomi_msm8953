@@ -9480,6 +9480,113 @@ VOS_STATUS hdd_reset_all_adapters( hdd_context_t *pHddCtx )
    return VOS_STATUS_SUCCESS;
 }
 
+/**
+ * hdd_get_bss_entry() - Get the bss entry matching the chan, bssid and ssid
+ * @wiphy: wiphy
+ * @channel: channel of the BSS to find
+ * @bssid: bssid of the BSS to find
+ * @ssid: ssid of the BSS to find
+ * @ssid_len: ssid len of of the BSS to find
+ *
+ * The API is a wrapper to get bss from kernel matching the chan,
+ * bssid and ssid
+ *
+ * Return: Void
+ */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 1, 0)) \
+    && !defined(WITH_BACKPORTS) && !defined(IEEE80211_PRIVACY)
+
+struct cfg80211_bss* hdd_get_bss_entry(struct wiphy *wiphy,
+      struct ieee80211_channel *channel,
+      const u8 *bssid,
+      const u8 *ssid, size_t ssid_len)
+{
+   return cfg80211_get_bss(wiphy, channel, bssid,
+           ssid, ssid_len,
+           WLAN_CAPABILITY_ESS,
+           WLAN_CAPABILITY_ESS);
+}
+#else
+struct cfg80211_bss* hdd_get_bss_entry(struct wiphy *wiphy,
+      struct ieee80211_channel *channel,
+      const u8 *bssid,
+      const u8 *ssid, size_t ssid_len)
+{
+   return cfg80211_get_bss(wiphy, channel, bssid,
+           ssid, ssid_len,
+           IEEE80211_BSS_TYPE_ESS,
+           IEEE80211_PRIVACY_ANY);
+}
+#endif
+
+/**
+ * hdd_connect_result() - API to send connection status to supplicant
+ * @dev: network device
+ * @bssid: bssid to which we want to associate
+ * @roam_info: information about connected bss
+ * @req_ie: Request Information Element
+ * @req_ie_len: len of the req IE
+ * @resp_ie: Response IE
+ * @resp_ie_len: len of ht response IE
+ * @status: status
+ * @gfp: Kernel Flag
+ *
+ * The API is a wrapper to send connection status to supplicant
+ *
+ * Return: Void
+ */
+#if defined CFG80211_CONNECT_BSS
+void hdd_connect_result(struct net_device *dev,
+    const u8 *bssid,
+    tCsrRoamInfo *roam_info,
+    const u8 *req_ie,
+    size_t req_ie_len,
+    const u8 *resp_ie,
+    size_t resp_ie_len,
+    u16 status,
+    gfp_t gfp)
+{
+   hdd_adapter_t *padapter = (hdd_adapter_t *) netdev_priv(dev);
+   struct cfg80211_bss *bss = NULL;
+
+   if (WLAN_STATUS_SUCCESS == status) {
+       struct ieee80211_channel *chan;
+       int freq;
+       int chan_no = roam_info->pBssDesc->channelId;;
+
+       if (chan_no <= 14)
+           freq = ieee80211_channel_to_frequency(chan_no,
+                  IEEE80211_BAND_2GHZ);
+       else
+           freq = ieee80211_channel_to_frequency(chan_no,
+                  IEEE80211_BAND_5GHZ);
+
+       chan = ieee80211_get_channel(padapter->wdev.wiphy, freq);
+       bss = hdd_get_bss_entry(padapter->wdev.wiphy,
+              chan, bssid,
+              roam_info->u.pConnectedProfile->SSID.ssId,
+              roam_info->u.pConnectedProfile->SSID.length);
+   }
+
+   cfg80211_connect_bss(dev, bssid, bss, req_ie, req_ie_len,
+        resp_ie, resp_ie_len, status, gfp);
+}
+#else
+void hdd_connect_result(struct net_device *dev,
+   const u8 *bssid,
+   tCsrRoamInfo *roam_info,
+   const u8 *req_ie,
+   size_t req_ie_len,
+   const u8 * resp_ie,
+   size_t resp_ie_len,
+   u16 status,
+   gfp_t gfp)
+{
+   cfg80211_connect_result(dev, bssid, req_ie, req_ie_len,
+         resp_ie, resp_ie_len, status, gfp);
+}
+#endif
+
 VOS_STATUS hdd_start_all_adapters( hdd_context_t *pHddCtx )
 {
    hdd_adapter_list_node_t *pAdapterNode = NULL, *pNext = NULL;
@@ -9536,7 +9643,7 @@ VOS_STATUS hdd_start_all_adapters( hdd_context_t *pHddCtx )
                * Indicate connect failure to supplicant if we were in the
                * process of connecting
                */
-               cfg80211_connect_result(pAdapter->dev, NULL,
+               hdd_connect_result(pAdapter->dev, NULL, NULL,
                                        NULL, 0, NULL, 0,
                                        WLAN_STATUS_ASSOC_DENIED_UNSPEC,
                                        GFP_KERNEL);
