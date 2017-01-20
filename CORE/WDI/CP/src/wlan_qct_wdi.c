@@ -223,7 +223,7 @@ static placeHolderInCapBitmap supportEnabledFeatures[] =
    ,SAP_MODE_WOW                   //64
    ,SAP_OFFLOADS                   //65
    ,SAP_BUFF_ALLOC                 //66
-   ,FEATURE_NOT_SUPPORTED
+   ,MAKE_BEFORE_BREAK              //67
    ,NUD_DEBUG                      //68
 };
 
@@ -2013,6 +2013,13 @@ void WDI_TraceHostFWCapabilities(tANI_U32 *capabilityBitmap)
                                          "%s", "SAP_BUFF_ALLOC");
                           pCapStr += strlen("SAP_BUFF_ALLOC");
                           break;
+
+                     case MAKE_BEFORE_BREAK:
+                          snprintf(pCapStr, sizeof("MAKE_BEFORE_BREAK"),
+                                         "%s", "MAKE_BEFORE_BREAK");
+                          pCapStr += strlen("MAKE_BEFORE_BREAK");
+                          break;
+
                      case NUD_DEBUG:
                           snprintf(pCapStr, sizeof("NUD_DEBUG"),
                                          "%s", "NUD_DEBUG");
@@ -25925,6 +25932,11 @@ WDI_2_HAL_LINK_STATE
 
   case WDI_LINK_SEND_ACTION_STATE:
     return eSIR_LINK_SEND_ACTION_STATE;
+
+#ifdef WLAN_FEATURE_LFR_MBB
+  case WDI_LINK_PRE_AUTH_REASSOC_STATE:
+    return eSIR_LINK_PRE_AUTH_REASSOC_STATE;
+#endif
 
   default:
     return eSIR_LINK_MAX;

@@ -151,6 +151,9 @@ typedef enum {
     */
    SAP_OFFLOADS = 65,
    SAP_BUFF_ALLOC = 66,
+#ifdef WLAN_FEATURE_LFR_MBB
+   MAKE_BEFORE_BREAK = 67,
+#endif
    NUD_DEBUG = 68,
    //MAX_FEATURE_SUPPORTED = 128
 } placeHolderInCapBitmap;

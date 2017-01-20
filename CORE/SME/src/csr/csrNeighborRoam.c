@@ -261,7 +261,12 @@ static eHalStatus csrNeighborRoamTriggerHandoff(tpAniSirGlobal pMac,
     eHalStatus status = eHAL_STATUS_SUCCESS;
 
 #ifdef WLAN_FEATURE_LFR_MBB
+    smsLog(pMac, LOG1, FL("enable_lfr_mbb %d is mbb supported %d"),
+           pMac->roam.configParam.enable_lfr_mbb,
+           sme_IsFeatureSupportedByFW(MAKE_BEFORE_BREAK));
+
     if (pMac->roam.configParam.enable_lfr_mbb
+        && sme_IsFeatureSupportedByFW(MAKE_BEFORE_BREAK)
 #ifdef WLAN_FEATURE_VOWIFI_11R
         && (!pNeighborRoamInfo->is11rAssoc)
 #endif
