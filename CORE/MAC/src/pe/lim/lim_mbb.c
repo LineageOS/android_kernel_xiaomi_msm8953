@@ -88,6 +88,8 @@ void lim_post_pre_auth_reassoc_rsp(tpAniSirGlobal mac,
 
     if (status != eSIR_SUCCESS) {
         limLog(mac, LOG1, FL("Pre-Auth Failed, Cleanup!"));
+        limLog(mac, LOG1, FL("flushing cached packets"));
+        WLANTL_PreAssocForward(false);
 
         /*
         * If reason is full clean up, add sme session id that
@@ -640,6 +642,9 @@ void lim_handle_reassoc_mbb_success(tpAniSirGlobal mac,
 
     mac->sme.roaming_mbb_callback(mac, mac->ft.ftSmeContext.smeSessionId,
                             NULL, NULL, SIR_STOP_ROAM_OFFLOAD_SCAN);
+
+    limLog(mac, LOG1, FL("enabling caching"));
+    WLANTL_EnablePreAssocCaching();
 
     /* To do: Add change to indicate TL to cache frames */
 
@@ -1603,6 +1608,9 @@ void lim_perform_post_add_sta_rsp(tpAniSirGlobal mac,
     tpPESession session_entry;
 
     session_entry = (tpPESession)data;
+
+    limLog(mac, LOG1, FL("forwarding cached packets"));
+    WLANTL_PreAssocForward(true);
 
     sta_ds = dphGetHashEntry(mac, DPH_STA_HASH_INDEX_PEER,
                               &session_entry->dph.dphHashTable);
