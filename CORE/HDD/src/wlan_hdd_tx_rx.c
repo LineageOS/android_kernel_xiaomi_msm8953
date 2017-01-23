@@ -2879,6 +2879,74 @@ void hdd_tx_rx_pkt_cnt_stat_timer_handler( void *phddctx)
     return;
 }
 
+/**
+ * hdd_rx_fwd_eapol() - forward cached eapol frames
+ * @vosContext : pointer to vos global context
+ * @pVosPacket: pointer to vos packet
+ *
+ * Return: None
+ *
+ */
+void hdd_rx_fwd_eapol(v_VOID_t *vosContext, vos_pkt_t *pVosPacket)
+{
+   hdd_context_t *pHddCtx = NULL;
+   hdd_adapter_t * pAdapter;
+   hdd_adapter_list_node_t *pAdapterNode = NULL, *pNext = NULL;
+   struct sk_buff *skb = NULL;
+   uint8_t proto_type;
+   uint8_t status;
+
+   if ((NULL == vosContext) || (NULL == pVosPacket))
+   {
+      VOS_TRACE(VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
+                        "%s: Null global context", __func__);
+      return;
+   }
+
+   pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD, vosContext);
+   if (NULL == pHddCtx)
+   {
+      VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
+                           "%s: HDD adapter context is Null", __func__);
+      return;
+   }
+
+   status = hdd_get_front_adapter ( pHddCtx, &pAdapterNode );
+
+   while ( NULL != pAdapterNode && 0 == status )
+   {
+      pAdapter = pAdapterNode->pAdapter;
+
+      if (pAdapter->device_mode == WLAN_HDD_INFRA_STATION)
+         break;
+
+      status = hdd_get_next_adapter (pHddCtx, pAdapterNode, &pNext);
+      pAdapterNode = pNext;
+   }
+
+   if (NULL == pAdapter)
+   {
+      VOS_TRACE(VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
+                        "%s: No adapter", __func__);
+      return;
+   }
+
+   vos_pkt_get_os_packet(pVosPacket, (v_VOID_t **)&skb, VOS_FALSE);
+   proto_type = vos_pkt_get_proto_type(skb,
+                                       pHddCtx->cfg_ini->gEnableDebugLog);
+   if (VOS_PKT_PROTO_TYPE_EAPOL & proto_type)
+   {
+      VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                   "STA RX EAPOL");
+   }
+
+   skb->dev = pAdapter->dev;
+   skb->protocol = eth_type_trans(skb, skb->dev);
+   skb->ip_summed = CHECKSUM_NONE;
+
+   netif_rx_ni(skb);
+}
+
 #ifdef FEATURE_WLAN_DIAG_SUPPORT
 /*
  * wlan_hdd_get_eapol_params() - Function to extract EAPOL params

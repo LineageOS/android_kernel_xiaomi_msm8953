@@ -12660,6 +12660,9 @@ int hdd_wlan_startup(struct device *dev )
 
    pHddCtx->is_ap_mode_wow_supported =
               sme_IsFeatureSupportedByFW(SAP_MODE_WOW);
+
+   hdd_assoc_registerFwdEapolCB(pVosContext);
+
    goto success;
 
 err_reg_netdev:
