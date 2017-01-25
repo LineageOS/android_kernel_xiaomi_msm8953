@@ -8636,10 +8636,14 @@ int wlan_hdd_cfg80211_alloc_new_beacon(hdd_adapter_t *pAdapter,
     beacon->proberesp_ies_len = proberesp_ies_len;
     beacon->assocresp_ies_len= assocresp_ies_len;
 
-    memcpy(beacon->head, head, head_len);
-    memcpy(beacon->tail, tail, tail_len);
-    memcpy(beacon->proberesp_ies, proberesp_ies, proberesp_ies_len);
-    memcpy(beacon->assocresp_ies, assocresp_ies, assocresp_ies_len);
+    if (head && head_len)
+        memcpy(beacon->head, head, head_len);
+    if (tail && tail_len)
+        memcpy(beacon->tail, tail, tail_len);
+    if (proberesp_ies && proberesp_ies_len)
+        memcpy(beacon->proberesp_ies, proberesp_ies, proberesp_ies_len);
+    if (assocresp_ies && assocresp_ies_len)
+        memcpy(beacon->assocresp_ies, assocresp_ies, assocresp_ies_len);
 
     *ppBeacon = beacon;
 
