@@ -2719,8 +2719,8 @@ eHalStatus csrScanGetResult(tpAniSirGlobal pMac, tCsrScanResultFilter *pFilter, 
                     {
                         pTmpResult = GET_BASE_ADDR( pTmpEntry, tCsrScanResult, Link );
                         /* Skip the bssid hint AP, as it should be on head */
-                        if (pFilter &&
-                           vos_mem_compare(pResult->Result.BssDescriptor.bssId,
+                        if (pFilter && vos_mem_compare(
+                           pTmpResult->Result.BssDescriptor.bssId,
                            pFilter->bssid_hint, VOS_MAC_ADDR_SIZE)) {
                            pTmpEntry = csrLLNext(&pRetList->List,
                                                   pTmpEntry, LL_ACCESS_NOLOCK);

@@ -1459,4 +1459,5 @@ int wlan_hdd_cfg80211_del_station(struct wiphy *wiphy,
 #endif
 
 int wlan_hdd_cfg80211_update_apies(hdd_adapter_t *pHostapdAdapter);
+int wlan_hdd_try_disconnect(hdd_adapter_t *pAdapter);
 #endif
