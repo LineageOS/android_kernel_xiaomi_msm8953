@@ -5596,9 +5596,11 @@ int wlan_hdd_set_proximity(int set_value, tHalHandle hal)
 
         txPwr = (int8)(hwCalTxPower & 0x00FF);
         txPwr = txPwr/10;
-        if (txPwr < TX_PWR_MIN)
+        if (txPwr == 0)
+            txPwr = TX_PWR_DEF;
+        else if (txPwr < TX_PWR_MIN)
             txPwr = TX_PWR_MIN;
-        if (txPwr > TX_PWR_MAX)
+        else if (txPwr > TX_PWR_MAX)
             txPwr = TX_PWR_MAX;
 
         if (sme_SetMaxTxPowerPerBand(eCSR_BAND_24, txPwr, hal) !=
@@ -5610,9 +5612,11 @@ int wlan_hdd_set_proximity(int set_value, tHalHandle hal)
 
         txPwr = (int8)((hwCalTxPower >> 8) & 0x00FF);
         txPwr /= 10;
-        if (txPwr < TX_PWR_MIN)
+        if (txPwr == 0)
+            txPwr = TX_PWR_DEF;
+        else if (txPwr < TX_PWR_MIN)
             txPwr = TX_PWR_MIN;
-        if (txPwr > TX_PWR_MAX)
+        else if (txPwr > TX_PWR_MAX)
             txPwr = TX_PWR_MAX;
 
         if (sme_SetMaxTxPowerPerBand(eCSR_BAND_5G, txPwr, hal) !=
