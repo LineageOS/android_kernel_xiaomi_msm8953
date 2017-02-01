@@ -148,6 +148,7 @@ enum {
     TRACE_CODE_SME_RX_HDD_ROAM_DEL_PMKIDCACHE,
     TRACE_CODE_SME_TX_HDD_CAP_TSF_REQ,
     TRACE_CODE_SME_TX_HDD_GET_TSF_REQ,
+    TRACE_CODE_SME_DEL_STA_BA_SESSION_REQ,
     /* New trace commands to be added before this comment not at the end */
     /* Trace codes for SME commands */
     TRACE_CODE_SME_COMMAND = 250,

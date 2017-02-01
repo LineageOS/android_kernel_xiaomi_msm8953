@@ -4028,4 +4028,6 @@ eHalStatus sme_set_nud_debug_stats(tHalHandle hHal,
                                psetArpStatsParams pSetStatsParam);
 eHalStatus sme_get_nud_debug_stats(tHalHandle hHal,
                                pgetArpStatsParams pGetStatsParam);
+eHalStatus sme_del_sta_ba_session_req(tHalHandle hHal,
+                                      tDelBaParams sta_del_params);
 #endif //#if !defined( __SME_API_H )

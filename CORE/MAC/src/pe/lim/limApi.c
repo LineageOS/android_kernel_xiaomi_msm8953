@@ -2799,3 +2799,49 @@ tSirRetStatus lim_process_sme_get_tsf_req(tpAniSirGlobal pMac,
 
     return eSIR_SUCCESS;
 }
+
+/**
+ * lim_process_sme_del_ba_ses_req()- process del ba req
+ * @pMac:Mac ctx
+ * @pMsgBuf: message buffer from sme
+ * Returns success on taking action based on cfg value, otherwise failure
+ */
+tSirRetStatus lim_process_sme_del_ba_ses_req(tpAniSirGlobal pMac,
+                                          tANI_U32 *pMsgBuf)
+{
+    tDelBaParams *pMsg = NULL;
+    tpPESession psessionEntry = NULL;
+    int val;
+
+    pMsg = (tDelBaParams*)pMsgBuf;
+    if (pMsg == NULL) {
+        limLog(pMac, LOGE, FL("NULL pMsg"));
+        return eSIR_FAILURE;
+    }
+
+    psessionEntry = peFindSessionBySessionId(pMac, pMsg->session_id);
+    if (NULL == psessionEntry)
+    {
+        limLog(pMac, LOGE, FL("NULL psessionEntry"));
+        return eSIR_FAILURE;
+    }
+
+    if (wlan_cfgGetInt
+       (pMac, WNI_CFG_ENABLE_TX_RX_AGGREGATION, &val) !=
+              eSIR_SUCCESS)
+    {
+        limLog(pMac, LOGE,
+               FL( "Unable to get WNI_CFG_ENABLE_TX_RX_AGGREGATION"));
+        return eSIR_FAILURE;
+    }
+
+    if (!val)
+    {
+        limLog(pMac, LOGW,
+               FL("user requested to disable all RX BA sessions"));
+        limDeleteBASessions(pMac, psessionEntry, BA_BOTH_DIRECTIONS,
+                             eSIR_MAC_PEER_TIMEDOUT_REASON);
+    }
+
+    return eSIR_SUCCESS;
+}

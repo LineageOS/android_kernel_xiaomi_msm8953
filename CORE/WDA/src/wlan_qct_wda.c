@@ -19051,7 +19051,7 @@ void WDA_BaCheckActivity(tWDA_CbContext *pWDA)
    tANI_U8 size = 0 ;
    tANI_U8 baCandidateCount = 0 ;
    tANI_U8 newBaCandidate = 0 ;
-   tANI_U32 val;
+   tANI_U32 val, val1;
    WDI_TriggerBAReqCandidateType baCandidate[WDA_MAX_STA] = {{0}} ;
    tpAniSirGlobal pMac;
 
@@ -19093,6 +19093,14 @@ void WDA_BaCheckActivity(tWDA_CbContext *pWDA)
       val = 0;
    }
 
+   if (wlan_cfgGetInt(pMac,
+           WNI_CFG_ENABLE_TX_RX_AGGREGATION, &val1) !=
+                                                      eSIR_SUCCESS)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+            "Unable to get WNI_CFG_ENABLE_TX_RX_AGGREGATION");
+      val1 = 1;
+   }
    /* walk through all STA entries and find out TX packet count */ 
    for(curSta = 0 ; curSta < pWDA->wdaMaxSta ; curSta++)
    {
@@ -19125,6 +19133,12 @@ void WDA_BaCheckActivity(tWDA_CbContext *pWDA)
             {
                  VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
                         "%s: BTC disabled aggregation - dont start "
+                         "TX ADDBA req",__func__);
+            }
+            else if (!val1)
+            {
+                 VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                        "%s: aggregation disabled- dont start "
                          "TX ADDBA req",__func__);
             }
             else if(!WDA_GET_BA_TXFLAG(pWDA, curSta, tid)

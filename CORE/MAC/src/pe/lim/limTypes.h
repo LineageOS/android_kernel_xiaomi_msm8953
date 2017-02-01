@@ -1078,5 +1078,9 @@ tSirRetStatus lim_process_sme_cap_tsf_req(tpAniSirGlobal pMac,
 
 tSirRetStatus lim_process_sme_get_tsf_req(tpAniSirGlobal pMac,
                                           tANI_U32 *pMsgBuf);
+
+tSirRetStatus lim_process_sme_del_ba_ses_req(tpAniSirGlobal pMac,
+                                             tANI_U32 *pMsgBuf);
+
 #endif /* __LIM_TYPES_H */
 
