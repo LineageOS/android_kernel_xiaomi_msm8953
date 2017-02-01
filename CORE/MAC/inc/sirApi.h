@@ -2929,11 +2929,10 @@ typedef struct sSmeDelBAPeerInd
     // Message Type
     tANI_U16 mesgType;
 
-    tSirMacAddr bssId;//BSSID 
-
     // Message Length
     tANI_U16 mesgLen;
 
+    tSirMacAddr bssId;//BSSID
     // Station Index
     tANI_U16 staIdx;
 

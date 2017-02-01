@@ -7734,6 +7734,29 @@ static bool hdd_get_con_alive(hdd_adapter_t *adapter)
    return true;
 }
 
+/**
+ * hdd_con_test_DELBA() - delete the BA session
+ * @adapter: pointer to adapter
+ *
+ * Return: true if SME command is sent of false otherwise
+ */
+static bool hdd_con_test_DELBA(hdd_adapter_t *adapter)
+{
+   hdd_context_t *hdd_ctx = WLAN_HDD_GET_CTX(adapter);
+   hdd_station_ctx_t *pHddStaCtx = &adapter->sessionCtx.station;
+   uint8_t sta_id = pHddStaCtx->conn_info.staId[0];
+
+   ENTER();
+
+   if (eHAL_STATUS_SUCCESS != sme_test_con_delba((hdd_ctx->hHal), sta_id,
+                                  adapter->sessionId)) {
+      hddLog(LOGE, FL("could not send DELBA "));
+      return false;
+   }
+
+   return true;
+}
+
 static void hdd_get_nud_stats_cb(void *data, rsp_stats *rsp)
 {
 
@@ -7854,6 +7877,7 @@ static int __wlan_hdd_cfg80211_get_nud_stats(struct wiphy *wiphy,
     if (adapter->con_status) {
         nla_put_flag(skb, AP_LINK_ACTIVE);
         adapter->con_status = false;
+        hdd_con_test_DELBA(adapter);
     }
     if (adapter->dad)
         nla_put_flag(skb, AP_LINK_DAD);

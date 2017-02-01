@@ -3970,4 +3970,6 @@ eHalStatus sme_get_nud_debug_stats(tHalHandle hHal,
 eHalStatus sme_test_con_alive(tHalHandle hHal);
 eHalStatus sme_get_con_alive(tHalHandle hHal,
                              pgetConStatusParams conStatusParams);
+eHalStatus sme_test_con_delba(tHalHandle hHal, uint8_t sta_id,
+                              uint8_t session_id);
 #endif //#if !defined( __SME_API_H )
