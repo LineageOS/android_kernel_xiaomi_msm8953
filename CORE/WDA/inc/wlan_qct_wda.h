@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1380,6 +1380,10 @@ eHalStatus WDA_SetRegDomain(void * clientCtxt, v_REGDOMAIN_t regId,
 #define WDA_AP_FIND_IND                       SIR_HAL_AP_FIND_IND
 #endif /* WLAN_FEATURE_APFIND */
 
+#define WDA_CAP_TSF_REQ                       SIR_HAL_CAP_TSF_REQ
+#define WDA_GET_TSF_REQ                       SIR_HAL_GET_TSF_REQ
+
+
 #define HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME 0x40 // Bit 6 will be used to control BD rate for Management frames
 
 #define halTxFrame(hHal, pFrmBuf, frmLen, frmType, txDir, tid, pCompFunc, pData, txFlag) \
@@ -2199,4 +2203,9 @@ void WDA_FWLoggingDXEdoneInd(v_U32_t logType);
 
 void WDA_SetMgmtPktViaWQ5(v_BOOL_t sendMgmtPktViaWQ5);
 
+#define CAP_TSF_REQUEST 0
+#define GET_TSF_REQUEST 1
+
+VOS_STATUS WDA_ProcessCapTsfReq(tWDA_CbContext *pWDA, tSirCapTsfParams *params);
+VOS_STATUS WDA_ProcessGetTsfReq(tWDA_CbContext *pWDA, tSirCapTsfParams *params);
 #endif

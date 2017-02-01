@@ -2138,6 +2138,12 @@ static __iw_softap_setparam(struct net_device *dev,
                 }
                 break;
             }
+        case QCSAP_PARAM_CAP_TSF:
+            {
+                ret = hdd_capture_tsf(pHostapdAdapter,
+                                     (uint32_t *)&set_value, 1);
+                break;
+            }
         default:
             hddLog(LOGE, FL("Invalid setparam command %d value %d"),
                     sub_cmd, set_value);
@@ -3244,6 +3250,60 @@ static iw_softap_ap_stats(struct net_device *dev,
     return ret;
 }
 
+/**
+ * __iw_softap_get_three() - return three value to upper layer.
+ *
+ * @dev: pointer of net_device of this wireless card
+ * @info: meta data about Request sent
+ * @wrqu: include request info
+ * @extra: buf used for in/out
+ *
+ * Return: execute result
+ */
+static int __iw_softap_get_three(struct net_device *dev,
+                                 struct iw_request_info *info,
+                                 union iwreq_data *wrqu, char *extra)
+{
+    uint32_t *value = (uint32_t *)extra;
+    uint32_t sub_cmd = value[0];
+    int ret = 0; /* success */
+
+    hdd_adapter_t *padapter = WLAN_HDD_GET_PRIV_PTR(dev);
+
+    switch (sub_cmd) {
+    case QCSAP_IOCTL_GET_TSF:
+        ret = hdd_indicate_tsf(padapter, value, 3);
+        break;
+    default:
+        hddLog(LOGE, FL("Invalid getparam command %d"), sub_cmd);
+        break;
+    }
+    return ret;
+}
+
+
+/**
+ * iw_softap_get_three() - return three value to upper layer.
+ *
+ * @dev: pointer of net_device of this wireless card
+ * @info: meta data about Request sent
+ * @wrqu: include request info
+ * @extra: buf used for in/Output
+ *
+ * Return: execute result
+ */
+static int iw_softap_get_three(struct net_device *dev,
+                               struct iw_request_info *info,
+                               union iwreq_data *wrqu, char *extra)
+{
+    int ret;
+
+    vos_ssr_protect(__func__);
+    ret = __iw_softap_get_three(dev, info, wrqu, extra);
+    vos_ssr_unprotect(__func__);
+
+    return ret;
+}
 static int __iw_softap_set_channel_range(struct net_device *dev,
                                        struct iw_request_info *info,
                                        union iwreq_data *wrqu, char *extra)
@@ -4702,6 +4762,8 @@ static const struct iw_priv_args hostapd_private_args[] = {
       IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0,  "setMcRate" },
   { QCSAP_PARAM_SET_PROXIMITY,
       IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0,  "setProximity" },
+  { QCSAP_PARAM_CAP_TSF,
+     IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0,  "cap_tsf" },
   { QCSAP_PARAM_SET_WOWL,
       IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0,  "wowl" },
   { QCSAP_IOCTL_GETPARAM,
@@ -4737,6 +4799,14 @@ static const struct iw_priv_args hostapd_private_args[] = {
         IW_PRIV_TYPE_BYTE | IW_PRIV_SIZE_FIXED | 6 , 0, "disassoc_sta" },
   { QCSAP_IOCTL_AP_STATS, 0,
         IW_PRIV_TYPE_CHAR | QCSAP_MAX_WSC_IE, "ap_stats" },
+  /* handlers for main ioctl */
+  { QCSAP_IOCTL_PRIV_SET_NONE_GET_THREE_INT, 0,
+       IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 3, "" },
+#ifdef WLAN_FEATURE_TSF
+  { QCSAP_IOCTL_GET_TSF, 0,
+       IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 3,
+       "get_tsf" },
+#endif
   { QCSAP_IOCTL_GET_STATS, 0,
         IW_PRIV_TYPE_CHAR | QCSAP_MAX_STR_LEN, "getStats"},
   { QCSAP_IOCTL_CLR_STATS, 0, 0, "clearStats" },
@@ -4846,6 +4916,7 @@ static const iw_handler hostapd_private[] = {
    [QCSAP_IOCTL_ASSOC_STA_MACADDR - SIOCIWFIRSTPRIV] = iw_softap_getassoc_stamacaddr,
    [QCSAP_IOCTL_DISASSOC_STA - SIOCIWFIRSTPRIV] = iw_softap_disassoc_sta,
    [QCSAP_IOCTL_AP_STATS - SIOCIWFIRSTPRIV] = iw_softap_ap_stats,
+   [QCSAP_IOCTL_PRIV_SET_NONE_GET_THREE_INT - SIOCIWFIRSTPRIV] = iw_softap_get_three,
    [QCSAP_IOCTL_PRIV_SET_THREE_INT_GET_NONE - SIOCIWFIRSTPRIV]  = iw_set_three_ints_getnone,
    [QCSAP_IOCTL_PRIV_SET_VAR_INT_GET_NONE - SIOCIWFIRSTPRIV]     = iw_set_var_ints_getnone,
    [QCSAP_IOCTL_SET_CHANNEL_RANGE - SIOCIWFIRSTPRIV] = iw_softap_set_channel_range,

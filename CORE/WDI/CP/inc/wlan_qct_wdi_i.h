@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -500,6 +500,9 @@ typedef enum
   WDI_MDNS_RESP_OFFLOAD_REQ                      = 121,
   WDI_MDNS_STATS_OFFLOAD_REQ                     = 122,
 
+  WDI_CAP_TSF_REQ                                = 123,
+  WDI_GET_TSF_REQ                                = 124,
+
   WDI_MAX_REQ,
 
   /*Send a suspend Indication down to HAL*/
@@ -885,6 +888,7 @@ typedef enum
   WDI_MDNS_FQDN_OFFLOAD_RSP                      = 120,
   WDI_MDNS_RESP_OFFLOAD_RSP                      = 121,
   WDI_MDNS_STATS_OFFLOAD_RSP                     = 122,
+  WDI_CAPTURE_GET_TSF_TSTAMP_RSP                 = 123,
 
   /*-------------------------------------------------------------------------
     Indications
@@ -6808,5 +6812,26 @@ WDI_ProcessApFindInd
   WDI_EventInfoType*     pEventData
 );
 #endif
+
+WDI_Status
+wdi_cap_tsf_req
+(
+    WDI_ControlBlockType *wdi_ctx,
+    WDI_EventInfoType *event_data
+);
+
+WDI_Status
+wdi_get_tsf_req
+(
+    WDI_ControlBlockType *wdi_ctx,
+    WDI_EventInfoType *event_data
+);
+WDI_Status
+wdi_get_tsf_rsp
+(
+    WDI_ControlBlockType *wdi_ctx,
+    WDI_EventInfoType *event_data
+);
+
 #endif /*WLAN_QCT_WDI_I_H*/
 
