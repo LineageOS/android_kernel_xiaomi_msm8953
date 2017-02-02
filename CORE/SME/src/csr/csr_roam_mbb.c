@@ -138,6 +138,7 @@ eHalStatus csr_neighbor_roam_issue_preauth_reassoc(tpAniSirGlobal mac)
                                            &mac->roam.neighborRoamInfo;
     eHalStatus status = eHAL_STATUS_SUCCESS;
     tpCsrNeighborRoamBSSInfo neighbor_bss_node;
+    tCsrRoamInfo roam_info;
 
     VOS_ASSERT(neighbor_roam_info->FTRoamInfo.preauthRspPending ==
                                                          eANI_BOOLEAN_FALSE);
@@ -176,6 +177,16 @@ eHalStatus csr_neighbor_roam_issue_preauth_reassoc(tpAniSirGlobal mac)
     neighbor_roam_info->FTRoamInfo.preauthRspPending = eANI_BOOLEAN_TRUE;
 
     CSR_NEIGHBOR_ROAM_STATE_TRANSITION(eCSR_NEIGHBOR_ROAM_STATE_MBB_PREAUTH_REASSOC)
+
+    if (csrRoamIsFastRoamEnabled(mac, CSR_SESSION_ID_INVALID))
+    {
+        smsLog(mac, LOG1, FL("Invoking eCSR_ROAM_PMK_NOTIFY"));
+        vos_mem_copy((void *)&roam_info.bssid,
+                     (void *)neighbor_bss_node->pBssDescription->bssId,
+                     sizeof(tCsrBssid));
+        csrRoamCallCallback(mac, neighbor_roam_info->csrSessionId, &roam_info,
+                            0, eCSR_ROAM_PMK_NOTIFY, 0);
+    }
     return status;
 }
 
