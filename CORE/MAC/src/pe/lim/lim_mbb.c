@@ -1143,6 +1143,7 @@ void lim_process_pre_auth_reassoc_req(tpAniSirGlobal mac, tpSirMsgQ msg)
         /* Post the pre auth response to SME */
         lim_post_pre_auth_reassoc_rsp(mac, eSIR_FAILURE, NULL,
                                                 SIR_MBB_CONNECTED);
+        return;
     }
 
     limLog(mac, LOG1,

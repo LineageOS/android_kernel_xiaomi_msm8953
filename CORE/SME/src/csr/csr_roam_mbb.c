@@ -188,8 +188,16 @@ eHalStatus csr_neighbor_roam_issue_preauth_reassoc(tpAniSirGlobal mac)
  */
 void csr_stop_preauth_reassoc_mbb_timer(tpAniSirGlobal mac)
 {
+    VOS_STATUS vos_status = VOS_STATUS_SUCCESS;
+
+    smsLog(mac, LOG1, FL("is_pre_auth_reassoc_mbb_timer_started %d"),
+           mac->roam.neighborRoamInfo.is_pre_auth_reassoc_mbb_timer_started);
+
     if (mac->roam.neighborRoamInfo.is_pre_auth_reassoc_mbb_timer_started)
-        vos_timer_stop(&mac->ft.ftSmeContext.pre_auth_reassoc_mbb_timer);
+        vos_status =
+            vos_timer_stop(&mac->ft.ftSmeContext.pre_auth_reassoc_mbb_timer);
+
+    smsLog(mac, LOG1, FL("vos_status %d"), vos_status);
 }
 
 
@@ -362,15 +370,15 @@ csr_neighbor_roam_preauth_reassoc_rsp_handler(tpAniSirGlobal mac,
            csrNeighborRoamFreeNeighborRoamBSSNode(mac, neighbor_bss_node);
         }
 
-        /* Dequeue ecsr_mbb_perform_preauth_reassoc */
-        csr_roam_dequeue_preauth_reassoc(mac);
-
         /*
         * Move state to Connected. Connected state here signifies connection
         * with current AP as preauth failed with roamable AP. Still driver has
         * connection with current AP.
         */
         CSR_NEIGHBOR_ROAM_STATE_TRANSITION(eCSR_NEIGHBOR_ROAM_STATE_CONNECTED)
+
+        /* Dequeue ecsr_mbb_perform_preauth_reassoc */
+        csr_roam_dequeue_preauth_reassoc(mac);
 
         /* Start a timer to issue preauth_reassoc request for the next entry*/
         status = vos_timer_start(&mac->ft.ftSmeContext.
@@ -382,6 +390,8 @@ csr_neighbor_roam_preauth_reassoc_rsp_handler(tpAniSirGlobal mac,
             return eHAL_STATUS_FAILURE;
         }
         mac->roam.neighborRoamInfo.is_pre_auth_reassoc_mbb_timer_started = true;
+        smsLog(mac, LOG1, FL("is_pre_auth_reassoc_mbb_timer_started %d"),
+           mac->roam.neighborRoamInfo.is_pre_auth_reassoc_mbb_timer_started);
         return eHAL_STATUS_SUCCESS;
     }
 
