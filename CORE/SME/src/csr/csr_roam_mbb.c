@@ -204,9 +204,12 @@ void csr_stop_preauth_reassoc_mbb_timer(tpAniSirGlobal mac)
     smsLog(mac, LOG1, FL("is_pre_auth_reassoc_mbb_timer_started %d"),
            mac->roam.neighborRoamInfo.is_pre_auth_reassoc_mbb_timer_started);
 
-    if (mac->roam.neighborRoamInfo.is_pre_auth_reassoc_mbb_timer_started)
+    if (mac->roam.neighborRoamInfo.is_pre_auth_reassoc_mbb_timer_started) {
         vos_status =
             vos_timer_stop(&mac->ft.ftSmeContext.pre_auth_reassoc_mbb_timer);
+        mac->roam.neighborRoamInfo.is_pre_auth_reassoc_mbb_timer_started =
+                                                                       false;
+    }
 
     smsLog(mac, LOG1, FL("vos_status %d"), vos_status);
 }
@@ -444,6 +447,7 @@ eHalStatus csr_update_roamed_info_mbb(tHalHandle hal,
     status = csrRoamCopyProfile(mac, profile, session->pCurRoamProfile);
     if(!HAL_STATUS_SUCCESS(status)) {
        smsLog(mac, LOGE, FL("Profile copy failed"));
+       vos_mem_free(profile);
        return status;
     }
 

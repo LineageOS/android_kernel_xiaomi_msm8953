@@ -44,3 +44,5 @@ void lim_process_sta_mlm_add_bss_rsp_mbb(tpAniSirGlobal mac,
      tpSirMsgQ limMsgQ,tpPESession session_entry);
 void lim_process_sta_mlm_add_sta_rsp_mbb(tpAniSirGlobal mac,
      tpSirMsgQ limMsgQ,tpPESession session_entry);
+eAniBoolean lim_is_mbb_reassoc_in_progress(tpAniSirGlobal mac,
+     tpPESession session_entry);

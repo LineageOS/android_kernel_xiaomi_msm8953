@@ -1702,3 +1702,18 @@ end:
       limMsgQ->bodyptr = NULL;
     }
 }
+
+eAniBoolean lim_is_mbb_reassoc_in_progress(tpAniSirGlobal mac,
+            tpPESession session_entry)
+{
+    if (session_entry == NULL)
+        return eANI_BOOLEAN_FALSE;
+
+    if ((eLIM_STA_ROLE == session_entry->limSystemRole) &&
+                        mac->ft.ftSmeContext.is_preauth_lfr_mbb) {
+        limLog(mac, LOG1, FL("MBB Reassoc in progress"));
+        return eANI_BOOLEAN_TRUE;
+    }
+
+    return eANI_BOOLEAN_FALSE;
+}
