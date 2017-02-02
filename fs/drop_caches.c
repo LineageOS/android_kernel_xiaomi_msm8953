@@ -8,6 +8,8 @@
 #include <linux/writeback.h>
 #include <linux/sysctl.h>
 #include <linux/gfp.h>
+#include <linux/fb.h>
+#include <linux/delay.h>
 #include "internal.h"
 
 /* A global variable is a bit ugly, but it keeps the code simple */
@@ -78,3 +80,46 @@ int drop_caches_sysctl_handler(struct ctl_table *table, int write,
 	}
 	return 0;
 }
+
+static void drop_caches_suspend(struct work_struct *work);
+static DECLARE_WORK(drop_caches_suspend_work, drop_caches_suspend);
+
+static void drop_caches_suspend(struct work_struct *work)
+{
+	/* sleep for 200ms */
+	msleep(200);
+	/* sync */
+	emergency_sync();
+	/* echo "3" > /proc/sys/vm/drop_caches */
+	iterate_supers(drop_pagecache_sb, NULL);
+        drop_slab();
+}
+
+static int fb_notifier(struct notifier_block *self,
+			unsigned long event, void *data)
+{
+	struct fb_event *evdata = (struct fb_event *)data;
+
+	if ((event == FB_EVENT_BLANK) && evdata && evdata->data) {
+		int blank = *(int *)evdata->data;
+
+		if (blank == FB_BLANK_POWERDOWN) {
+			schedule_work_on(0, &drop_caches_suspend_work);
+			return NOTIFY_OK;
+		}
+		return NOTIFY_OK;
+	}
+	return NOTIFY_DONE;
+}
+
+static struct notifier_block fb_notifier_block = {
+	.notifier_call = fb_notifier,
+	.priority = -1,
+};
+
+static int __init drop_caches_init(void)
+{
+	fb_register_client(&fb_notifier_block);
+	return 0;
+}
+late_initcall(drop_caches_init);
