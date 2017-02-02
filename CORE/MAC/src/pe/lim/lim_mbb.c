@@ -643,11 +643,6 @@ void lim_handle_reassoc_mbb_success(tpAniSirGlobal mac,
     mac->sme.roaming_mbb_callback(mac, mac->ft.ftSmeContext.smeSessionId,
                             NULL, NULL, SIR_STOP_ROAM_OFFLOAD_SCAN);
 
-    limLog(mac, LOG1, FL("enabling caching"));
-    WLANTL_EnablePreAssocCaching();
-
-    /* To do: Add change to indicate TL to cache frames */
-
     if((session_entry_con_ap = peFindSessionByBssid(mac,
           mac->ft.ftPEContext.pFTPreAuthReq->currbssId,
           &session_id_connected_ap))== NULL) {
@@ -813,6 +808,9 @@ static inline void lim_process_preauth_mbb_result(tpAniSirGlobal mac,
        vos_mem_free(mlm_reassoc_req);
        goto end;
     }
+
+    limLog(mac, LOG1, FL("enabling caching"));
+    WLANTL_EnablePreAssocCaching();
 
     /* To do: Add changes for reassoc fail timer */
     limSendReassocReqWithFTIEsMgmtFrame(mac,
