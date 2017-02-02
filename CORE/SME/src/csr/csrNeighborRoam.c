@@ -5319,7 +5319,14 @@ tANI_BOOLEAN csrNeighborMiddleOfRoaming (tHalHandle hHal)
                        (eCSR_NEIGHBOR_ROAM_STATE_PREAUTHENTICATING == pMac->roam.neighborRoamInfo.neighborRoamState) ||
                        (eCSR_NEIGHBOR_ROAM_STATE_PREAUTH_DONE == pMac->roam.neighborRoamInfo.neighborRoamState) ||
                        (eCSR_NEIGHBOR_ROAM_STATE_REPORT_SCAN == pMac->roam.neighborRoamInfo.neighborRoamState) ||
-                       (eCSR_NEIGHBOR_ROAM_STATE_CFG_CHAN_LIST_SCAN == pMac->roam.neighborRoamInfo.neighborRoamState);
+                       (eCSR_NEIGHBOR_ROAM_STATE_CFG_CHAN_LIST_SCAN == pMac->roam.neighborRoamInfo.neighborRoamState)
+
+#ifdef WLAN_FEATURE_LFR_MBB
+                       || (eCSR_NEIGHBOR_ROAM_STATE_MBB_PREAUTH_REASSOC ==
+                                pMac->roam.neighborRoamInfo.neighborRoamState);
+#else
+                       ;
+#endif
     return (val);
 }
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
