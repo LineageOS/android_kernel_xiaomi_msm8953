@@ -4684,6 +4684,7 @@ VOS_STATUS hdd_init_ap_mode( hdd_adapter_t *pAdapter, bool re_init)
     struct net_device *dev = pAdapter->dev;
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
     VOS_STATUS status;
+    hdd_config_t *ini_cfg;
 #ifdef FEATURE_WLAN_CH_AVOID
     v_U16_t unsafeChannelList[NUM_20MHZ_RF_CHANNELS];
     v_U16_t unsafeChannelCount;
@@ -4758,6 +4759,17 @@ VOS_STATUS hdd_init_ap_mode( hdd_adapter_t *pAdapter, bool re_init)
     }
 
     set_bit(WMM_INIT_DONE, &pAdapter->event_flags);
+
+    ini_cfg =  pHddCtx->cfg_ini;
+    if (re_init && ini_cfg) {
+        hddLog(VOS_TRACE_LEVEL_INFO, FL("start_ch: %d end_ch:%d op_band:%d"),
+                          ini_cfg->apStartChannelNum, ini_cfg->apEndChannelNum,
+                          ini_cfg->apOperatingBand);
+        WLANSAP_SetChannelRange(WLAN_HDD_GET_HAL_CTX(pAdapter),
+                                ini_cfg->apStartChannelNum,
+                                ini_cfg->apEndChannelNum,
+                                ini_cfg->apOperatingBand);
+    }
 
     return status;
 
