@@ -418,7 +418,7 @@ void csr_update_roamed_info_mbb(tHalHandle hal,
     tpAniSirGlobal mac = PMAC_STRUCT(hal);
     tDot11fBeaconIEs *ies_local = NULL;
     tCsrRoamSession *session = NULL;
-    tCsrRoamProfile roam_profile, *profile;
+    tCsrRoamProfile *profile;
     tSirMacAddr broadcast_mac = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
     tANI_U32 key_timeout_interval;
     tCsrRoamInfo roam_info;
@@ -444,12 +444,17 @@ void csr_update_roamed_info_mbb(tHalHandle hal,
     session = CSR_GET_SESSION(mac, sme_session_id);
     vos_mem_set(&roam_info, sizeof(roam_info), 0);
 
-    status = csrRoamCopyProfile(mac, &roam_profile, session->pCurRoamProfile);
+    profile = vos_mem_malloc(sizeof(*profile));
+    if (NULL == profile) {
+        smsLog(mac, LOGE, FL("Memory allocation failure for profile"));
+        return;
+    }
+
+    status = csrRoamCopyProfile(mac, profile, session->pCurRoamProfile);
     if(!HAL_STATUS_SUCCESS(status)) {
        smsLog(mac, LOGE, FL("Profile copy failed"));
        return;
     }
-    profile = &roam_profile;
 
     profile->negotiatedAuthType =
        mac->roam.roamSession[sme_session_id].connectedProfile.AuthType;
@@ -631,6 +636,7 @@ void csr_update_roamed_info_mbb(tHalHandle hal,
 
     vos_mem_free(pre_auth_rsp->roam_info->pbFrames);
     vos_mem_free(pre_auth_rsp->roam_info);
+    vos_mem_free(profile);
 
 }
 

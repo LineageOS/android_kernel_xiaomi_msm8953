@@ -14072,7 +14072,7 @@ eHalStatus csr_fill_reassoc_req(tpAniSirGlobal mac, tANI_U32 session_id,
     tANI_U8 tx_bf_csn_value = 0;
     tANI_U16 rate_bitmap = 0;
     tANI_U16 message_type = eWNI_SME_REASSOC_REQ;
-    tCsrRoamProfile roam_profile, *profile;
+    tCsrRoamProfile *profile;
 
     if(!session) {
         smsLog(mac, LOGE, FL("  session %d not found "), session_id);
@@ -14087,12 +14087,17 @@ eHalStatus csr_fill_reassoc_req(tpAniSirGlobal mac, tANI_U32 session_id,
     smsLog(mac, LOG1,
            FL("session_id %d"), session_id);
 
-    status = csrRoamCopyProfile(mac, &roam_profile, session->pCurRoamProfile);
+    profile = vos_mem_malloc(sizeof(*profile));
+    if (NULL == profile) {
+        smsLog(mac, LOGE, FL("Memory allocation failure for profile"));
+        return eHAL_STATUS_RESOURCES;
+    }
+
+    status = csrRoamCopyProfile(mac, profile, session->pCurRoamProfile);
     if(!HAL_STATUS_SUCCESS(status)) {
        smsLog(mac, LOGE, FL("Profile copy failed"));
        return eHAL_STATUS_FAILURE;
     }
-    profile = &roam_profile;
 
     do {
         /*
@@ -14746,6 +14751,7 @@ eHalStatus csr_fill_reassoc_req(tpAniSirGlobal mac, tANI_U32 session_id,
 
     smsLog(mac, LOG1, FL("status %d"), status);
 
+    vos_mem_free(profile);
     return status;
 }
 #endif
