@@ -989,11 +989,6 @@ VOS_STATUS hdd_hostapd_SAPEventCB( tpSap_Event pSapEvent, v_PVOID_t usrDataForCa
             hddLog(LOG1, FL("BSS stop status = %s"),pSapEvent->sapevt.sapStopBssCompleteEvent.status ?
                              "eSAP_STATUS_FAILURE" : "eSAP_STATUS_SUCCESS");
 
-#ifdef SAP_AUTH_OFFLOAD
-            if (cfg_param->enable_sap_auth_offload)
-                hdd_set_sap_auth_offload(pHostapdAdapter, FALSE);
-#endif
-
             //Free up Channel List incase if it is set
             sapCleanupChannelList();
 
