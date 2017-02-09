@@ -9756,7 +9756,7 @@ void hdd_dhcp_server_offload_done(void *fw_dhcp_srv_offload_cb_context,
  *
  * Return: None
  */
-static VOS_STATUS wlan_hdd_set_dhcp_server_offload(hdd_adapter_t *hostapd_adapter)
+VOS_STATUS wlan_hdd_set_dhcp_server_offload(hdd_adapter_t *hostapd_adapter)
 {
 	hdd_context_t *hdd_ctx = WLAN_HDD_GET_CTX(hostapd_adapter);
 	sir_dhcp_srv_offload_info dhcp_srv_info;

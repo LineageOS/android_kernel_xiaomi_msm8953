@@ -2158,6 +2158,9 @@ void wlan_hdd_defer_scan_init_work(hdd_context_t *pHddCtx,
                                 unsigned long delay);
 int hdd_reassoc(hdd_adapter_t *pAdapter, const tANI_U8 *bssid,
 			const tANI_U8 channel, const handoff_src src);
+#ifdef DHCP_SERVER_OFFLOAD
+VOS_STATUS wlan_hdd_set_dhcp_server_offload(hdd_adapter_t *hostapd_adapter);
+#endif
 #ifdef MDNS_OFFLOAD
 bool wlan_hdd_set_mdns_offload(hdd_adapter_t *adapter);
 #else
