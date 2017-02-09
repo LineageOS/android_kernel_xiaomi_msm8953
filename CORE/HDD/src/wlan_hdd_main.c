@@ -9367,6 +9367,8 @@ static void __hdd_sap_restart_handle(struct work_struct *work)
         wlan_hdd_restart_sap(sap_adapter);
         hdd_change_ch_avoidance_status(hdd_ctx, false);
     }
+    if (hdd_ctx->cfg_ini->enable_sap_auth_offload)
+        wlan_hdd_restart_sap(sap_adapter);
 }
 
 /**

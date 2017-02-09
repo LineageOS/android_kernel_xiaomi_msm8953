@@ -143,5 +143,7 @@ hdd_set_sap_auth_offload(hdd_adapter_t *pHostapdAdapter, bool enabled)
  */
 void hdd_check_for_unsafe_ch(hdd_adapter_t *phostapd_adapter,
                                            hdd_context_t *hdd_ctx);
+void hdd_force_scc_restart_sap(hdd_adapter_t *adapter,
+    hdd_context_t *hdd_ctx, tANI_U8  channelId);
 
 #endif    // end #if !defined( WLAN_HDD_HOSTAPD_H )

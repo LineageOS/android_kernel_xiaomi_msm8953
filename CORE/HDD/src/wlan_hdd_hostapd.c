@@ -5355,3 +5355,41 @@ void hdd_sap_destroy_timers(hdd_adapter_t *adapter)
 			FL("Failed to Destroy HT20/40 timer"));
 
 }
+
+/**
+ * hdd_force_scc_restart_sap - restart sap to forcer SCC
+ * @adapter: hdd ap adapter
+ *
+ * hdd_force_scc_restart_sap will choose station channel and will
+ * schedule work to restart the sap.
+ *
+ * Return - none
+ */
+void hdd_force_scc_restart_sap(hdd_adapter_t *adapter,
+   hdd_context_t *hdd_ctx, tANI_U8  channelId)
+{
+  if (!(adapter && (WLAN_HDD_SOFTAP == adapter->device_mode))) {
+    return;
+  }
+
+  hddLog(LOG1, FL("Current operation channel %d"),
+      adapter->sessionCtx.ap.operatingChannel);
+  hddLog(LOG1, FL("STA channel is  %d"),
+      channelId);
+
+  vos_flush_work(
+      &hdd_ctx->sap_start_work);
+
+  hddLog(LOGE,
+      FL("Restarting SAP for force SCC "));
+
+  adapter->sessionCtx.ap.sapConfig.channel = channelId;
+
+  if (hdd_ctx->cfg_ini->sap_internal_restart) {
+    netif_tx_disable(adapter->dev);
+    schedule_work(&hdd_ctx->sap_start_work);
+  } else {
+    hdd_hostapd_stop(adapter->dev);
+  }
+  return;
+}
