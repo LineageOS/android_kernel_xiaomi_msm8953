@@ -665,6 +665,12 @@ void lim_handle_reassoc_mbb_success(tpAniSirGlobal mac,
         goto end;
     }
 
+    /*
+     * Change Mlm state of new AP to Del sta rsp state so that
+     * duplicate reassoc response will be dropped.
+     */
+    session_entry->limMlmState = eLIM_MLM_WT_DEL_STA_RSP_STATE;
+
     /* Delete sta for currently connected AP */
     ret_code = lim_del_sta_mbb(mac, sta_ds_connected_ap,
                     false, session_entry_con_ap);
