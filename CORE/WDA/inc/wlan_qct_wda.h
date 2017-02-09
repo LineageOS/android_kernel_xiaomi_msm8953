@@ -1308,6 +1308,10 @@ tSirRetStatus uMacPostCtrlMsg(void* pSirGlobal, tSirMbMsg* pMb);
 #define WDA_GET_MDNS_STATUS_CMD               SIR_HAL_GET_MDNS_STATUS
 #endif /* MDNS_OFFLOAD */
 
+/* ARP Debug */
+#define WDA_SET_ARP_STATS_REQ                 SIR_HAL_SET_ARP_STATS_REQ
+#define WDA_GET_ARP_STATS_REQ                 SIR_HAL_GET_ARP_STATS_REQ
+
 tSirRetStatus wdaPostCtrlMsg(tpAniSirGlobal pMac, tSirMsgQ *pMsg);
 
 eHalStatus WDA_SetRegDomain(void * clientCtxt, v_REGDOMAIN_t regId,

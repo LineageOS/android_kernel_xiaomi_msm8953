@@ -919,6 +919,8 @@ tANI_U8* macTraceGetWdaMsgString( tANI_U16 wdaMsg )
 #endif
         CASE_RETURN_STRING(WDA_CAP_TSF_REQ);
         CASE_RETURN_STRING(WDA_GET_TSF_REQ);
+        CASE_RETURN_STRING(WDA_SET_ARP_STATS_REQ);
+        CASE_RETURN_STRING(WDA_GET_ARP_STATS_REQ);
         default:
             return((tANI_U8*) "UNKNOWN" );
             break;

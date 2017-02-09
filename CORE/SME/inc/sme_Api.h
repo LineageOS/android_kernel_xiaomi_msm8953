@@ -4023,4 +4023,9 @@ eHalStatus sme_set_tsfcb(tHalHandle hHal,
                          tsf_rsp_cb rsp_cb, struct stsf *pTsf,
                          void *pcallbackcontext);
 
+/* ARP DEBUG STATS */
+eHalStatus sme_set_nud_debug_stats(tHalHandle hHal,
+                               psetArpStatsParams pSetStatsParam);
+eHalStatus sme_get_nud_debug_stats(tHalHandle hHal,
+                               pgetArpStatsParams pGetStatsParam);
 #endif //#if !defined( __SME_API_H )
