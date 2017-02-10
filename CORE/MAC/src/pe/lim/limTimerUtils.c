@@ -1769,6 +1769,8 @@ limDeactivateAndChangeTimer(tpAniSirGlobal pMac, tANI_U32 timerId)
 
 #ifdef WLAN_FEATURE_LFR_MBB
         case eLIM_PREAUTH_MBB_RSP_TIMER:
+            MTRACE(macTrace(pMac, TRACE_CODE_TIMER_DEACTIVATE,
+                                  NO_SESSION, eLIM_PREAUTH_MBB_RSP_TIMER));
             if (tx_timer_deactivate(&pMac->lim.limTimers.
                           glim_pre_auth_mbb_rsp_timer) != TX_SUCCESS) {
                 limLog(pMac, LOGP,
@@ -1777,6 +1779,8 @@ limDeactivateAndChangeTimer(tpAniSirGlobal pMac, tANI_U32 timerId)
             }
             break;
         case eLIM_REASSOC_MBB_RSP_TIMER:
+            MTRACE(macTrace(pMac, TRACE_CODE_TIMER_DEACTIVATE,
+                                  NO_SESSION, eLIM_REASSOC_MBB_RSP_TIMER));
             if (tx_timer_deactivate(&pMac->lim.limTimers.
                           glim_reassoc_mbb_rsp_timer) != TX_SUCCESS) {
                 limLog(pMac, LOGP,

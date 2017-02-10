@@ -458,6 +458,8 @@ tSirRetStatus lim_del_sta_mbb(tpAniSirGlobal mac,
 
     /* Change Mlm state of connected AP to Del sta rsp state */
     session_entry_connected_ap->limMlmState = eLIM_MLM_WT_DEL_STA_RSP_STATE;
+    MTRACE(macTrace(mac, TRACE_CODE_MLM_STATE,
+      session_entry_connected_ap->peSessionId, eLIM_MLM_WT_DEL_STA_RSP_STATE));
 
     msg.type = WDA_DELETE_STA_REQ;
     msg.reserved = 0;
@@ -469,6 +471,9 @@ tSirRetStatus lim_del_sta_mbb(tpAniSirGlobal mac,
            del_sta_params->sessionId, del_sta_params->staIdx,
            del_sta_params->assocId,
            MAC_ADDR_ARRAY(sta_ds_connected_ap->staAddr));
+
+    MTRACE(macTraceMsgTx(mac, session_entry_connected_ap->peSessionId,
+                                                               msg.type));
 
     ret_code = wdaPostCtrlMsg(mac, &msg);
     if( eSIR_SUCCESS != ret_code) {
@@ -517,6 +522,8 @@ tSirRetStatus lim_del_bss_mbb(tpAniSirGlobal mac, tpDphHashNode sta_ds,
         delbss_params->bssIdx = bss_idx;
 
     session_entry->limMlmState = eLIM_MLM_WT_DEL_BSS_RSP_STATE;
+    MTRACE(macTrace(mac, TRACE_CODE_MLM_STATE,
+          session_entry->peSessionId, eLIM_MLM_WT_DEL_BSS_RSP_STATE));
 
     delbss_params->status= eHAL_STATUS_SUCCESS;
     delbss_params->respReqd = 1;
@@ -532,6 +539,8 @@ tSirRetStatus lim_del_bss_mbb(tpAniSirGlobal mac, tpDphHashNode sta_ds,
     msg.reserved = 0;
     msg.bodyptr = delbss_params;
     msg.bodyval = 0;
+
+    MTRACE(macTraceMsgTx(mac, session_entry->peSessionId, msg.type));
 
     if(eSIR_SUCCESS != (ret_code = wdaPostCtrlMsg(mac, &msg)))
     {
@@ -571,6 +580,11 @@ void lim_add_bss_mbb(tpAniSirGlobal mac, tpDphHashNode sta_ds,
 
     session_entry->limMlmState = eLIM_MLM_WT_ADD_BSS_RSP_REASSOC_STATE;
 
+    MTRACE(macTrace(mac, TRACE_CODE_MLM_STATE,
+          session_entry->peSessionId, eLIM_MLM_WT_ADD_BSS_RSP_REASSOC_STATE));
+
+    MTRACE(macTraceMsgTx(mac, session_entry->peSessionId, msg.type));
+
     ret_code = wdaPostCtrlMsg(mac, &msg);
     if( eSIR_SUCCESS != ret_code) {
         vos_mem_free(mac->ft.ftPEContext.pAddBssReq);
@@ -602,6 +616,11 @@ tSirRetStatus lim_add_sta_mbb(tpAniSirGlobal mac, tANI_U16 assoc_id,
 
     session_entry->limPrevMlmState = session_entry->limMlmState;
     session_entry->limMlmState = eLIM_MLM_WT_ADD_STA_RSP_STATE;
+
+    MTRACE(macTrace(mac, TRACE_CODE_MLM_STATE,
+          session_entry->peSessionId, eLIM_MLM_WT_ADD_STA_RSP_STATE));
+
+    MTRACE(macTraceMsgTx(mac, session_entry->peSessionId, msg.type));
 
     if(eSIR_SUCCESS != (retCode = wdaPostCtrlMsg( mac, &msg))) {
         limLog(mac, LOGE,
@@ -670,6 +689,8 @@ void lim_handle_reassoc_mbb_success(tpAniSirGlobal mac,
      * duplicate reassoc response will be dropped.
      */
     session_entry->limMlmState = eLIM_MLM_WT_DEL_STA_RSP_STATE;
+    MTRACE(macTrace(mac, TRACE_CODE_MLM_STATE,
+              session_entry->peSessionId, eLIM_MLM_WT_DEL_STA_RSP_STATE));
 
     /* Delete sta for currently connected AP */
     ret_code = lim_del_sta_mbb(mac, sta_ds_connected_ap,
@@ -801,6 +822,9 @@ static inline void lim_process_preauth_mbb_result(tpAniSirGlobal mac,
     /* Start timer here to handle reassoc timeout */
     mac->lim.limTimers.glim_reassoc_mbb_rsp_timer.sessionId =
                                                 ft_session_entry->peSessionId;
+
+    MTRACE(macTrace(mac, TRACE_CODE_TIMER_ACTIVATE,
+             session_entry->peSessionId, eLIM_REASSOC_MBB_RSP_TIMER));
 
     if(TX_SUCCESS !=
           tx_timer_activate(&mac->lim.limTimers.glim_reassoc_mbb_rsp_timer)) {
@@ -1058,6 +1082,9 @@ void lim_perform_pre_auth_reassoc(tpAniSirGlobal mac, eHalStatus status,
     limSendAuthMgmtFrame(mac, &authFrame,
          mac->ft.ftPEContext.pFTPreAuthReq->preAuthbssId,
          LIM_NO_WEP_IN_FC, session_entry, eSIR_FALSE);
+
+    MTRACE(macTrace(mac, TRACE_CODE_TIMER_ACTIVATE,
+             session_entry->peSessionId, eLIM_PREAUTH_MBB_RSP_TIMER));
 
     if(TX_SUCCESS !=
           tx_timer_activate(&mac->lim.limTimers.glim_pre_auth_mbb_rsp_timer)) {
@@ -1629,6 +1656,8 @@ void lim_perform_post_add_sta_rsp(tpAniSirGlobal mac,
     }
 
     session_entry->limMlmState = eLIM_MLM_LINK_ESTABLISHED_STATE;
+    MTRACE(macTrace(mac, TRACE_CODE_MLM_STATE,
+          session_entry->peSessionId, eLIM_MLM_LINK_ESTABLISHED_STATE));
 
 #ifdef FEATURE_WLAN_TDLS
            /* initialize TDLS peer related data */
