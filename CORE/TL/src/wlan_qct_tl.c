@@ -6116,6 +6116,11 @@ static void WLANTL_CacheEapol(WLANTL_CbType* pTLCb, vos_pkt_t* vosTempBuff)
                "%s: Cache Eapol frame", __func__));
       pTLCb->vosEapolCachedFrame = vosTempBuff;
    }
+   else {
+      TLLOG1(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO,
+               "%s: Drop duplicate EAPOL frame", __func__));
+      vos_pkt_return_packet(vosTempBuff);
+   }
 }
 
 /*==========================================================================
@@ -6182,7 +6187,9 @@ WLANTL_RxFrames
   v_S7_t              currentAvgRSSI = 0;
   v_U8_t              ac;
 #endif
+  uint8_t            ucMPDUHLen;
   uint16_t           seq_no;
+  uint16_t           usEtherType = 0;
 
   /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
@@ -6363,6 +6370,7 @@ WLANTL_RxFrames
       ucSTAId = (v_U8_t)WDA_GET_RX_STAID( pvBDHeader );
       ucTid   = (v_U8_t)WDA_GET_RX_TID( pvBDHeader );
       uDPUSig = WDA_GET_RX_DPUSIG(pvBDHeader);
+      ucMPDUHLen = (uint8_t)WDA_GET_RX_MPDU_HEADER_LEN(pvBDHeader);
       seq_no = (uint16_t)WDA_GET_RX_REORDER_CUR_PKT_SEQ_NO(pvBDHeader);
 
       TLLOG2(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO_HIGH,
@@ -6391,9 +6399,21 @@ WLANTL_RxFrames
       /* Pre assoc cache eapol */
       if (pTLCb->preassoc_caching)
       {
-        TLLOG1(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO,
-               "WLAN TL:TL preassoc_caching is enabled seq No: %d", seq_no));
-         WLANTL_CacheEapol(pTLCb, vosTempBuff);
+         WLANTL_GetEtherType(pvBDHeader,vosTempBuff, ucMPDUHLen, &usEtherType);
+         if (WLANTL_LLC_8021X_TYPE != usEtherType)
+         {
+            VOS_TRACE(VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO,
+                      "%s: RX Frame not EAPOL EtherType %d",
+                      __func__, usEtherType);
+            vos_pkt_return_packet(vosTempBuff);
+         }
+         else
+         {
+            WLANTL_CacheEapol(pTLCb, vosTempBuff);
+            TLLOG1(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO,
+                "WLAN TL:TL preassoc_caching is enabled seq No: %d", seq_no));
+         }
+
          vosTempBuff = vosDataBuff;
          continue;
       }
