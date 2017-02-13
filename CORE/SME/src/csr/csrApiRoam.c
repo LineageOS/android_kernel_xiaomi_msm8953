@@ -5078,6 +5078,12 @@ eHalStatus csrRoamProcessCommand( tpAniSirGlobal pMac, tSmeCmd *pCommand )
         smsLog(pMac, LOG1, FL("Attempting MBB PreAuth/Reassoc Req"));
         status = csr_roam_issue_preauth_reassoc_req(pMac, sessionId,
                 pCommand->u.roamCmd.pLastRoamBss);
+        if (eHAL_STATUS_SUCCESS != status)
+        {
+            pMac->ft.ftSmeContext.is_preauth_lfr_mbb = false;
+            smsLog(pMac, LOG1, FL("is_preauth_lfr_mbb %d"),
+                    pMac->ft.ftSmeContext.is_preauth_lfr_mbb);
+        }
         break;
 #endif
 

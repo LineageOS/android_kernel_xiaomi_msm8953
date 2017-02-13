@@ -80,6 +80,18 @@ eHalStatus csr_roam_issue_preauth_reassoc_req(tHalHandle hal,
     }
 
     /*
+     * If neighborRoamState is eCSR_NEIGHBOR_ROAM_STATE_INIT
+     * by the time this API is invoked, disconnect would have happened.
+     * So, need to proceed further.
+     */
+    if (mac->roam.neighborRoamInfo.neighborRoamState ==
+                                          eCSR_NEIGHBOR_ROAM_STATE_INIT) {
+        smsLog(mac, LOGE, FL("neighborRoamState %d"),
+                          mac->roam.neighborRoamInfo.neighborRoamState);
+        return eHAL_STATUS_FAILURE;
+    }
+
+    /*
      * Save the SME Session ID here. We need it while processing
      * the preauth response.
      */
@@ -98,14 +110,6 @@ eHalStatus csr_roam_issue_preauth_reassoc_req(tHalHandle hal,
                      pal_cpu_to_be16(eWNI_SME_MBB_PRE_AUTH_REASSOC_REQ);
 
     pre_auth_req->preAuthchannelNum = bss_description->channelId;
-
-    /*
-     * Set is_preauth_lfr_mbb which will be checked in
-     * limProcessAuthFrameNoSession
-     */
-    mac->ft.ftSmeContext.is_preauth_lfr_mbb = true;
-    smsLog(mac, LOG1, FL("is_preauth_lfr_mbb %d"),
-           mac->ft.ftSmeContext.is_preauth_lfr_mbb);
 
     vos_mem_copy((void *)&pre_auth_req->currbssId,
                  (void *)session->connectedProfile.bssid, sizeof(tSirMacAddr));
@@ -155,6 +159,14 @@ eHalStatus csr_neighbor_roam_issue_preauth_reassoc(tpAniSirGlobal mac)
     }
     else
     {
+        /*
+         * Set is_preauth_lfr_mbb which will be checked in
+         * different API's.
+         */
+        mac->ft.ftSmeContext.is_preauth_lfr_mbb = true;
+        smsLog(mac, LOG1, FL("is_preauth_lfr_mbb %d"),
+                mac->ft.ftSmeContext.is_preauth_lfr_mbb);
+
         status = csrRoamEnqueuePreauth(mac,
                  neighbor_roam_info->csrSessionId,
                  neighbor_bss_node->pBssDescription,

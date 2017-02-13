@@ -277,6 +277,12 @@ static eHalStatus csrNeighborRoamTriggerHandoff(tpAniSirGlobal pMac,
         smsLog(pMac, LOG1,
                FL("Issuing preauth reassoc"));
         status = csr_neighbor_roam_issue_preauth_reassoc(pMac);
+        if (eHAL_STATUS_SUCCESS != status)
+        {
+            pMac->ft.ftSmeContext.is_preauth_lfr_mbb = false;
+            smsLog(pMac, LOG1, FL("is_preauth_lfr_mbb %d"),
+                    pMac->ft.ftSmeContext.is_preauth_lfr_mbb);
+        }
         return status;
     }
 

@@ -776,6 +776,7 @@ limHandle80211Frames(tpAniSirGlobal pMac, tpSirMsgQ limMsg, tANI_U8 *pDeferMsg)
     tANI_U8             sessionId;
     tAniBool            isFrmFt = FALSE;
     tANI_U16            fcOffset = WLANHAL_RX_BD_HEADER_SIZE;
+    tANI_S8             pe_sessionid = -1;
 
     *pDeferMsg= false;
     limGetBDfromRxPacket(pMac, limMsg->bodyptr, (tANI_U32 **)&pRxPacketInfo);
@@ -874,6 +875,24 @@ limHandle80211Frames(tpAniSirGlobal pMac, tpSirMsgQ limMsg, tANI_U8 *pDeferMsg)
             /* Normal RSSI based roaming */
             pMac->PERroamCandidatesCnt = 0;
         }
+
+        pe_sessionid = limGetInfraSessionId(pMac);
+        if (pe_sessionid != -1) {
+            psessionEntry = peFindSessionBySessionId(pMac, pe_sessionid);
+            if (psessionEntry != NULL)
+            {
+                if ((psessionEntry->limSmeState == eLIM_SME_WT_DEAUTH_STATE) ||
+                    (psessionEntry->limSmeState == eLIM_SME_WT_DISASSOC_STATE))
+                {
+                     limLog(pMac, LOG1,
+                       FL("Drop candidate ind as deauth/disassoc in progress"));
+                     goto end;
+                }
+            }
+        }
+        else
+         limLog(pMac, LOGE,
+               FL("session id doesn't exist for infra"));
 
         //send a session 0 for now - TBD
         limSendSmeCandidateFoundInd(pMac, 0);
