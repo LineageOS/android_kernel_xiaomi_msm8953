@@ -6357,19 +6357,23 @@ static tANI_BOOLEAN csrRoamProcessResults( tpAniSirGlobal pMac, tSmeCmd *pComman
                    if( CSR_IS_SESSION_VALID(pMac, sessionId) )
                    {                    
                        pSession = CSR_GET_SESSION(pMac, sessionId);
-
-                       if ( CSR_IS_INFRA_AP(&pSession->connectedProfile) )
+                       if (pSession)
                        {
-                           roamInfo.u.pConnectedProfile = &pSession->connectedProfile;
-                           vos_mem_copy(roamInfo.peerMac,
-                                        pCommand->u.roamCmd.peerMac,
-                                        sizeof(tSirMacAddr));
-                           roamInfo.reasonCode = eCSR_ROAM_RESULT_FORCED;
-                           roamInfo.statusCode = eSIR_SME_SUCCESS;
-                           status = csrRoamCallCallback(pMac, sessionId, 
-                                       &roamInfo, pCommand->u.roamCmd.roamId, 
-                                       eCSR_ROAM_LOSTLINK, eCSR_ROAM_RESULT_FORCED);
-                       }
+                           if ( CSR_IS_INFRA_AP(&pSession->connectedProfile) )
+                           {
+                                roamInfo.u.pConnectedProfile =
+                                                  &pSession->connectedProfile;
+                                vos_mem_copy(roamInfo.peerMac,
+                                                 pCommand->u.roamCmd.peerMac,
+                                                 sizeof(tSirMacAddr));
+                                roamInfo.reasonCode = eCSR_ROAM_RESULT_FORCED;
+                                roamInfo.statusCode = eSIR_SME_SUCCESS;
+                                status = csrRoamCallCallback(pMac, sessionId,
+                                         &roamInfo, pCommand->u.roamCmd.roamId,
+                                         eCSR_ROAM_LOSTLINK,
+                                         eCSR_ROAM_RESULT_FORCED);
+                           }
+                      }
                    }
                    break;
                 case eCsrLostLink1:
@@ -8175,6 +8179,12 @@ static void csrRoamingStateConfigCnfProcessor( tpAniSirGlobal pMac, tANI_U32 res
             if(pCommand->u.roamCmd.pRoamBssEntry)
             {
                 pScanResult = GET_BASE_ADDR(pCommand->u.roamCmd.pRoamBssEntry, tCsrScanResult, Link);
+                if (!pScanResult)
+                {
+                    smsLog(pMac, LOGE,
+                           FL("Failed to get base address for pScanResult"));
+                    return;
+                }
                 pBssDesc = &pScanResult->Result.BssDescriptor;
             }
             if ( csrIsBssTypeIBSS( pCommand->u.roamCmd.roamProfile.BSSType ) ||
@@ -8202,6 +8212,12 @@ static void csrRoamingStateConfigCnfProcessor( tpAniSirGlobal pMac, tANI_U32 res
                 } 
                 // If we are roaming TO an Infrastructure BSS...
                 VOS_ASSERT(pScanResult != NULL); 
+                if( !pScanResult->Result.pvIes )
+                {
+                    smsLog(pMac, LOGE, FL(" pvIes is NULL"));
+                    return;
+                }
+
                 if ( csrIsInfraBssDesc( pBssDesc ) )
                 {
                     tDot11fBeaconIEs *pIesLocal = (tDot11fBeaconIEs *)pScanResult->Result.pvIes;
@@ -11123,35 +11139,35 @@ void csrRoamWaitForKeyTimeOutHandler(void *pv)
            macTraceGetcsrRoamSubState(
            pMac->roam.curSubState[pInfo->sessionId]));
 
-    if( CSR_IS_WAIT_FOR_KEY( pMac, pInfo->sessionId ) )
+    if (pSession)
     {
+        if( CSR_IS_WAIT_FOR_KEY( pMac, pInfo->sessionId ) )
+        {
 #ifdef FEATURE_WLAN_LFR
-        if (csrNeighborRoamIsHandoffInProgress(pMac))
-        {
-            /* 
-             * Enable heartbeat timer when hand-off is in progress
-             * and Key Wait timer expired. 
-             */
-            smsLog(pMac, LOG2, "Enabling HB timer after WaitKey expiry"
-                    " (nHBCount=%d)",
-                    pMac->roam.configParam.HeartbeatThresh24);
-            ccmCfgSetInt(pMac, WNI_CFG_HEART_BEAT_THRESHOLD,
-                    pMac->roam.configParam.HeartbeatThresh24,
-                    NULL, eANI_BOOLEAN_FALSE);
-        }
+            if (csrNeighborRoamIsHandoffInProgress(pMac))
+            {
+               /*
+                * Enable heartbeat timer when hand-off is in progress
+                * and Key Wait timer expired.
+                */
+                smsLog(pMac, LOG2, "Enabling HB timer after WaitKey expiry"
+                       " (nHBCount=%d)",
+                       pMac->roam.configParam.HeartbeatThresh24);
+                ccmCfgSetInt(pMac, WNI_CFG_HEART_BEAT_THRESHOLD,
+                          pMac->roam.configParam.HeartbeatThresh24,
+                          NULL, eANI_BOOLEAN_FALSE);
+            }
 #endif
-        smsLog(pMac, LOGE, " SME pre-auth state timeout. ");
+            smsLog(pMac, LOGE, " SME pre-auth state timeout. ");
 
-        //Change the substate so command queue is unblocked.
-        if (CSR_ROAM_SESSION_MAX > pInfo->sessionId)
-        {
-            csrRoamSubstateChange(pMac, eCSR_ROAM_SUBSTATE_NONE,
-                                  pInfo->sessionId);
-        }
+            //Change the substate so command queue is unblocked.
+            if (CSR_ROAM_SESSION_MAX > pInfo->sessionId)
+            {
+                csrRoamSubstateChange(pMac, eCSR_ROAM_SUBSTATE_NONE,
+                                      pInfo->sessionId);
+            }
 
-        if (pSession)
-        {
-            if( csrIsConnStateConnectedInfra(pMac, pInfo->sessionId) ) 
+            if( csrIsConnStateConnectedInfra(pMac, pInfo->sessionId) )
             {
                 csrRoamLinkUp(pMac, pSession->connectedProfile.bssid);
                 smeProcessPendingQueue(pMac);
