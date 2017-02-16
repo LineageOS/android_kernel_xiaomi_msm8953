@@ -1537,9 +1537,6 @@ eHalStatus sme_Open(tHalHandle hHal)
 #if defined WLAN_FEATURE_VOWIFI_11R
       sme_FTOpen(pMac);
 #endif
-#ifdef WLAN_FEATURE_LFR_MBB
-
-#endif
 
       sme_p2pOpen(pMac);
       smeTraceInit(pMac);
