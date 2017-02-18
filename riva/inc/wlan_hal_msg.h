@@ -622,6 +622,11 @@ typedef enum
    WLAN_HAL_QRF_PREF_NETW_FOUND_IND          = 351,
    WLAN_HAL_CAPTURE_GET_TSF_TSTAMP           = 352,
    WLAN_HAL_CAPTURE_GET_TSF_TSTAMP_RSP       = 353,
+   /* ARP DEBUG stats*/
+   WLAN_HAL_FW_SET_CLEAR_ARP_STATS_REQ       = 354,
+   WLAN_HAL_FW_SET_CLEAR_ARP_STATS_RSP       = 355,
+   WLAN_HAL_FW_GET_ARP_STATS_REQ             = 356,
+   WLAN_HAL_FW_GET_ARP_STATS_RSP             = 357,
 
    WLAN_HAL_MSG_MAX = WLAN_HAL_MSG_TYPE_MAX_ENUM_SIZE
 }tHalHostMsgType;
@@ -6899,6 +6904,7 @@ typedef enum {
     SAP_MODE_WOW           = 64,
     SAP_OFFLOADS           = 65,
     SAP_BUFF_ALLOC         = 66,
+    NUD_DEBUG              = 68,
     MAX_FEATURE_SUPPORTED  = 128,
 } placeHolderInCapBitmap;
 
@@ -9604,6 +9610,69 @@ typedef PACKED_PRE struct PACKED_POST
    tHalMsgHeader header;
    hal_mdns_stats_offload_rsp_param_t mdns_stats_rsp_params;
 } hal_mdns_stats_offload_rsp_msg_t, *hal_mdns_stats_offload_rsp_msg;
+
+/*---------------------------------------------------------------------------
+ * WLAN_HAL_FW_SET_CLEAR_ARP_STATS_REQ
+ *--------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U8 set_clr; /*1 set and 0 reset*/
+   tANI_U8 pkt_type; /* Default 1: ARP */
+   tANI_U32 ip_addr; /*GW ipv4 address */
+} tHalStatsArpReqParams, *tpHalStatsArpReqParams;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader        header;
+   tHalStatsArpReqParams statsArpReqParams;
+} tHalStatsArpReqMsg, *tpHalStatsArpReqMsg;
+
+/*---------------------------------------------------------------------------
+ * WLAN_HAL_FW_SET_CLEAR_ARP_STATS_RSP
+ *--------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U32 status; //success or failure
+} tHalStatsArpRspParams, *tpHalStatsArpRspParams;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader        header;
+   tHalStatsArpRspParams statsArpRspParams;
+} tHalStatsArpRspMsg, *tpHalStatsArpRspMsg;
+
+/*---------------------------------------------------------------------------
+ * WLAN_HAL_FW_GET_ARP_STATS_REQ
+ *--------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U8 pkt_type; /* Furture purpose */
+} tHalStatsGetArpReqParams, *tpHalStatsGetArpReqParams;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader        header;
+   tHalStatsGetArpReqParams statsGetArpReqParams;
+} tHalStatsGetArpReqMsg, *tpHalStatsGetArpReqMsg;
+
+/*---------------------------------------------------------------------------
+ * WLAN_HAL_FW_GET_ARP_STATS_RSP
+ *--------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+    tANI_U32   status;
+    tANI_U16   dad;
+    tANI_U16   arpReqRcvdInFW;
+    tANI_U16   ackedArpReqCnt;
+    tANI_U16   arpRspCnt;
+    tANI_U8    data[1];
+} tdbugArpStatsgetRspParams, *tpdbugArpStatsgetRspParams;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader        header;
+   tdbugArpStatsgetRspParams   fwArpstatsRspParams;
+} tHalARPfwStatsRspMsg, *tpHalARPfwStatsRspMsg;
 
 #if defined(__ANI_COMPILER_PRAGMA_PACK_STACK)
 #pragma pack(pop)

@@ -9027,6 +9027,7 @@ VOS_STATUS hdd_stop_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter,
          if( hdd_connIsConnected(pstation) ||
              (pstation->conn_info.connState == eConnectionState_Connecting) )
          {
+            INIT_COMPLETION(pAdapter->disconnect_comp_var);
             if (pWextState->roamProfile.BSSType == eCSR_BSS_TYPE_START_IBSS)
                 halStatus = sme_RoamDisconnect(pHddCtx->hHal,
                                              pAdapter->sessionId,
@@ -11821,6 +11822,7 @@ int hdd_wlan_startup(struct device *dev )
 
 
    hdd_init_ll_stats_ctx(pHddCtx);
+   hdd_init_nud_stats_ctx(pHddCtx);
 
 #ifdef CONFIG_ENABLE_LINUX_REG
    init_completion(&pHddCtx->linux_reg_req);
@@ -12658,6 +12660,9 @@ int hdd_wlan_startup(struct device *dev )
 
    pHddCtx->is_ap_mode_wow_supported =
               sme_IsFeatureSupportedByFW(SAP_MODE_WOW);
+
+   hdd_assoc_registerFwdEapolCB(pVosContext);
+
    goto success;
 
 err_reg_netdev:
