@@ -28251,6 +28251,8 @@ WDI_ProcessPrefNetworkFoundInd
     /*Notify UMAC*/
     pWDICtx->wdiLowLevelIndCB( &wdiInd, pWDICtx->pIndUserData );
   }
+  else
+      vos_mem_free( wdiInd.wdiIndicationData.wdiPrefNetworkFoundInd.pData);
 
   return WDI_STATUS_SUCCESS;
 }
