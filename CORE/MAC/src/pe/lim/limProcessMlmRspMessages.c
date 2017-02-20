@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1068,8 +1068,15 @@ limProcessMlmReassocInd(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
     }
     sirStoreU16N((tANI_U8 *) &pSirSmeReassocInd->messageType,
                  eWNI_SME_REASSOC_IND);
-    limReassocIndSerDes(pMac, (tpLimMlmReassocInd) pMsgBuf,
-                        (tANI_U8 *) &(pSirSmeReassocInd->length), psessionEntry);
+    if (limReassocIndSerDes(pMac, (tpLimMlmReassocInd) pMsgBuf,
+                        (tANI_U8 *) &(pSirSmeReassocInd->length),
+                         psessionEntry, sizeof(tSirSmeReassocInd))
+                        != eSIR_SUCCESS)
+    {
+        limLog(pMac, LOGE,FL(" Received SME message with invalid rem length"));
+        vos_mem_free(pSirSmeReassocInd);
+        return;
+    }
 
     // Required for indicating the frames to upper layer
     pSirSmeReassocInd->assocReqLength = ((tpLimMlmReassocInd) pMsgBuf)->assocReqLength;
@@ -1141,8 +1148,14 @@ limProcessMlmAuthInd(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
         return;
     }
     limCopyU16((tANI_U8 *) &pSirSmeAuthInd->messageType, eWNI_SME_AUTH_IND);
-    limAuthIndSerDes(pMac, (tpLimMlmAuthInd) pMsgBuf,
-                        (tANI_U8 *) &(pSirSmeAuthInd->length));
+    if (limAuthIndSerDes(pMac, (tpLimMlmAuthInd) pMsgBuf,
+                        (tANI_U8 *) &(pSirSmeAuthInd->length),
+                         sizeof(tSirSmeAuthInd)) != eSIR_SUCCESS)
+    {
+        limLog(pMac, LOGE,FL(" Received SME message with invalid rem length"));
+        vos_mem_free(pSirSmeAuthInd);
+        return;
+    }
     msgQ.type = eWNI_SME_AUTH_IND;
     msgQ.bodyptr = pSirSmeAuthInd;
     msgQ.bodyval = 0;
