@@ -6227,7 +6227,7 @@ WLANTL_RxFrames
    ---------------------------------------------------------------------*/
   vosTempBuff = vosDataBuff;
 
-  while ( NULL != vosTempBuff )
+  while (NULL != vosDataBuff)
   {
     broadcast = VOS_FALSE;
     selfBcastLoopback = VOS_FALSE; 
