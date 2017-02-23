@@ -1199,6 +1199,11 @@ typedef struct tagCsrConfigParam
     v_U32_t PERtimerThreshold;
     v_U32_t PERroamTriggerPercent;
 #endif
+
+#ifdef WLAN_FEATURE_LFR_MBB
+    tANI_BOOLEAN enable_lfr_mbb;
+#endif
+
 #endif
 
     tANI_BOOLEAN ignorePeerErpInfo;
@@ -1765,7 +1770,6 @@ eHalStatus csrSetBand(tHalHandle hHal, eCsrBand eBand);
 
 ---------------------------------------------------------------------------*/
 eCsrBand csrGetCurrentBand (tHalHandle hHal);
-
 
 #endif
 

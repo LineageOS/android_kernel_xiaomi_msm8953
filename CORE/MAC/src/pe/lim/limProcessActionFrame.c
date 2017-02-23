@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -67,6 +67,10 @@
 #include "eseApi.h"
 #endif
 #include "wlan_qct_wda.h"
+
+#ifdef WLAN_FEATURE_LFR_MBB
+#include "lim_mbb.h"
+#endif
 
 
 #define BA_DEFAULT_TX_BUFFER_SIZE 64
@@ -169,7 +173,16 @@ void limStopTxAndSwitchChannel(tpAniSirGlobal pMac, tANI_U8 sessionId)
 tSirRetStatus limStartChannelSwitch(tpAniSirGlobal pMac, tpPESession psessionEntry)
 {
     limLog(pMac, LOG1, FL(" ENTER"));
-    
+
+#ifdef WLAN_FEATURE_LFR_MBB
+    if (lim_is_mbb_reassoc_in_progress(pMac, psessionEntry))
+    {
+        limLog(pMac, LOGE,
+             FL("Ignore channel switch as LFR MBB in progress"));
+        return eSIR_SUCCESS;
+    }
+#endif
+
     /*If channel switch is already running and it is on a different session, just return*/  
     /*This need to be removed for MCC */
     if( limIsChanSwitchRunning (pMac) &&

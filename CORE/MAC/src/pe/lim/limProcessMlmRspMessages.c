@@ -61,6 +61,10 @@
 #include "wlan_qct_wda.h"
 #include "vos_utils.h"
 
+#ifdef WLAN_FEATURE_LFR_MBB
+#include "lim_mbb.h"
+#endif
+
 static void limHandleSmeJoinResult(tpAniSirGlobal, tSirResultCodes, tANI_U16,tpPESession);
 static void limHandleSmeReaasocResult(tpAniSirGlobal, tSirResultCodes, tANI_U16, tpPESession);
 void limProcessMlmScanCnf(tpAniSirGlobal, tANI_U32 *);
@@ -1981,6 +1985,12 @@ void limProcessMlmAddStaRsp( tpAniSirGlobal pMac, tpSirMsgQ limMsgQ,tpPESession 
         limProcessBtAmpApMlmAddStaRsp(pMac, limMsgQ,psessionEntry);
         return;
     }
+#ifdef WLAN_FEATURE_LFR_MBB
+        if (pMac->ft.ftSmeContext.is_preauth_lfr_mbb) {
+            lim_process_sta_mlm_add_sta_rsp_mbb(pMac, limMsgQ, psessionEntry);
+            return;
+        }
+#endif
     limProcessStaMlmAddStaRsp(pMac, limMsgQ,psessionEntry);
 }
 void limProcessStaMlmAddStaRsp( tpAniSirGlobal pMac, tpSirMsgQ limMsgQ ,tpPESession psessionEntry)
@@ -2157,6 +2167,13 @@ void limProcessStaMlmDelBssRsp( tpAniSirGlobal pMac, tpSirMsgQ limMsgQ,tpPESessi
     tpDeleteBssParams pDelBssParams =   (tpDeleteBssParams) limMsgQ->bodyptr;
     tpDphHashNode pStaDs =              dphGetHashEntry(pMac, DPH_STA_HASH_INDEX_PEER, &psessionEntry->dph.dphHashTable);
     tSirResultCodes statusCode =        eSIR_SME_SUCCESS;
+
+#ifdef WLAN_FEATURE_LFR_MBB
+        if (pMac->ft.ftSmeContext.is_preauth_lfr_mbb) {
+            lim_process_sta_mlm_del_bss_rsp_mbb(pMac, limMsgQ, psessionEntry);
+            return;
+        }
+#endif
 
     if (NULL == pDelBssParams)
     {
@@ -2430,6 +2447,13 @@ void limProcessStaMlmDelStaRsp( tpAniSirGlobal pMac, tpSirMsgQ limMsgQ,tpPESessi
     tSirResultCodes   statusCode    = eSIR_SME_SUCCESS;
     tpDeleteStaParams pDelStaParams = (tpDeleteStaParams) limMsgQ->bodyptr;
     tpDphHashNode     pStaDs        = NULL;
+
+#ifdef WLAN_FEATURE_LFR_MBB
+    if (pMac->ft.ftSmeContext.is_preauth_lfr_mbb) {
+        lim_process_sta_mlm_del_sta_rsp_mbb(pMac, limMsgQ, psessionEntry);
+        return;
+    }
+#endif
 
     if(NULL == pDelStaParams )
     {
@@ -3430,9 +3454,16 @@ void limProcessMlmAddBssRsp( tpAniSirGlobal pMac, tpSirMsgQ limMsgQ )
             else
             limProcessApMlmAddBssRsp( pMac,limMsgQ);
         }
-        else
+        else {
+#ifdef WLAN_FEATURE_LFR_MBB
+        if (pMac->ft.ftSmeContext.is_preauth_lfr_mbb) {
+            lim_process_sta_mlm_add_bss_rsp_mbb(pMac, limMsgQ, psessionEntry);
+            return;
+        }
+#endif
             /* Called while processing assoc response */
             limProcessStaMlmAddBssRsp( pMac, limMsgQ,psessionEntry);
+        }
     }
 
     if(limIsInMCC(pMac))

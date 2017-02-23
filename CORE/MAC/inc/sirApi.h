@@ -6338,4 +6338,30 @@ typedef struct {
     void * tsf_rsp_cb_ctx;
 }tSirCapTsfParams,*tpSirCapTsfParams;
 
+#ifdef WLAN_FEATURE_LFR_MBB
+
+/**
+ * enum csr_roam_op_code - Operation to be done by the callback.
+ * @SIR_ROAMING_DEREGISTER_STA: Deregister the old STA after roaming.
+ * @SIR_STOP_ROAM_OFFLOAD_SCAN : sends RSO stop
+ * @SIR_PREPARE_REASSOC_REQ: prepares reassoc request
+ */
+enum csr_roam_op_code {
+    SIR_ROAMING_DEREGISTER_STA,
+    SIR_STOP_ROAM_OFFLOAD_SCAN,
+    SIR_PREPARE_REASSOC_REQ,
+};
+
+/**
+ * enum sir_roam_cleanup_type - Type of cleanup needs to be performed.
+ * @SIR_MBB_DISCONNECTED: Entire CSR cleanup for connected AP
+ * needs to be performed
+ * @SIR_MBB_CONNECTED: No need to perform CSR cleanup for connected AP.
+ */
+enum sir_roam_cleanup_type {
+    SIR_MBB_DISCONNECTED,
+    SIR_MBB_CONNECTED,
+};
+#endif
+
 #endif /* __SIR_API_H */

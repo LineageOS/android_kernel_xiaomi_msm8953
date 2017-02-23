@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2013, 2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -81,6 +81,10 @@ typedef struct sSirFTPreAuthRsp
    tANI_U8          ft_ies[MAX_FTIE_SIZE];
    tANI_U16         ric_ies_length;
    tANI_U8          ric_ies[MAX_FTIE_SIZE];
+#ifdef WLAN_FEATURE_LFR_MBB
+   enum sir_roam_cleanup_type reason;
+   tCsrRoamInfo *roam_info;
+#endif
 } tSirFTPreAuthRsp, *tpSirFTPreAuthRsp;
 
 /*--------------------------------------------------------------------------

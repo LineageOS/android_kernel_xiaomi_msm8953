@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -72,6 +72,9 @@
 #if defined(FEATURE_WLAN_ESE) && !defined(FEATURE_WLAN_ESE_UPLOAD)
 #include "csrEse.h"
 #endif
+#ifdef WLAN_FEATURE_LFR_MBB
+#include "csr_roam_mbb.h"
+#endif
 
 #define WLAN_FEATURE_NEIGHBOR_ROAMING_DEBUG 1
 #ifdef WLAN_FEATURE_NEIGHBOR_ROAMING_DEBUG
@@ -112,6 +115,9 @@ v_U8_t *csrNeighborRoamStateToString(v_U8_t state)
         CASE_RETURN_STRING( eCSR_NEIGHBOR_ROAM_STATE_REPORT_SCAN );
         CASE_RETURN_STRING( eCSR_NEIGHBOR_ROAM_STATE_PREAUTHENTICATING );
         CASE_RETURN_STRING( eCSR_NEIGHBOR_ROAM_STATE_PREAUTH_DONE );
+#ifdef WLAN_FEATURE_LFR_MBB
+        CASE_RETURN_STRING(eCSR_NEIGHBOR_ROAM_STATE_MBB_PREAUTH_REASSOC);
+#endif
             default:
         return "eCSR_NEIGHBOR_ROAM_STATE_UNKNOWN";
     }
@@ -253,6 +259,36 @@ static eHalStatus csrNeighborRoamTriggerHandoff(tpAniSirGlobal pMac,
                                           tpCsrNeighborRoamControlInfo pNeighborRoamInfo)
 {
     eHalStatus status = eHAL_STATUS_SUCCESS;
+
+#ifdef WLAN_FEATURE_LFR_MBB
+    smsLog(pMac, LOG1, FL("enable_lfr_mbb %d is mbb supported %d"),
+           pMac->roam.configParam.enable_lfr_mbb,
+           sme_IsFeatureSupportedByFW(MAKE_BEFORE_BREAK));
+
+    if (pMac->roam.configParam.enable_lfr_mbb
+        && sme_IsFeatureSupportedByFW(MAKE_BEFORE_BREAK)
+#ifdef WLAN_FEATURE_VOWIFI_11R
+        && (!pNeighborRoamInfo->is11rAssoc)
+#endif
+#ifdef FEATURE_WLAN_ESE
+        && (!pNeighborRoamInfo->isESEAssoc)
+#endif
+    ) {
+        smsLog(pMac, LOG1,
+               FL("Issuing preauth reassoc"));
+        status = csr_neighbor_roam_issue_preauth_reassoc(pMac);
+        if (eHAL_STATUS_SUCCESS != status)
+        {
+            pMac->ft.ftSmeContext.is_preauth_lfr_mbb = false;
+            smsLog(pMac, LOG1, FL("is_preauth_lfr_mbb %d"),
+                    pMac->ft.ftSmeContext.is_preauth_lfr_mbb);
+        }
+        return status;
+    }
+
+
+#endif
+
 #ifdef WLAN_FEATURE_VOWIFI_11R
     if ((pNeighborRoamInfo->is11rAssoc)
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
@@ -4442,6 +4478,10 @@ eHalStatus csrNeighborRoamIndicateDisconnect(tpAniSirGlobal pMac, tANI_U8 sessio
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
             }
 #endif
+
+#ifdef WLAN_FEATURE_LFR_MBB
+            csr_stop_preauth_reassoc_mbb_timer(pMac);
+#endif
             break;
 
         case eCSR_NEIGHBOR_ROAM_STATE_CFG_CHAN_LIST_SCAN:
@@ -4560,6 +4600,9 @@ eHalStatus csrNeighborRoamIndicateConnect(tpAniSirGlobal pMac, tANI_U8 sessionId
 
     switch (pNeighborRoamInfo->neighborRoamState)
     {
+#ifdef WLAN_FEATURE_LFR_MBB
+        case eCSR_NEIGHBOR_ROAM_STATE_MBB_PREAUTH_REASSOC:
+#endif
         case eCSR_NEIGHBOR_ROAM_STATE_REASSOCIATING:
             if (VOS_STATUS_SUCCESS != vosStatus)
             {
@@ -5282,7 +5325,14 @@ tANI_BOOLEAN csrNeighborMiddleOfRoaming (tHalHandle hHal)
                        (eCSR_NEIGHBOR_ROAM_STATE_PREAUTHENTICATING == pMac->roam.neighborRoamInfo.neighborRoamState) ||
                        (eCSR_NEIGHBOR_ROAM_STATE_PREAUTH_DONE == pMac->roam.neighborRoamInfo.neighborRoamState) ||
                        (eCSR_NEIGHBOR_ROAM_STATE_REPORT_SCAN == pMac->roam.neighborRoamInfo.neighborRoamState) ||
-                       (eCSR_NEIGHBOR_ROAM_STATE_CFG_CHAN_LIST_SCAN == pMac->roam.neighborRoamInfo.neighborRoamState);
+                       (eCSR_NEIGHBOR_ROAM_STATE_CFG_CHAN_LIST_SCAN == pMac->roam.neighborRoamInfo.neighborRoamState)
+
+#ifdef WLAN_FEATURE_LFR_MBB
+                       || (eCSR_NEIGHBOR_ROAM_STATE_MBB_PREAUTH_REASSOC ==
+                                pMac->roam.neighborRoamInfo.neighborRoamState);
+#else
+                       ;
+#endif
     return (val);
 }
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD

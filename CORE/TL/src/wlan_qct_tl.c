@@ -247,6 +247,7 @@ int bdPduInterruptGetThreshold = WLANTL_BD_PDU_INTERRUPT_GET_THRESHOLD;
 #define WLANTL_PER_THRESHOLD 5
 #define WLANTL_QUEUE_THRESHOLD 60
 #define WLANTL_GOOD_STA_WEIGHT 1
+#define WLANTL_WEIGHT_THRESHOLD 50
 
 /*----------------------------------------------------------------------------
  * Type Declarations
@@ -6056,14 +6057,27 @@ static bool WLANTL_FlowControl(WLANTL_CbType* pTLCb, vos_pkt_t* pvosDataBuff)
    for (i = 0; i < num_stas; i++) {
       pTLCb->atlSTAClients[staid[i]]->weight =
                              max_rate/pTLCb->atlSTAClients[staid[i]]->trate;
-      if (pTLCb->atlSTAClients[staid[i]]->weight >= WLANTL_RATE_RATIO_THRESHOLD
-          && !pTLCb->atlSTAClients[staid[i]]->set_flag) {
+      if (pTLCb->atlSTAClients[staid[i]]->weight >=
+          WLANTL_RATE_RATIO_THRESHOLD) {
+         if (!pTLCb->atlSTAClients[staid[i]]->set_flag) {
             vos_set_hdd_bad_sta(staid[i]);
             pTLCb->atlSTAClients[staid[i]]->set_flag = true;
+         }
+         /**
+          * If station's link becomes very bad rssi below -90dbm then because
+          * of high PER rate high number of packets are stuck in BTQM which is
+          * affecting the good peers throughput. So throttle further the bad
+          * link traffic.
+          */
+         if ((pTLCb->atlSTAClients[staid[i]]->weight >
+              WLANTL_WEIGHT_THRESHOLD) &&
+             (pTLCb->atlSTAClients[staid[i]]->queue >
+              WLANTL_QUEUE_THRESHOLD))
+            pTLCb->atlSTAClients[staid[i]]->weight *= 2;
       }
       if (pTLCb->atlSTAClients[staid[i]]->weight <
           WLANTL_RATE_RATIO_THRESHOLD) {
-         if (pTLCb->atlSTAClients[staid[i]]->per > WLANTL_PER_THRESHOLD &&
+         if (pTLCb->atlSTAClients[staid[i]]->per >= WLANTL_PER_THRESHOLD &&
              pTLCb->atlSTAClients[staid[i]]->queue > WLANTL_QUEUE_THRESHOLD) {
              vos_set_hdd_bad_sta(staid[i]);
              pTLCb->atlSTAClients[staid[i]]->set_flag = true;

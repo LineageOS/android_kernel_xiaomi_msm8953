@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2015, 2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -51,6 +51,9 @@
 #include "limFT.h"
 #endif
 #include "vos_utils.h"
+#ifdef WLAN_FEATURE_LFR_MBB
+#include "lim_mbb.h"
+#endif
 
 
 /**
@@ -1873,15 +1876,33 @@ tSirRetStatus limProcessAuthFrameNoSession(tpAniSirGlobal pMac, tANI_U8 *pBd, vo
     limLog(pMac, LOG1, FL("Pre-Auth response received from neighbor"));
     limLog(pMac, LOG1, FL("Pre-Auth done state"));
 #endif
+
+    limLog(pMac, LOG1, FL("is_preauth_lfr_mbb %d"),
+                          pMac->ft.ftSmeContext.is_preauth_lfr_mbb);
+
     // Stopping timer now, that we have our unicast from the AP
     // of our choice.
-    limDeactivateAndChangeTimer(pMac, eLIM_FT_PREAUTH_RSP_TIMER);
+    if (!pMac->ft.ftSmeContext.is_preauth_lfr_mbb)
+        limDeactivateAndChangeTimer(pMac, eLIM_FT_PREAUTH_RSP_TIMER);
+
+#ifdef WLAN_FEATURE_LFR_MBB
+    if (pMac->ft.ftSmeContext.is_preauth_lfr_mbb)
+        limDeactivateAndChangeTimer(pMac, eLIM_PREAUTH_MBB_RSP_TIMER);
+#endif
 
 
     // Save off the auth resp.
     if ((sirConvertAuthFrame2Struct(pMac, pBody, frameLen, &rxAuthFrame) != eSIR_SUCCESS))
     {
         limLog(pMac, LOGE, FL("failed to convert Auth frame to struct"));
+
+#ifdef WLAN_FEATURE_LFR_MBB
+        if (pMac->ft.ftSmeContext.is_preauth_lfr_mbb) {
+            lim_handle_pre_auth_mbb_rsp(pMac, eSIR_FAILURE, psessionEntry);
+            return eSIR_FAILURE;
+        }
+#endif
+
         limHandleFTPreAuthRsp(pMac, eSIR_FAILURE, NULL, 0, psessionEntry);
         return eSIR_FAILURE;
     }
@@ -1920,6 +1941,13 @@ tSirRetStatus limProcessAuthFrameNoSession(tpAniSirGlobal pMac, tANI_U8 *pBd, vo
 #endif
             break;
     }
+
+#ifdef WLAN_FEATURE_LFR_MBB
+        if (pMac->ft.ftSmeContext.is_preauth_lfr_mbb) {
+            lim_handle_pre_auth_mbb_rsp(pMac, ret_status, psessionEntry);
+            return ret_status;
+        }
+#endif
 
     // Send the Auth response to SME
     limHandleFTPreAuthRsp(pMac, ret_status, pBody, frameLen, psessionEntry);
