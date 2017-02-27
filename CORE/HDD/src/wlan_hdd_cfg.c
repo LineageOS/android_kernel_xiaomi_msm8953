@@ -6131,7 +6131,8 @@ VOS_STATUS hdd_set_sme_config( hdd_context_t *pHddCtx )
    smeConfig->csrConfig.PERRoamFullScanThreshold =
                    pConfig->PERRoamFullScanThreshold * -1;
    smeConfig->csrConfig.PERroamTriggerPercent = pConfig->PERroamTriggerPercent;
-
+   smeConfig->csrConfig.PERMinRssiThresholdForRoam =
+                   pConfig->PERMinRssiThresholdForRoam;
 
    if (0 == smeConfig->csrConfig.isRoamOffloadScanEnabled)
    {
