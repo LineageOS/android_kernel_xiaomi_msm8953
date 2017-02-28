@@ -1096,6 +1096,7 @@ typedef struct sAniSirGlobal
     uint32_t sap_auth_offload_sec_type;
 #endif /* SAP_AUTH_OFFLOAD */
    bool max_power_cmd_pending;
+   uint32_t sta_auth_retries_for_code17;
 } tAniSirGlobal;
 
 #ifdef FEATURE_WLAN_TDLS
