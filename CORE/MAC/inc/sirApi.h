@@ -6364,4 +6364,11 @@ enum sir_roam_cleanup_type {
 };
 #endif
 
+/**
+ * struct tDelBaParams - Del BA Session req
+ * @session_id: adapter session id
+ */
+typedef struct {
+    tANI_U8 session_id;
+}tDelBaParams,*ptDelBaParams;
 #endif /* __SIR_API_H */

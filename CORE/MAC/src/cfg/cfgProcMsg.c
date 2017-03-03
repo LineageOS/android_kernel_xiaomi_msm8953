@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1723,7 +1723,11 @@ tAniSirCgStatic cfgStatic[CFG_PARAM_MAX_NUM] =
      WNI_CFG_ENABLE_UNITS_BWAIT_STAMIN,
      WNI_CFG_ENABLE_UNITS_BWAIT_STAMAX,
      WNI_CFG_ENABLE_UNITS_BWAIT_STADEF},
-
+    {WNI_CFG_ENABLE_TX_RX_AGGREGATION,
+     CFG_CTL_VALID | CFG_CTL_RE | CFG_CTL_WE | CFG_CTL_INT,
+     WNI_CFG_ENABLE_TX_RX_AGGREGATION_MIN,
+     WNI_CFG_ENABLE_TX_RX_AGGREGATION_MAX,
+     WNI_CFG_ENABLE_TX_RX_AGGREGATION_DEF},
 };
 
 tAniSirCfgStaticString cfgStaticString[CFG_MAX_STATIC_STRING] =

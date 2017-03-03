@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -395,7 +395,8 @@ enum {
      WNI_CFG_ENABLE_UNITS_BWAIT,
      WNI_CFG_ENABLE_CONC_BMISS,
      WNI_CFG_BTC_DISABLE_WLAN_LINK_CRITICAL,
-     WNI_CFG_DISABLE_SCAN_DURING_SCO
+     WNI_CFG_DISABLE_SCAN_DURING_SCO,
+     WNI_CFG_ENABLE_TX_RX_AGGREGATION
 };
 
 /*
@@ -1936,9 +1937,12 @@ enum {
 #define WNI_CFG_DISABLE_SCAN_DURING_SCO_MAX   1
 #define WNI_CFG_DISABLE_SCAN_DURING_SCO_DEF   0
 
+#define WNI_CFG_ENABLE_TX_RX_AGGREGATION_MIN  0
+#define WNI_CFG_ENABLE_TX_RX_AGGREGATION_MAX  1
+#define WNI_CFG_ENABLE_TX_RX_AGGREGATION_DEF  1
 
-#define CFG_PARAM_MAX_NUM        362
-#define CFG_STA_IBUF_MAX_SIZE    296
+#define CFG_PARAM_MAX_NUM        363
+#define CFG_STA_IBUF_MAX_SIZE    297
 #define CFG_STA_SBUF_MAX_SIZE    3389
 
 #define CFG_STA_MAGIC_DWORD    0xbeefbeef

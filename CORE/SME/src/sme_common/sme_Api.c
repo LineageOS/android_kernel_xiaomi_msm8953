@@ -15066,6 +15066,57 @@ eHalStatus sme_capture_tsf_req(tHalHandle hHal, tSirCapTsfParams cap_tsf_params)
     return(status);
 }
 
+eHalStatus sme_del_sta_ba_session_req(tHalHandle hHal,
+                                      tDelBaParams sta_del_params)
+{
+    eHalStatus          status    = eHAL_STATUS_SUCCESS;
+    tpAniSirGlobal      pMac      = PMAC_STRUCT(hHal);
+    vos_msg_t           vosMessage;
+    ptDelBaParams del_params = NULL;
+    VOS_STATUS vos_status;
+    tCsrRoamSession *pSession;
+
+    MTRACE(vos_trace(VOS_MODULE_ID_SME,
+                     TRACE_CODE_SME_DEL_STA_BA_SESSION_REQ, NO_SESSION, 0));
+    if (eHAL_STATUS_SUCCESS == ( status = sme_AcquireGlobalLock(&pMac->sme)))
+    {
+        pSession = CSR_GET_SESSION(pMac, sta_del_params.session_id);
+        if (!pSession)
+        {
+            smsLog(pMac, LOGE, FL("session not found"));
+            sme_ReleaseGlobalLock( &pMac->sme );
+            return eHAL_STATUS_FAILURE;
+        }
+
+        del_params = (ptDelBaParams) vos_mem_malloc(sizeof(*del_params));
+
+        if (NULL == del_params)
+        {
+           VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+                     "%s: Not able to allocate memory for sme_del_sta_ba_session_req", __func__);
+           sme_ReleaseGlobalLock( &pMac->sme );
+           return eHAL_STATUS_FAILURE;
+        }
+        vos_mem_copy(&del_params->session_id, &pSession->sessionId,
+                     sizeof(del_params->session_id));
+
+        vosMessage.bodyptr = del_params;
+        vosMessage.type    = eWNI_SME_DEL_BA_SES_REQ;
+
+        vos_status = vos_mq_post_message(VOS_MQ_ID_PE, &vosMessage);
+
+        if (!VOS_IS_STATUS_SUCCESS(vos_status))
+        {
+           VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+                     "%s: Post Set TM Level MSG fail", __func__);
+           vos_mem_free(del_params);
+           status = eHAL_STATUS_FAILURE;
+        }
+        sme_ReleaseGlobalLock( &pMac->sme );
+    }
+    return(status);
+}
+
 /**
  * sme_get_tsf_req() - send tsf get request to firmware
  * @hHal: hal handle.

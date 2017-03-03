@@ -395,6 +395,7 @@ enum eWniMsgTypes
     eWNI_SME_MBB_PRE_AUTH_REASSOC_RSP,
 #endif
 
+    eWNI_SME_DEL_BA_SES_REQ,
     eWNI_SME_MSG_TYPES_END
 };
 
