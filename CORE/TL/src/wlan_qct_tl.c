@@ -6078,9 +6078,11 @@ static bool WLANTL_FlowControl(WLANTL_CbType* pTLCb, vos_pkt_t* pvosDataBuff)
       if (pTLCb->atlSTAClients[staid[i]]->weight <
           WLANTL_RATE_RATIO_THRESHOLD) {
          if (pTLCb->atlSTAClients[staid[i]]->per >= WLANTL_PER_THRESHOLD &&
-             pTLCb->atlSTAClients[staid[i]]->queue > WLANTL_QUEUE_THRESHOLD) {
-             vos_set_hdd_bad_sta(staid[i]);
-             pTLCb->atlSTAClients[staid[i]]->set_flag = true;
+             pTLCb->atlSTAClients[staid[i]]->queue > WLANTL_QUEUE_THRESHOLD
+             && !pTLCb->atlSTAClients[staid[i]]->set_flag) {
+            pTLCb->atlSTAClients[staid[i]]->weight *= 2;
+            vos_set_hdd_bad_sta(staid[i]);
+            pTLCb->atlSTAClients[staid[i]]->set_flag = true;
          }
          else if (pTLCb->atlSTAClients[staid[i]]->set_flag) {
             vos_reset_hdd_bad_sta(staid[i]);
