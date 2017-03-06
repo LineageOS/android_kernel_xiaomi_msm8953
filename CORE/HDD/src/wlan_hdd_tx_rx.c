@@ -903,6 +903,24 @@ int __hdd_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
          return NETDEV_TX_OK;
       }
    }
+
+   if (pHddCtx->bad_sta[STAId]) {
+      hdd_list_node_t *anchor = NULL;
+      skb_list_node_t *pktNode = NULL;
+      struct sk_buff *fskb = NULL;
+
+      if (pAdapter->wmm_tx_queue[qid].count >=
+          pAdapter->wmm_tx_queue[qid].max_size / 2) {
+         hdd_list_remove_front(&pAdapter->wmm_tx_queue[qid],
+                               &anchor);
+         pktNode = list_entry(anchor, skb_list_node_t, anchor);
+         fskb = pktNode->skb;
+         kfree_skb(fskb);
+         ++pAdapter->stats.tx_dropped;
+         ++pAdapter->hdd_stats.hddTxRxStats.txXmitDropped;
+      }
+   }
+
    //If we have already reached the max queue size, disable the TX queue
    if ( pAdapter->wmm_tx_queue[qid].count == pAdapter->wmm_tx_queue[qid].max_size)
    {
