@@ -358,7 +358,7 @@ typedef enum
  * supported by rome/prima hardware
  */
 #define MIN_TX_PWR_CAP    8
-#define MAX_TX_PWR_CAP    30
+#define MAX_TX_PWR_CAP    22
 
 /* Moving the miscellaneous defination required by UMAC are moved here from 
  * volansdefs.h */
