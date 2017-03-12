@@ -2092,6 +2092,14 @@ __limProcessSmeJoinReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
                         " max tx = %d", regMax, localPowerConstraint,
                           psessionEntry->maxTxPower );
 
+        if (pSmeJoinReq->powerCap.maxTxPower > psessionEntry->maxTxPower)
+        {
+            pSmeJoinReq->powerCap.maxTxPower = psessionEntry->maxTxPower;
+            VOS_TRACE(VOS_MODULE_ID_PE, VOS_TRACE_LEVEL_INFO,
+                   "Update MaxTxPower in join Req to %d",
+                    pSmeJoinReq->powerCap.maxTxPower);
+        }
+
         if (pMac->lim.gLimCurrentBssUapsd)
         {
             pMac->lim.gUapsdPerAcBitmask = psessionEntry->pLimJoinReq->uapsdPerAcBitmask;

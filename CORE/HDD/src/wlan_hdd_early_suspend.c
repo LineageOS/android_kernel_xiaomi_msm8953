@@ -98,7 +98,7 @@ static eHalStatus g_full_pwr_status;
 static eHalStatus g_standby_status;
 
 extern VOS_STATUS hdd_post_voss_start_config(hdd_context_t* pHddCtx);
-extern void hdd_wlan_initial_scan(hdd_context_t *pHddCtx);
+extern void hdd_wlan_initial_scan(hdd_adapter_t *pAdapter);
 
 extern struct notifier_block hdd_netdev_notifier;
 extern tVOS_CON_MODE hdd_get_conparam ( void );
@@ -489,7 +489,7 @@ VOS_STATUS hdd_exit_deep_sleep(hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter)
    pHddCtx->hdd_ps_state = eHDD_SUSPEND_NONE;
 
    //Trigger the initial scan
-   hdd_wlan_initial_scan(pHddCtx);
+   hdd_wlan_initial_scan(pAdapter);
 
    return VOS_STATUS_SUCCESS;
 
@@ -2162,6 +2162,30 @@ static void hdd_ssr_timer_start(int msec)
     ssr_timer_started = true;
 }
 
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
+/**
+ * hdd_wlan_ssr_shutdown_event()- send ssr shutdown state
+ *
+ * This Function send send ssr shutdown state diag event
+ *
+ * Return: void.
+ */
+static void hdd_wlan_ssr_shutdown_event(void)
+{
+	WLAN_VOS_DIAG_EVENT_DEF(ssr_shutdown,
+				struct host_event_wlan_ssr_shutdown);
+	vos_mem_zero(&ssr_shutdown, sizeof(ssr_shutdown));
+	ssr_shutdown.status = SSR_SUB_SYSTEM_SHUTDOWN;
+	WLAN_VOS_DIAG_EVENT_REPORT(&ssr_shutdown,
+				EVENT_WLAN_SSR_SHUTDOWN_SUBSYSTEM);
+}
+#else
+static inline void hdd_wlan_ssr_shutdown_event(void)
+{
+
+};
+#endif
+
 /* the HDD interface to WLAN driver shutdown,
  * the primary shutdown function in SSR
  */
@@ -2198,7 +2222,6 @@ VOS_STATUS hdd_wlan_shutdown(void)
    {
         vos_timer_stop(&pHddCtx->tx_rx_trafficTmr);
    }
-
    vos_flush_delayed_work(&pHddCtx->spoof_mac_addr_work);
    vos_flush_work(&pHddCtx->sap_start_work);
    hdd_reset_all_adapters(pHddCtx);
@@ -2347,6 +2370,7 @@ VOS_STATUS hdd_wlan_shutdown(void)
       hddLog(VOS_TRACE_LEVEL_ERROR, "%s: failed to free power on lock",
                                            __func__);
    }
+   hdd_wlan_ssr_shutdown_event();
    hddLog(VOS_TRACE_LEVEL_FATAL, "%s: WLAN driver shutdown complete"
                                    ,__func__);
    return VOS_STATUS_SUCCESS;
@@ -2453,6 +2477,29 @@ static void hdd_ssr_restart_sap(hdd_context_t *hdd_ctx)
 
 	EXIT();
 }
+
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
+/**
+* hdd_wlan_ssr_reinit_event()- send ssr reinit state
+*
+* This Function send send ssr reinit state diag event
+*
+* Return: void.
+*/
+static void hdd_wlan_ssr_reinit_event(void)
+{
+	WLAN_VOS_DIAG_EVENT_DEF(ssr_reinit, struct host_event_wlan_ssr_reinit);
+	vos_mem_zero(&ssr_reinit, sizeof(ssr_reinit));
+	ssr_reinit.status = SSR_SUB_SYSTEM_REINIT;
+	WLAN_VOS_DIAG_EVENT_REPORT(&ssr_reinit,
+					EVENT_WLAN_SSR_REINIT_SUBSYSTEM);
+}
+#else
+static inline void hdd_wlan_ssr_reinit_event(void)
+{
+
+}
+#endif
 
 /* the HDD interface to WLAN driver re-init.
  * This is called to initialize/start WLAN driver after a shutdown.
@@ -2751,6 +2798,7 @@ err_re_init:
    return -EPERM;
 
 success:
+   hdd_wlan_ssr_reinit_event();
    /* Trigger replay of BTC events */
    send_btc_nlink_msg(WLAN_MODULE_DOWN_IND, 0);
 
