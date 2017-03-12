@@ -2196,4 +2196,5 @@ hdd_capture_tsf(hdd_adapter_t *adapter, uint32_t *buf, int len)
 	return -ENOTSUPP;
 }
 #endif
+int hdd_dhcp_mdns_offload(hdd_adapter_t *adapter);
 #endif    // end #if !defined( WLAN_HDD_MAIN_H )

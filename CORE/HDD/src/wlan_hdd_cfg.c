@@ -5116,13 +5116,20 @@ int hdd_string_to_string_array(char *data, uint8_t *datalist,
                       uint8_t max_len_entry)
 {
     uint8_t num = 0;
-    char *str = data;
+    char *str = NULL;
     char *field;
     uint16_t len = 0;
 
     if ((data == NULL) || ( datalist == NULL) || (num_entries == NULL))
         return VOS_STATUS_E_INVAL;
 
+    str = vos_mem_malloc(strlen((char *)data));
+    if (!str) {
+       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                 "%s str allocation failed",__func__);
+       return -ENOMEM;
+    }
+    vos_mem_copy(str, data, strlen((char *)data));
     /* parse the string */
     while (str && ('\0' != *str) && (num < max_entries)) {
         field = str;
@@ -5146,6 +5153,7 @@ int hdd_string_to_string_array(char *data, uint8_t *datalist,
         num++;
     }
     *num_entries = num;
+    vos_mem_free(str);
 
     return 0;
 }
