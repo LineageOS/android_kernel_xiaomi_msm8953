@@ -2392,7 +2392,7 @@ static int hdd_dhcp_mdns_offload(hdd_adapter_t *adapter)
     /* set dhcp server offload */
     if (config->enable_dhcp_srv_offload &&
         sme_IsFeatureSupportedByFW(SAP_OFFLOADS)) {
-        status = wlan_hdd_set_dhcp_server_offload(adapter);
+        status = wlan_hdd_set_dhcp_server_offload(adapter, true);
         if (!VOS_IS_STATUS_SUCCESS(status))
         {
             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,

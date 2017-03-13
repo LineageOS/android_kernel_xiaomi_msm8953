@@ -9769,10 +9769,12 @@ void hdd_dhcp_server_offload_done(void *fw_dhcp_srv_offload_cb_context,
 /**
  * wlan_hdd_set_dhcp_server_offload() - set dhcp server offload
  * @hostapd_adapter: pointer to hostapd adapter.
+ * @re_init: flag set if api called post ssr
  *
  * Return: None
  */
-VOS_STATUS wlan_hdd_set_dhcp_server_offload(hdd_adapter_t *hostapd_adapter)
+VOS_STATUS wlan_hdd_set_dhcp_server_offload(hdd_adapter_t *hostapd_adapter,
+					    bool re_init)
 {
 	hdd_context_t *hdd_ctx = WLAN_HDD_GET_CTX(hostapd_adapter);
 	sir_dhcp_srv_offload_info dhcp_srv_info;
@@ -9784,9 +9786,11 @@ VOS_STATUS wlan_hdd_set_dhcp_server_offload(hdd_adapter_t *hostapd_adapter)
 
 	ENTER();
 
-	ret = wlan_hdd_validate_context(hdd_ctx);
-	if (0 != ret)
-		return VOS_STATUS_E_INVAL;
+	if (!re_init) {
+		ret = wlan_hdd_validate_context(hdd_ctx);
+		if (0 != ret)
+			return VOS_STATUS_E_INVAL;
+	}
 
 	/* Prepare the request to send to SME */
 	dhcp_srv_info = vos_mem_malloc(sizeof(*dhcp_srv_info));
@@ -10367,7 +10371,7 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
     /* set dhcp server offload */
     if (iniConfig->enable_dhcp_srv_offload &&
         sme_IsFeatureSupportedByFW(SAP_OFFLOADS)) {
-        status = wlan_hdd_set_dhcp_server_offload(pHostapdAdapter);
+        status = wlan_hdd_set_dhcp_server_offload(pHostapdAdapter, false);
         if (!VOS_IS_STATUS_SUCCESS(status))
         {
             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
