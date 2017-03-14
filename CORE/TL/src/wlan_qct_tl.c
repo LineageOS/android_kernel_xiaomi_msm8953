@@ -698,8 +698,8 @@ WLANTL_Open
   }
 
   // scheduling init to be the last one of previous round
-  pTLCb->uCurServedAC = WLANTL_AC_BK;
-  pTLCb->ucCurLeftWeight = 1;
+  pTLCb->uCurServedAC = WLANTL_AC_VO;
+  pTLCb->ucCurLeftWeight = pTLCb->tlConfigInfo.ucAcWeights[pTLCb->uCurServedAC];
   pTLCb->ucCurrentSTA = WLAN_MAX_STA_COUNT-1;
 
   vos_timer_init(&pTLCb->tx_frames_timer, VOS_TIMER_TYPE_SW,
@@ -11691,10 +11691,8 @@ WLAN_TLAPGetNextTxIds
   ++ucNextSTA;
 
   if ( WLAN_MAX_STA_COUNT <= ucNextSTA )
-  {
-    //one round is done.
     ucNextSTA = 0;
-    pTLCb->ucCurLeftWeight--;
+
     isServed = FALSE;
     if ( 0 == pTLCb->ucCurLeftWeight )
     {
@@ -11712,7 +11710,6 @@ WLAN_TLAPGetNextTxIds
       pTLCb->ucCurLeftWeight =  pTLCb->tlConfigInfo.ucAcWeights[pTLCb->uCurServedAC];
  
     } // (0 == pTLCb->ucCurLeftWeight)
-  } //( WLAN_MAX_STA_COUNT == ucNextSTA )
 
   ucTempSTA = ucNextSTA;
   minWeightSta = ucNextSTA;
@@ -11807,6 +11804,7 @@ WLAN_TLAPGetNextTxIds
                    " TL serve one station AC: %d  W: %d StaId: %d",
                    pTLCb->uCurServedAC, pTLCb->ucCurLeftWeight, pTLCb->ucCurrentSTA ));
       
+        pTLCb->ucCurLeftWeight--;
         return VOS_STATUS_SUCCESS;
       } //STA loop
 
@@ -11859,6 +11857,7 @@ WLAN_TLAPGetNextTxIds
          TLLOG4(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO_LOW,
                     " TL serve one station AC: %d  W: %d StaId: %d",
                    pTLCb->uCurServedAC, pTLCb->ucCurLeftWeight, pTLCb->ucCurrentSTA ));
+         pTLCb->ucCurLeftWeight--;
          return VOS_STATUS_SUCCESS;
       }
 
@@ -11887,6 +11886,7 @@ WLAN_TLAPGetNextTxIds
          TLLOG4(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO_LOW,
                     " TL serve one station AC: %d  W: %d StaId: %d",
                    pTLCb->uCurServedAC, pTLCb->ucCurLeftWeight, pTLCb->ucCurrentSTA ));
+         pTLCb->ucCurLeftWeight--;
          return VOS_STATUS_SUCCESS;
       }
 
