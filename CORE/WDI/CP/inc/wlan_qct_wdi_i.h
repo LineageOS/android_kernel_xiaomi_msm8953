@@ -1356,6 +1356,8 @@ typedef struct
    wpt_uint8                  roamDelayStatsEnabled;
    /* enable/disable sendMgmtPktViaWQ5 params in ini */
    wpt_boolean                 sendMgmtPktViaWQ5;
+   /* Wake lock for keep device in awake once host gets a find AP indication */
+   vos_wake_lock_t             find_ap_lock;
 
 }WDI_ControlBlockType; 
 
