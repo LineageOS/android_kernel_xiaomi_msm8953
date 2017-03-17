@@ -7020,10 +7020,10 @@ static int __iw_get_char_setnone(struct net_device *dev,
                      pResetStats->totalFWHearbeatFailures,
                      pResetStats->totalUnknownExceptions,
 
-                     parpStats->txCount,
+                     parpStats->tx_arp_req_count,
                      parpStats->txDropped,
 
-                     parpStats->rxCount,
+                     parpStats->rx_arp_rsp_count,
                      parpStats->rxDropped,
                      parpStats->rxDelivered,
                      parpStats->rxRefused,

@@ -7592,6 +7592,7 @@ static int __wlan_hdd_cfg80211_set_nud_stats(struct wiphy *wiphy,
     if (!arp_stats_params.flag) {
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                   "%s STATS_SET_START Cleared!!", __func__);
+        hdd_ctx->track_arp_ip = 0;
         vos_mem_zero(&adapter->hdd_stats.hddArpStats, sizeof(adapter->hdd_stats.hddArpStats));
     }
 
@@ -7855,7 +7856,7 @@ static int __wlan_hdd_cfg80211_get_nud_stats(struct wiphy *wiphy,
     }
 
     if (nla_put_u16(skb, COUNT_FROM_NETDEV,
-            adapter->hdd_stats.hddArpStats.txCount) ||
+            adapter->hdd_stats.hddArpStats.tx_arp_req_count) ||
             nla_put_u16(skb, COUNT_TO_LOWER_MAC,
             adapter->hdd_stats.hddArpStats.tx_host_fw_sent) ||
             nla_put_u16(skb, RX_COUNT_BY_LOWER_MAC,
@@ -7865,7 +7866,7 @@ static int __wlan_hdd_cfg80211_get_nud_stats(struct wiphy *wiphy,
             nla_put_u16(skb, RSP_RX_COUNT_BY_LOWER_MAC,
             adapter->hdd_stats.hddArpStats.rx_fw_cnt) ||
             nla_put_u16(skb, RSP_RX_COUNT_BY_UPPER_MAC,
-            adapter->hdd_stats.hddArpStats.rxCount) ||
+            adapter->hdd_stats.hddArpStats.rx_arp_rsp_count) ||
             nla_put_u16(skb, RSP_COUNT_TO_NETDEV,
             adapter->hdd_stats.hddArpStats.rxDelivered) ||
             nla_put_u16(skb, RSP_COUNT_OUT_OF_ORDER_DROP,
@@ -7882,6 +7883,7 @@ static int __wlan_hdd_cfg80211_get_nud_stats(struct wiphy *wiphy,
     if (adapter->dad)
         nla_put_flag(skb, AP_LINK_DAD);
 
+    hdd_ctx->track_arp_ip = 0;
     cfg80211_vendor_cmd_reply(skb);
     return err;
 }

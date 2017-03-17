@@ -392,8 +392,8 @@ typedef enum
 
 typedef struct hdd_arp_stats_s
 {
-   uint16   txCount;
-   uint16   rxCount;
+   uint16   tx_arp_req_count;
+   uint16   rx_arp_rsp_count;
    uint16   txDropped;
    uint16   rxDropped;
    uint16   rxDelivered;

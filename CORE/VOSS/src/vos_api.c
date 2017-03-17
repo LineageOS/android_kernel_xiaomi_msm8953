@@ -103,9 +103,6 @@
 /* Trace index for WDI Read/Write */
 #define VOS_TRACE_INDEX_MAX 256
 
-/* ARP Target IP offset */
-#define VOS_ARP_TARGET_IP_OFFSET 58
-
 /*---------------------------------------------------------------------------
  * Data definitions
  * ------------------------------------------------------------------------*/
@@ -3670,14 +3667,16 @@ void vos_dump_wdi_events(void)
 /**
  * vos_check_arp_target_ip() - check if the Target IP is gateway IP
  * @pPacket: pointer to vos packet
+ * @conversion: 802.3 to 802.11 frame conversion
  *
  * Return: true if the IP is of gateway or false otherwise
  */
-bool vos_check_arp_target_ip(vos_pkt_t *pPacket)
+bool vos_check_arp_target_ip(void *pSkb, bool conversion)
 {
    v_CONTEXT_t pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
    hdd_context_t *pHddCtx = NULL;
    struct sk_buff *skb;
+   uint8_t offset;
 
    if(!pVosContext)
    {
@@ -3692,24 +3691,159 @@ bool vos_check_arp_target_ip(vos_pkt_t *pPacket)
       return false;
    }
 
-   if (unlikely(NULL == pPacket))
+   if (unlikely(NULL == pSkb))
    {
       VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
                 "%s: NULL pointer", __func__);
       return false;
    }
 
-   if ( VOS_STATUS_SUCCESS !=
-        vos_pkt_get_os_packet(pPacket, (void**)&skb, VOS_FALSE ))
+   skb = (struct sk_buff *)pSkb;
+
+   if (conversion)
+      offset = VOS_ARP_TARGET_IP_OFFSET + VOS_80211_8023_HEADER_OFFSET;
+   else
+      offset = VOS_ARP_TARGET_IP_OFFSET;
+
+   if (pHddCtx->track_arp_ip ==
+                      (v_U32_t)(*(v_U32_t *)(skb->data + offset)))
+      return true;
+
+   return false;
+}
+
+/**
+ * vos_check_arp_req_target_ip() - check if the ARP is request and
+                                   target IP is gateway
+ * @pPacket: pointer to vos packet
+ * @conversion: 802.3 to 802.11 frame conversion
+ *
+ * Return: true if the IP is of gateway or false otherwise
+ */
+bool vos_check_arp_req_target_ip(void *pSkb, bool conversion)
+{
+   v_CONTEXT_t pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+   struct sk_buff *skb;
+   uint8_t offset;
+
+   if(!pVosContext)
    {
-      VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
-                "%s: OS PKT pointer is NULL", __func__);
+      hddLog(VOS_TRACE_LEVEL_FATAL,"%s: Global VOS context is Null", __func__);
       return false;
    }
 
+   if (unlikely(NULL == pSkb))
+   {
+      VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+                "%s: NULL pointer", __func__);
+      return false;
+   }
+
+   skb = (struct sk_buff *)pSkb;
+
+   if (conversion)
+      offset = VOS_PKT_ARP_OPCODE_OFFSET + VOS_80211_8023_HEADER_OFFSET;
+   else
+      offset = VOS_PKT_ARP_OPCODE_OFFSET;
+
+   if (htons(VOS_PKT_ARPOP_REQUEST) ==
+			       (uint16_t)(*(uint16_t *)(skb->data + offset)))
+   {
+      if (vos_check_arp_target_ip(skb, conversion))
+         return true;
+   }
+
+   return false;
+}
+
+/**
+ * vos_check_arp_src_ip() - check if the ARP response src IP is gateway IP
+ * @pPacket: pointer to vos packet
+ * @conversion: 802.3 to 802.11 frame conversion
+ *
+ * Return: true if the IP is of gateway or false otherwise
+ */
+bool vos_check_arp_src_ip(void *pSkb, bool conversion)
+{
+   v_CONTEXT_t pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+   hdd_context_t *pHddCtx = NULL;
+   struct sk_buff *skb;
+   uint8_t offset;
+
+   if(!pVosContext)
+   {
+      hddLog(VOS_TRACE_LEVEL_FATAL,"%s: Global VOS context is Null", __func__);
+      return false;
+   }
+
+   pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD, pVosContext );
+   if(!pHddCtx) {
+      VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+               "%s: HDD context is Null", __func__);
+      return false;
+   }
+
+   if (unlikely(NULL == pSkb))
+   {
+      VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+                "%s: NULL pointer", __func__);
+      return false;
+   }
+
+   skb = (struct sk_buff *)pSkb;
+
+   if (conversion)
+      offset = VOS_ARP_SRC_IP_OFFSET + VOS_80211_8023_HEADER_OFFSET;
+   else
+      offset = VOS_ARP_SRC_IP_OFFSET;
+
    if (pHddCtx->track_arp_ip ==
-       (v_U32_t)(*(v_U32_t *)(skb->data + VOS_ARP_TARGET_IP_OFFSET)))
+                      (v_U32_t)(*(v_U32_t *)(skb->data + offset)))
       return true;
+
+   return false;
+}
+
+/**
+ * vos_check_arp_rsp_src_ip() - check if the ARP is request and
+                                   target IP is gateway
+ * @pPacket: pointer to vos packet
+ * @conversion: 802.3 to 802.11 frame conversion
+ *
+ * Return: true if the IP is of gateway or false otherwise
+ */
+bool vos_check_arp_rsp_src_ip(void *pSkb, bool conversion)
+{
+   v_CONTEXT_t pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+   struct sk_buff *skb;
+   uint8_t offset;
+
+   if(!pVosContext)
+   {
+      hddLog(VOS_TRACE_LEVEL_FATAL,"%s: Global VOS context is Null", __func__);
+      return false;
+   }
+
+   if (unlikely(NULL == pSkb))
+   {
+      VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+                "%s: NULL pointer", __func__);
+      return false;
+   }
+
+   skb = (struct sk_buff *)pSkb;
+
+   if (conversion)
+      offset = VOS_PKT_ARP_OPCODE_OFFSET + VOS_80211_8023_HEADER_OFFSET;
+   else
+      offset = VOS_PKT_ARP_OPCODE_OFFSET;
+
+   if (htons(VOS_PKT_ARPOP_REPLY) ==
+			       (uint16_t)(*(uint16_t *)(skb->data + offset)))
+   {
+      if (vos_check_arp_src_ip(skb, conversion))
+         return true;
+   }
 
    return false;
 }

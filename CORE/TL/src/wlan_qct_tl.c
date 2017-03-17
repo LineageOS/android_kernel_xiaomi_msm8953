@@ -8309,11 +8309,13 @@ WLANTL_STATxAuth
   {
     if (pTLCb->track_arp)
     {
-       if (vos_check_arp_target_ip(vosDataBuff))
+       if (vos_check_arp_req_target_ip(vosDataBuff->pSkb, true))
        {
           ucTxFlag |= HAL_USE_FW_IN_TX_PATH;
           ucTxFlag |= HAL_TXCOMP_REQUESTED_MASK;
           tlMetaInfo.ucTxBdToken = ++ pTLCb->txbd_token;
+          TLLOG1(VOS_TRACE(VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO,
+                          "%s: ARP packet FW in data path", __func__));
        }
     }
 
