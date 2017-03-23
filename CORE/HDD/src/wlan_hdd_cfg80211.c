@@ -7623,11 +7623,11 @@ static int __wlan_hdd_cfg80211_set_nud_stats(struct wiphy *wiphy,
     } else {
         arp_stats_params.flag = false;
     }
-    if (arp_stats_params.flag) {
+    if (arp_stats_params.flag)
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                   "%s STATS_SET_START Cleared!!", __func__);
-        vos_mem_zero(&adapter->hdd_stats.hddArpStats, sizeof(adapter->hdd_stats.hddArpStats));
-    }
+    vos_mem_zero(&adapter->hdd_stats.hddArpStats,
+                 sizeof(adapter->hdd_stats.hddArpStats));
 
     arp_stats_params.pkt_type = 1; // ARP packet type
 
