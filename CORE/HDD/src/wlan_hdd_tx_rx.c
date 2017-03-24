@@ -2615,6 +2615,40 @@ VOS_STATUS  hdd_rx_packet_monitor_cbk(v_VOID_t *vosContext,vos_pkt_t *pVosPacket
 return status;
 }
 
+bool hdd_is_duplicate_ip_arp(struct sk_buff *skb)
+{
+   struct in_ifaddr **ifap = NULL;
+   struct in_ifaddr *ifa = NULL;
+   struct in_device *in_dev;
+   uint32_t arp_ip,if_ip;
+
+   if (NULL == skb)
+      return false;
+
+   arp_ip = hdd_get_arp_src_ip(skb);
+
+   if(!skb->dev) return false;
+
+   in_dev = __in_dev_get_rtnl(skb->dev);
+
+   if (in_dev) {
+      for (ifap = &in_dev->ifa_list; (ifa = *ifap) != NULL;
+           ifap = &ifa->ifa_next) {
+         if (!strcmp(skb->dev->name, ifa->ifa_label))
+            break;
+      }
+   }
+   if (ifa && ifa->ifa_local) {
+
+        if_ip = ntohl(ifa->ifa_local);
+        if (if_ip == arp_ip) {
+         return true;
+        }
+   }
+
+   return false;
+}
+
 /**============================================================================
   @brief hdd_rx_packet_cbk() - Receive callback registered with TL.
   TL will call this to notify the HDD when one or more packets were
@@ -2802,6 +2836,14 @@ VOS_STATUS hdd_rx_packet_cbk( v_VOID_t *vosContext,
       ++pAdapter->hdd_stats.hddTxRxStats.rxPackets;
       ++pAdapter->stats.rx_packets;
       pAdapter->stats.rx_bytes += skb->len;
+
+      if (arp_pkt)
+      {
+         pAdapter->dad = hdd_is_duplicate_ip_arp(skb);
+         if(pAdapter->dad)
+         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                   "%s :Duplicate IP detected",__func__);
+      }
 #ifdef WLAN_FEATURE_HOLD_RX_WAKELOCK
        vos_wake_lock_timeout_release(&pHddCtx->rx_wake_lock,
                           HDD_WAKE_LOCK_DURATION,
