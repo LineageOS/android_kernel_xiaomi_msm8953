@@ -166,6 +166,12 @@ static VOS_STATUS wdaCreateTimers(tWDA_CbContext *pWDA) ;
 static VOS_STATUS wdaDestroyTimers(tWDA_CbContext *pWDA);
 bool WDA_AllowAddBA(tpAniSirGlobal pMAc, tANI_U8 staId, tANI_U8 tid);
 void WDA_BaCheckActivity(tWDA_CbContext *pWDA) ;
+
+/* check connection status */
+void WDA_TriggerBACheck(tWDA_CbContext *pWDA);
+void WDA_GetConnectionStatus(tWDA_CbContext *pWDA,
+                              getConStatusParams *conStatusParams);
+
 void WDA_TimerTrafficStatsInd(tWDA_CbContext *pWDA);
 void WDA_HALDumpCmdCallback(WDI_HALDumpCmdRspParamsType *wdiRspParams, void* pUserData);
 #ifdef WLAN_FEATURE_VOWIFI_11R
@@ -16187,11 +16193,21 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
          WDA_BaCheckActivity(pWDA) ;
          break ;
       }
-
       /* timer related messages */
       case WDA_TIMER_TRAFFIC_STATS_IND:
       {
          WDA_TimerTrafficStatsInd(pWDA);
+         break;
+      }
+      /* Connection status related messages */
+      case WDA_TRIGGER_ADD_BA_REQ:
+      {
+         WDA_TriggerBACheck(pWDA);
+         break;
+      }
+      case WDA_GET_CON_STATUS:
+      {
+         WDA_GetConnectionStatus(pWDA, (getConStatusParams *)pMsg->bodyptr);
          break;
       }
 #ifdef WLAN_FEATURE_VOWIFI_11R
@@ -18094,6 +18110,171 @@ void WDA_BaCheckActivity(tWDA_CbContext *pWDA)
    }
    return ;
 }
+
+/*
+ * Trigger BA request to test connection status
+ */
+void WDA_TriggerBACheck(tWDA_CbContext *pWDA)
+{
+   tANI_U8 curSta = 0;
+   tANI_U8 tid = 0;
+   tANI_U8 size = 0;
+   tANI_U8 baCandidateCount = 0;
+   tANI_U8 newBaCandidate = 0;
+   tANI_U32 val;
+   WDI_TriggerBAReqCandidateType baCandidate[WDA_MAX_STA] = {{0}};
+   tpAniSirGlobal pMac;
+
+   if (NULL == pWDA || NULL == pWDA->pVosContext) {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                           "%s: Invalid memory", __func__);
+      return;
+   }
+
+   if(WDA_MAX_STA < pWDA->wdaMaxSta) {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                              "Inconsistent STA entries in WDA");
+   }
+
+   pMac = (tpAniSirGlobal )VOS_GET_MAC_CTXT(pWDA->pVosContext);
+   if(NULL == pMac) {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                          "%s: pMac is NULL",__func__);
+      return ;
+   }
+
+   if (wlan_cfgGetInt(pMac,
+           WNI_CFG_DEL_ALL_RX_TX_BA_SESSIONS_2_4_G_BTC, &val) !=
+                                                      eSIR_SUCCESS) {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+            "Unable to get WNI_CFG_DEL_ALL_RX_TX_BA_SESSIONS_2_4_G_BTC");
+      val = 0;
+   }
+
+   /* walk through all STA entries and find out TX packet count */
+   for(curSta = 0 ; curSta < pWDA->wdaMaxSta ; curSta++)
+   {
+      tANI_U32 currentOperChan = pWDA->wdaStaInfo[curSta].currentOperChan;
+      WLANTL_STAStateType tlSTAState;
+      tANI_U8 validStaIndex = pWDA->wdaStaInfo[curSta].ucValidStaIndex;
+
+      if (!((WDA_VALID_STA_INDEX == validStaIndex) &&
+         (VOS_STATUS_SUCCESS == WDA_TL_GET_STA_STATE( pWDA->pVosContext,
+                                                curSta, &tlSTAState))))
+         continue;
+
+      if (WLANTL_STA_AUTHENTICATED != tlSTAState)
+         continue;
+
+#ifdef WLAN_SOFTAP_VSTA_FEATURE
+      /* We can only do BA on "hard" STAs */
+      if (!(IS_HWSTA_IDX(curSta)))
+          continue;
+#endif
+
+      if(val && ((currentOperChan >= SIR_11B_CHANNEL_BEGIN) &&
+                 (currentOperChan <= SIR_11B_CHANNEL_END))) {
+         VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                   "%s: BTC disabled aggregation - dont start "
+                   "TX ADDBA req",__func__);
+         continue;
+      }
+
+      for(tid = 0; tid < STACFG_MAX_TC; tid ++)
+      {
+         if(!WDA_GET_BA_TXFLAG(pWDA, curSta, tid) &&
+                 WDA_AllowAddBA(pMac, curSta, tid))
+         {
+               baCandidate[baCandidateCount].ucTidBitmap |= 1 << tid;
+               newBaCandidate = WDA_ENABLE_BA;
+               pWDA->tx_aggr = true;
+               pWDA->tid = tid;
+               pWDA->sta_id = curSta;
+               break;
+         }
+      }
+
+      if(WDA_ENABLE_BA == newBaCandidate)
+      {
+         baCandidate[baCandidateCount].ucSTAIdx = curSta;
+         size += sizeof(WDI_TriggerBAReqCandidateType);
+         baCandidateCount++;
+         newBaCandidate = WDA_DISABLE_BA;
+      }
+   }
+
+   if (0 < baCandidateCount)
+   {
+      WDI_Status status = WDI_STATUS_SUCCESS;
+      WDI_TriggerBAReqParamsType *wdiTriggerBaReq;
+      tWDA_ReqParams *pWdaParams =
+               (tWDA_ReqParams *)vos_mem_malloc(sizeof(tWDA_ReqParams));
+      if(NULL == pWdaParams)
+      {
+         VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+            "%s: VOS MEM Alloc Failure", __func__);
+         VOS_ASSERT(0);
+         return;
+      }
+      wdiTriggerBaReq = (WDI_TriggerBAReqParamsType *)
+                    vos_mem_malloc(sizeof(WDI_TriggerBAReqParamsType) + size);
+      if(NULL == wdiTriggerBaReq)
+      {
+         VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+            "%s: VOS MEM Alloc Failure", __func__);
+         vos_mem_free(pWdaParams);
+         return;
+      }
+      do
+      {
+         WDI_TriggerBAReqinfoType *triggerBaInfo =
+                                   &wdiTriggerBaReq->wdiTriggerBAInfoType;
+         triggerBaInfo->usBACandidateCnt = baCandidateCount;
+         triggerBaInfo->ucSTAIdx = baCandidate[0].ucSTAIdx;
+         triggerBaInfo->ucBASessionID = 0;
+         vos_mem_copy((wdiTriggerBaReq + 1), baCandidate, size);
+      } while(0);
+      wdiTriggerBaReq->wdiReqStatusCB = NULL;
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                                          "------> %s " ,__func__);
+      pWdaParams->pWdaContext = pWDA;
+      pWdaParams->wdaWdiApiMsgParam = wdiTriggerBaReq;
+      pWdaParams->wdaMsgParam = NULL;
+      status = WDI_TriggerBAReq(wdiTriggerBaReq, size,
+                                   WDA_TriggerBaReqCallback, pWdaParams);
+      if(IS_WDI_STATUS_FAILURE(status))
+      {
+         VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                   "%s: Failure in Trigger BA REQ, free memory", __func__);
+         vos_mem_free(pWdaParams->wdaMsgParam);
+         vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
+         vos_mem_free(pWdaParams);
+      }
+   }
+   else {
+      pWDA->tx_aggr = false;
+      VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                "%s: ADD BA is disabled for all the tids", __func__);
+   }
+
+   return;
+}
+
+void WDA_GetConnectionStatus(tWDA_CbContext *pWDA,
+                               getConStatusParams *conStatusParams)
+{
+   uint8_t sta_id = pWDA->sta_id;
+   uint8_t tid = pWDA->tid;
+
+   if (!pWDA->tx_aggr || !WDA_GET_BA_TXFLAG(pWDA, sta_id, tid)) {
+      if (conStatusParams->rsp_cb_fn)
+         conStatusParams->rsp_cb_fn(conStatusParams->data_ctx, false);
+      return;
+   }
+
+    conStatusParams->rsp_cb_fn(conStatusParams->data_ctx, true);
+}
+
 /*
  * WDA common routine to create timer used by WDA.
  */

@@ -14489,3 +14489,48 @@ eHalStatus sme_get_nud_debug_stats(tHalHandle hHal,
 
    return VOS_STATUS_SUCCESS;
 }
+
+eHalStatus sme_test_con_alive(tHalHandle hHal)
+{
+   vos_msg_t wdaMsg = {0};
+
+   wdaMsg.type = WDA_TRIGGER_ADD_BA_REQ;
+   wdaMsg.bodyptr = NULL;
+   wdaMsg.reserved = 0;
+
+   if (VOS_STATUS_SUCCESS != vos_mq_post_message(VOS_MQ_ID_WDA, &wdaMsg))
+      return  VOS_STATUS_E_FAILURE;
+
+   return VOS_STATUS_SUCCESS;
+}
+
+
+eHalStatus sme_get_con_alive(tHalHandle hHal,
+                             pgetConStatusParams conStatusParams)
+{
+   vos_msg_t wdaMsg = {0};
+   pgetConStatusParams statusParams;
+   VOS_STATUS vosStatus;
+
+   statusParams = vos_mem_malloc(sizeof(getConStatusParams));
+   if (NULL == statusParams) {
+      VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+                FL("Memory allocation failure"));
+       return VOS_STATUS_E_NOMEM;
+   }
+
+   vos_mem_copy(statusParams, conStatusParams, sizeof(getConStatusParams));
+   wdaMsg.type = WDA_GET_CON_STATUS;
+   wdaMsg.bodyptr = statusParams;
+   wdaMsg.reserved = 0;
+
+   vosStatus = vos_mq_post_message(VOS_MQ_ID_WDA, &wdaMsg);
+   if (!VOS_IS_STATUS_SUCCESS(vosStatus)) {
+      VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+                FL(" Not able to post message"));
+      vos_mem_free(statusParams);
+      return  VOS_STATUS_E_FAILURE;
+   }
+
+   return VOS_STATUS_SUCCESS;
+}

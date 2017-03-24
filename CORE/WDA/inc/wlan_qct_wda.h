@@ -525,6 +525,10 @@ typedef struct
    uint8_t  mgmt_pktfree_fail;
    vos_lock_t mgmt_pkt_lock;
 
+   /* debug connection status */
+   bool tx_aggr;
+   uint8_t sta_id;
+   uint8_t tid;
 } tWDA_CbContext ; 
 
 typedef struct
@@ -1294,6 +1298,8 @@ tSirRetStatus uMacPostCtrlMsg(void* pSirGlobal, tSirMbMsg* pMb);
 /* ARP Debug */
 #define WDA_SET_ARP_STATS_REQ                 SIR_HAL_SET_ARP_STATS_REQ
 #define WDA_GET_ARP_STATS_REQ                 SIR_HAL_GET_ARP_STATS_REQ
+#define WDA_TRIGGER_ADD_BA_REQ                SIR_HAL_TRIGGER_ADD_BA_REQ
+#define WDA_GET_CON_STATUS                    SIR_HAL_GET_CON_STATUS
 
 tSirRetStatus wdaPostCtrlMsg(tpAniSirGlobal pMac, tSirMsgQ *pMsg);
 

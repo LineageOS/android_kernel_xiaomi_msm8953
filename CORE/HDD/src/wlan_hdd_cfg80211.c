@@ -7486,6 +7486,24 @@ qca_wlan_vendor_set_nud_stats[STATS_SET_MAX +1] =
 };
 
 /**
+ * hdd_test_con_alive() - check connection alive
+ * @adapter: pointer to adapter
+ *
+ * Return: true if SME command is sent of false otherwise
+ */
+static bool hdd_test_con_alive(hdd_adapter_t *adapter)
+{
+   hdd_context_t *hdd_ctx = WLAN_HDD_GET_CTX(adapter);
+
+   if (eHAL_STATUS_SUCCESS != sme_test_con_alive(hdd_ctx->hHal)) {
+      hddLog(LOGE, FL("could not send  ADDBA"));
+      return false;
+   }
+
+   return true;
+}
+
+/**
  * hdd_set_nud_stats_cb() - hdd callback api to get status
  * @data: pointer to adapter
  * @rsp: status
@@ -7503,6 +7521,8 @@ static void hdd_set_nud_stats_cb(void *data, VOS_STATUS rsp)
    if (VOS_STATUS_SUCCESS == rsp) {
       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                 "%s success received STATS_SET_START", __func__);
+      if (adapter->nud_set_arp_stats)
+         hdd_test_con_alive(adapter);
    } else {
       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                 "%s STATS_SET_START Failed!!", __func__);
@@ -7563,11 +7583,13 @@ static int __wlan_hdd_cfg80211_set_nud_stats(struct wiphy *wiphy,
             return -EINVAL;
         }
         arp_stats_params.flag = true;
+        adapter->nud_set_arp_stats = true;
         arp_stats_params.ip_addr = nla_get_u32(tb[STATS_GW_IPV4]);
     } else {
         arp_stats_params.flag = false;
+        adapter->nud_set_arp_stats = false;
     }
-    if (arp_stats_params.flag) {
+    if (!arp_stats_params.flag) {
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                   "%s STATS_SET_START Cleared!!", __func__);
         vos_mem_zero(&adapter->hdd_stats.hddArpStats, sizeof(adapter->hdd_stats.hddArpStats));
@@ -7676,6 +7698,42 @@ qca_wlan_vendor_get_nud_stats[STATS_GET_MAX +1] =
     [AP_LINK_DAD] = {.type = NLA_FLAG },
 };
 
+/**
+ * hdd_con_alive_cb() - Call back to get the connection status
+ * @context: pointer to adapter
+ *
+ * Return: None
+ */
+static void hdd_con_alive_cb(void *context, bool status)
+{
+   hdd_adapter_t *adapter = (hdd_adapter_t *)context;
+   adapter->con_status = status;
+}
+
+/**
+ * hdd_get_con_alive() - get the connection status
+ * @adapter: pointer to adapter
+ *
+ * Return: true if SME command is sent of false otherwise
+ */
+static bool hdd_get_con_alive(hdd_adapter_t *adapter)
+{
+   hdd_context_t *hdd_ctx = WLAN_HDD_GET_CTX(adapter);
+   getConStatusParams conStatusParams;
+
+   conStatusParams.rsp_cb_fn = hdd_con_alive_cb;
+   conStatusParams.data_ctx = adapter;
+
+   if (eHAL_STATUS_SUCCESS != sme_get_con_alive(hdd_ctx->hHal,
+                                                &conStatusParams))
+   {
+      hddLog(LOGE, FL("could not get connection status"));
+      return false;
+   }
+
+   return true;
+}
+
 static void hdd_get_nud_stats_cb(void *data, rsp_stats *rsp)
 {
 
@@ -7729,6 +7787,8 @@ static int __wlan_hdd_cfg80211_get_nud_stats(struct wiphy *wiphy,
     err = wlan_hdd_validate_context(hdd_ctx);
     if (0 != err)
         return err;
+
+    hdd_get_con_alive(adapter);
 
     arp_stats_params.pkt_type = WLAN_NUD_STATS_ARP_PKT_TYPE;
     arp_stats_params.get_rsp_cb_fn = hdd_get_nud_stats_cb;
@@ -7791,8 +7851,10 @@ static int __wlan_hdd_cfg80211_get_nud_stats(struct wiphy *wiphy,
             kfree_skb(skb);
             return -EINVAL;
     }
-    if (adapter->con_status)
+    if (adapter->con_status) {
         nla_put_flag(skb, AP_LINK_ACTIVE);
+        adapter->con_status = false;
+    }
     if (adapter->dad)
         nla_put_flag(skb, AP_LINK_DAD);
 

@@ -6109,5 +6109,11 @@ typedef struct {
    tANI_U32  value;
 } tModifyRoamParamsReqParams, * tpModifyRoamParamsReqParams;
 
+typedef void(*hdd_conAliveCb)(void *data, bool status);
+
+typedef struct {
+   hdd_conAliveCb rsp_cb_fn;
+   void *data_ctx;
+}getConStatusParams, *pgetConStatusParams;
 
 #endif /* __SIR_API_H */

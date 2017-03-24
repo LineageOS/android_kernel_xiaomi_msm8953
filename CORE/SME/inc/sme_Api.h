@@ -3967,4 +3967,7 @@ eHalStatus sme_set_nud_debug_stats(tHalHandle hHal,
                                psetArpStatsParams pSetStatsParam);
 eHalStatus sme_get_nud_debug_stats(tHalHandle hHal,
                                pgetArpStatsParams pGetStatsParam);
+eHalStatus sme_test_con_alive(tHalHandle hHal);
+eHalStatus sme_get_con_alive(tHalHandle hHal,
+                             pgetConStatusParams conStatusParams);
 #endif //#if !defined( __SME_API_H )
