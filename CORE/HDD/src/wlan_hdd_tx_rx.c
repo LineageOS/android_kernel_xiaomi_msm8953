@@ -2839,7 +2839,7 @@ VOS_STATUS hdd_rx_packet_cbk( v_VOID_t *vosContext,
 
       if (arp_pkt)
       {
-         pAdapter->dad = hdd_is_duplicate_ip_arp(skb);
+         pAdapter->dad |= hdd_is_duplicate_ip_arp(skb);
          if(pAdapter->dad)
          VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                    "%s :Duplicate IP detected",__func__);
