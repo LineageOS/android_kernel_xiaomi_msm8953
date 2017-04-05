@@ -3907,6 +3907,13 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                VAR_FLAGS_OPTIONAL,
                (void *) CFG_MDNS_RESPONSE_TYPE_SRV_TGT_DEFAULT ),
 #endif /* MDNS_OFFLOAD */
+
+  REG_VARIABLE( CFG_STA_AUTH_RETRIES_FOR_CODE17_NAME, WLAN_PARAM_Integer,
+               hdd_config_t, sta_auth_retries_for_code17,
+               VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+               CFG_STA_AUTH_RETRIES_FOR_CODE17_DEFAULT,
+               CFG_STA_AUTH_RETRIES_FOR_CODE17_MIN,
+               CFG_STA_AUTH_RETRIES_FOR_CODE17_MAX ),
 };
 
 /*
@@ -4546,6 +4553,9 @@ static void print_hdd_cfg(hdd_context_t *pHddCtx)
            pHddCtx->cfg_ini->enable_lfr_mbb);
 #endif
 
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+        "Name = [sta_auth_retries_for_code17] Value = [%u] ",
+         pHddCtx->cfg_ini->sta_auth_retries_for_code17);
 }
 
 
@@ -6531,6 +6541,8 @@ VOS_STATUS hdd_set_sme_config( hdd_context_t *pHddCtx )
    smeConfig->csrConfig.edca_be_aifs =
                         pHddCtx->cfg_ini->edca_be_aifs;
 
+   smeConfig->csrConfig.sta_auth_retries_for_code17 =
+                        pHddCtx->cfg_ini->sta_auth_retries_for_code17;
 
    sme_set_mgmt_frm_via_wq5((tHalHandle)(pHddCtx->hHal),
            pHddCtx->cfg_ini->sendMgmtPktViaWQ5);

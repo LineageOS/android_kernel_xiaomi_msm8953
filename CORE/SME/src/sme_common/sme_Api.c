@@ -1775,6 +1775,9 @@ eHalStatus sme_UpdateConfig(tHalHandle hHal, tpSmeConfigParams pSmeConfigParams)
    pMac->fDeferIMPSTime = pSmeConfigParams->fDeferIMPSTime;
    pMac->fBtcEnableIndTimerVal = pSmeConfigParams->fBtcEnableIndTimerVal;
 
+   pMac->sta_auth_retries_for_code17 =
+         pSmeConfigParams->csrConfig.sta_auth_retries_for_code17;
+
    return status;
 }
 

@@ -1244,6 +1244,7 @@ typedef struct tagCsrConfigParam
     uint32_t edca_bk_aifs;
     uint32_t edca_be_aifs;
     tANI_BOOLEAN disable_scan_during_sco;
+    uint32_t sta_auth_retries_for_code17;
 }tCsrConfigParam;
 
 //Tush

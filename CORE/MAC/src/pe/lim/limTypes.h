@@ -701,7 +701,7 @@ void limSendDisassocMgmtFrame(tpAniSirGlobal, tANI_U16, tSirMacAddr, tpPESession
 void limSendDeauthMgmtFrame(tpAniSirGlobal, tANI_U16, tSirMacAddr, tpPESession, tANI_BOOLEAN waitForAck);
 void limSendSmeDisassocDeauthNtf( tpAniSirGlobal pMac,
                                 eHalStatus status, tANI_U32 *pCtx );
-
+void limDoSendAuthMgmtFrame(tpAniSirGlobal, tpPESession);
 
 void limContinueChannelScan(tpAniSirGlobal);
 tSirResultCodes limMlmAddBss(tpAniSirGlobal, tLimMlmStartReq *,tpPESession psessionEntry);
