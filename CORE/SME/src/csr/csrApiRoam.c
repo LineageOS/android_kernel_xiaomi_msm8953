@@ -6378,10 +6378,10 @@ static tANI_BOOLEAN csrRoamProcessResults( tpAniSirGlobal pMac, tSmeCmd *pComman
                 case eCsrForcedDisassocSta:
                 case eCsrForcedDeauthSta:
                    csrRoamStateChange( pMac, eCSR_ROAMING_STATE_JOINED, sessionId);
-                   if( CSR_IS_SESSION_VALID(pMac, sessionId) )
-                   {                    
-                       pSession = CSR_GET_SESSION(pMac, sessionId);
-                       if (pSession)
+                   pSession = CSR_GET_SESSION(pMac, sessionId);
+                   if (pSession)
+                   {
+                       if( CSR_IS_SESSION_VALID(pMac, sessionId) )
                        {
                            if ( CSR_IS_INFRA_AP(&pSession->connectedProfile) )
                            {
@@ -6397,7 +6397,18 @@ static tANI_BOOLEAN csrRoamProcessResults( tpAniSirGlobal pMac, tSmeCmd *pComman
                                          eCSR_ROAM_LOSTLINK,
                                          eCSR_ROAM_RESULT_FORCED);
                            }
+                       }
+                       else
+                       {
+                           smsLog(pMac, LOGE, FL("Inactive session %d"),
+                                              sessionId);
+                           return eHAL_STATUS_FAILURE;
                       }
+                   }
+                   else
+                   {
+                       smsLog(pMac, LOGE, FL("Invalid session"));
+                       return eHAL_STATUS_FAILURE;
                    }
                    break;
                 case eCsrLostLink1:
