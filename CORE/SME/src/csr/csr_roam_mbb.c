@@ -70,6 +70,9 @@ eHalStatus csr_roam_issue_preauth_reassoc_req(tHalHandle hal,
     tpSirFTPreAuthReq pre_auth_req;
     tANI_U16 auth_req_len = 0;
     tCsrRoamSession *session = CSR_GET_SESSION(mac, session_id);
+    tpCsrNeighborRoamControlInfo neighbor_roam_info =
+                                          &mac->roam.neighborRoamInfo;
+    eHalStatus status;
 
     auth_req_len = sizeof(tSirFTPreAuthReq);
     pre_auth_req = (tpSirFTPreAuthReq)vos_mem_malloc(auth_req_len);
@@ -123,6 +126,17 @@ eHalStatus csr_roam_issue_preauth_reassoc_req(tHalHandle hal,
     /* Register mbb callback */
     smsLog(mac, LOG1, FL("Registering mbb callback"));
     csr_register_roaming_mbb_callback(mac);
+
+    csrReleaseProfile(mac, &neighbor_roam_info->csrNeighborRoamProfile);
+
+    /* Copy current profile to be used in csr_update_roamed_info_mbb */
+    status = csrRoamCopyProfile(mac,
+                                &neighbor_roam_info->csrNeighborRoamProfile,
+                                session->pCurRoamProfile);
+    if(!HAL_STATUS_SUCCESS(status)) {
+       smsLog(mac, LOGE, FL("Profile copy failed"));
+       return status;
+    }
 
     return palSendMBMessage(mac->hHdd, pre_auth_req);
 }
@@ -213,17 +227,12 @@ void csr_stop_preauth_reassoc_mbb_timer(tpAniSirGlobal mac)
 {
     VOS_STATUS vos_status = VOS_STATUS_SUCCESS;
 
-    smsLog(mac, LOG1, FL("is_pre_auth_reassoc_mbb_timer_started %d"),
-           mac->roam.neighborRoamInfo.is_pre_auth_reassoc_mbb_timer_started);
-
     if (mac->roam.neighborRoamInfo.is_pre_auth_reassoc_mbb_timer_started) {
         vos_status =
             vos_timer_stop(&mac->ft.ftSmeContext.pre_auth_reassoc_mbb_timer);
         mac->roam.neighborRoamInfo.is_pre_auth_reassoc_mbb_timer_started =
                                                                        false;
     }
-
-    smsLog(mac, LOG1, FL("vos_status %d"), vos_status);
 }
 
 
@@ -445,18 +454,20 @@ eHalStatus csr_update_roamed_info_mbb(tHalHandle hal,
     /* Get profile */
     session = CSR_GET_SESSION(mac, sme_session_id);
 
-    if (session->abortConnection) {
-        smsLog(mac, LOGE, FL("Disconnect in progress"));
-        return eHAL_STATUS_FAILURE;
-    }
-
     profile = vos_mem_malloc(sizeof(*profile));
     if (NULL == profile) {
         smsLog(mac, LOGE, FL("Memory allocation failure for profile"));
         return eHAL_STATUS_FAILURE;
     }
 
-    status = csrRoamCopyProfile(mac, profile, session->pCurRoamProfile);
+    /*
+     * session->pCurRoamProfile is copied into csrNeighborRoamProfile
+     * in csr_roam_issue_preauth_reassoc_req as there is a chance of
+     * session->pCurRoamProfile getting freed when disconnect is issued
+     * from upper layer.
+     */
+    status = csrRoamCopyProfile(mac, profile,
+                  &mac->roam.neighborRoamInfo.csrNeighborRoamProfile);
     if(!HAL_STATUS_SUCCESS(status)) {
        smsLog(mac, LOGE, FL("Profile copy failed"));
        vos_mem_free(profile);
@@ -485,11 +496,13 @@ eHalStatus csr_update_roamed_info_mbb(tHalHandle hal,
     if (!HAL_STATUS_SUCCESS(status)) {
         smsLog(mac, LOGE,
                FL("csrGetParsedBssDescriptionIEs failed"));
+        vos_mem_free(profile);
         return status;
     }
     if(ies_local == NULL) {
        smsLog(mac, LOGE,
               FL("ies_local is NULL "));
+       vos_mem_free(profile);
        return eHAL_STATUS_FAILURE;
     }
 
@@ -507,6 +520,27 @@ eHalStatus csr_update_roamed_info_mbb(tHalHandle hal,
                              ies_local);
 
     csrRoamStateChange(mac, eCSR_ROAMING_STATE_JOINED, sme_session_id);
+
+    /*
+     * If abortConnection is set, it implies that disconnect in progress
+     * from upper layer. So there is no point in proceeding further.
+     * By this point, pConnectBssDesc is updated in
+     * csrRoamSaveConnectedInfomation. This pConnectBssDesc is used
+     * during processing of disconnect in CSR and this has new BSSID info.
+     * By this time, original AP related info was cleaned up in LIM. So,
+     * disconnect queued while roaming in progress will take care of
+     * cleaning up roamed AP related info in LIM.
+     */
+    if (session->abortConnection) {
+        smsLog(mac, LOGE, FL("Disconnect in progress"));
+
+        smsLog(mac, LOGE, FL("MBB reassoc BSSID "MAC_ADDRESS_STR" Ch %d"),
+               MAC_ADDR_ARRAY(bss_description->bssId),
+               bss_description->channelId);
+
+        vos_mem_free(profile);
+        return eHAL_STATUS_FAILURE;
+    }
 
     if(CSR_IS_ENC_TYPE_STATIC(profile->negotiatedUCEncryptionType) &&
                                         !profile->bWPSAssociation) {
@@ -681,6 +715,7 @@ void csr_roam_preauth_rsp_mbb_processor(tHalHandle hal,
     eHalStatus  status;
     tCsrRoamInfo roam_info;
     tpSirBssDescription  bss_description = NULL;
+    tCsrRoamSession *session = NULL;
 
     mac->ft.ftSmeContext.is_preauth_lfr_mbb = false;
     smsLog(mac, LOG1, FL("is_preauth_lfr_mbb %d"),
@@ -711,6 +746,13 @@ void csr_roam_preauth_rsp_mbb_processor(tHalHandle hal,
          * csr_neighbor_roam_preauth_reassoc_rsp_handler for error cases.
          */
         return;
+    }
+
+    session = CSR_GET_SESSION(mac, pre_auth_rsp->smeSessionId);
+    if (session->abortConnection) {
+        smsLog(mac, LOGE,
+               FL("Disconnect in progress, stop preauth/reassoc timer"));
+        vos_timer_stop(&mac->ft.ftSmeContext.pre_auth_reassoc_mbb_timer);
     }
 
     /*
