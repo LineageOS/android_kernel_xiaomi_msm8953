@@ -9235,7 +9235,7 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
     eCsrAuthType RSNAuthType;
     eCsrEncryptionType RSNEncryptType;
     eCsrEncryptionType mcRSNEncryptType;
-    int status = VOS_STATUS_SUCCESS;
+    int status = VOS_STATUS_SUCCESS, ret = 0;
     tpWLAN_SAPEventCB pSapEventCallback;
     hdd_hostapd_state_t *pHostapdState;
     v_CONTEXT_t pVosContext = (WLAN_HDD_GET_CTX(pHostapdAdapter))->pvosContext;
@@ -9680,12 +9680,15 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
     }
     pConfig->acsBandSwitchThreshold = iniConfig->acsBandSwitchThreshold;
 
+    set_bit(SOFTAP_INIT_DONE, &pHostapdAdapter->event_flags);
+
     pSapEventCallback = hdd_hostapd_SAPEventCB;
     if(WLANSAP_StartBss(pVosContext, pSapEventCallback, pConfig,
                  (v_PVOID_t)pHostapdAdapter->dev) != VOS_STATUS_SUCCESS)
     {
         hddLog(LOGE,FL("SAP Start Bss fail"));
-        return -EINVAL;
+        ret = -EINVAL;
+        goto error;
     }
 
     hddLog(LOG1,
@@ -9728,6 +9731,9 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
     EXIT();
 
    return 0;
+error:
+   clear_bit(SOFTAP_INIT_DONE, &pHostapdAdapter->event_flags);
+   return ret;
 }
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3,4,0))
@@ -10007,6 +10013,8 @@ static int __wlan_hdd_cfg80211_stop_ap (struct wiphy *wiphy,
         // Reset WNI_CFG_PROBE_RSP Flags
         wlan_hdd_reset_prob_rspies(pAdapter);
 
+        clear_bit(SOFTAP_INIT_DONE, &pAdapter->event_flags);
+
         pAdapter->sessionCtx.ap.beacon = NULL;
         kfree(old);
 #ifdef WLAN_FEATURE_P2P_DEBUG
@@ -10085,6 +10093,8 @@ static int __wlan_hdd_cfg80211_start_ap(struct wiphy *wiphy,
                    "%s: HDD adapter magic is invalid", __func__);
         return -ENODEV;
     }
+
+    clear_bit(SOFTAP_INIT_DONE, &pAdapter->event_flags);
 
     pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
     status = wlan_hdd_validate_context(pHddCtx);
@@ -14681,6 +14691,11 @@ static int wlan_hdd_try_disconnect( hdd_adapter_t *pAdapter )
       (eConnectionState_Connecting == pHddStaCtx->conn_info.connState) ||
       (eConnectionState_IbssConnected == pHddStaCtx->conn_info.connState))
     {
+        /* Indicate disconnect to SME so that in-progress connection or preauth
+         * can be aborted
+         */
+        sme_abortConnection(WLAN_HDD_GET_HAL_CTX(pAdapter),
+                            pAdapter->sessionId);
         spin_lock_bh(&pAdapter->lock_for_active_session);
         if (eConnectionState_Associated ==  pHddStaCtx->conn_info.connState)
         {
