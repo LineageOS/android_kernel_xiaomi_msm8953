@@ -1795,6 +1795,8 @@ struct hdd_context_s
     scan_reject_states last_scan_reject_reason;
     v_TIME_t last_scan_reject_timestamp;
     bool is_ap_mode_wow_supported;
+
+    uint32_t track_arp_ip;
 };
 
 typedef enum  {
@@ -2196,4 +2198,5 @@ hdd_capture_tsf(hdd_adapter_t *adapter, uint32_t *buf, int len)
 	return -ENOTSUPP;
 }
 #endif
+int hdd_dhcp_mdns_offload(hdd_adapter_t *adapter);
 #endif    // end #if !defined( WLAN_HDD_MAIN_H )

@@ -2376,7 +2376,7 @@ VOS_STATUS hdd_wlan_shutdown(void)
    return VOS_STATUS_SUCCESS;
 }
 
-static int hdd_dhcp_mdns_offload(hdd_adapter_t *adapter)
+int hdd_dhcp_mdns_offload(hdd_adapter_t *adapter)
 {
     hdd_config_t *config;
     int status = VOS_STATUS_SUCCESS;
@@ -2392,6 +2392,7 @@ static int hdd_dhcp_mdns_offload(hdd_adapter_t *adapter)
     /* set dhcp server offload */
     if (config->enable_dhcp_srv_offload &&
         sme_IsFeatureSupportedByFW(SAP_OFFLOADS)) {
+        vos_event_reset(&adapter->dhcp_status.vos_event);
         status = wlan_hdd_set_dhcp_server_offload(adapter, true);
         if (!VOS_IS_STATUS_SUCCESS(status))
         {
@@ -2399,7 +2400,6 @@ static int hdd_dhcp_mdns_offload(hdd_adapter_t *adapter)
                       ("HDD DHCP Server Offload Failed!!"));
             return -EINVAL;
         }
-        vos_event_reset(&adapter->dhcp_status.vos_event);
         status = vos_wait_single_event(&adapter->dhcp_status.vos_event, 2000);
         if (!VOS_IS_STATUS_SUCCESS(status) ||
             adapter->dhcp_status.dhcp_offload_status)
@@ -2411,6 +2411,7 @@ static int hdd_dhcp_mdns_offload(hdd_adapter_t *adapter)
         }
 #ifdef MDNS_OFFLOAD
         if (config->enable_mdns_offload) {
+            vos_event_reset(&adapter->mdns_status.vos_event);
             status = wlan_hdd_set_mdns_offload(adapter);
             if (VOS_IS_STATUS_SUCCESS(status))
             {
@@ -2418,7 +2419,6 @@ static int hdd_dhcp_mdns_offload(hdd_adapter_t *adapter)
                           ("HDD MDNS Server Offload Failed!!"));
                 return -EINVAL;
             }
-            vos_event_reset(&adapter->mdns_status.vos_event);
             status = vos_wait_single_event(&adapter->
                                            mdns_status.vos_event, 2000);
             if (!VOS_IS_STATUS_SUCCESS(status) ||
@@ -2456,6 +2456,7 @@ static void hdd_ssr_restart_sap(hdd_context_t *hdd_ctx)
 	VOS_STATUS       status;
 	hdd_adapter_list_node_t *adapter_node = NULL, *next = NULL;
 	hdd_adapter_t *adapter;
+	hdd_hostapd_state_t *hostapd_state;
 
 	ENTER();
 
@@ -2463,13 +2464,25 @@ static void hdd_ssr_restart_sap(hdd_context_t *hdd_ctx)
 	while (NULL != adapter_node && VOS_STATUS_SUCCESS == status) {
 		adapter = adapter_node->pAdapter;
 		if (adapter && adapter->device_mode == WLAN_HDD_SOFTAP) {
+			hostapd_state = WLAN_HDD_GET_HOSTAP_STATE_PTR(adapter);
 			hddLog(VOS_TRACE_LEVEL_INFO, FL("in sap mode %p"),
-				adapter);
+			       adapter);
 			wlan_hdd_start_sap(adapter);
-                        if (!VOS_IS_STATUS_SUCCESS(
-                            hdd_dhcp_mdns_offload(adapter)))
-                             hddLog(VOS_TRACE_LEVEL_INFO,
-                                    FL("DHCP/MDNS offload Failed!!"));
+			if (!VOS_IS_STATUS_SUCCESS(
+				hdd_dhcp_mdns_offload(adapter))) {
+			    vos_event_reset(&hostapd_state->vosEvent);
+			    hddLog(VOS_TRACE_LEVEL_ERROR,
+				   FL("DHCP/MDNS offload Failed!!"));
+				if (VOS_STATUS_SUCCESS ==
+				    WLANSAP_StopBss(hdd_ctx->pvosContext)) {
+				    status = vos_wait_single_event(
+					    &hostapd_state->vosEvent, 10000);
+					if (!VOS_IS_STATUS_SUCCESS(status)) {
+						hddLog(LOGE, FL("SAP Stop Failed"));
+						return;
+					}
+				}
+			}
 		}
 		status = hdd_get_next_adapter(hdd_ctx, adapter_node, &next);
 		adapter_node = next;

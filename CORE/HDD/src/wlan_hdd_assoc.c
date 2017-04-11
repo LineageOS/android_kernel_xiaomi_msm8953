@@ -1258,6 +1258,7 @@ static eHalStatus hdd_DisConnectHandler( hdd_adapter_t *pAdapter, tCsrRoamInfo *
     pAdapter->hdd_stats.hddTxRxStats.txMcast[WLANTL_AC_BE] = 0;
     pAdapter->hdd_stats.hddTxRxStats.txMcast[WLANTL_AC_BK] = 0;
 #endif /* WLAN_FEATURE_LINK_LAYER_STATS */
+    pAdapter->dad = false;
 
     // Clear saved connection information in HDD
     hdd_connRemoveConnectInfo( pHddStaCtx );
@@ -2130,6 +2131,10 @@ static eHalStatus hdd_AssociationCompletionHandler( hdd_adapter_t *pAdapter, tCs
                        "and STA channel is %d", pHostapdAdapter->sessionCtx.ap.operatingChannel,
                        (int)pRoamInfo->pBssDesc->channelId);
                 hdd_hostapd_stop(pHostapdAdapter->dev);
+                if (pHddCtx->cfg_ini->enable_sap_auth_offload)
+                  hdd_force_scc_restart_sap(pHostapdAdapter,
+                      pHddCtx, (int)pRoamInfo->pBssDesc->channelId);
+
              }
         }
     }

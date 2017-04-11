@@ -7586,6 +7586,7 @@ static int __wlan_hdd_cfg80211_set_nud_stats(struct wiphy *wiphy,
     struct net_device   *dev = wdev->netdev;
     hdd_adapter_t       *adapter = WLAN_HDD_GET_PRIV_PTR(dev);
     hdd_context_t *hdd_ctx = wiphy_priv(wiphy);
+    v_CONTEXT_t pVosContext = (WLAN_HDD_GET_CTX(adapter))->pvosContext;
     setArpStatsParams arp_stats_params;
     int err = 0;
 
@@ -7629,6 +7630,19 @@ static int __wlan_hdd_cfg80211_set_nud_stats(struct wiphy *wiphy,
     }
 
     arp_stats_params.pkt_type = 1; // ARP packet type
+
+    if (arp_stats_params.flag) {
+       hdd_ctx->track_arp_ip = arp_stats_params.ip_addr;
+       WLANTL_SetARPFWDatapath(pVosContext, true);
+       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                 "%s Set FW in data path for ARP with tgt IP :%d",
+                 __func__,  hdd_ctx->track_arp_ip);
+    }
+    else {
+       WLANTL_SetARPFWDatapath(pVosContext, false);
+       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                 "%s Remove FW from data path", __func__);
+    }
 
     arp_stats_params.rsp_cb_fn = hdd_set_nud_stats_cb;
     arp_stats_params.data_ctx = adapter;
@@ -10371,32 +10385,57 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
     /* set dhcp server offload */
     if (iniConfig->enable_dhcp_srv_offload &&
         sme_IsFeatureSupportedByFW(SAP_OFFLOADS)) {
+        vos_event_reset(&pHostapdAdapter->dhcp_status.vos_event);
         status = wlan_hdd_set_dhcp_server_offload(pHostapdAdapter, false);
         if (!VOS_IS_STATUS_SUCCESS(status))
         {
             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                       ("HDD DHCP Server Offload Failed!!"));
-            return -EINVAL;
+            vos_event_reset(&pHostapdState->vosEvent);
+            if (VOS_STATUS_SUCCESS == WLANSAP_StopBss(pHddCtx->pvosContext)) {
+                status = vos_wait_single_event(&pHostapdState->vosEvent,
+                                               10000);
+                if (!VOS_IS_STATUS_SUCCESS(status)) {
+                    hddLog(LOGE, FL("SAP Stop Failed"));
+                    return -EINVAL;
+                }
+            }
         }
-        vos_event_reset(&pHostapdAdapter->dhcp_status.vos_event);
         status = vos_wait_single_event(&pHostapdAdapter->dhcp_status.vos_event, 2000);
         if (!VOS_IS_STATUS_SUCCESS(status) || pHostapdAdapter->dhcp_status.dhcp_offload_status)
         {
             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                      ("ERROR: DHCP HDD vos wait for single_event failed!! %d"),
                      pHostapdAdapter->dhcp_status.dhcp_offload_status);
-            return -EINVAL;
+            vos_event_reset(&pHostapdState->vosEvent);
+            if (VOS_STATUS_SUCCESS == WLANSAP_StopBss(pHddCtx->pvosContext)) {
+                status = vos_wait_single_event(&pHostapdState->vosEvent,
+                                               10000);
+                if (!VOS_IS_STATUS_SUCCESS(status)) {
+                    hddLog(LOGE, FL("SAP Stop Failed"));
+                    return -EINVAL;
+                }
+            }
         }
 #ifdef MDNS_OFFLOAD
         if (iniConfig->enable_mdns_offload) {
+            vos_event_reset(&pHostapdAdapter->mdns_status.vos_event);
             status = wlan_hdd_set_mdns_offload(pHostapdAdapter);
             if (VOS_IS_STATUS_SUCCESS(status))
             {
                 VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                           ("HDD MDNS Server Offload Failed!!"));
-                return -EINVAL;
+                vos_event_reset(&pHostapdState->vosEvent);
+                if (VOS_STATUS_SUCCESS ==
+                    WLANSAP_StopBss(pHddCtx->pvosContext)) {
+                    status = vos_wait_single_event(&pHostapdState->vosEvent,
+                                                   10000);
+                    if (!VOS_IS_STATUS_SUCCESS(status)) {
+                        hddLog(LOGE, FL("SAP Stop Failed"));
+                        return -EINVAL;
+                    }
+                }
             }
-            vos_event_reset(&pHostapdAdapter->mdns_status.vos_event);
             status = vos_wait_single_event(&pHostapdAdapter->
                                            mdns_status.vos_event, 2000);
             if (!VOS_IS_STATUS_SUCCESS(status) ||
@@ -10409,7 +10448,16 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
                           pHostapdAdapter->mdns_status.mdns_enable_status,
                           pHostapdAdapter->mdns_status.mdns_fqdn_status,
                           pHostapdAdapter->mdns_status.mdns_resp_status);
-                return -EINVAL;
+                vos_event_reset(&pHostapdState->vosEvent);
+                if (VOS_STATUS_SUCCESS ==
+                    WLANSAP_StopBss(pHddCtx->pvosContext)) {
+                    status = vos_wait_single_event(&pHostapdState->vosEvent,
+                                                   10000);
+                    if (!VOS_IS_STATUS_SUCCESS(status)) {
+                        hddLog(LOGE, FL("SAP Stop Failed"));
+                        return -EINVAL;
+                    }
+                }
             }
         }
 #endif /* MDNS_OFFLOAD */

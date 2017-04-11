@@ -9316,6 +9316,18 @@ static void wlan_hdd_restart_sap(hdd_adapter_t *ap_adapter)
         set_bit(SOFTAP_BSS_STARTED, &ap_adapter->event_flags);
         wlan_hdd_incr_active_session(pHddCtx, ap_adapter->device_mode);
         pHostapdState->bCommit = TRUE;
+        if (!VOS_IS_STATUS_SUCCESS(hdd_dhcp_mdns_offload(ap_adapter))) {
+            hddLog(VOS_TRACE_LEVEL_ERROR, FL("DHCP/MDNS offload Failed!!"));
+            vos_event_reset(&pHostapdState->vosEvent);
+            if (VOS_STATUS_SUCCESS == WLANSAP_StopBss(pHddCtx->pvosContext)) {
+                vos_status = vos_wait_single_event(&pHostapdState->vosEvent,
+                                                   10000);
+                if (!VOS_IS_STATUS_SUCCESS(vos_status)) {
+                    hddLog(LOGE, FL("SAP Stop Failed"));
+                    goto end;
+                }
+            }
+        }
     }
 end:
     mutex_unlock(&pHddCtx->sap_lock);
@@ -9355,6 +9367,8 @@ static void __hdd_sap_restart_handle(struct work_struct *work)
         wlan_hdd_restart_sap(sap_adapter);
         hdd_change_ch_avoidance_status(hdd_ctx, false);
     }
+    if (hdd_ctx->cfg_ini->enable_sap_auth_offload)
+        wlan_hdd_restart_sap(sap_adapter);
 }
 
 /**
