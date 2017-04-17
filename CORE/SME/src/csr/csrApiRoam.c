@@ -18987,11 +18987,21 @@ void csrRoamFTPreAuthRspProcessor( tHalHandle hHal, tpSirFTPreAuthRsp pFTPreAuth
         tANI_U16 ft_ies_length;
         ft_ies_length = pFTPreAuthRsp->ric_ies_length;
 
+        if (pMac->roam.roamSession[pMac->ft.ftSmeContext.smeSessionId].
+            connectedProfile.MDID.mdiePresent)
+              pMac->ft.ftSmeContext.addMDIE = TRUE;
+
         if ( (pMac->ft.ftSmeContext.reassoc_ft_ies) &&
              (pMac->ft.ftSmeContext.reassoc_ft_ies_length))
         {
             vos_mem_free(pMac->ft.ftSmeContext.reassoc_ft_ies);
             pMac->ft.ftSmeContext.reassoc_ft_ies_length = 0;
+        }
+
+        if (!ft_ies_length)
+        {
+             pMac->ft.ftSmeContext.psavedFTPreAuthRsp = NULL;
+             return;
         }
 
         pMac->ft.ftSmeContext.reassoc_ft_ies = vos_mem_malloc(ft_ies_length);
