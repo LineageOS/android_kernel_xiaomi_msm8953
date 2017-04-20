@@ -2464,22 +2464,28 @@ static void hdd_ssr_restart_sap(hdd_context_t *hdd_ctx)
 	while (NULL != adapter_node && VOS_STATUS_SUCCESS == status) {
 		adapter = adapter_node->pAdapter;
 		if (adapter && adapter->device_mode == WLAN_HDD_SOFTAP) {
-			hostapd_state = WLAN_HDD_GET_HOSTAP_STATE_PTR(adapter);
-			hddLog(VOS_TRACE_LEVEL_INFO, FL("in sap mode %p"),
-			       adapter);
-			wlan_hdd_start_sap(adapter);
-			if (!VOS_IS_STATUS_SUCCESS(
-				hdd_dhcp_mdns_offload(adapter))) {
-			    vos_event_reset(&hostapd_state->vosEvent);
-			    hddLog(VOS_TRACE_LEVEL_ERROR,
-				   FL("DHCP/MDNS offload Failed!!"));
-				if (VOS_STATUS_SUCCESS ==
-				    WLANSAP_StopBss(hdd_ctx->pvosContext)) {
-				    status = vos_wait_single_event(
-					    &hostapd_state->vosEvent, 10000);
-					if (!VOS_IS_STATUS_SUCCESS(status)) {
-						hddLog(LOGE, FL("SAP Stop Failed"));
-						return;
+			if (test_bit(SOFTAP_INIT_DONE, &adapter->event_flags)) {
+				hostapd_state =
+					WLAN_HDD_GET_HOSTAP_STATE_PTR(adapter);
+				hddLog(VOS_TRACE_LEVEL_INFO, FL("Restart prev SAP session"));
+				wlan_hdd_start_sap(adapter);
+				if (!VOS_IS_STATUS_SUCCESS(
+					hdd_dhcp_mdns_offload(adapter))) {
+					vos_event_reset(
+						&hostapd_state->vosEvent);
+					hddLog(VOS_TRACE_LEVEL_ERROR,
+						FL("DHCP/MDNS offload Failed!!"));
+					if (VOS_STATUS_SUCCESS ==
+					    WLANSAP_StopBss(
+					      hdd_ctx->pvosContext)) {
+						status = vos_wait_single_event(
+							&hostapd_state->vosEvent
+								, 10000);
+						if (!VOS_IS_STATUS_SUCCESS(
+								status)) {
+							hddLog(LOGE, FL("SAP Stop Failed"));
+							return;
+						}
 					}
 				}
 			}
