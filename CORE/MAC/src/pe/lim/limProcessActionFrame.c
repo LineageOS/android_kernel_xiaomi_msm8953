@@ -936,7 +936,8 @@ __limProcessQosMapConfigureFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,
          return;
      }
      limSendSmeMgmtFrameInd(pMac, psessionEntry->smeSessionId,
-                                        pRxPacketInfo, psessionEntry, 0);
+                                        pRxPacketInfo, psessionEntry,
+                                        WDA_GET_RX_RSSI_DB(pRxPacketInfo));
 }
 
 #ifdef ANI_SUPPORT_11H
@@ -2179,7 +2180,8 @@ static void __limProcessSAQueryResponseActionFrame(tpAniSirGlobal pMac, tANI_U8 
     if (eLIM_STA_ROLE == psessionEntry->limSystemRole)
     {
         limSendSmeMgmtFrameInd(pMac, psessionEntry->smeSessionId,
-                                    pRxPacketInfo, psessionEntry, 0);
+                                    pRxPacketInfo, psessionEntry,
+                                    WDA_GET_RX_RSSI_DB(pRxPacketInfo));
         return;
     }
 
@@ -2617,7 +2619,8 @@ limProcessActionFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,tpPESession ps
                  // type is ACTION
                  limSendSmeMgmtFrameInd(pMac, psessionEntry->smeSessionId,
                                         pRxPacketInfo,
-                                        psessionEntry, 0);
+                                        psessionEntry,
+                                        WDA_GET_RX_RSSI_DB(pRxPacketInfo));
               }
               else
               {
@@ -2752,7 +2755,8 @@ limProcessActionFrameNoSession(tpAniSirGlobal pMac, tANI_U8 *pBd)
                 {
                   /* Forward to the SME to HDD to wpa_supplicant */
                   // type is ACTION
-                  limSendSmeMgmtFrameInd(pMac, 0, pBd, NULL, 0);
+                  limSendSmeMgmtFrameInd(pMac, 0, pBd, NULL,
+                                         WDA_GET_RX_RSSI_DB(pBd));
                 }
                 else
                 {
