@@ -516,7 +516,7 @@ limCheckMgmtRegisteredFrames(tpAniSirGlobal pMac, tANI_U8 *pBd,
 
         /* Indicate this to SME */
         limSendSmeMgmtFrameInd( pMac, pLimMgmtRegistration->sessionId,
-                                pBd, psessionEntry, 0);
+                                pBd, psessionEntry, WDA_GET_RX_RSSI_DB(pBd));
     
         if ( (type == SIR_MAC_MGMT_FRAME) && (fc.type == SIR_MAC_MGMT_FRAME)
               && (subType == SIR_MAC_MGMT_RESERVED15) )
