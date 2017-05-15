@@ -155,6 +155,9 @@ typedef enum {
    MAKE_BEFORE_BREAK = 67,
 #endif
    NUD_DEBUG = 68,
+   /*69 reserved for FATAL_EVENT_LOGGING */
+   /*70 reserved for WIFI_DUAL_BAND_ENABLE */
+   PROBE_RSP_TEMPLATE_VER1 = 71,
    //MAX_FEATURE_SUPPORTED = 128
 } placeHolderInCapBitmap;
 
