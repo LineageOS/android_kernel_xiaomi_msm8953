@@ -12675,6 +12675,11 @@ int hdd_wlan_startup(struct device *dev )
    pHddCtx->is_ap_mode_wow_supported =
               sme_IsFeatureSupportedByFW(SAP_MODE_WOW);
 
+   pHddCtx->is_fatal_event_log_sup =
+      sme_IsFeatureSupportedByFW(FATAL_EVENT_LOGGING);
+   hddLog(VOS_TRACE_LEVEL_INFO, FL("FATAL_EVENT_LOGGING: %d"),
+          pHddCtx->is_fatal_event_log_sup);
+
    hdd_assoc_registerFwdEapolCB(pVosContext);
 
    goto success;

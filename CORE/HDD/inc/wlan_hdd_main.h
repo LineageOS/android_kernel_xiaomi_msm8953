@@ -1796,6 +1796,7 @@ struct hdd_context_s
     scan_reject_states last_scan_reject_reason;
     v_TIME_t last_scan_reject_timestamp;
     bool is_ap_mode_wow_supported;
+    bool is_fatal_event_log_sup;
 
     uint32_t track_arp_ip;
 };
