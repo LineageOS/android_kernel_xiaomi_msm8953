@@ -177,7 +177,7 @@
 
 	i2c@78b6000 { /* BLSP1 QUP3 */
 		aw2013@45 {
-			compatible = "awinic";
+			compatible = "awinic,aw2013";
 			reg = <0x45>;
 			vdd-supply = <&pm8953_l10>;
 			vcc-supply = <&pm8953_l5>;
