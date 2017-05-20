@@ -1423,6 +1423,7 @@ static int msm_isp_send_hw_cmd(struct vfe_device *vfe_dev,
 		vfe_dev->vfe_ub_policy = *cfg_data;
 		break;
 	}
+#ifndef CONFIG_MACH_XIAOMI_MIDO
 	case GET_VFE_HW_LIMIT: {
 		uint32_t *hw_limit = NULL;
 
@@ -1437,6 +1438,7 @@ static int msm_isp_send_hw_cmd(struct vfe_device *vfe_dev,
 		*hw_limit = vfe_dev->vfe_hw_limit;
 		break;
 	}
+#endif
 	}
 	return 0;
 }
