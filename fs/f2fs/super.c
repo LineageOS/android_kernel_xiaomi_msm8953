@@ -1543,6 +1543,7 @@ int sanity_check_ckpt(struct f2fs_sb_info *sbi)
 		    le16_to_cpu(ckpt->cur_data_blkoff[i]) >= blocks_per_seg) {
 			return 1;
 		}
+	}
 
 	ovp_segments = le32_to_cpu(ckpt->overprov_segment_count);
 	reserved_segments = le32_to_cpu(ckpt->rsvd_segment_count);
@@ -1563,8 +1564,8 @@ int sanity_check_ckpt(struct f2fs_sb_info *sbi)
 
 static void init_sb_info(struct f2fs_sb_info *sbi)
 {
-	struct f2fs_super_block *raw_super = sbi->raw_super;
 	int i;
+	struct f2fs_super_block *raw_super = sbi->raw_super;
 
 	sbi->log_sectors_per_block =
 		le32_to_cpu(raw_super->log_sectors_per_block);
