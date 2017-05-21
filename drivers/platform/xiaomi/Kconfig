@@ -1,0 +1,17 @@
+# Xiaomi configuration options
+
+config MACH_XIAOMI_MSM8953
+	bool "Xiaomi MSM8953"
+	depends on ARCH_MSM8953
+	help
+	  Support for MSM8953 Xiaomi variants
+
+menu "Xiaomi board selection"
+
+config MACH_XIAOMI_MIDO
+	bool "Mido board"
+	select MACH_XIAOMI_MSM8953
+	help
+	  Support for Redmi Note 4 SD Mido
+
+endmenu
