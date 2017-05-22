@@ -323,6 +323,7 @@ struct work_struct work_vr;
 u8 vr_on;
 #endif
 };
+static bool disable_keys_function = false;
 bool is_ft5435 = false;
 struct wakeup_source ft5436_wakelock;
 
@@ -1175,7 +1176,7 @@ static irqreturn_t ft5435_ts_interrupt(int irq, void *dev_id)
 				input_mt_report_slot_state(ip_dev, MT_TOOL_FINGER, 0);
 			}
 		} else{
-			if (data->pdata->fw_vkey_support) {
+			if (data->pdata->fw_vkey_support && !disable_keys_function) {
 				for (j = 0; j < data->pdata->num_virkey; j++) {
 					if (x == data->pdata->vkeys[j].x) {
 						if (status == FT_TOUCH_DOWN || status == FT_TOUCH_CONTACT)
@@ -3644,6 +3645,112 @@ static void ft5x0x_release_apk_debug_channel(void)
 }
 #endif
 
+static ssize_t ft5435_ts_disable_keys_show(struct device *dev,
+	struct device_attribute *attr, char *buf)
+{
+	const char c = disable_keys_function ? '1' : '0';
+	return sprintf(buf, "%c\n", c);
+}
+
+static ssize_t ft5435_ts_disable_keys_store(struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t count)
+{
+	int i;
+
+	if (sscanf(buf, "%u", &i) == 1 && i < 2) {
+		disable_keys_function = (i == 1);
+		return count;
+	} else {
+		dev_dbg(dev, "disable_keys write error\n");
+		return -EINVAL;
+	}
+}
+
+
+static DEVICE_ATTR(disable_keys, S_IWUSR | S_IRUSR, ft5435_ts_disable_keys_show,
+		   ft5435_ts_disable_keys_store);
+
+
+
+static ssize_t ft5435_ts_enable_dt2w_show(struct device *dev,
+        struct device_attribute *attr, char *buf)
+{
+        const char c = gesture_func_on ? '1' : '0';
+        return sprintf(buf, "%c\n", c);
+}
+
+static ssize_t ft5435_ts_enable_dt2w_store(struct device *dev,
+        struct device_attribute *attr, const char *buf, size_t count)
+{
+        int i;
+
+        if (sscanf(buf, "%u", &i) == 1 && i < 2) {
+                gesture_func_on = (i == 1);
+                return count;
+        } else {
+                dev_dbg(dev, "enable_dt2w write error\n");
+                return -EINVAL;
+        }
+}
+
+
+static DEVICE_ATTR(enable_dt2w, S_IWUSR | S_IRUSR, ft5435_ts_enable_dt2w_show,
+                   ft5435_ts_enable_dt2w_store);
+
+static struct attribute *ft5435_ts_attrs[] = {
+    &dev_attr_disable_keys.attr,
+    &dev_attr_enable_dt2w.attr,
+	NULL
+};
+
+
+static const struct attribute_group ft5435_ts_attr_group = {
+       .attrs = ft5435_ts_attrs,
+};
+
+static int ft5435_proc_init(struct kernfs_node *sysfs_node_parent)
+{
+       int ret = 0;
+       char *buf;
+       char *key_disabler_sysfs_node, *double_tap_sysfs_node;
+       struct proc_dir_entry *proc_entry_tp = NULL;
+       struct proc_dir_entry *proc_symlink_tmp = NULL;
+       buf = kzalloc(PATH_MAX, GFP_KERNEL);
+       if (buf)
+               kernfs_path(sysfs_node_parent, buf, PATH_MAX);
+
+       proc_entry_tp = proc_mkdir("touchpanel", NULL);
+       if (proc_entry_tp == NULL) {
+               pr_err("%s: Couldn't create touchpanel dir in procfs\n", __func__);
+               ret = -ENOMEM;
+       }
+
+       key_disabler_sysfs_node = kzalloc(PATH_MAX, GFP_KERNEL);
+       if (key_disabler_sysfs_node)
+               sprintf(key_disabler_sysfs_node, "/sys%s/%s", buf, "disable_keys");
+       proc_symlink_tmp = proc_symlink("capacitive_keys_disable",
+                       proc_entry_tp, key_disabler_sysfs_node);
+       if (proc_symlink_tmp == NULL) {
+               pr_err("%s: Couldn't create capacitive_keys_enable symlink\n", __func__);
+               ret = -ENOMEM;
+       }
+
+       double_tap_sysfs_node = kzalloc(PATH_MAX, GFP_KERNEL);
+       if (double_tap_sysfs_node)
+               sprintf(double_tap_sysfs_node, "/sys%s/%s", buf, "enable_dt2w");
+       proc_symlink_tmp = proc_symlink("enable_dt2w",
+               proc_entry_tp, double_tap_sysfs_node);
+       if (proc_symlink_tmp == NULL) {
+               ret = -ENOMEM;
+               pr_err("%s: Couldn't create double_tap_enable symlink\n", __func__);
+       }
+
+       kfree(buf);
+       kfree(key_disabler_sysfs_node);
+       kfree(double_tap_sysfs_node);
+       return ret;
+}
+
 static char tp_info_summary[80] = "";
 
 static int ft5435_ts_probe(struct i2c_client *client,
@@ -4095,6 +4202,13 @@ g_ft5435_ts_data = data;
 	if (ft5x0x_create_apk_debug_channel(client) < 0)
 		ft5x0x_release_apk_debug_channel();
 #endif
+        err = sysfs_create_group(&client->dev.kobj, &ft5435_ts_attr_group);
+        if (err) {
+	        dev_err(&client->dev, "Failure %d creating sysfs group\n",
+		        err);
+                goto free_reset_gpio;
+        }
+	ft5435_proc_init(client->dev.kobj.sd);
 
 	w_buf[0] = FT_REG_RESET_FW;
 	ft5435_i2c_write(client, w_buf, 1);
