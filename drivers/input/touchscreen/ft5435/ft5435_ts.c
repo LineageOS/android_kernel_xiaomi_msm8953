@@ -490,13 +490,10 @@ static ssize_t tp_glove_id_show(struct device *dev,
 				struct device_attribute *attr, char *buf)
 {
 	struct ft5435_ts_data *data = NULL;
-	int ret;
 
 	data = dev_get_drvdata(dev);
 
-	ret = snprintf(buf, 50, "glove_id show:%d\n", data->glove_id);
-
-	return ret;
+	return sprintf(buf, "%d", data->glove_id);
 }
 
 static ssize_t tp_glove_id_store(struct device *dev,
@@ -545,8 +542,9 @@ static DEVICE_ATTR(glove_enable, 0644, tp_glove_id_show, tp_glove_id_store);
 void tp_glove_register (struct ft5435_ts_data *data)
 {
 	int rc = 0;
-
-	tp_glove_dev = device_create(tp_device_class, NULL, 0, NULL, "tp_glove");
+	struct class *tp_device_class = NULL;
+	tp_device_class = class_create(THIS_MODULE, "tp_glove");
+	tp_glove_dev = device_create(tp_device_class, NULL, 0, NULL, "device");
 	if (IS_ERR(tp_glove_dev))
 		pr_err("Failed to create device(glove_ctrl)!\n");
 
