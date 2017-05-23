@@ -76,6 +76,8 @@ struct ist30xx_data *ts_data;
 extern int set_usb_charge_mode_par;
 int ist30xx_log_level = IST30XX_LOG_LEVEL;
 
+static bool disable_keys_function = false;
+
 void tsp_printk(int level, const char *fmt, ...)
 {
 	struct va_format vaf;
@@ -814,13 +816,15 @@ static void report_input_data(struct ist30xx_data *data, int finger_counts,
 	}
 
 #ifdef IST30XX_USE_KEY
-	status = PARSE_KEY_STATUS(data->t_status);
-	for (id = 0; id < ARRAY_SIZE(ist30xx_key_code); id++) {
-		press = (status & (1 << id)) ? true : false;
+	if(!disable_keys_function) {
+		status = PARSE_KEY_STATUS(data->t_status);
+		for (id = 0; id < ARRAY_SIZE(ist30xx_key_code); id++) {
+			press = (status & (1 << id)) ? true : false;
 
-		input_report_key(data->input_dev, ist30xx_key_code[id], press);
+			input_report_key(data->input_dev, ist30xx_key_code[id], press);
 
-		print_tkey_event(data, id);
+			print_tkey_event(data, id);
+		}
 	}
 #endif
 
@@ -1903,6 +1907,115 @@ static int fb_notifier_callback(struct notifier_block *self,
 }
 #endif
 
+
+static ssize_t ist30xx_ts_disable_keys_show(struct device *dev,
+	struct device_attribute *attr, char *buf)
+{
+	const char c = disable_keys_function ? '1' : '0';
+	return sprintf(buf, "%c\n", c);
+}
+
+static ssize_t ist30xx_ts_disable_keys_store(struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t count)
+{
+	int i;
+
+	if (sscanf(buf, "%u", &i) == 1 && i < 2) {
+		disable_keys_function = (i == 1);
+		return count;
+	} else {
+		dev_dbg(dev, "disable_keys write error\n");
+		return -EINVAL;
+	}
+}
+
+
+static DEVICE_ATTR(disable_keys, S_IWUSR | S_IRUSR, ist30xx_ts_disable_keys_show,
+		   ist30xx_ts_disable_keys_store);
+
+
+
+static ssize_t ist30xx_ts_enable_dt2w_show(struct device *dev,
+        struct device_attribute *attr, char *buf)
+{
+        const char c = ist30xx_gesture_func_on ? '1' : '0';
+        return sprintf(buf, "%c\n", c);
+}
+
+static ssize_t ist30xx_ts_enable_dt2w_store(struct device *dev,
+        struct device_attribute *attr, const char *buf, size_t count)
+{
+        int i;
+
+        if (sscanf(buf, "%u", &i) == 1 && i < 2) {
+                ist30xx_gesture_func_on = (i == 1);
+                return count;
+        } else {
+                dev_dbg(dev, "enable_dt2w write error\n");
+                return -EINVAL;
+        }
+}
+
+
+static DEVICE_ATTR(enable_dt2w, S_IWUSR | S_IRUSR, ist30xx_ts_enable_dt2w_show,
+                   ist30xx_ts_enable_dt2w_store);
+
+static struct attribute *ist30xx_ts_attrs[] = {
+    &dev_attr_disable_keys.attr,
+    &dev_attr_enable_dt2w.attr,
+	NULL
+};
+
+
+static const struct attribute_group ist30xx_ts_attr_group = {
+       .attrs = ist30xx_ts_attrs,
+};
+
+static int ist30xx_proc_init(struct kernfs_node *sysfs_node_parent)
+{
+       int ret = 0;
+       char *buf, *path = NULL;
+       char *key_disabler_sysfs_node, *double_tap_sysfs_node;
+       struct proc_dir_entry *proc_entry_tp = NULL;
+       struct proc_dir_entry *proc_symlink_tmp = NULL;
+       buf = kzalloc(PATH_MAX, GFP_KERNEL);
+       if (buf)
+               path = kernfs_path(sysfs_node_parent, buf, PATH_MAX);
+
+       proc_entry_tp = proc_mkdir("touchpanel", NULL);
+       if (proc_entry_tp == NULL) {
+               pr_err("%s: Couldn't create touchpanel dir in procfs\n", __func__);
+               ret = -ENOMEM;
+       }
+
+       key_disabler_sysfs_node = kzalloc(PATH_MAX, GFP_KERNEL);
+       if (key_disabler_sysfs_node)
+               sprintf(key_disabler_sysfs_node, "/sys%s/%s", path, "disable_keys");
+       proc_symlink_tmp = proc_symlink("capacitive_keys_disable",
+                       proc_entry_tp, key_disabler_sysfs_node);
+       if (proc_symlink_tmp == NULL) {
+               pr_err("%s: Couldn't create capacitive_keys_enable symlink\n", __func__);
+               ret = -ENOMEM;
+       }
+
+       double_tap_sysfs_node = kzalloc(PATH_MAX, GFP_KERNEL);
+       if (double_tap_sysfs_node)
+               sprintf(double_tap_sysfs_node, "/sys%s/%s", path, "enable_dt2w");
+       proc_symlink_tmp = proc_symlink("enable_dt2w",
+               proc_entry_tp, double_tap_sysfs_node);
+       if (proc_symlink_tmp == NULL) {
+               ret = -ENOMEM;
+               pr_err("%s: Couldn't create double_tap_enable symlink\n", __func__);
+       }
+
+       kfree(buf);
+       kfree(key_disabler_sysfs_node);
+       kfree(double_tap_sysfs_node);
+       return ret;
+}
+
+
+
 static char tp_info_summary[80] = "";
 
 static int ist30xx_probe(struct i2c_client *client,
@@ -2180,6 +2293,14 @@ static int ist30xx_probe(struct i2c_client *client,
 	ist30xx_start(data);
 	data->initialized = true;
 #endif
+
+	ret = sysfs_create_group(&client->dev.kobj, &ist30xx_ts_attr_group);
+	if (ret) {
+		dev_err(&client->dev, "Failure %d creating sysfs group\n",ret);
+		goto err_alloc_dt;
+	}
+	ist30xx_proc_init(client->dev.kobj.sd);
+
 	strcpy(tp_info_summary, "[Vendor]Dongshan, [IC]IST3038C, [FW]Ver");
 	sprintf(tp_temp_info, "%x", data->fw.bin.fw_ver);
 	strcat(tp_info_summary, tp_temp_info);
