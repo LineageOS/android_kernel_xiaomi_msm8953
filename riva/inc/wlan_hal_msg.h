@@ -4216,6 +4216,20 @@ typedef PACKED_PRE struct PACKED_POST
     tSendProbeRespReqParams sendProbeRespReqParams ;
 }tSendProbeRespReqMsg, *tpSendProbeRespReqMsg;
 
+typedef PACKED_PRE struct PACKED_POST
+{
+    tSirMacAddr  bssId;
+    tANI_U32     probeRespTemplateLen;
+    tANI_U32     ucProxyProbeReqValidIEBmap[8];
+    tANI_U8      pProbeRespTemplate[1];    //Variable length array
+}tSendProbeRespReqParams_V1, *tpSendProbeRespReqParams_V1;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tHalMsgHeader header;
+    tSendProbeRespReqParams_V1 sendProbeRespReqParams_v1;
+}tSendProbeRespReqMsg_V1, *tpSendProbeRespReqMsg_V1;
+
 /*---------------------------------------------------------------------------
  *WLAN_HAL_UPDATE_PROBE_RSP_TEMPLATE_RSP
  *--------------------------------------------------------------------------*/
@@ -6884,6 +6898,9 @@ typedef enum {
     ANTENNA_DIVERSITY_SELECTION  = 62,
     PER_BASED_ROAMING      = 63,
     NUD_DEBUG              = 68,
+    /* 69 reserved for FATAL_EVENT_LOGGING */
+    /* 70 reserved for WIFI_DUAL_BAND_ENABLE */
+    PROBE_RSP_TEMPLATE_VER1 = 71,
     MAX_FEATURE_SUPPORTED  = 128,
 } placeHolderInCapBitmap;
 
