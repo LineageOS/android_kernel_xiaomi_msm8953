@@ -2738,7 +2738,7 @@ static ssize_t fts_set_cover_mode(struct device *dev,
 	}
 	return ret;
 }
-static DEVICE_ATTR(set_cover_mode, 0664, NULL,
+static DEVICE_ATTR(set_cover_mode, 0220, NULL,
 				fts_set_cover_mode);
 
 #endif
