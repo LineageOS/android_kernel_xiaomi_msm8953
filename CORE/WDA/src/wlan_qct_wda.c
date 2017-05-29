@@ -19943,6 +19943,8 @@ VOS_STATUS WDA_ProcessRoamScanOffloadReq(tWDA_CbContext *pWDA,
            pRoamOffloadScanReqParams->nProbes;
    pwdiRoamOffloadScanInfo->HomeAwayTime =
            pRoamOffloadScanReqParams->HomeAwayTime;
+   pwdiRoamOffloadScanInfo->WeakZoneRssiThresholdForRoam =
+           pRoamOffloadScanReqParams->WeakZoneRssiThresholdForRoam;
    pwdiRoamScanOffloadReqParams->wdiReqStatusCB = NULL;
    /* Store Params pass it to WDI */
    pWdaParams->wdaWdiApiMsgParam = (void *)pwdiRoamScanOffloadReqParams;

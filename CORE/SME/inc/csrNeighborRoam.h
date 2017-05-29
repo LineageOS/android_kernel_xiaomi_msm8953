@@ -81,6 +81,7 @@ typedef struct sCsrNeighborRoamCfgParams
     tANI_U16        neighborResultsRefreshPeriod;
     tANI_U16        emptyScanRefreshPeriod;
     tANI_U8         neighborInitialForcedRoamTo5GhEnable;
+    tANI_U8         WeakZoneRssiThresholdForRoam;
 } tCsrNeighborRoamCfgParams, *tpCsrNeighborRoamCfgParams;
 
 #define CSR_NEIGHBOR_ROAM_INVALID_CHANNEL_INDEX    255

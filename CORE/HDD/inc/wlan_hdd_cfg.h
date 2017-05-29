@@ -1444,6 +1444,16 @@ typedef enum
 #define CFG_NEIGHBOR_INITIAL_FORCED_ROAM_TO_5GH_ENABLE_MAX       (1)
 #define CFG_NEIGHBOR_INITIAL_FORCED_ROAM_TO_5GH_ENABLE_DEFAULT   (0)
 
+/*
+ * gWeakZoneRssiThresholdForRoam is the minimum threshold value to get
+ * candidate list from firmware, firmware filters the received candidate with
+ * this param before sending candidate list to host.
+ */
+#define CFG_NEIGHBOR_WEAK_ZONE_RSSI_THRESHOLD_FOR_ROAM_NAME   "gWeakZoneRssiThresholdForRoam"
+#define CFG_NEIGHBOR_WEAK_ZONE_RSSI_THRESHOLD_FOR_ROAM_MIN     (40)
+#define CFG_NEIGHBOR_WEAK_ZONE_RSSI_THRESHOLD_FOR_ROAM_MAX     (100)
+#define CFG_NEIGHBOR_WEAK_ZONE_RSSI_THRESHOLD_FOR_ROAM_DEFAULT (80)
+
 #endif /* WLAN_FEATURE_NEIGHBOR_ROAMING */
 
 #define CFG_QOS_WMM_BURST_SIZE_DEFN_NAME                        "burstSizeDefinition" 
@@ -3215,6 +3225,7 @@ typedef struct
    v_U16_t       nNeighborResultsRefreshPeriod;
    v_U16_t       nEmptyScanRefreshPeriod;
    v_U8_t        nNeighborInitialForcedRoamTo5GhEnable;
+   v_U8_t        nWeakZoneRssiThresholdForRoam;
 #endif
 
    //Additional Handoff params

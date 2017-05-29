@@ -5574,6 +5574,7 @@ typedef struct
   WDI_MobilityDomainInfo  MDID;
   wpt_uint8               nProbes;
   wpt_uint16              HomeAwayTime;
+  wpt_uint8 WeakZoneRssiThresholdForRoam;
 } WDI_RoamOffloadScanInfo;
 
 typedef struct

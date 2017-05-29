@@ -27533,6 +27533,8 @@ WDI_PackRoamScanOffloadParams
                   pwdiRoamScanOffloadReqParams->wdiRoamOffloadScanInfo.ValidChannelList,
                   pwdiRoamScanOffloadReqParams->wdiRoamOffloadScanInfo.ValidChannelCount);
    pRoamCandidateListParams->ValidChannelCount = pwdiRoamScanOffloadReqParams->wdiRoamOffloadScanInfo.ValidChannelCount;
+   pRoamCandidateListParams->WeakZoneRssiThresholdForRoam =
+      pwdiRoamScanOffloadReqParams->wdiRoamOffloadScanInfo.WeakZoneRssiThresholdForRoam;
 
    WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO_HIGH,
               "Values are ssid = %s, RoamOffloadScan=%d,Command=%d,"
@@ -27540,7 +27542,7 @@ WDI_PackRoamScanOffloadParams
               "NeighborRoamScanRefreshPeriod=%d,NeighborScanChannelMinTime=%d,"
               "NeighborScanChannelMaxTime = %d,EmptyRefreshScanPeriod=%d,"
               "mdiePresent=%d,MDID=%d, auth=%d, uce=%d, mce=%d, nProbes=%d,"
-              "HomeAwayTime=%d",
+              "HomeAwayTime=%d RssiThesholdForRoam=%d",
               pRoamCandidateListParams->ConnectedNetwork.ssId.ssId,
               pRoamCandidateListParams->RoamScanOffloadEnabled,
               pRoamCandidateListParams->Command,
@@ -27556,7 +27558,8 @@ WDI_PackRoamScanOffloadParams
               pRoamCandidateListParams->ConnectedNetwork.encryption,
                    pRoamCandidateListParams->ConnectedNetwork.mcencryption,
                    pwdiRoamScanOffloadReqParams->wdiRoamOffloadScanInfo.nProbes,
-                   pwdiRoamScanOffloadReqParams->wdiRoamOffloadScanInfo.HomeAwayTime);
+                   pwdiRoamScanOffloadReqParams->wdiRoamOffloadScanInfo.HomeAwayTime,
+              pRoamCandidateListParams->WeakZoneRssiThresholdForRoam);
    pRoamCandidateListParams->us24GProbeSize =
            (pwdiRoamScanOffloadReqParams->wdiRoamOffloadScanInfo.us24GProbeSize<
             WLAN_HAL_ROAM_SCAN_MAX_PROBE_SIZE)?
