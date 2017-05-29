@@ -123,7 +123,7 @@ typedef tANI_U8 tHalIpv4Addr[4];
 /* 80 is actually NUM_RF_CHANNELS_V2, but beyond V2, this number will be ignored by FW */
 #define WLAN_HAL_ROAM_SCAN_MAX_CHANNELS       80
 #define WLAN_HAL_ROAM_SACN_PMK_SIZE           32
-#define WLAN_HAL_ROAM_SCAN_RESERVED_BYTES     20
+#define WLAN_HAL_ROAM_SCAN_RESERVED_BYTES     19
 
 #define WLAN_HAL_EXT_SCAN_MAX_CHANNELS               16
 #define WLAN_HAL_EXT_SCAN_MAX_BUCKETS                16
@@ -6391,6 +6391,7 @@ typedef PACKED_PRE struct PACKED_POST {
    tANI_U8           Prefer5GHz;
    tANI_U8           RoamRssiCatGap;
    tANI_U8           Select5GHzMargin;
+   tANI_U8           WeakZoneRssiThresholdForRoam;
    tANI_U8           ReservedBytes[WLAN_HAL_ROAM_SCAN_RESERVED_BYTES];
    tRoamNetworkType  ConnectedNetwork;
    tMobilityDomainInfo MDID;
