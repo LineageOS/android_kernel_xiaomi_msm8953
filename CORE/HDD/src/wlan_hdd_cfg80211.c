@@ -18044,7 +18044,6 @@ static int __wlan_hdd_cfg80211_sched_scan_start(struct wiphy *wiphy,
     MTRACE(vos_trace(VOS_MODULE_ID_HDD,
                      TRACE_CODE_HDD_CFG80211_SCHED_SCAN_START,
                      pAdapter->sessionId, pAdapter->device_mode));
-    sme_ScanFlushResult(hHal, pAdapter->sessionId);
     ret = wlan_hdd_scan_abort(pAdapter);
     if (ret < 0)
     {
