@@ -4119,6 +4119,7 @@ typedef struct sSirRoamOffloadScanReq
   tANI_U8   p5GProbeTemplate[SIR_ROAM_SCAN_MAX_PB_REQ_SIZE];
   tANI_U8   nProbes;
   tANI_U16  HomeAwayTime;
+  tANI_U8     WeakZoneRssiThresholdForRoam;
   tSirRoamNetworkType ConnectedNetwork;
   tSirMobilityDomainInfo MDID;
 } tSirRoamOffloadScanReq, *tpSirRoamOffloadScanReq;

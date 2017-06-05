@@ -520,6 +520,7 @@ typedef struct tagCsrNeighborRoamConfig
     tANI_U16       nNeighborResultsRefreshPeriod;
     tANI_U16       nEmptyScanRefreshPeriod;
     tANI_U8        nNeighborInitialForcedRoamTo5GhEnable;
+    tANI_U8        nWeakZoneRssiThresholdForRoam;
 }tCsrNeighborRoamConfig;
 #endif
 
@@ -1067,6 +1068,7 @@ typedef struct tagCsrRoamStruct
     tANI_BOOLEAN   isWESModeEnabled;
 #endif
     tANI_U32 deauthRspStatus;
+    tANI_BOOLEAN pending_roam_disable;
 }tCsrRoamStruct;
 
 

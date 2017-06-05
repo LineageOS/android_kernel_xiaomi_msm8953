@@ -1955,6 +1955,14 @@ REG_TABLE_ENTRY g_registry_table[] =
                           CFG_NEIGHBOR_INITIAL_FORCED_ROAM_TO_5GH_ENABLE_MIN,
                           CFG_NEIGHBOR_INITIAL_FORCED_ROAM_TO_5GH_ENABLE_MAX),
 
+   REG_VARIABLE(CFG_NEIGHBOR_WEAK_ZONE_RSSI_THRESHOLD_FOR_ROAM_NAME,
+                 WLAN_PARAM_Integer,
+                 hdd_config_t, nWeakZoneRssiThresholdForRoam,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_NEIGHBOR_WEAK_ZONE_RSSI_THRESHOLD_FOR_ROAM_DEFAULT,
+                 CFG_NEIGHBOR_WEAK_ZONE_RSSI_THRESHOLD_FOR_ROAM_MIN,
+                 CFG_NEIGHBOR_WEAK_ZONE_RSSI_THRESHOLD_FOR_ROAM_MAX),
+
 #endif /* WLAN_FEATURE_NEIGHBOR_ROAMING */
 
    REG_VARIABLE( CFG_QOS_WMM_BURST_SIZE_DEFN_NAME , WLAN_PARAM_Integer,
@@ -4261,6 +4269,7 @@ static void print_hdd_cfg(hdd_context_t *pHddCtx)
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [nNeighborScanResultsRefreshPeriod] Value = [%u] ",pHddCtx->cfg_ini->nNeighborResultsRefreshPeriod);
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [nEmptyScanRefreshPeriod] Value = [%u] ",pHddCtx->cfg_ini->nEmptyScanRefreshPeriod);
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [nNeighborInitialForcedRoamTo5GhEnable] Value = [%u] ",pHddCtx->cfg_ini->nNeighborInitialForcedRoamTo5GhEnable);
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [nWeakZoneRssiThresholdForRoam] Value = [%u] ",pHddCtx->cfg_ini->nWeakZoneRssiThresholdForRoam);
 #endif
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [burstSizeDefinition] Value = [0x%x] ",pHddCtx->cfg_ini->burstSizeDefinition);
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH, "Name = [tsInfoAckPolicy] Value = [0x%x] ",pHddCtx->cfg_ini->tsInfoAckPolicy);
@@ -6470,6 +6479,8 @@ VOS_STATUS hdd_set_sme_config( hdd_context_t *pHddCtx )
        smeConfig->csrConfig.neighborRoamConfig.nNeighborInitialForcedRoamTo5GhEnable
        = pConfig->nNeighborInitialForcedRoamTo5GhEnable;
    }
+   smeConfig->csrConfig.neighborRoamConfig.nWeakZoneRssiThresholdForRoam =
+        pConfig->nWeakZoneRssiThresholdForRoam;
    hdd_string_to_u8_array( pConfig->neighborScanChanList,
                                         smeConfig->csrConfig.neighborRoamConfig.neighborScanChanList.channelList,
                                         &smeConfig->csrConfig.neighborRoamConfig.neighborScanChanList.numChannels,
