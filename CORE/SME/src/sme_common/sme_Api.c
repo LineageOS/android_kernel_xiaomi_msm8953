@@ -3828,7 +3828,13 @@ eHalStatus sme_RoamDisconnect(tHalHandle hHal, tANI_U8 sessionId, eCsrRoamDiscon
    {
       if( CSR_IS_SESSION_VALID( pMac, sessionId ) )
       {
-          status = csrRoamDisconnect( pMac, sessionId, reason );
+          /*
+           * Indicate csr of disconnect so that
+           * in progress connection, scan for ssid and preauth
+           * can be aborted
+           */
+          csr_abortConnection(pMac, sessionId);
+          status = csrRoamDisconnect(pMac, sessionId, reason);
       }
       else
       {
