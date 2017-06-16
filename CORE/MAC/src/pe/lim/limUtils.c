@@ -8534,6 +8534,84 @@ eHalStatus limTxBdComplete(tpAniSirGlobal pMac, void *pData)
     return eHAL_STATUS_SUCCESS;
 }
 
+eHalStatus limAssocRspTxCompleteCnf(tpAniSirGlobal pMac, void *pData)
+{
+    tpSirTxBdStatus pTxBdStatus;
+    tpDphHashNode pStaDs;
+    tpPESession psessionEntry;
+    VOS_STATUS vosStatus;
+    vos_list_node_t *pNode= NULL, *pNext = NULL;
+    assoc_rsp_tx_context *tmp_tx_context = NULL;
+
+    if (!pData)
+    {
+       limLog(pMac, LOGE, FL("pData is NULL"));
+       return eHAL_STATUS_FAILURE;
+    }
+
+    pTxBdStatus = (tpSirTxBdStatus) pData;
+
+    limLog(pMac, LOG1, FL("txBdToken %u, txBdStatus %u"),
+            pTxBdStatus->txBdToken, pTxBdStatus->txCompleteStatus);
+
+    vos_list_peek_front(&pMac->assoc_rsp_completion_list,
+             &pNode);
+
+    while(pNode)
+    {
+       tmp_tx_context = container_of(pNode, assoc_rsp_tx_context, node);
+       if (tmp_tx_context->txBdToken != pTxBdStatus->txBdToken)
+       {
+        limLog(pMac, LOG1, FL("expecting txBdToken %u, got txBdToken %u"),
+            tmp_tx_context->txBdToken, pTxBdStatus->txBdToken);
+
+        vosStatus = vos_list_peek_next (
+                &pMac->assoc_rsp_completion_list,
+                pNode, &pNext );
+        pNode = pNext;
+        pNext = NULL;
+      }
+      else
+      {
+        limLog(pMac, LOG1, FL("expecting txBdToken %u, got txBdToken %u"),
+            tmp_tx_context->txBdToken, pTxBdStatus->txBdToken);
+        break;
+      }
+    }
+
+    if (!tmp_tx_context) {
+        limLog(pMac, LOGE, FL("context is NULL"));
+        return eHAL_STATUS_SUCCESS;
+    }
+    psessionEntry = peFindSessionBySessionId(pMac, tmp_tx_context->psessionID);
+    if (!psessionEntry) {
+        limLog(pMac, LOGE, FL("failed to get psession pointer"));
+        vos_list_remove_node(&pMac->assoc_rsp_completion_list,
+                pNode);
+        vos_mem_free(tmp_tx_context);
+        return eHAL_STATUS_SUCCESS;
+    }
+    pStaDs = dphGetHashEntry(pMac, tmp_tx_context->staId,
+                             &psessionEntry->dph.dphHashTable);
+    if (pStaDs == NULL)
+    {
+        limLog(pMac, LOGW,
+               FL("STA context not found"));
+        vos_list_remove_node(&pMac->assoc_rsp_completion_list,
+                pNode);
+        vos_mem_free(tmp_tx_context);
+
+        return eHAL_STATUS_SUCCESS;
+    }
+
+    /* Receive path cleanup */
+    limCleanupRxPath(pMac, pStaDs, psessionEntry);
+    vos_list_remove_node(&pMac->assoc_rsp_completion_list,
+                pNode);
+    vos_mem_free(tmp_tx_context);
+
+    return eHAL_STATUS_SUCCESS;
+}
 /**
  * lim_is_robust_mgmt_action_frame() - Check if action catagory is
  * robust action frame
