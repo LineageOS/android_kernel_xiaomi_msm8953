@@ -816,6 +816,7 @@ struct hdd_station_ctx
    hdd_ibss_peer_info_t ibss_peer_info;
 
    v_BOOL_t hdd_ReassocScenario;
+   v_BOOL_t get_mgmt_log_sent;
 
 };
 
