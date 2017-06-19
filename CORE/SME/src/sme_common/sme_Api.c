@@ -2585,12 +2585,16 @@ eHalStatus sme_ProcessMsg(tHalHandle hHal, vos_msg_t* pMsg)
                        smsLog( pMac, LOG1, FL("SIR_COEX_IND_TYPE_DISABLE_AGGREGATION_IN_2p4"));
                        sme_RequestFullPower(hHal, NULL, NULL, eSME_REASON_OTHER);
                        pMac->isCoexScoIndSet = 1;
+                       pMac->scan.fRestartIdleScan = eANI_BOOLEAN_FALSE;
+                       pMac->scan.fCancelIdleScan = eANI_BOOLEAN_TRUE;
                    }
                    else if (pSmeCoexInd->coexIndType == SIR_COEX_IND_TYPE_ENABLE_AGGREGATION_IN_2p4)
                    {
                        smsLog( pMac, LOG1, FL("SIR_COEX_IND_TYPE_ENABLE_AGGREGATION_IN_2p4"));
                        pMac->isCoexScoIndSet = 0;
                        sme_RequestBmps(hHal, NULL, NULL);
+                       pMac->scan.fRestartIdleScan = eANI_BOOLEAN_TRUE;
+                       pMac->scan.fCancelIdleScan = eANI_BOOLEAN_FALSE;
                    }
 
                    status = btcHandleCoexInd((void *)pMac, pMsg->bodyptr);
