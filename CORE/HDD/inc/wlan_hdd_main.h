@@ -1246,7 +1246,10 @@ struct hdd_adapter_s
 #ifdef FEATURE_WLAN_WAPI
    hdd_wapi_info_t wapi_info;
 #endif
-   
+
+   /* Keep track ns offload count */
+   v_U8_t ns_slots;
+
    v_S7_t rssi;
    v_S7_t rssi_on_disconnect;
 

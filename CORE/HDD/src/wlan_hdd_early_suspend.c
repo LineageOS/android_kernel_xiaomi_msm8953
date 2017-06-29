@@ -875,6 +875,8 @@ void hdd_conf_ns_offload(hdd_adapter_t *pAdapter, int fenable)
                     i++;
                 }
             }
+            /* store actual slots being used */
+            pAdapter->ns_slots = i;
             read_unlock_bh(&in6_dev->lock);
 
             vos_mem_zero(&offLoadRequest, sizeof(offLoadRequest));
@@ -979,7 +981,7 @@ void hdd_conf_ns_offload(hdd_adapter_t *pAdapter, int fenable)
         hdd_wlan_offload_event(SIR_IPV6_NS_OFFLOAD,
                                            SIR_OFFLOAD_DISABLE);
 
-        for (i = 0; i < slot_index; i++)
+        for (i = 0; i <  pAdapter->ns_slots; i++)
         {
             hddLog(VOS_TRACE_LEVEL_INFO, FL("Disable Slot= %d"), i);
             offLoadRequest.nsOffloadInfo.slotIdx = i;
@@ -991,6 +993,7 @@ void hdd_conf_ns_offload(hdd_adapter_t *pAdapter, int fenable)
                                                  " %d Slot"), i);
             }
         }
+        pAdapter->ns_slots = 0;
     }
 end:
     while (slot > 0 && selfIPv6Addr[--slot])
