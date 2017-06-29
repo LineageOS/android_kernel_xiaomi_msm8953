@@ -1983,6 +1983,8 @@ void hdd_resume_wlan(void)
    hdd_adapter_list_node_t *pAdapterNode = NULL, *pNext = NULL;
    VOS_STATUS status;
    v_CONTEXT_t pVosContext = NULL;
+   tPmcState pmc_state;
+   hdd_adapter_t *first_adapter = NULL;
 
    hddLog(VOS_TRACE_LEVEL_INFO, "%s: WLAN being resumed by Android OS",__func__);
 
@@ -2017,6 +2019,26 @@ void hdd_resume_wlan(void)
 
    pHddCtx->hdd_wlan_suspended = FALSE;
    hdd_wlan_suspend_resume_event(HDD_WLAN_EARLY_RESUME);
+
+   /* Get first valid adapter for disable/enable  bmps purpose */
+   status = hdd_get_front_adapter ( pHddCtx, &pAdapterNode );
+   while ( NULL != pAdapterNode && VOS_STATUS_SUCCESS == status )
+   {
+       first_adapter = pAdapterNode->pAdapter;
+       if (first_adapter != NULL)
+           break;
+       status = hdd_get_next_adapter ( pHddCtx, pAdapterNode, &pNext );
+       pAdapterNode = pNext;
+   }
+   pmc_state = pmcGetPmcState(pHddCtx->hHal);
+   if (BMPS == pmc_state && first_adapter)
+   {
+       /* put the device into full power */
+       hddLog(VOS_TRACE_LEVEL_INFO,
+             "%s: Disaling bmps during resume", __func__);
+       wlan_hdd_enter_bmps(first_adapter, DRIVER_POWER_MODE_ACTIVE);
+   }
+
    /*loop through all adapters. Concurrency */
    status = hdd_get_front_adapter ( pHddCtx, &pAdapterNode );
 
@@ -2064,14 +2086,8 @@ void hdd_resume_wlan(void)
                         "Switch to DTIM%d",powerRequest.uListenInterval);
          sme_SetPowerParams( WLAN_HDD_GET_HAL_CTX(pAdapter), &powerRequest, FALSE);
 
-         if (BMPS == pmcGetPmcState(pHddCtx->hHal))
+         if (BMPS == pmc_state)
          {
-             /* put the device into full power */
-             wlan_hdd_enter_bmps(pAdapter, DRIVER_POWER_MODE_ACTIVE);
-
-             /* put the device back into BMPS */
-             wlan_hdd_enter_bmps(pAdapter, DRIVER_POWER_MODE_AUTO);
-
              pHddCtx->hdd_ignore_dtim_enabled = FALSE;
          }
       }
@@ -2079,6 +2095,15 @@ void hdd_resume_wlan(void)
       hdd_conf_resume_ind(pAdapter);
       status = hdd_get_next_adapter ( pHddCtx, pAdapterNode, &pNext );
       pAdapterNode = pNext;
+   }
+
+   if (BMPS == pmc_state && first_adapter)
+   {
+       /* put the device into full power */
+       hddLog(VOS_TRACE_LEVEL_INFO,
+             "%s: Enable bmps during resume", __func__);
+      /* put the device back into BMPS */
+      wlan_hdd_enter_bmps(first_adapter, DRIVER_POWER_MODE_AUTO);
    }
 
 #ifdef SUPPORT_EARLY_SUSPEND_STANDBY_DEEPSLEEP   

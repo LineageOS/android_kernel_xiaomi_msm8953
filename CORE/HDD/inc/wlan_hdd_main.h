@@ -106,11 +106,12 @@
 /** Maximum time(ms)to wait for disconnect to complete **/
 #define WLAN_WAIT_TIME_DISCONNECT  5000
 #define WLAN_WAIT_TIME_STATS       800
-#define WLAN_WAIT_TIME_POWER       800
+#define WLAN_WAIT_TIME_POWER       5000
 #define WLAN_WAIT_TIME_COUNTRY     1000
 #define WLAN_WAIT_TIME_CHANNEL_UPDATE   600
 #define FW_STATE_WAIT_TIME 500
 #define FW_STATE_RSP_LEN 100
+
 /* Amount of time to wait for sme close session callback.
    This value should be larger than the timeout used by WDI to wait for
    a response from WCNSS */
