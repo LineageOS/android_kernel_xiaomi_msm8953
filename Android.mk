@@ -20,8 +20,22 @@ ifneq ($(WLAN_CHIPSET),)
 
 LOCAL_PATH := $(call my-dir)
 
-# This makefile is only for DLKM
+ifeq ($(TARGET_SUPPORTS_WEARABLES),true)
+ifneq ($(findstring device,$(LOCAL_PATH)),)
+    WLAN_DLKM := 1
+else
+    WLAN_DLKM := 0
+endif # findstring device
+else
 ifneq ($(findstring vendor,$(LOCAL_PATH)),)
+    WLAN_DLKM := 1
+else
+    WLAN_DLKM := 0
+endif # findstring vendor
+endif # TARGET_SUPPORTS_WEARABLES
+
+# This makefile is only for DLKM
+ifeq ($(WLAN_DLKM),1)
 
 # Determine if we are Proprietary or Open Source
 ifneq ($(findstring opensource,$(LOCAL_PATH)),)
@@ -33,12 +47,20 @@ endif
 ifeq ($(WLAN_PROPRIETARY),1)
     WLAN_BLD_DIR := vendor/qcom/proprietary/wlan
 else
+ifneq ($(TARGET_SUPPORTS_WEARABLES),true)
     WLAN_BLD_DIR := vendor/qcom/opensource/wlan
+else
+    WLAN_BLD_DIR := device/qcom/msm8909w/opensource/wlan
+endif
 endif
 
 # DLKM_DIR was moved for JELLY_BEAN (PLATFORM_SDK 16)
 ifeq (1,$(filter 1,$(shell echo "$$(( $(PLATFORM_SDK_VERSION) >= 16 ))" )))
+ifneq ($(TARGET_SUPPORTS_WEARABLES),true)
        DLKM_DIR := $(TOP)/device/qcom/common/dlkm
+else
+       DLKM_DIR := $(BOARD_DLKM_DIR)
+endif
 else
        DLKM_DIR := build/dlkm
 endif
