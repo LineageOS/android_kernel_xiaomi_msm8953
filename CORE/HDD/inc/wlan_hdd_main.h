@@ -263,6 +263,8 @@ typedef v_U8_t tWlanHddMacAddr[HDD_MAC_ADDR_LEN];
 #define MDNS_TTL                                  5
 #endif /* MDNS_OFFLOAD */
 
+#define HDD_MIN_TX_POWER (-100) /* minimum tx power */
+#define HDD_MAX_TX_POWER (+100)  /* maximum tx power */
 /*
  * Generic asynchronous request/response support
  *
