@@ -7026,19 +7026,7 @@ eHalStatus csrRoamConnect(tpAniSirGlobal pMac, tANI_U32 sessionId, tCsrRoamProfi
 #ifdef FEATURE_WLAN_BTAMP_UT_RF
     pSession->maxRetryCount = CSR_JOIN_MAX_RETRY_COUNT; 
 #endif
-    /*
-     * If roamSession.connectState is disconnecting that mean
-     * disconnect/stop adapter was received with scan for ssid
-     * in progress and dropped. This state will ensure that
-     * connect will not be issued from scan for ssid completion.
-     * Thus if this fresh connect also issue scan for ssid the connect
-     * command will be dropped assuming disconnect is in progress.
-     * Thus reset connectState here
-     */
-    if (eCSR_ASSOC_STATE_TYPE_INFRA_DISCONNECTING ==
-         pMac->roam.roamSession[sessionId].connectState)
-        pMac->roam.roamSession[sessionId].connectState =
-                       eCSR_ASSOC_STATE_TYPE_NOT_CONNECTED;
+
     if(CSR_INVALID_SCANRESULT_HANDLE != hBssListIn)
     {
         smsLog(pMac, LOG1, FL("is called with BSSList"));
@@ -7633,8 +7621,6 @@ eHalStatus csrRoamDisconnectInternal(tpAniSirGlobal pMac, tANI_U32 sessionId, eC
     }
     else
     {
-        pMac->roam.roamSession[sessionId].connectState =
-            eCSR_ASSOC_STATE_TYPE_INFRA_DISCONNECTING;
         csrScanAbortScanForSSID(pMac, sessionId);
         status = eHAL_STATUS_CMD_NOT_QUEUED;
         smsLog(pMac, LOGE,

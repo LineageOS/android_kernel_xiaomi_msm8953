@@ -1728,13 +1728,8 @@ eHalStatus csrScanHandleSearchForSSID(tpAniSirGlobal pMac, tSmeCmd *pCommand)
             smsLog(pMac, LOGE, FL("session %d not found"), sessionId);
             break;
         }
-        /* If Disconnect is already issued from HDD no need to issue connect
-         * pSession->abortConnection will not be set in case of try
-         * disconnect or hdd stop adaptor use connectState for these cases.
-         */
-        if (pSession->abortConnection ||
-            (pMac->roam.roamSession[sessionId].connectState ==
-            eCSR_ASSOC_STATE_TYPE_INFRA_DISCONNECTING))
+        /* If Disconnect is already issued from HDD no need to issue connect */
+        if (pSession->abortConnection)
         {
            smsLog(pMac, LOGE,
               FL("Disconnect in progress, no need to issue connect"));
