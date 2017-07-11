@@ -13124,13 +13124,24 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
             pHddCtx->last_scan_reject_session_id = curr_session_id;
             pHddCtx->last_scan_reject_reason = curr_reason;
             pHddCtx->last_scan_reject_timestamp = jiffies_to_msecs(jiffies);
+            pHddCtx->scan_reject_cnt = 0;
         }
-        else {
-            if ((jiffies_to_msecs(jiffies) -
-                 pHddCtx->last_scan_reject_timestamp) >=
-                SCAN_REJECT_THRESHOLD_TIME)
+        else
+        {
+            pHddCtx->scan_reject_cnt++;
+
+            hddLog(LOGE, FL("Reject cnt %d time delta %lu ms"), pHddCtx->scan_reject_cnt,
+               (jiffies_to_msecs(jiffies) -
+               pHddCtx->last_scan_reject_timestamp));
+
+            if ((pHddCtx->scan_reject_cnt >=
+               SCAN_REJECT_THRESHOLD) &&
+               (jiffies_to_msecs(jiffies) -
+               pHddCtx->last_scan_reject_timestamp) >=
+               SCAN_REJECT_THRESHOLD_TIME)
             {
                 pHddCtx->last_scan_reject_timestamp = 0;
+                pHddCtx->scan_reject_cnt = 0;
                 if (pHddCtx->cfg_ini->enableFatalEvent)
                     vos_fatal_event_logs_req(WLAN_LOG_TYPE_FATAL,
                           WLAN_LOG_INDICATOR_HOST_DRIVER,
@@ -13148,6 +13159,7 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
     pHddCtx->last_scan_reject_timestamp = 0;
     pHddCtx->last_scan_reject_session_id = 0xFF;
     pHddCtx->last_scan_reject_reason = 0;
+    pHddCtx->scan_reject_cnt = 0;
 
     vos_mem_zero( &scanRequest, sizeof(scanRequest));
 
