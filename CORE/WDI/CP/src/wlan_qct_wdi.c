@@ -24842,6 +24842,8 @@ WDI_HAL_2_WDI_STATUS
    /*The rest of the HAL error codes must be kept hidden from the UMAC as
      they refer to specific internal modules of our device*/
   default:
+     WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                "Fwr halStatus:%d", halStatus);
     return WDI_STATUS_DEV_INTERNAL_FAILURE;
   }
 
