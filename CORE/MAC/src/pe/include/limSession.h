@@ -364,6 +364,10 @@ typedef struct sPESession           // Added to Support BT-AMP
     tANI_BOOLEAN addBssfailed;
     tDot11fIEExtCap ExtCap;
     uint32_t sta_auth_retries_for_code17;
+    tDot11fIEHTCaps ht_caps;
+    tDot11fIEVHTCaps vht_caps;
+    tDot11fIEHTInfo ht_operation;
+    tDot11fIEVHTOperation vht_operation;
 }tPESession, *tpPESession;
 
 #define LIM_MAX_ACTIVE_SESSIONS 4
