@@ -1011,6 +1011,8 @@ limRejectAssociation(tpAniSirGlobal pMac, tSirMacAddr peerAddr, tANI_U8 subType,
                      tANI_U16 staId, tANI_U8 deleteSta, tSirResultCodes rCode, tpPESession psessionEntry )
 {
     tpDphHashNode       pStaDs;
+    assoc_rsp_tx_context *tx_complete_context = NULL;
+    vos_list_node_t *pNode= NULL;
 
     limLog(pMac, LOG1, FL("Sessionid: %d authType: %d subType: %d "
            "addPreAuthContext: %d staId: %d deleteSta: %d rCode : %d "
@@ -1049,23 +1051,38 @@ limRejectAssociation(tpAniSirGlobal pMac, tSirMacAddr peerAddr, tANI_U8 subType,
 
             return;
         }
+       vos_list_peek_front(&pMac->assoc_rsp_completion_list, &pNode);
+
+       tx_complete_context = vos_mem_malloc(sizeof(*tx_complete_context));
+       if (!tx_complete_context)
+       {
+            limLog(pMac, LOGW,
+                   FL("Failed to allocate memory"));
+
+            return;
+       }
+       tx_complete_context->psessionID = psessionEntry->peSessionId;
+       tx_complete_context->staId = staId;
+
+       if (pNode)
+            vos_list_insert_back(&pMac->assoc_rsp_completion_list,
+                              &tx_complete_context->node);
+       else
+            vos_list_insert_front(&pMac->assoc_rsp_completion_list,
+                              &tx_complete_context->node);
 
         /**
          * Polaris has state for this STA.
          * Trigger cleanup.
          */
         pStaDs->mlmStaContext.cleanupTrigger = eLIM_REASSOC_REJECT;
-
-        // Receive path cleanup
-        limCleanupRxPath(pMac, pStaDs, psessionEntry);
-   
         // Send Re/Association Response with
         // status code to requesting STA.
         limSendAssocRspMgmtFrame(pMac,
                                  rCode,
                                  0,
                                  peerAddr,
-                                 subType, 0,psessionEntry);
+                                 subType, 0,psessionEntry, tx_complete_context);
 
         if ( psessionEntry->parsedAssocReq[pStaDs->assocId] != NULL)
         {
@@ -1085,7 +1102,7 @@ limRejectAssociation(tpAniSirGlobal pMac, tSirMacAddr peerAddr, tANI_U8 subType,
                                  eSIR_MAC_MAX_ASSOC_STA_REACHED_STATUS,
                                  1,
                                  peerAddr,
-                                 subType, 0,psessionEntry);
+                                 subType, 0,psessionEntry, NULL);
         // Log error
         limLog(pMac, LOGW,
            FL("received Re/Assoc req when max associated STAs reached from "));

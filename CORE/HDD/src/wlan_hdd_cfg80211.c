@@ -12919,9 +12919,11 @@ VOS_STATUS wlan_hdd_cfg80211_roam_metrics_handover(hdd_adapter_t * pAdapter,
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 14, 0))
 static inline bool wlan_hdd_cfg80211_validate_scan_req(struct
                                                        cfg80211_scan_request
-                                                       *scan_req)
+                                                       *scan_req, hdd_context_t
+                                                       *hdd_ctx)
 {
-        if (!scan_req || !scan_req->wiphy) {
+        if (!scan_req || !scan_req->wiphy ||
+            scan_req->wiphy != hdd_ctx->wiphy) {
                 hddLog(VOS_TRACE_LEVEL_ERROR, "Invalid scan request");
                 return false;
         }
@@ -12934,9 +12936,11 @@ static inline bool wlan_hdd_cfg80211_validate_scan_req(struct
 #else
 static inline bool wlan_hdd_cfg80211_validate_scan_req(struct
                                                        cfg80211_scan_request
-                                                       *scan_req)
+                                                       *scan_req, hdd_context_t
+                                                       *hdd_ctx)
 {
-        if (!scan_req || !scan_req->wiphy) {
+        if (!scan_req || !scan_req->wiphy ||
+            scan_req->wiphy != hdd_ctx->wiphy) {
                 hddLog(VOS_TRACE_LEVEL_ERROR, "Invalid scan request");
                 return false;
         }
@@ -13066,7 +13070,7 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
     /* Scan is no longer pending */
     pScanInfo->mScanPending = VOS_FALSE;
 
-    if (!wlan_hdd_cfg80211_validate_scan_req(req))
+    if (!wlan_hdd_cfg80211_validate_scan_req(req, pHddCtx))
     {
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
             hddLog(VOS_TRACE_LEVEL_ERROR, FL("interface state %s"),
@@ -13426,22 +13430,23 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
         {
             pHddCtx->last_scan_reject_session_id = curr_session_id;
             pHddCtx->last_scan_reject_reason = curr_reason;
-            pHddCtx->last_scan_reject_timestamp = jiffies_to_msecs(jiffies);
+            pHddCtx->last_scan_reject_timestamp =
+              jiffies_to_msecs(jiffies) + SCAN_REJECT_THRESHOLD_TIME;
             pHddCtx->scan_reject_cnt = 0;
         }
         else
         {
             pHddCtx->scan_reject_cnt++;
 
-            hddLog(LOGE, FL("Reject cnt %d time delta %lu ms"), pHddCtx->scan_reject_cnt,
-               (jiffies_to_msecs(jiffies) -
+            hddLog(LOGE, FL("Session %d reason %d reject cnt %d threshold time has elapsed? %d"),
+               curr_session_id, curr_reason,  pHddCtx->scan_reject_cnt,
+               vos_system_time_after(jiffies_to_msecs(jiffies),
                pHddCtx->last_scan_reject_timestamp));
 
             if ((pHddCtx->scan_reject_cnt >=
                SCAN_REJECT_THRESHOLD) &&
-               (jiffies_to_msecs(jiffies) -
-               pHddCtx->last_scan_reject_timestamp) >=
-               SCAN_REJECT_THRESHOLD_TIME)
+               vos_system_time_after(jiffies_to_msecs(jiffies),
+               pHddCtx->last_scan_reject_timestamp))
             {
                 pHddCtx->last_scan_reject_timestamp = 0;
                 pHddCtx->scan_reject_cnt = 0;

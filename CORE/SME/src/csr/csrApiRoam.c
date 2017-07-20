@@ -7622,6 +7622,7 @@ eHalStatus csrRoamDisconnectInternal(tpAniSirGlobal pMac, tANI_U32 sessionId, eC
     else
     {
         csrScanAbortScanForSSID(pMac, sessionId);
+        csrScanStartIdleScan(pMac);
         status = eHAL_STATUS_CMD_NOT_QUEUED;
         smsLog(pMac, LOGE,
              FL("Disconnect not queued, Abort Scan for SSID"));

@@ -4030,8 +4030,10 @@ __limProcessSmeAssocCnfNew(tpAniSirGlobal pMac, tANI_U32 msgType, tANI_U32 *pMsg
          */
         pStaDs->mlmStaContext.mlmState = eLIM_MLM_LINK_ESTABLISHED_STATE;
         limLog(pMac, LOG1, FL("sending Assoc Rsp frame to STA (assoc id=%d) "), pStaDs->assocId);
-        limSendAssocRspMgmtFrame( pMac, eSIR_SUCCESS, pStaDs->assocId, pStaDs->staAddr, 
-                                  pStaDs->mlmStaContext.subType, pStaDs, psessionEntry);
+        limSendAssocRspMgmtFrame(pMac, eSIR_SUCCESS, pStaDs->assocId,
+                                 pStaDs->staAddr,
+                                 pStaDs->mlmStaContext.subType, pStaDs,
+                                 psessionEntry, NULL);
         goto end;      
     } // (assocCnf.statusCode == eSIR_SME_SUCCESS)
     else
