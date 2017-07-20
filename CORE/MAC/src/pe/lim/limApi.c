@@ -703,6 +703,18 @@ tSirRetStatus limStart(tpAniSirGlobal pMac)
    return retCode;
 }
 
+static void
+limInitAssocRspCompletiontionList(tpAniSirGlobal pMac)
+{
+    vos_list_init(&pMac->assoc_rsp_completion_list);
+}
+
+static void
+limDestroyAssocRspCompletiontionList(tpAniSirGlobal pMac)
+{
+    vos_list_destroy(&pMac->assoc_rsp_completion_list);
+}
+
 /**
  * limInitialize()
  *
@@ -753,6 +765,7 @@ limInitialize(tpAniSirGlobal pMac)
     // Initializations for maintaining peers in IBSS
     limIbssInit(pMac);
 
+    limInitAssocRspCompletiontionList(pMac);
     pmmInitialize(pMac);
 
     
@@ -946,7 +959,7 @@ limCleanup(tpAniSirGlobal pMac)
         vos_mem_free(pMac->lim.gpLimMlmScanReq);
         pMac->lim.gpLimMlmScanReq = NULL;
     }
-
+    limDestroyAssocRspCompletiontionList(pMac);
 #if 0
     if(NULL != pMac->lim.beacon)
     {
