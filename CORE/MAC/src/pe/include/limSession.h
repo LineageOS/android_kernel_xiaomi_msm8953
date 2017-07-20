@@ -353,6 +353,8 @@ typedef struct sPESession           // Added to Support BT-AMP
     tANI_BOOLEAN isCiscoVendorAP;
     /* To hold OBSS Scan IE Parameters */
     tSirOBSSHT40Param obssHT40ScanParam;
+    /* HS 2.0 Indication */
+    tDot11fIEhs20vendor_ie hs20vendor_ie;
     /* flag to indicate country code in beacon */
     tANI_U8  countryInfoPresent;
     /*  DSCP to UP mapping for HS 2.0 */
