@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -203,6 +203,7 @@ eHalStatus pmcStart (tHalHandle hHal)
     pMac->pmc.uapsdSessionRequired = FALSE;
     pMac->pmc.wowlModeRequired = FALSE;
     pMac->pmc.wowlExitSrc = eWOWL_EXIT_USER;
+    pMac->pmc.isAPWOWExit = FALSE;
     pMac->pmc.bmpsRequestedByHdd = FALSE;
     pMac->pmc.remainInPowerActiveTillDHCP = FALSE;
     pMac->pmc.full_power_till_set_key = false;
@@ -1239,6 +1240,7 @@ static void pmcProcessResponse( tpAniSirGlobal pMac, tSirSmeRsp *pMsg )
     tListElem *pEntry = NULL;
     tSmeCmd *pCommand = NULL;
     tANI_BOOLEAN fRemoveCommand = eANI_BOOLEAN_TRUE;
+    tCsrRoamSession *pSession = NULL;
 
     pEntry = csrLLPeekHead(&pMac->sme.smeCmdActiveList, LL_ACCESS_LOCK);
     if(pEntry)
@@ -1563,11 +1565,25 @@ static void pmcProcessResponse( tpAniSirGlobal pMac, tSirSmeRsp *pMsg )
                 break;
             }
 
-         /* Enter BMPS State */
-         if (pMsg->statusCode != eSIR_SME_SUCCESS) {
-            pmcLog(pMac, LOGP, "PMC: response message to request to exit "
-               "WOWL indicates failure, status %d", pMsg->statusCode);
-         }
+            /* Enter BMPS State */
+            if (pMsg->statusCode != eSIR_SME_SUCCESS) {
+                pmcLog(pMac, LOGP, "PMC: response message to request to exit "
+                       "WOWL indicates failure, status %d", pMsg->statusCode);
+            }
+
+            pSession = CSR_GET_SESSION(pMac, pMsg->sessionId);
+            if (pSession && pSession->pCurRoamProfile &&
+                CSR_IS_INFRA_AP(pSession->pCurRoamProfile))
+            {
+                pMac->pmc.pmcState = FULL_POWER;
+                pMac->pmc.isAPWOWExit = TRUE;
+                break;
+            }
+            else
+            {
+                pMac->pmc.isAPWOWExit = FALSE;
+            }
+
             pmcEnterBmpsState(pMac);
          break;
 
@@ -1779,7 +1795,9 @@ eHalStatus pmcRequestBmps (
       /* If DUT exits from WoWL because of wake-up indication then it enters
        * into WoWL again. Disable WoWL only when user explicitly disables.
        */
-      if(pMac->pmc.wowlModeRequired == FALSE && pMac->pmc.wowlExitSrc == eWOWL_EXIT_WAKEIND)
+      if(pMac->pmc.wowlModeRequired == FALSE &&
+         pMac->pmc.wowlExitSrc == eWOWL_EXIT_WAKEIND &&
+         !pMac->pmc.isAPWOWExit)
       {
           pMac->pmc.wowlModeRequired = TRUE;
       }
