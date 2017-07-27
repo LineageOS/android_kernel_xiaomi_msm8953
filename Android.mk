@@ -133,15 +133,24 @@ LOCAL_MODULE              := $(WLAN_CHIPSET)_wlan.ko
 LOCAL_MODULE_KBUILD_NAME  := wlan.ko
 LOCAL_MODULE_TAGS         := debug
 LOCAL_MODULE_DEBUG_ENABLE := true
+ifeq ($(PRODUCT_VENDOR_MOVE_ENABLED), true)
+LOCAL_MODULE_PATH         := $(TARGET_OUT_VENDOR)/lib/modules/$(WLAN_CHIPSET)
+else
 LOCAL_MODULE_PATH         := $(TARGET_OUT)/lib/modules/$(WLAN_CHIPSET)
+endif # PRODUCT_VENDOR_MOVE_ENABLED
 include $(DLKM_DIR)/AndroidKernelModule.mk
 ###########################################################
 
 #Create symbolic link
+ifeq ($(PRODUCT_VENDOR_MOVE_ENABLED), true)
+$(shell mkdir -p $(TARGET_OUT_VENDOR)/lib/modules; \
+        ln -sf /$(TARGET_COPY_OUT_VENDOR)/lib/modules/$(WLAN_CHIPSET)/$(WLAN_CHIPSET)_wlan.ko \
+               $(TARGET_OUT_VENDOR)/lib/modules/wlan.ko)
+else
 $(shell mkdir -p $(TARGET_OUT)/lib/modules; \
         ln -sf /system/lib/modules/$(WLAN_CHIPSET)/$(WLAN_CHIPSET)_wlan.ko \
                $(TARGET_OUT)/lib/modules/wlan.ko)
-
+endif # PRODUCT_VENDOR_MOVE_ENABLED
 endif # DLKM check
 
 endif # supported target check
