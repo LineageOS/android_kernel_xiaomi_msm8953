@@ -2821,6 +2821,7 @@ WDI_Shutdown
             "%s: Failed to delete mutex %d",  __func__, wptStatus);
       WDI_ASSERT(0);
    }
+   vos_wake_lock_destroy(&gWDICb.find_ap_lock);
    /* Free the global variables */
    wpalMemoryFree(gpHostWlanFeatCaps);
    wpalMemoryFree(gpFwWlanFeatCaps);
