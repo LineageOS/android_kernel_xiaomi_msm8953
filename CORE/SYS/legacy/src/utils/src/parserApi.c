@@ -2412,6 +2412,7 @@ tSirRetStatus sirConvertProbeFrame2Struct(tpAniSirGlobal       pMac,
         vos_mem_copy( &pProbeResp->VHTExtBssLoad, &pr->VHTExtBssLoad, sizeof( tDot11fIEVHTExtBssLoad) );
     }
 #endif
+    sir_copy_hs20_ie(&pProbeResp->hs20vendor_ie, &pr->hs20vendor_ie);
 
     vos_mem_vfree(pr);
     return eSIR_SUCCESS;
@@ -3525,6 +3526,8 @@ sirParseBeaconIE(tpAniSirGlobal        pMac,
         vos_mem_copy( &pBeaconStruct->ExtCap, &pBies->ExtCap,
                         sizeof(tDot11fIEExtCap));
     }
+    sir_copy_hs20_ie(&pBeaconStruct->hs20vendor_ie, &pBies->hs20vendor_ie);
+
     vos_mem_free(pBies);
 
 
@@ -3830,6 +3833,7 @@ sirConvertBeaconFrame2Struct(tpAniSirGlobal       pMac,
                      &pBeacon->OBSSScanParameters,
                      sizeof( tDot11fIEOBSSScanParameters));
     }
+    sir_copy_hs20_ie(&pBeaconStruct->hs20vendor_ie, &pBeacon->hs20vendor_ie);
 
     vos_mem_vfree(pBeacon);
     return eSIR_SUCCESS;
@@ -5598,5 +5602,27 @@ sap_auth_offload_update_rsn_ie( tpAniSirGlobal pmac,
     }
 }
 #endif /* SAP_AUTH_OFFLOAD */
+
+/**
+ * sir_copy_hs20_ie() - Update HS 2.0 Information Element.
+ * @dest: dest HS IE buffer to be updated
+ * @src: src HS IE buffer
+ *
+ * Update HS2.0 IE info from src to dest
+ *
+ * Return: void
+ */
+void sir_copy_hs20_ie(tDot11fIEhs20vendor_ie *dest, tDot11fIEhs20vendor_ie *src)
+{
+   if (src->present) {
+       vos_mem_copy(dest, src,
+            sizeof(tDot11fIEhs20vendor_ie) -
+            sizeof(src->hs_id));
+       if (src->hs_id_present)
+           vos_mem_copy(&dest->hs_id,
+                   &src->hs_id,
+                   sizeof(src->hs_id));
+   }
+}
 
 // parserApi.c ends here.
