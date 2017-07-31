@@ -46,6 +46,7 @@
 static uint32_t interval = STATUS_CHECK_INTERVAL_MS;
 static int32_t dsi_status_disable = DSI_STATUS_CHECK_INIT;
 struct dsi_status_data *pstatus_data;
+static DEFINE_SPINLOCK(pstatus_init_lock);
 
 /*
  * check_dsi_ctrl_status() - Reads MFD structure and
@@ -91,13 +92,20 @@ irqreturn_t hw_vsync_handler(int irq, void *data)
 {
 	struct mdss_dsi_ctrl_pdata *ctrl_pdata =
 			(struct mdss_dsi_ctrl_pdata *)data;
+	struct dsi_status_data *ps_data;
+	unsigned long flags;
+
 	if (!ctrl_pdata) {
 		pr_err("%s: DSI ctrl not available\n", __func__);
 		return IRQ_HANDLED;
 	}
 
-	if (pstatus_data)
-		mod_delayed_work(system_wq, &pstatus_data->check_status,
+	spin_lock_irqsave(&pstatus_init_lock, flags);
+	ps_data = pstatus_data;
+	spin_unlock_irqrestore(&pstatus_init_lock, flags);
+
+	if (ps_data)
+		mod_delayed_work(system_wq, &ps_data->check_status,
 			msecs_to_jiffies(interval));
 	else
 		pr_err("Pstatus data is NULL\n");
@@ -233,27 +241,33 @@ static int param_set_interval(const char *val, struct kernel_param *kp)
 
 int __init mdss_dsi_status_init(void)
 {
+	struct dsi_status_data *ps_data;
+	unsigned long flags;
 	int rc = 0;
 
-	pstatus_data = kzalloc(sizeof(struct dsi_status_data), GFP_KERNEL);
-	if (!pstatus_data) {
+	ps_data = kzalloc(sizeof(struct dsi_status_data), GFP_KERNEL);
+	if (!ps_data) {
 		pr_err("%s: can't allocate memory\n", __func__);
 		return -ENOMEM;
 	}
 
-	pstatus_data->fb_notifier.notifier_call = fb_event_callback;
+	ps_data->fb_notifier.notifier_call = fb_event_callback;
 
-	rc = fb_register_client(&pstatus_data->fb_notifier);
+	rc = fb_register_client(&ps_data->fb_notifier);
 	if (rc < 0) {
 		pr_err("%s: fb_register_client failed, returned with rc=%d\n",
 								__func__, rc);
-		kfree(pstatus_data);
+		kfree(ps_data);
 		return -EPERM;
 	}
 
 	pr_info("%s: DSI status check interval:%d\n", __func__,	interval);
 
-	INIT_DELAYED_WORK(&pstatus_data->check_status, check_dsi_ctrl_status);
+	INIT_DELAYED_WORK(&ps_data->check_status, check_dsi_ctrl_status);
+
+	spin_lock_irqsave(&pstatus_init_lock, flags);
+	pstatus_data = ps_data;
+	spin_unlock_irqrestore(&pstatus_init_lock, flags);
 
 	pr_debug("%s: DSI ctrl status work queue initialized\n", __func__);
 
