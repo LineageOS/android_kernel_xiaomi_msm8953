@@ -76,6 +76,7 @@ config FB_MSM_MDSS_FRC_DEBUG
 config FB_MSM_MDSS_KCAL_CTRL
 	depends on FB_MSM_MDSS
 	bool "MDSS color control"
+        default n
 	---help---
-	  Enable sysfs for post-processing control of mdss-mdp5 display
-	  controllers in MDSS.
+        Enable sysfs for rgb/lut control for mdss-mdp display controllers
+	in the MDSS sub-system.
