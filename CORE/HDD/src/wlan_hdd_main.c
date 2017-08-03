@@ -12634,6 +12634,11 @@ int hdd_wlan_startup(struct device *dev )
    memdump_init();
    hdd_dp_util_send_rps_ind(pHddCtx);
 
+   pHddCtx->is_fatal_event_log_sup =
+      sme_IsFeatureSupportedByFW(FATAL_EVENT_LOGGING);
+   hddLog(VOS_TRACE_LEVEL_INFO, FL("FATAL_EVENT_LOGGING: %d"),
+          pHddCtx->is_fatal_event_log_sup);
+
    goto success;
 
 err_reg_netdev:
