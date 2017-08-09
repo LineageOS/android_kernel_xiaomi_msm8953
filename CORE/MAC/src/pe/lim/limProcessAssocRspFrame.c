@@ -555,16 +555,19 @@ limProcessAssocRspFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tANI_U8 sub
     if(pAssocRsp->ricPresent)
     {
         psessionEntry->RICDataLen = pAssocRsp->num_RICData * sizeof(tDot11fIERICDataDesc);
-        psessionEntry->ricData = vos_mem_malloc(psessionEntry->RICDataLen);
-        if ( NULL == psessionEntry->ricData )
+        if (psessionEntry->RICDataLen)
         {
-            PELOGE(limLog(pMac, LOGE, FL("Unable to allocate memory to store assoc response"));)
-            psessionEntry->RICDataLen = 0; 
-        }
-        else
-        {
-            vos_mem_copy(psessionEntry->ricData,
-                         &pAssocRsp->RICData[0], psessionEntry->RICDataLen);
+            psessionEntry->ricData = vos_mem_malloc(psessionEntry->RICDataLen);
+            if ( NULL == psessionEntry->ricData )
+            {
+                PELOGE(limLog(pMac, LOGE, FL("Unable to allocate memory to store assoc response"));)
+                psessionEntry->RICDataLen = 0;
+            }
+            else
+            {
+                vos_mem_copy(psessionEntry->ricData,
+                             &pAssocRsp->RICData[0], psessionEntry->RICDataLen);
+            }
         }
     }
     else

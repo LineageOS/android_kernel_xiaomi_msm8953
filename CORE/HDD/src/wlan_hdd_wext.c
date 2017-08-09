@@ -3593,15 +3593,25 @@ static void hdd_get_station_statisticsCB(void *pStats, void *pContext)
 
 VOS_STATUS  wlan_hdd_get_station_stats(hdd_adapter_t *pAdapter)
 {
-   hdd_station_ctx_t *pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
+   hdd_station_ctx_t *pHddStaCtx;
+   hdd_ap_ctx_t *sap_ctx;
    eHalStatus hstatus;
    long lrc;
    struct statsContext context;
+   tANI_U8 sta_id;
 
    if (NULL == pAdapter)
    {
        hddLog(VOS_TRACE_LEVEL_ERROR, "%s: Padapter is NULL", __func__);
        return VOS_STATUS_SUCCESS;
+   }
+
+   if (pAdapter->device_mode == WLAN_HDD_SOFTAP) {
+       sap_ctx = WLAN_HDD_GET_AP_CTX_PTR(pAdapter);
+       sta_id = sap_ctx->uBCStaId;
+   } else {
+       pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
+       sta_id = pHddStaCtx->conn_info.staId[0];
    }
 
    /* we are connected
@@ -3619,7 +3629,7 @@ VOS_STATUS  wlan_hdd_get_station_stats(hdd_adapter_t *pAdapter)
                                hdd_get_station_statisticsCB,
                                0, // not periodic
                                FALSE, //non-cached results
-                               pHddStaCtx->conn_info.staId[0],
+                               sta_id,
                                &context);
    if (eHAL_STATUS_SUCCESS != hstatus)
    {
