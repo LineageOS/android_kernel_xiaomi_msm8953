@@ -1092,6 +1092,8 @@ typedef enum
 
 #endif
 
+#define HDD_SCAN_REJECT_RATE_LIMIT 5
+
 /*
  * @eHDD_SCAN_REJECT_DEFAULT: default value
  * @eHDD_CONNECTION_IN_PROGRESS: connection is in progress
