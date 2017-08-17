@@ -4340,13 +4340,20 @@ static int hdd_extscan_start_fill_bucket_channel_spec(
     int rem1, rem2;
     eHalStatus status;
     tANI_U8 bktIndex, j, numChannels;
+    uint32_t expected_buckets;
     tANI_U32 chanList[WNI_CFG_VALID_CHANNEL_LIST_LEN] = {0};
     tANI_U32 passive_max_chn_time, active_max_chn_time;
 
+    expected_buckets = pReqMsg->numBuckets;
     bktIndex = 0;
 
     nla_for_each_nested(buckets,
             tb[QCA_WLAN_VENDOR_ATTR_EXTSCAN_BUCKET_SPEC], rem1) {
+        if (bktIndex >= expected_buckets) {
+            hddLog(LOGW, FL("ignoring excess buckets"));
+            break;
+        }
+
         if (nla_parse(bucket,
                       QCA_WLAN_VENDOR_ATTR_EXTSCAN_SUBCMD_CONFIG_PARAM_MAX,
                       nla_data(buckets), nla_len(buckets),
