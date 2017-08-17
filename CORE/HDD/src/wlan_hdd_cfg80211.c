@@ -13501,7 +13501,7 @@ static inline bool wlan_hdd_cfg80211_validate_scan_req(struct
 }
 #endif
 
-
+#define NET_DEV_IS_IFF_UP(pAdapter) (pAdapter->dev->flags & IFF_UP)
 /*
  * FUNCTION: hdd_cfg80211_scan_done_callback
  * scanning callback function, called after finishing scan
@@ -13517,9 +13517,6 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
     struct cfg80211_scan_request *req = NULL;
     int ret = 0;
     bool aborted = false;
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
-    bool iface_down = false;
-#endif
     long waitRet = 0;
     tANI_U8 i;
     hdd_context_t *pHddCtx;
@@ -13538,10 +13535,9 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
     }
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
-    if (!(pAdapter->dev->flags & IFF_UP))
+    if (!NET_DEV_IS_IFF_UP(pAdapter))
     {
         hddLog(VOS_TRACE_LEVEL_ERROR, FL("Interface is down"));
-        iface_down = true;
     }
 #endif
     pScanInfo = &pHddCtx->scan_info;
@@ -13581,7 +13577,7 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
     }
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
-    if (!iface_down)
+    if (NET_DEV_IS_IFF_UP(pAdapter))
 #endif
     {
         ret = wlan_hdd_cfg80211_update_bss((WLAN_HDD_GET_CTX(pAdapter))->wiphy,
@@ -13627,7 +13623,7 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
     {
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
             hddLog(VOS_TRACE_LEVEL_ERROR, FL("interface state %s"),
-                   iface_down ? "up" : "down");
+                   NET_DEV_IS_IFF_UP(pAdapter) ? "up" : "down");
 #endif
 
         if (pAdapter->dev) {
@@ -13669,7 +13665,8 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
     }
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
-    if (!iface_down)
+    if (NET_DEV_IS_IFF_UP(pAdapter) &&
+        wlan_hdd_cfg80211_validate_scan_req(req, pHddCtx))
 #endif
         cfg80211_scan_done(req, aborted);
 
@@ -13696,7 +13693,7 @@ allow_suspend:
     hdd_prevent_suspend_timeout(1000, WIFI_POWER_EVENT_WAKELOCK_SCAN);
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
-    if (!iface_down)
+    if (NET_DEV_IS_IFF_UP(pAdapter))
 #endif
 #ifdef FEATURE_WLAN_TDLS
         wlan_hdd_tdls_scan_done_callback(pAdapter);

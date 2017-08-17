@@ -14320,7 +14320,7 @@ int wlan_hdd_scan_abort(hdd_adapter_t *pAdapter)
          */
         if (abortScanStatus == eSIR_ABORT_ACTIVE_SCAN_LIST_NOT_EMPTY)
         {
-            status = wait_for_completion_interruptible_timeout(
+            status = wait_for_completion_timeout(
                            &pScanInfo->abortscan_event_var,
                            msecs_to_jiffies(5000));
             if (0 >= status)
