@@ -3922,6 +3922,13 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                CFG_STA_AUTH_RETRIES_FOR_CODE17_DEFAULT,
                CFG_STA_AUTH_RETRIES_FOR_CODE17_MIN,
                CFG_STA_AUTH_RETRIES_FOR_CODE17_MAX ),
+
+  REG_VARIABLE( CFG_TRIGGER_NULLFRAME_BEFORE_HB_NAME, WLAN_PARAM_Integer,
+                hdd_config_t, trigger_nullframe_before_hb,
+                VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                CFG_TRIGGER_NULLFRAME_BEFORE_HB_DEFAULT,
+                CFG_TRIGGER_NULLFRAME_BEFORE_HB_MIN,
+                CFG_TRIGGER_NULLFRAME_BEFORE_HB_MAX ),
 };
 
 /*
@@ -4565,6 +4572,11 @@ static void print_hdd_cfg(hdd_context_t *pHddCtx)
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
         "Name = [sta_auth_retries_for_code17] Value = [%u] ",
          pHddCtx->cfg_ini->sta_auth_retries_for_code17);
+
+    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+            "Name = [%s] Value = [%u] ",
+            CFG_TRIGGER_NULLFRAME_BEFORE_HB_NAME,
+            pHddCtx->cfg_ini->trigger_nullframe_before_hb);
 }
 
 
@@ -6243,6 +6255,14 @@ v_BOOL_t hdd_update_config_dat( hdd_context_t *pHddCtx )
       hddLog(LOGE, "Could not pass on WNI_CFG_ENABLE_UNITS_BWAIT to CCM");
    }
 
+   if(ccmCfgSetInt(pHddCtx->hHal, WNI_CFG_TRIGGER_NULLFRAME_BEFORE_HB,
+                   pConfig->trigger_nullframe_before_hb, NULL,
+                   eANI_BOOLEAN_FALSE)
+       ==eHAL_STATUS_FAILURE)
+   {
+      fStatus = FALSE;
+      hddLog(LOGE, "Couldn't pass WNI_CFG_TRIGGER_NULLFRAME_BEFORE_HB to CCM");
+   }
    return fStatus;
 }
 

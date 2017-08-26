@@ -2691,6 +2691,8 @@ wlan_hdd_extscan_config_policy
                                                         { .type = NLA_U32 },
     [QCA_WLAN_VENDOR_ATTR_EXTSCAN_GET_VALID_CHANNELS_CONFIG_PARAM_WIFI_BAND] =
                                                         { .type = NLA_U32 },
+    [QCA_WLAN_VENDOR_ATTR_EXTSCAN_GET_VALID_CHANNELS_CONFIG_PARAM_MAX_CHANNELS] =
+                                                        { .type = NLA_U32 },
     [QCA_WLAN_VENDOR_ATTR_EXTSCAN_CHANNEL_SPEC_CHANNEL] = { .type = NLA_U32 },
     [QCA_WLAN_VENDOR_ATTR_EXTSCAN_CHANNEL_SPEC_DWELL_TIME] =
                                                             { .type = NLA_U32 },
@@ -12760,6 +12762,10 @@ static int __wlan_hdd_cfg80211_set_default_key( struct wiphy *wiphy,
     {
         if ( (eCSR_ENCRYPT_TYPE_TKIP !=
                 pHddStaCtx->conn_info.ucEncryptionType) &&
+#ifdef FEATURE_WLAN_WAPI
+             (eCSR_ENCRYPT_TYPE_WPI !=
+                pHddStaCtx->conn_info.ucEncryptionType) &&
+#endif
              (eCSR_ENCRYPT_TYPE_AES !=
                 pHddStaCtx->conn_info.ucEncryptionType)
            )

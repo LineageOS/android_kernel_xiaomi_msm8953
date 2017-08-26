@@ -2456,6 +2456,20 @@ VOS_STATUS WDA_prepareConfigTLV(v_PVOID_t pVosContext,
    tlvStruct = (tHalCfg *)( (tANI_U8 *) tlvStruct
                             + sizeof(tHalCfg) + tlvStruct->length);
 
+   /*  QWLAN_HAL_CFG_TRIGGER_NULLFRAME_BEFORE_HB  */
+   tlvStruct->type = QWLAN_HAL_CFG_TRIGGER_NULLFRAME_BEFORE_HB;
+   tlvStruct->length = sizeof(tANI_U32);
+   configDataValue = (tANI_U32 *)(tlvStruct + 1);
+   if(wlan_cfgGetInt(pMac, WNI_CFG_TRIGGER_NULLFRAME_BEFORE_HB,
+                     configDataValue) != eSIR_SUCCESS)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                 "Failed to get WNI_CFG_TRIGGER_NULLFRAME_BEFORE_HB");
+      goto handle_failure;
+   }
+
+   tlvStruct = (tHalCfg *)( (tANI_U8 *) tlvStruct
+                            + sizeof(tHalCfg) + tlvStruct->length);
 #ifdef WLAN_DEBUG
    {
       int i;
