@@ -326,6 +326,7 @@ config SUSPEND_TIME
 	  keeps statistics on the time spent in suspend in
 	  /sys/kernel/debug/suspend_time
 
-config DEDUCE_WAKEUP_REASONS
-	bool
-	default n
+config	BOEFFLA_WL_BLOCKER
+		bool "Boeffla generic wakelock blocker driver"
+		depends on PM
+		default N
