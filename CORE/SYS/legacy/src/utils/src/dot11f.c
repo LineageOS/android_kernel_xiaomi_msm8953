@@ -469,7 +469,7 @@ static tANI_U32 GetContainerIesLen(tpAniSirGlobal pCtx,
 {
     const tIEDefn *pIe, *pIeFirst;
     tANI_U8 *pBufRemaining = pBuf;
-    tANI_U8 len = 0;
+    tANI_U32 len = 0;
 
     (void)pCtx;
 
