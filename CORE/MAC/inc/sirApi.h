@@ -1125,6 +1125,7 @@ typedef struct sSirSmeJoinReq
     tAniBool            spectrumMgtIndicator;
     tSirMacPowerCapInfo powerCap;
     tSirSupChnl         supportedChannels;
+    bool force_24ghz_in_ht20;
     tSirBssDescription  bssDescription;
 
 } tSirSmeJoinReq, *tpSirSmeJoinReq;

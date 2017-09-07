@@ -3384,6 +3384,12 @@ eHalStatus csrRoamPrepareBssConfig(tpAniSirGlobal pMac, tCsrRoamProfile *pProfil
         }
         //validate CB
         pBssConfig->cbMode = csrGetCBModeFromIes(pMac, pBssDesc->channelId, pIes);
+        if (CSR_IS_CHANNEL_24GHZ(pBssDesc->channelId) &&
+            pProfile->force_24ghz_in_ht20) {
+             pBssConfig->cbMode = PHY_SINGLE_CHANNEL_CENTERED;
+             smsLog(pMac, LOG1,
+                    FL("force_24ghz_in_ht20 is set so set cbmode to 0"));
+        }
         smsLog(pMac, LOG1, FL("Bss Cb is %d, join timeout is %d, HB thresh is %d,"),
                pBssConfig->cbMode, pBssConfig->uJoinTimeOut,  pBssConfig->uHeartBeatThresh);
     }while(0);
@@ -6630,6 +6636,8 @@ eHalStatus csrRoamCopyProfile(tpAniSirGlobal pMac, tCsrRoamProfile *pDstProfile,
         pDstProfile->cfg_protection    = pSrcProfile->cfg_protection;
         pDstProfile->wps_state         = pSrcProfile->wps_state;
         pDstProfile->ieee80211d        = pSrcProfile->ieee80211d;
+        pDstProfile->force_24ghz_in_ht20 =
+                       pSrcProfile->force_24ghz_in_ht20;
         vos_mem_copy(&pDstProfile->Keys, &pSrcProfile->Keys,
                      sizeof(pDstProfile->Keys));
 #ifdef WLAN_FEATURE_VOWIFI_11R
@@ -13503,9 +13511,13 @@ eHalStatus csrSendJoinReqMsg( tpAniSirGlobal pMac, tANI_U32 sessionId, tSirBssDe
         //CBMode
         *pBuf = (tANI_U8)pSession->bssParams.cbMode;
         pBuf++;
+       *pBuf = (tANI_U8)pProfile->force_24ghz_in_ht20;
+        pBuf++;
 
         VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_INFO,
-                  FL("CSR PERSONA=%d CSR CbMode %d"), pProfile->csrPersona, pSession->bssParams.cbMode);
+                  FL("CSR PERSONA=%d CSR CbMode %d force_24ghz_in_ht20 %d"),
+                  pProfile->csrPersona, pSession->bssParams.cbMode,
+                  pProfile->force_24ghz_in_ht20);
 
         // uapsdPerAcBitmask
         *pBuf = pProfile->uapsd_mask;

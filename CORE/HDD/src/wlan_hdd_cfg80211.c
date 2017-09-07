@@ -9195,7 +9195,7 @@ static void wlan_hdd_add_hostapd_conf_vsie(hdd_adapter_t* pHostapdAdapter,
                     elem_id, elem_len, left);
             return;
         }
-        if (IE_EID_VENDOR == elem_id)
+        if ((IE_EID_VENDOR == elem_id) && (elem_len >= WPS_OUI_TYPE_SIZE))
         {
             /* skipping the VSIE's which we don't want to include or
              * it will be included by existing code
@@ -13501,7 +13501,7 @@ static inline bool wlan_hdd_cfg80211_validate_scan_req(struct
 }
 #endif
 
-
+#define NET_DEV_IS_IFF_UP(pAdapter) (pAdapter->dev->flags & IFF_UP)
 /*
  * FUNCTION: hdd_cfg80211_scan_done_callback
  * scanning callback function, called after finishing scan
@@ -13517,9 +13517,6 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
     struct cfg80211_scan_request *req = NULL;
     int ret = 0;
     bool aborted = false;
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
-    bool iface_down = false;
-#endif
     long waitRet = 0;
     tANI_U8 i;
     hdd_context_t *pHddCtx;
@@ -13538,10 +13535,9 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
     }
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
-    if (!(pAdapter->dev->flags & IFF_UP))
+    if (!NET_DEV_IS_IFF_UP(pAdapter))
     {
         hddLog(VOS_TRACE_LEVEL_ERROR, FL("Interface is down"));
-        iface_down = true;
     }
 #endif
     pScanInfo = &pHddCtx->scan_info;
@@ -13581,7 +13577,7 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
     }
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
-    if (!iface_down)
+    if (NET_DEV_IS_IFF_UP(pAdapter))
 #endif
     {
         ret = wlan_hdd_cfg80211_update_bss((WLAN_HDD_GET_CTX(pAdapter))->wiphy,
@@ -13627,7 +13623,7 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
     {
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
             hddLog(VOS_TRACE_LEVEL_ERROR, FL("interface state %s"),
-                   iface_down ? "up" : "down");
+                   NET_DEV_IS_IFF_UP(pAdapter) ? "up" : "down");
 #endif
 
         if (pAdapter->dev) {
@@ -13669,7 +13665,8 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
     }
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
-    if (!iface_down)
+    if (NET_DEV_IS_IFF_UP(pAdapter) &&
+        wlan_hdd_cfg80211_validate_scan_req(req, pHddCtx))
 #endif
         cfg80211_scan_done(req, aborted);
 
@@ -13696,7 +13693,7 @@ allow_suspend:
     hdd_prevent_suspend_timeout(1000, WIFI_POWER_EVENT_WAKELOCK_SCAN);
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
-    if (!iface_down)
+    if (NET_DEV_IS_IFF_UP(pAdapter))
 #endif
 #ifdef FEATURE_WLAN_TDLS
         wlan_hdd_tdls_scan_done_callback(pAdapter);
@@ -13739,7 +13736,7 @@ v_BOOL_t hdd_isConnectionInProgress(hdd_context_t *pHddCtx, v_U8_t *session_id,
                  (eConnectionState_Connecting ==
                 (WLAN_HDD_GET_STATION_CTX_PTR(pAdapter))->conn_info.connState))
             {
-                hddLog(VOS_TRACE_LEVEL_ERROR,
+                hddLog(LOG1,
                        "%s: %p(%d) Connection is in progress", __func__,
                        WLAN_HDD_GET_STATION_CTX_PTR(pAdapter), pAdapter->sessionId);
                 if (session_id && reason)
@@ -13752,7 +13749,7 @@ v_BOOL_t hdd_isConnectionInProgress(hdd_context_t *pHddCtx, v_U8_t *session_id,
             if ((WLAN_HDD_INFRA_STATION == pAdapter->device_mode) &&
                  smeNeighborMiddleOfRoaming(WLAN_HDD_GET_HAL_CTX(pAdapter)))
             {
-                hddLog(VOS_TRACE_LEVEL_ERROR,
+                hddLog(LOG1,
                        "%s: %p(%d) Reassociation is in progress", __func__,
                        WLAN_HDD_GET_STATION_CTX_PTR(pAdapter), pAdapter->sessionId);
                 if (session_id && reason)
@@ -13771,7 +13768,7 @@ v_BOOL_t hdd_isConnectionInProgress(hdd_context_t *pHddCtx, v_U8_t *session_id,
                     (VOS_FALSE == pHddStaCtx->conn_info.uIsAuthenticated))
                 {
                     staMac = (v_U8_t *) &(pAdapter->macAddressCurrent.bytes[0]);
-                    hddLog(VOS_TRACE_LEVEL_ERROR,
+                    hddLog(LOG1,
                            "%s: client " MAC_ADDRESS_STR
                            " is in the middle of WPS/EAPOL exchange.", __func__,
                             MAC_ADDR_ARRAY(staMac));
@@ -13801,7 +13798,7 @@ v_BOOL_t hdd_isConnectionInProgress(hdd_context_t *pHddCtx, v_U8_t *session_id,
                     {
                         staMac = (v_U8_t *) &(pSapCtx->aStaInfo[staId].macAddrSTA.bytes[0]);
 
-                        hddLog(VOS_TRACE_LEVEL_ERROR,
+                        hddLog(LOG1,
                                "%s: client " MAC_ADDRESS_STR " of SoftAP/P2P-GO is in the "
                                "middle of WPS/EAPOL exchange.", __func__,
                                 MAC_ADDR_ARRAY(staMac));
@@ -13976,7 +13973,10 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
     }
     if (hdd_isConnectionInProgress(pHddCtx, &curr_session_id, &curr_reason))
     {
-        hddLog(VOS_TRACE_LEVEL_ERROR, FL("Scan not allowed"));
+
+        if (!(pHddCtx->scan_reject_cnt % HDD_SCAN_REJECT_RATE_LIMIT))
+            hddLog(LOGE, FL("Scan not allowed Session %d reason %d"),
+                curr_session_id, curr_reason);
         if (pHddCtx->last_scan_reject_session_id != curr_session_id ||
             pHddCtx->last_scan_reject_reason != curr_reason ||
             !pHddCtx->last_scan_reject_timestamp)
@@ -13991,16 +13991,15 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
         {
             pHddCtx->scan_reject_cnt++;
 
-            hddLog(LOGE, FL("Session %d reason %d reject cnt %d threshold time has elapsed? %d"),
-               curr_session_id, curr_reason,  pHddCtx->scan_reject_cnt,
-               vos_system_time_after(jiffies_to_msecs(jiffies),
-               pHddCtx->last_scan_reject_timestamp));
-
             if ((pHddCtx->scan_reject_cnt >=
                SCAN_REJECT_THRESHOLD) &&
                vos_system_time_after(jiffies_to_msecs(jiffies),
                pHddCtx->last_scan_reject_timestamp))
             {
+                hddLog(LOGE, FL("Session %d reason %d reject cnt %d threshold time has elapsed? %d"),
+                    curr_session_id, curr_reason, pHddCtx->scan_reject_cnt,
+                    vos_system_time_after(jiffies_to_msecs(jiffies),
+                    pHddCtx->last_scan_reject_timestamp));
                 pHddCtx->last_scan_reject_timestamp = 0;
                 pHddCtx->scan_reject_cnt = 0;
                 if (pHddCtx->cfg_ini->enableFatalEvent)
@@ -15581,6 +15580,51 @@ static int wlan_hdd_reassoc_bssid_hint(hdd_adapter_t *adapter,
 }
 #endif
 
+/**
+ * wlan_hdd_check_ht20_ht40_ind() - check if Supplicant has indicated to
+ * connect in HT20 mode
+ * @hdd_ctx: hdd context
+ * @adapter: Pointer to the HDD adapter
+ * @req: Pointer to the structure cfg_connect_params receieved from user space
+ *
+ * This function will check if supplicant has indicated to to connect in HT20
+ * mode. this is currently applicable only for 2.4Ghz mode only.
+ * if feature is enabled and supplicant indicate HT20 set
+ * force_24ghz_in_ht20 to true to force 2.4Ghz in HT20 else set it to false.
+ *
+ * Return: void
+ */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0)
+static void wlan_hdd_check_ht20_ht40_ind(hdd_context_t *hdd_ctx,
+    hdd_adapter_t *adapter,
+    struct cfg80211_connect_params *req)
+{
+    hdd_wext_state_t *wext_state = WLAN_HDD_GET_WEXT_STATE_PTR(adapter);
+    tCsrRoamProfile *roam_profile;
+
+    roam_profile = &wext_state->roamProfile;
+    roam_profile->force_24ghz_in_ht20 = false;
+    if (hdd_ctx->cfg_ini->override_ht20_40_24g &&
+        !(req->ht_capa.cap_info &
+          IEEE80211_HT_CAP_SUP_WIDTH_20_40))
+        roam_profile->force_24ghz_in_ht20 = true;
+
+    hddLog(LOG1, FL("req->ht_capa.cap_info %x override_ht20_40_24g %d"),
+         req->ht_capa.cap_info, hdd_ctx->cfg_ini->override_ht20_40_24g);
+}
+#else
+static inline void wlan_hdd_check_ht20_ht40_ind(hdd_context_t *hdd_ctx,
+    hdd_adapter_t *adapter,
+    struct cfg80211_connect_params *req)
+{
+    hdd_wext_state_t *wext_state = WLAN_HDD_GET_WEXT_STATE_PTR(adapter);
+    tCsrRoamProfile *roam_profile;
+
+    roam_profile = &wext_state->roamProfile;
+    roam_profile->force_24ghz_in_ht20 = false;
+}
+#endif
+
 /*
  * FUNCTION: __wlan_hdd_cfg80211_connect
  * This function is used to start the association process
@@ -15696,6 +15740,8 @@ static int __wlan_hdd_cfg80211_connect( struct wiphy *wiphy,
     status = wlan_hdd_scan_abort(pAdapter);
     if (0 != status)
         hddLog(VOS_TRACE_LEVEL_ERROR, FL("scan abort failed"));
+
+    wlan_hdd_check_ht20_ht40_ind(pHddCtx, pAdapter, req);
 
     status = wlan_hdd_cfg80211_connect_start(pAdapter, req->ssid,
                                              req->ssid_len, req->bssid,
