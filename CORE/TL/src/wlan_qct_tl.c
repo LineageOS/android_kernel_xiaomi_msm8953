@@ -6123,6 +6123,42 @@ static void WLANTL_CacheEapol(WLANTL_CbType* pTLCb, vos_pkt_t* vosTempBuff)
    }
 }
 
+/**
+ * WLANTL_SampleRxRSSI() - Collect RX rssi samples
+ * @pTLCb: TL context pointer
+ * @pBDHeader: RX Meta data pointer
+ * @sta_id: Station ID
+ *
+ * This function records the last twenty RX RSSI samples
+ *
+ * Return: void
+ */
+static void WLANTL_SampleRxRSSI(WLANTL_CbType* pTLCb, void * pBDHeader,
+                                uint8_t sta_id)
+{
+   WLANTL_STAClientType *pClientSTA = pTLCb->atlSTAClients[sta_id];
+   uint8_t count = pClientSTA->rssi_sample_cnt;
+   uint8_t old_idx = pClientSTA->rssi_stale_idx;
+   s8 curr_RSSI, curr_RSSI0, curr_RSSI1;
+
+   curr_RSSI0 = WLANTL_GETRSSI0(pBDHeader);
+   curr_RSSI1 = WLANTL_GETRSSI1(pBDHeader);
+
+   curr_RSSI  = (curr_RSSI0 > curr_RSSI1) ? curr_RSSI0 : curr_RSSI1;
+
+   if (count >= WLANTL_RSSI_SAMPLE_CNT) {
+      pClientSTA->rssi_sample_sum -= pClientSTA->rssi_sample[old_idx];
+      pClientSTA->rssi_sample[old_idx] = curr_RSSI;
+      pClientSTA->rssi_sample_sum += pClientSTA->rssi_sample[old_idx];
+      old_idx >= WLANTL_RSSI_SAMPLE_CNT ? old_idx = 0 : old_idx++;
+      pClientSTA->rssi_stale_idx = old_idx;
+   } else {
+      pClientSTA->rssi_sample[count] = curr_RSSI;
+      pClientSTA->rssi_sample_sum += pClientSTA->rssi_sample[count];
+      pClientSTA->rssi_sample_cnt++;
+   }
+}
+
 /*==========================================================================
 
   FUNCTION    WLANTL_RxFrames
@@ -6361,6 +6397,9 @@ WLANTL_RxFrames
             pClientSTA->interfaceStats.mgmtRx++;
         }
 #endif
+
+        WLANTL_SampleRxRSSI(pTLCb, pvBDHeader, ucSTAId);
+
       }
 
       pTLCb->tlMgmtFrmClient.pfnTlMgmtFrmRx( pvosGCtx, vosTempBuff); 
@@ -6670,6 +6709,8 @@ WLANTL_RxFrames
           TLLOGW(VOS_TRACE(VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_WARN,
                            FL("Failed to Read SNR")));
         }
+
+        WLANTL_SampleRxRSSI(pTLCb, pvBDHeader, ucSTAId);
 
         pfnSTAFsm( pvosGCtx, ucSTAId, &vosTempBuff, bForwardIAPPwithLLC);
       }
@@ -14376,6 +14417,24 @@ void WLANTL_SetARPFWDatapath(void * pvosGCtx, bool flag)
 
    pTLCb->track_arp = flag;
 
+}
+
+void WLANTL_GetSAPStaRSSi(void *pvosGCtx, uint8_t ucSTAId, s8 *rssi)
+{
+   WLANTL_CbType*  pTLCb = NULL;
+   uint8_t count;
+
+   pTLCb = VOS_GET_TL_CB(pvosGCtx);
+   if (NULL == pTLCb) {
+      TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
+             "%s: Invalid TL pointer from pvosGCtx", __func__));
+      return;
+   }
+
+   count = pTLCb->atlSTAClients[ucSTAId]->rssi_sample_cnt;
+   count < WLANTL_RSSI_SAMPLE_CNT ? count++ : count;
+
+   *rssi = pTLCb->atlSTAClients[ucSTAId]->rssi_sample_sum / count;
 }
 
 #ifdef WLAN_FEATURE_RMC
