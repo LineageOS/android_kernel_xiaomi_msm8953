@@ -629,7 +629,7 @@ WLANTL_Open
   if (( NULL == pTLCb ) || ( NULL == pTLConfig ) )
   {
     TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_FATAL,
-               "WLAN TL: Invalid input pointer on WLANTL_Open TL %p Config %p", pTLCb, pTLConfig ));
+               "WLAN TL: Invalid input pointer on WLANTL_Open TL %pK Config %pK", pTLCb, pTLConfig ));
     return VOS_STATUS_E_FAULT;
   }
 
@@ -5103,7 +5103,7 @@ WLANTL_TxComp
     }
 
     TLLOG2(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO_HIGH,
-               "WLAN TL:Calling Tx complete for pkt %p in function %p",
+               "WLAN TL:Calling Tx complete for pkt %pK in function %pK",
                vosDataBuff, pfnTxComp));
 
     vosTempTx = vosDataBuff;
@@ -5181,8 +5181,8 @@ WLANTL_CacheSTAFrame
   if (( NULL == pTLCb ) || ( NULL == vosTempBuff ) )
   {
     TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
-               "WLAN TL: Invalid input pointer on WLANTL_CacheSTAFrame TL %p"
-               " Packet %p", pTLCb, vosTempBuff ));
+               "WLAN TL: Invalid input pointer on WLANTL_CacheSTAFrame TL %pK"
+               " Packet %pK", pTLCb, vosTempBuff ));
     return VOS_STATUS_E_FAULT;
   }
 
@@ -5397,7 +5397,7 @@ WLANTL_ForwardSTAFrames
   if ( NULL == pTLCb )
   {
     TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
-        "WLAN TL: Invalid input pointer on WLANTL_ForwardSTAFrames TL %p",
+        "WLAN TL: Invalid input pointer on WLANTL_ForwardSTAFrames TL %pK",
          pTLCb ));
     return VOS_STATUS_E_FAULT;
   }
@@ -8236,7 +8236,7 @@ WLANTL_STATxAuth
   if (( NULL == pTLCb ) || ( NULL == pvosDataBuff ))
   {
      TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
-            "WLAN TL:Invalid input params on WLANTL_STATxAuth TL %p DB %p",
+            "WLAN TL:Invalid input params on WLANTL_STATxAuth TL %pK DB %pK",
              pTLCb, pvosDataBuff));
     if (NULL != pvosDataBuff)
     {
@@ -9945,7 +9945,7 @@ WLANTL_McProcessMsg
 
     // Free the PAL memory, we are done with it.
     TLLOG2(VOS_TRACE(VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO_HIGH,
-        "Flush complete received by TL: Freeing %p", FlushACRspPtr));
+        "Flush complete received by TL: Freeing %pK", FlushACRspPtr));
     vos_mem_free((v_VOID_t *)FlushACRspPtr);
     break;
 
@@ -10894,7 +10894,7 @@ static v_VOID_t WLANTL_DebugFrame
    numBytes = dataSize % WLANTL_DEBUG_FRAME_BYTE_PER_LINE;
    linePointer = (v_U8_t *)dataPointer;
 
-   TLLOGE(VOS_TRACE(VOS_MODULE_ID_SAL, VOS_TRACE_LEVEL_ERROR, "WLAN TL:Frame Debug Frame Size %d, Pointer 0x%p", dataSize, dataPointer));
+   TLLOGE(VOS_TRACE(VOS_MODULE_ID_SAL, VOS_TRACE_LEVEL_ERROR, "WLAN TL:Frame Debug Frame Size %d, Pointer 0x%pK", dataSize, dataPointer));
    for(idx = 0; idx < numLines; idx++)
    {
       memset(lineBuffer, 0, WLANTL_DEBUG_FRAME_BYTE_PER_LINE);
@@ -11445,7 +11445,7 @@ WLANTL_FastHwFwdDataFrame
     if ( NULL == pucBuffPtr )
     {
         TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
-                    "WLAN TL:No enough space in VOSS packet %p for DxE/BD/WLAN header", vosDataBuff));
+                    "WLAN TL:No enough space in VOSS packet %pK for DxE/BD/WLAN header", vosDataBuff));
        *pvosStatus = VOS_STATUS_E_INVAL;
         return;
     }
@@ -12712,7 +12712,7 @@ WLANTL_EnableUAPSDForAC
   {
     TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
                "WLAN TL:Invalid input params on WLANTL_EnableUAPSDForAC"
-               " TL: %p  STA: %d  AC: %d",
+               " TL: %pK  STA: %d  AC: %d",
                pTLCb, ucSTAId, ucAC));
     return VOS_STATUS_E_FAULT;
   }
@@ -12810,7 +12810,7 @@ WLANTL_DisableUAPSDForAC
   {
     TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
                "WLAN TL:Invalid input params on WLANTL_DisableUAPSDForAC"
-               " TL: %p  STA: %d  AC: %d", pTLCb, ucSTAId, ucAC ));
+               " TL: %pK  STA: %d  AC: %d", pTLCb, ucSTAId, ucAC ));
     return VOS_STATUS_E_FAULT;
   }
 
@@ -14473,7 +14473,7 @@ WLANTL_RMC_SESSION* WLANTL_RmcLookUpRmcSession
     if (NULL == pMcastAddr)
     {
         TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
-            "Sanity check failed pMcastAddr %p", pMcastAddr));
+            "Sanity check failed pMcastAddr %pK", pMcastAddr));
         return NULL;
     }
 
@@ -14663,7 +14663,7 @@ WLANTL_EnableRMC
     if ( (NULL == pvosGCtx) || (NULL == pMcastTransmitterAddr) )
     {
         TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
-            "WLAN TL %s: Sanity check failed pvosGCtx %p aMcastAddr %p",
+            "WLAN TL %s: Sanity check failed pvosGCtx %pK aMcastAddr %pK",
             __func__, pvosGCtx, pMcastTransmitterAddr));
         return VOS_STATUS_E_FAILURE;
     }
@@ -14697,7 +14697,7 @@ WLANTL_DisableRMC
     if ((NULL == pvosGCtx) || (NULL == pMcastTransmitterAddr))
     {
         TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
-            "WLAN TL %s: Sanity check failed pvosGCtx %p aMcastAddr %p",
+            "WLAN TL %s: Sanity check failed pvosGCtx %pK aMcastAddr %pK",
              __func__, pvosGCtx, pMcastTransmitterAddr));
         return VOS_STATUS_E_FAILURE;
     }
@@ -14956,7 +14956,7 @@ WLANTL_SetMcastDuplicateDetection
     if (NULL == pvosGCtx)
     {
         TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
-            "WLAN TL %s: Sanity check failed pvosGCtx %p",
+            "WLAN TL %s: Sanity check failed pvosGCtx %pK",
              __func__, pvosGCtx));
         return VOS_STATUS_E_FAILURE;
     }
