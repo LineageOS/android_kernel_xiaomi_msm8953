@@ -11641,6 +11641,11 @@ static int hdd_generate_iface_mac_addr_auto(hdd_context_t *pHddCtx,
          pHddCtx->cfg_ini->intfMacAddr[i].bytes[4] = (serialno >> 8) & 0xFF;
          pHddCtx->cfg_ini->intfMacAddr[i].bytes[5] = serialno & 0xFF;
 
+		if (0 == memcmp(&pHddCtx->cfg_ini->intfMacAddr[i].bytes[0],
+				&mac_addr.bytes[0], VOS_MAC_ADDR_SIZE))
+			pHddCtx->cfg_ini->intfMacAddr[i].bytes[5] +=
+				VOS_MAX_CONCURRENCY_PERSONA;
+
          serialno++;
          hddLog(VOS_TRACE_LEVEL_ERROR,
                    "%s: Derived Mac Addr: "
