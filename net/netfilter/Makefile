@@ -92,6 +92,9 @@ obj-$(CONFIG_NFT_MASQ)		+= nft_masq.o
 # generic X tables 
 obj-$(CONFIG_NETFILTER_XTABLES) += x_tables.o xt_tcpudp.o
 
+# TTL
+obj-$(CONFIG_IP_NF_TARGET_TTL) += xt_HL.o
+
 # combos
 obj-$(CONFIG_NETFILTER_XT_MARK) += xt_mark.o
 obj-$(CONFIG_NETFILTER_XT_CONNMARK) += xt_connmark.o
