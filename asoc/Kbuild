@@ -30,6 +30,11 @@ ifeq ($(KERNEL_BUILD), 0)
 		export
 		INCS    +=  -include $(AUDIO_ROOT)/config/sdm670autoconf.h
 	endif
+	ifeq ($(CONFIG_ARCH_SDXPOORWILLS), y)
+		include $(AUDIO_ROOT)/config/sdxpoorwillsauto.conf
+		export
+		INCS    +=  -include $(AUDIO_ROOT)/config/sdxpoorwillsautoconf.h
+	endif
 endif
 
 # As per target team, build is done as follows:
@@ -78,6 +83,11 @@ endif
 # for SDM845 sound card driver
 ifdef CONFIG_SND_SOC_MACHINE_SDM845
 	MACHINE_OBJS += sdm845.o
+endif
+
+# for SDXPOORWILLS sound card driver
+ifdef CONFIG_SND_SOC_MACHINE_SDXPOORWILLS
+	MACHINE_OBJS += sdxpoorwills.o
 endif
 
 ifdef CONFIG_SND_SOC_CPE
