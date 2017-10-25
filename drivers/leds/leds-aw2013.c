@@ -447,7 +447,7 @@ static int aw_2013_check_chipid(struct aw2013_led *led)
 	u8 val;
 
 	aw2013_write(led, AW_REG_RESET, AW_LED_RESET_MASK);
-	usleep_range(AW_LED_RESET_DELAY, AW_LED_RESET_DELAY+100);
+	usleep_range(AW_LED_RESET_DELAY, AW_LED_RESET_DELAY);
 	aw2013_read(led, AW_REG_RESET, &val);
 	if (val == AW2013_CHIPID)
 		return 0;
