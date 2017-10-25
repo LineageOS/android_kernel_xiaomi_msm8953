@@ -97,7 +97,7 @@ typedef struct sSirProbeRespBeacon
     tDot11fIEPowerConstraints localPowerConstraint;
     tDot11fIETPCReport        tpcReport;
     tDot11fIEChanSwitchAnn    channelSwitchIE;
-    tDot11fIEExtChanSwitchAnn extChannelSwitchIE;
+    tDot11fIEsec_chan_offset sec_chan_offset;
     tSirMacAddr               bssid;
     tDot11fIEQuiet            quietIE;
     tDot11fIEHTCaps           HTCaps;
@@ -583,7 +583,7 @@ PopulateDot11fChanSwitchAnn(tpAniSirGlobal          pMac,
 /// Populate a tDot11fIEChanSwitchAnn
 void
 PopulateDot11fExtChanSwitchAnn(tpAniSirGlobal          pMac,
-                             tDot11fIEExtChanSwitchAnn *pDot11f,
+                             tDot11fIEsec_chan_offset *pDot11f,
                              tpPESession psessionEntry);
 
 /// Populate a tDot11fIECountry

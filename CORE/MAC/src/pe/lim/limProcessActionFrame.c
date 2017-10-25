@@ -360,25 +360,25 @@ __limProcessChannelSwitchActionFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo
 
         if (psessionEntry->htSupportedChannelWidthSet)
         {
-            if ((pChannelSwitchFrame->ExtChanSwitchAnn.secondaryChannelOffset == PHY_DOUBLE_CHANNEL_LOW_PRIMARY) ||
-                (pChannelSwitchFrame->ExtChanSwitchAnn.secondaryChannelOffset == PHY_DOUBLE_CHANNEL_HIGH_PRIMARY))
+            if ((pChannelSwitchFrame->sec_chan_offset.secondaryChannelOffset == PHY_DOUBLE_CHANNEL_LOW_PRIMARY) ||
+                (pChannelSwitchFrame->sec_chan_offset.secondaryChannelOffset == PHY_DOUBLE_CHANNEL_HIGH_PRIMARY))
             {
                 psessionEntry->gLimChannelSwitch.state = eLIM_CHANNEL_SWITCH_PRIMARY_AND_SECONDARY;
-                psessionEntry->gLimChannelSwitch.secondarySubBand = pChannelSwitchFrame->ExtChanSwitchAnn.secondaryChannelOffset;
+                psessionEntry->gLimChannelSwitch.secondarySubBand = pChannelSwitchFrame->sec_chan_offset.secondaryChannelOffset;
             }
 #ifdef WLAN_FEATURE_11AC
             if(psessionEntry->vhtCapability && pChannelSwitchFrame->WiderBWChanSwitchAnn.present)
             {
                 if (pChannelSwitchFrame->WiderBWChanSwitchAnn.newChanWidth == WNI_CFG_VHT_CHANNEL_WIDTH_80MHZ)
                 {
-                    if (pChannelSwitchFrame->ExtChanSwitchAnn.present && ((pChannelSwitchFrame->ExtChanSwitchAnn.secondaryChannelOffset == PHY_DOUBLE_CHANNEL_LOW_PRIMARY) ||
-                        (pChannelSwitchFrame->ExtChanSwitchAnn.secondaryChannelOffset == PHY_DOUBLE_CHANNEL_HIGH_PRIMARY)))
+                    if (pChannelSwitchFrame->sec_chan_offset.present && ((pChannelSwitchFrame->sec_chan_offset.secondaryChannelOffset == PHY_DOUBLE_CHANNEL_LOW_PRIMARY) ||
+                        (pChannelSwitchFrame->sec_chan_offset.secondaryChannelOffset == PHY_DOUBLE_CHANNEL_HIGH_PRIMARY)))
                     {
                         psessionEntry->gLimChannelSwitch.state = eLIM_CHANNEL_SWITCH_PRIMARY_AND_SECONDARY;
                         psessionEntry->gLimChannelSwitch.secondarySubBand =
                            limGet11ACPhyCBState(pMac,
                                                 psessionEntry->gLimChannelSwitch.primaryChannel,
-                                                pChannelSwitchFrame->ExtChanSwitchAnn.secondaryChannelOffset,
+                                                pChannelSwitchFrame->sec_chan_offset.secondaryChannelOffset,
                                                 pChannelSwitchFrame->WiderBWChanSwitchAnn.newCenterChanFreq0,
                                                 psessionEntry);
                     }

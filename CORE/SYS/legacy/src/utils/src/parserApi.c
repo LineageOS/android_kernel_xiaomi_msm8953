@@ -309,7 +309,7 @@ PopulateDot11fChanSwitchAnn(tpAniSirGlobal          pMac,
 
 void
 PopulateDot11fExtChanSwitchAnn(tpAniSirGlobal pMac,
-                               tDot11fIEExtChanSwitchAnn *pDot11f,
+                               tDot11fIEsec_chan_offset *pDot11f,
                                tpPESession psessionEntry)
 {
     //Has to be updated on the cb state basis
@@ -2277,14 +2277,14 @@ tSirRetStatus sirConvertProbeFrame2Struct(tpAniSirGlobal       pMac,
     {
         pProbeResp->channelSwitchPresent = 1;
         vos_mem_copy( &pProbeResp->channelSwitchIE, &pr->ChanSwitchAnn,
-                       sizeof(tDot11fIEExtChanSwitchAnn) );
+                       sizeof(tDot11fIEChanSwitchAnn) );
     }
 
-       if ( pr->ExtChanSwitchAnn.present )
+       if ( pr->sec_chan_offset.present )
     {
         pProbeResp->extChannelSwitchPresent = 1;
-        vos_mem_copy ( &pProbeResp->extChannelSwitchIE, &pr->ExtChanSwitchAnn,
-                       sizeof(tDot11fIEExtChanSwitchAnn) );
+        vos_mem_copy ( &pProbeResp->sec_chan_offset, &pr->sec_chan_offset,
+                       sizeof(tDot11fIEsec_chan_offset) );
     }
 
     if( pr->TPCReport.present)
@@ -3418,11 +3418,11 @@ sirParseBeaconIE(tpAniSirGlobal        pMac,
                       sizeof(tDot11fIEChanSwitchAnn));
     }
 
-    if ( pBies->ExtChanSwitchAnn.present)
+    if ( pBies->sec_chan_offset.present)
     {
         pBeaconStruct->extChannelSwitchPresent= 1;
-        vos_mem_copy( &pBeaconStruct->extChannelSwitchIE, &pBies->ExtChanSwitchAnn,
-                      sizeof(tDot11fIEExtChanSwitchAnn));
+        vos_mem_copy( &pBeaconStruct->sec_chan_offset, &pBies->sec_chan_offset,
+                      sizeof(tDot11fIEsec_chan_offset));
     }
 
     if ( pBies->Quiet.present )
@@ -3666,11 +3666,11 @@ sirConvertBeaconFrame2Struct(tpAniSirGlobal       pMac,
                                                        sizeof(tDot11fIEChanSwitchAnn) );
     }
 
-    if ( pBeacon->ExtChanSwitchAnn.present )
+    if ( pBeacon->sec_chan_offset.present )
     {
         pBeaconStruct->extChannelSwitchPresent = 1;
-        vos_mem_copy( &pBeaconStruct->extChannelSwitchIE, &pBeacon->ExtChanSwitchAnn,
-                                                       sizeof(tDot11fIEExtChanSwitchAnn) );
+        vos_mem_copy(&pBeaconStruct->sec_chan_offset, &pBeacon->sec_chan_offset,
+                      sizeof(tDot11fIEsec_chan_offset));
     }
 
     if( pBeacon->TPCReport.present)

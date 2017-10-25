@@ -2804,11 +2804,11 @@ limUpdateChannelSwitch(struct sAniSirGlobal *pMac,  tpSirProbeRespBeacon pBeacon
         {
             if (pBeacon->extChannelSwitchPresent)
             {
-                if ((pBeacon->extChannelSwitchIE.secondaryChannelOffset == PHY_DOUBLE_CHANNEL_LOW_PRIMARY) || 
-                    (pBeacon->extChannelSwitchIE.secondaryChannelOffset == PHY_DOUBLE_CHANNEL_HIGH_PRIMARY))
+                if ((pBeacon->sec_chan_offset.secondaryChannelOffset == PHY_DOUBLE_CHANNEL_LOW_PRIMARY) ||
+                    (pBeacon->sec_chan_offset.secondaryChannelOffset == PHY_DOUBLE_CHANNEL_HIGH_PRIMARY))
                 {
                     psessionEntry->gLimChannelSwitch.state = eLIM_CHANNEL_SWITCH_PRIMARY_AND_SECONDARY;
-                    psessionEntry->gLimChannelSwitch.secondarySubBand = pBeacon->extChannelSwitchIE.secondaryChannelOffset;
+                    psessionEntry->gLimChannelSwitch.secondarySubBand = pBeacon->sec_chan_offset.secondaryChannelOffset;
                 }
 #ifdef WLAN_FEATURE_11AC
                 if(psessionEntry->vhtCapability && pBeacon->WiderBWChanSwitchAnnPresent)
@@ -2817,13 +2817,13 @@ limUpdateChannelSwitch(struct sAniSirGlobal *pMac,  tpSirProbeRespBeacon pBeacon
                     {
                         if(pBeacon->extChannelSwitchPresent)
                         {
-                            if ((pBeacon->extChannelSwitchIE.secondaryChannelOffset == PHY_DOUBLE_CHANNEL_LOW_PRIMARY) ||
-                                (pBeacon->extChannelSwitchIE.secondaryChannelOffset == PHY_DOUBLE_CHANNEL_HIGH_PRIMARY))
+                            if ((pBeacon->sec_chan_offset.secondaryChannelOffset == PHY_DOUBLE_CHANNEL_LOW_PRIMARY) ||
+                                (pBeacon->sec_chan_offset.secondaryChannelOffset == PHY_DOUBLE_CHANNEL_HIGH_PRIMARY))
                             {
                                 psessionEntry->gLimChannelSwitch.state = eLIM_CHANNEL_SWITCH_PRIMARY_AND_SECONDARY;
                                 psessionEntry->gLimChannelSwitch.secondarySubBand = limGet11ACPhyCBState(pMac, 
                                                                                                          psessionEntry->gLimChannelSwitch.primaryChannel,
-                                                                                                         pBeacon->extChannelSwitchIE.secondaryChannelOffset,
+                                                                                                         pBeacon->sec_chan_offset.secondaryChannelOffset,
                                                                                                          pWiderChnlSwitch->newCenterChanFreq0,
                                                                                                          psessionEntry);
                             }
