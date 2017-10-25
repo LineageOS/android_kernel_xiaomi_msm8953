@@ -396,6 +396,7 @@ enum eWniMsgTypes
 #endif
 
     eWNI_SME_DEL_BA_SES_REQ,
+    eWNI_SME_SET_CHAN_SW_IE_REQ,
     eWNI_SME_MSG_TYPES_END
 };
 

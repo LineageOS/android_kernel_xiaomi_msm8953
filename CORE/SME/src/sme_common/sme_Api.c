@@ -15090,3 +15090,24 @@ eHalStatus sme_get_tsf_req(tHalHandle hHal, tSirCapTsfParams cap_tsf_params)
     }
     return(status);
 }
+
+VOS_STATUS sme_roam_csa_ie_request(tHalHandle hal, tCsrBssid bssid,
+                                   uint8_t new_chan, uint32_t phy_mode)
+{
+   VOS_STATUS status = VOS_STATUS_E_FAILURE;
+   tpAniSirGlobal mac_ctx = PMAC_STRUCT(hal);
+   uint8_t cb_mode = 0;
+
+   status = sme_AcquireGlobalLock(&mac_ctx->sme);
+   if (VOS_IS_STATUS_SUCCESS(status)) {
+       if (CSR_IS_CHANNEL_5GHZ(new_chan)) {
+           sme_SelectCBMode(hal, phy_mode, new_chan);
+           cb_mode = mac_ctx->roam.configParam.channelBondingMode5GHz;
+       }
+       status = csr_roam_send_chan_sw_ie_request(mac_ctx, bssid,
+                                                 new_chan, cb_mode);
+       sme_ReleaseGlobalLock(&mac_ctx->sme);
+   }
+   return status;
+}
+

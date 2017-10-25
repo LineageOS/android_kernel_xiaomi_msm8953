@@ -392,6 +392,10 @@
 #define SIR_MAC_RSN_EID_MIN                4
 #define SIR_MAC_RSN_EID_MAX                254
 
+#define SIR_MAC_EXT_CHNL_SWITCH_ANN_EID    60
+#define SIR_MAC_WIDER_BW_CHANNEL_SWITCH_ANN 194
+
+
 //using reserved EID for Qos Action IE for now,
 //need to check 11e spec for the actual EID
 #define SIR_MAC_QOS_ACTION_EID         49

@@ -5627,6 +5627,84 @@ static void lim_register_mgmt_frame_ind_cb(tpAniSirGlobal pMac,
   else
       limLog(pMac, LOGE, FL("sme_req->callback is null"));
 }
+/**
+ * lim_process_sme_set_csa_ie_request() - process sme dfs csa ie req
+ *
+ * @mac_ctx: Pointer to Global MAC structure
+ * @msg_buf: pointer to the SME message buffer
+ *
+ * This function processes SME request messages from HDD or upper layer
+ * application.
+ *
+ * Return: None
+ */
+static void lim_process_sme_set_csa_ie_request(tpAniSirGlobal mac_ctx,
+                                               uint32_t *msg_buf)
+{
+   struct sir_ecsa_ie_req *csa_ie_req = (struct sir_ecsa_ie_req *)msg_buf;
+   uint8_t session_id;
+   tpPESession session_entry = NULL;
+   tLimWiderBWChannelSwitchInfo *wider_bw_ch_switch;
+
+   if (!csa_ie_req) {
+       limLog(mac_ctx, LOGE, FL("Buffer is Pointing to NULL"));
+       return;
+   }
+
+   session_entry = peFindSessionByBssid(mac_ctx,
+                                        csa_ie_req->bssid, &session_id);
+   if (!session_entry) {
+       limLog(mac_ctx, LOGE,
+              FL("Session not found for given BSSID" MAC_ADDRESS_STR),
+              MAC_ADDR_ARRAY(csa_ie_req->bssid));
+       return;
+   }
+
+   if (session_entry->valid && !LIM_IS_AP_ROLE(session_entry)) {
+       limLog(mac_ctx, LOGE, FL("Invalid SystemRole %d"),
+              GET_LIM_SYSTEM_ROLE(session_entry));
+       return;
+   }
+
+   /* target channel */
+   session_entry->gLimChannelSwitch.primaryChannel = csa_ie_req->new_chan;
+
+   /* Channel switch announcement needs to be included in beacon */
+   session_entry->include_ecsa_ie = true;
+   session_entry->gLimChannelSwitch.switchCount =
+                             CHANNEL_SWITCH_BEACON_COUNT;
+   session_entry->gLimChannelSwitch.secondarySubBand =
+                             csa_ie_req->cb_mode;
+   session_entry->gLimChannelSwitch.switchMode = SAP_CHANNEL_SWITCH_MODE;
+
+   /* Now encode the Wider Ch BW element depending on the ch width */
+   if (session_entry->vhtCapability &&
+       (csa_ie_req->cb_mode >=
+        PHY_QUADRUPLE_CHANNEL_20MHZ_LOW_40MHZ_CENTERED)) {
+       wider_bw_ch_switch = &session_entry->gLimWiderBWChannelSwitch;
+       session_entry->include_wide_ch_bw_ie = true;
+       wider_bw_ch_switch->newChanWidth = WNI_CFG_VHT_CHANNEL_WIDTH_80MHZ;
+       /* Fetch the center channel based on the channel width */
+       wider_bw_ch_switch->newCenterChanFreq0 =
+                     limGetCenterChannel(mac_ctx, csa_ie_req->new_chan,
+                                         csa_ie_req->cb_mode,
+                                         WNI_CFG_VHT_CHANNEL_WIDTH_80MHZ);
+   }
+   /* Send ECSA/CSA IE request from here */
+   if (schSetFixedBeaconFields(mac_ctx, session_entry) != eSIR_SUCCESS) {
+       limLog(mac_ctx, LOGE, FL("Unable to set CSA IE in beacon"));
+       return;
+   }
+
+    limSendBeaconInd(mac_ctx, session_entry);
+    session_entry->include_ecsa_ie = false;
+    session_entry->include_wide_ch_bw_ie = false;
+
+    limLog(mac_ctx, LOG1, FL("IE count:%d chan:%d secondarySubBand:%d"),
+           session_entry->gLimChannelSwitch.switchCount,
+           session_entry->gLimChannelSwitch.primaryChannel,
+           session_entry->gLimChannelSwitch.secondarySubBand);
+}
 
 /**
  * limProcessSmeReqMessages()
@@ -5988,6 +6066,8 @@ limProcessSmeReqMessages(tpAniSirGlobal pMac, tpSirMsgQ pMsg)
         case eWNI_SME_REGISTER_MGMT_FRAME_CB:
             lim_register_mgmt_frame_ind_cb(pMac, pMsgBuf);
             break;
+        case eWNI_SME_SET_CHAN_SW_IE_REQ:
+            lim_process_sme_set_csa_ie_request(pMac, pMsgBuf);
         default:
             vos_mem_free((v_VOID_t*)pMsg->bodyptr);
             pMsg->bodyptr = NULL;

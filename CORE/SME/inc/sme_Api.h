@@ -4009,4 +4009,16 @@ eHalStatus sme_get_nud_debug_stats(tHalHandle hHal,
                                pgetArpStatsParams pGetStatsParam);
 eHalStatus sme_del_sta_ba_session_req(tHalHandle hHal,
                                       tDelBaParams sta_del_params);
+/**
+ * sme_roam_csa_ie_request() - request CSA IE transmission from PE
+ * @hal: handle returned by mac_open
+ * @bssid: SAP bssid
+ * @new_chan: target channel information
+ * @phy_mode: SAP phymode
+ *
+ * Return: VOS_STATUS
+ */
+VOS_STATUS sme_roam_csa_ie_request(tHalHandle hal, tCsrBssid bssid,
+                                   uint8_t new_chan, uint32_t phy_mode);
+
 #endif //#if !defined( __SME_API_H )

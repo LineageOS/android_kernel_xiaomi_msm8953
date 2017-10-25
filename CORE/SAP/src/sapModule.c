@@ -2459,3 +2459,89 @@ void WLANSAP_PopulateDelStaParams(const v_U8_t *mac,
                    pDelStaParams->reason_code, pDelStaParams->subtype,
                    MAC_ADDR_ARRAY(pDelStaParams->peerMacAddr));
 }
+
+/**
+ * wlansap_validate_phy_mode() -
+ * validate if the phymode allow the channel to set.
+ *
+ * @phy_mode: current phymode
+ * @channel: target channel number.
+ *
+ * Return: true if channel is allowed else false
+ */
+static bool wlansap_validate_phy_mode(uint32_t phy_mode, uint32_t channel)
+{
+  switch (phy_mode) {
+  case eSAP_DOT11_MODE_11a:
+     if (channel <= SIR_11B_CHANNEL_END)
+         return false;
+  case eSAP_DOT11_MODE_11b:
+  case eSAP_DOT11_MODE_11g:
+  case eSAP_DOT11_MODE_11g_ONLY:
+  case eSAP_DOT11_MODE_11b_ONLY:
+    if (channel > SIR_11B_CHANNEL_END)
+        return false;
+  default:
+    return true;
+  }
+
+  return true;
+}
+
+int wlansap_set_channel_change(v_PVOID_t vos_ctx, uint32_t new_channel)
+{
+   ptSapContext sap_ctx;
+   tWLAN_SAPEvent sap_event = {0};
+   v_PVOID_t hal;
+   tpAniSirGlobal mac_ctx;
+
+   sap_ctx = VOS_GET_SAP_CB(vos_ctx);
+
+   if (!sap_ctx) {
+        hddLog(LOGE, FL("sap_ctx is NULL"));
+        return -EINVAL;
+   }
+
+   hal = VOS_GET_HAL_CB(sap_ctx->pvosGCtx);
+   if (!hal) {
+        hddLog(LOGE, FL("hal is NULL"));
+        return -EINVAL;
+   }
+   mac_ctx = PMAC_STRUCT(hal);
+   if (sap_ctx->channel == new_channel) {
+        hddLog(LOGE, FL("channel %d already set"), new_channel);
+        return -EALREADY;
+   }
+   if (sap_ctx->ecsa_info.channel_switch_in_progress) {
+        hddLog(LOGE, FL("channel switch already in progress ignore"));
+        return -EALREADY;
+   }
+   if (NV_CHANNEL_ENABLE != vos_nv_getChannelEnabledState(new_channel)) {
+        hddLog(LOGE, FL("Invalid channel Ignore channel switch "));
+        return -EINVAL;
+   }
+
+   if (eSAP_STARTED != sap_ctx->sapsMachine) {
+        hddLog(LOGE, FL("SAP is not in eSAP_STARTED state "));
+        return -EINVAL;
+   }
+   if (!wlansap_validate_phy_mode(sap_ctx->csrRoamProfile.phyMode,
+       new_channel)) {
+        hddLog(LOGE, FL("Channel %d not valid for phyMode %d"), new_channel,
+               sap_ctx->csrRoamProfile.phyMode);
+        return -EINVAL;
+   }
+
+   sap_ctx->ecsa_info.new_channel = new_channel;
+   sap_ctx->ecsa_info.channel_switch_in_progress = true;
+   /*
+    * Post the eSAP_CHANNEL_SWITCH_ANNOUNCEMENT_START
+    * to SAP state machine to process the channel
+    * request with CSA IE set in the beacons.
+    */
+   sap_event.event = eSAP_CHANNEL_SWITCH_ANNOUNCEMENT_START;
+   sapFsm(sap_ctx, &sap_event);
+
+   return 0;
+}
+

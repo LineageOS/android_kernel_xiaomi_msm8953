@@ -155,6 +155,9 @@ typedef tANI_U8 tSirVersionString[SIR_VERSION_STRING_LEN];
 
 #define WLAN_DISA_MAX_PAYLOAD_SIZE                1600
 
+#define CHANNEL_SWITCH_BEACON_COUNT 5
+#define SAP_CHANNEL_SWITCH_MODE 1
+
 enum eSirHostMsgTypes
 {
     SIR_HAL_APP_SETUP_NTF = SIR_HAL_HOST_MSG_START,
@@ -6331,4 +6334,21 @@ enum sir_roam_cleanup_type {
 typedef struct {
     tANI_U8 session_id;
 }tDelBaParams,*ptDelBaParams;
+
+/**
+ * struct sir_ecsa_ie_req - structure to send req to include ECSA IE in beacon
+ * @type: type of msg
+ * @len: length of msg
+ * @new_chan: new channel to which switch is requested
+ * @cb_mode:cbmode of the new channel
+ * @bssid: bssid of the AP
+ */
+struct sir_ecsa_ie_req {
+   uint16_t type;
+   uint16_t len;
+   uint8_t new_chan;
+   uint8_t cb_mode;
+   uint8_t bssid[VOS_MAC_ADDR_SIZE];
+};
+
 #endif /* __SIR_API_H */

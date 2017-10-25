@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013, 2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2013, 2016-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1171,6 +1171,17 @@ sapFsm
                            __func__, "eSAP_STARTED", "eSAP_DISCONNECTING");
                 sapContext->sapsMachine = eSAP_DISCONNECTING;
                 vosStatus = sapGotoDisconnecting(sapContext);
+            }
+            else if (msg == eSAP_CHANNEL_SWITCH_ANNOUNCEMENT_START ) {
+                tHalHandle hHal = VOS_GET_HAL_CB(sapContext->pvosGCtx);
+                if (!hHal) {
+                     VOS_TRACE(VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
+                                 "In %s, NULL hHal in state %s, msg %d",
+                                  __func__, "eSAP_STARTING", msg);
+                }
+                vosStatus = sme_roam_csa_ie_request(hHal, sapContext->bssid,
+                                        sapContext->ecsa_info.new_channel,
+                                        sapContext->csrRoamProfile.phyMode);
             }
             else
             {

@@ -19648,3 +19648,29 @@ void csrGetStaticUapsdMask(tpAniSirGlobal pMac, tANI_U8 *staticUapsdMask)
        *staticUapsdMask = pSession->pCurRoamProfile->uapsd_mask;
 }
 
+VOS_STATUS csr_roam_send_chan_sw_ie_request(tpAniSirGlobal mac_ctx,
+               tCsrBssid bssid, uint8_t new_chan, uint8_t cb_mode)
+{
+   VOS_STATUS status = VOS_STATUS_SUCCESS;
+   struct sir_ecsa_ie_req *msg;
+
+   msg = vos_mem_malloc(sizeof(*msg));
+   if (!msg) {
+        smsLog(mac_ctx, LOGE, FL(" Memory alloc failed "));
+        return VOS_STATUS_E_NOMEM;
+   }
+
+   msg->type = eWNI_SME_SET_CHAN_SW_IE_REQ;
+   msg->len = sizeof(*msg);
+
+   msg->new_chan = new_chan;
+   msg->cb_mode = cb_mode;
+   vos_mem_copy(msg->bssid, bssid, VOS_MAC_ADDR_SIZE);
+
+   status = palSendMBMessage(mac_ctx->hHdd, msg);
+   if (!VOS_IS_STATUS_SUCCESS(status))
+         smsLog(mac_ctx, LOGE,
+                FL(" channel switch req fauiled status %d "), status);
+   return status;
+}
+

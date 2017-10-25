@@ -574,6 +574,19 @@ PopulateDot11fCapabilities2(tpAniSirGlobal         pMac,
                             struct sDphHashNode   *pSta,
                             tpPESession            psessionEntry);
 
+/**
+ * populate_dot11f_ext_chann_switch_ann() - Function to populate ECS
+ * @mac_ptr:            Pointer to PMAC structure
+ * @dot_11_ptr:         ECS element
+ * @session_entry:      PE session entry
+ *
+ * This function is used to populate the extended channel switch element
+ *
+ * Return: None
+ */
+void populate_dot11f_ext_chann_switch_ann(tpAniSirGlobal mac_ctx,
+        tDot11fIEext_chan_switch_ann *dot_11_ptr, tpPESession session_entry);
+
 /// Populate a tDot11fIEChanSwitchAnn
 void
 PopulateDot11fChanSwitchAnn(tpAniSirGlobal          pMac,
@@ -582,7 +595,7 @@ PopulateDot11fChanSwitchAnn(tpAniSirGlobal          pMac,
 
 /// Populate a tDot11fIEChanSwitchAnn
 void
-PopulateDot11fExtChanSwitchAnn(tpAniSirGlobal          pMac,
+PopulateDot11fsecChanOffset(tpAniSirGlobal          pMac,
                              tDot11fIEsec_chan_offset *pDot11f,
                              tpPESession psessionEntry);
 

@@ -295,6 +295,32 @@ PopulateDot11fCapabilities2(tpAniSirGlobal         pMac,
 
 } // End PopulateDot11fCapabilities2.
 
+void populate_dot11f_ext_chann_switch_ann(tpAniSirGlobal mac_ctx,
+            tDot11fIEext_chan_switch_ann *dot_11_ptr, tpPESession session_entry)
+{
+   offset_t ch_offset;
+
+   if (session_entry->gLimChannelSwitch.secondarySubBand >=
+       PHY_QUADRUPLE_CHANNEL_20MHZ_LOW_40MHZ_CENTERED)
+         ch_offset = BW80;
+   else
+         ch_offset = session_entry->gLimChannelSwitch.secondarySubBand;
+
+   dot_11_ptr->switch_mode = session_entry->gLimChannelSwitch.switchMode;
+   dot_11_ptr->new_reg_class = limGetOPClassFromChannel(
+         mac_ctx->scan.countryCodeCurrent,
+         session_entry->gLimChannelSwitch.primaryChannel, ch_offset);
+   dot_11_ptr->new_channel = session_entry->gLimChannelSwitch.primaryChannel;
+   dot_11_ptr->switch_count = session_entry->gLimChannelSwitch.switchCount;
+   dot_11_ptr->present = 1;
+
+   limLog(mac_ctx, LOG1, FL("country:%s cb mode:%d width:%d reg:%d off:%d"),
+          mac_ctx->scan.countryCodeCurrent,
+          session_entry->gLimChannelSwitch.primaryChannel,
+          session_entry->gLimChannelSwitch.secondarySubBand,
+          dot_11_ptr->new_reg_class, ch_offset);
+}
+
 void
 PopulateDot11fChanSwitchAnn(tpAniSirGlobal          pMac,
                             tDot11fIEChanSwitchAnn *pDot11f,
@@ -308,7 +334,7 @@ PopulateDot11fChanSwitchAnn(tpAniSirGlobal          pMac,
 } // End PopulateDot11fChanSwitchAnn.
 
 void
-PopulateDot11fExtChanSwitchAnn(tpAniSirGlobal pMac,
+PopulateDot11fsecChanOffset(tpAniSirGlobal pMac,
                                tDot11fIEsec_chan_offset *pDot11f,
                                tpPESession psessionEntry)
 {
@@ -329,6 +355,9 @@ PopulateDot11fWiderBWChanSwitchAnn(tpAniSirGlobal pMac,
     pDot11f->newChanWidth = psessionEntry->gLimWiderBWChannelSwitch.newChanWidth;
     pDot11f->newCenterChanFreq0 = psessionEntry->gLimWiderBWChannelSwitch.newCenterChanFreq0;
     pDot11f->newCenterChanFreq1 = psessionEntry->gLimWiderBWChannelSwitch.newCenterChanFreq1;
+    limLog(pMac, LOG1, FL("wrapper: width:%d f0:%d f1:%d"),
+           pDot11f->newChanWidth, pDot11f->newCenterChanFreq0,
+           pDot11f->newCenterChanFreq1);
 }
 #endif
 

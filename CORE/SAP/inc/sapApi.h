@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013, 2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2013, 2016-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1617,6 +1617,17 @@ void WLANSAP_PopulateDelStaParams(const v_U8_t *mac,
                                  v_U16_t reason_code,
                                  v_U8_t subtype,
                                  struct tagCsrDelStaParams *pDelStaParams);
+/**
+ * wlansap_set_channel_change() -
+ * This function to support SAP channel change with CSA/ECSA IE
+ * set in the beacons.
+ *
+ * @vos_ctx: vos context.
+ * @new_channel: target channel number.
+ *
+ * Return: 0 for success, non zero for failure
+ */
+int wlansap_set_channel_change(v_PVOID_t vos_ctx, uint32_t new_channel);
 
 #ifdef __cplusplus
  }

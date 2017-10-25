@@ -798,6 +798,18 @@ limSendProbeRspMgmtFrame(tpAniSirGlobal pMac,
     }
 #endif
 
+    if (LIM_IS_AP_ROLE(psessionEntry) && psessionEntry->include_ecsa_ie) {
+       populate_dot11f_ext_chann_switch_ann(pMac, &pFrm->ext_chan_switch_ann,
+                                              psessionEntry);
+       if (psessionEntry->lim11hEnable) {
+           PopulateDot11fChanSwitchAnn(pMac,
+                                       &pFrm->ChanSwitchAnn, psessionEntry);
+           if (psessionEntry->include_wide_ch_bw_ie)
+               PopulateDot11fWiderBWChanSwitchAnn(pMac,
+                                &pFrm->WiderBWChanSwitchAnn, psessionEntry);
+       }
+    }
+
 
     if ( psessionEntry->pLimStartBssReq )
     {

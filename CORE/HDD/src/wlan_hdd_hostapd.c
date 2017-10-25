@@ -2148,6 +2148,18 @@ static __iw_softap_setparam(struct net_device *dev,
                                      (uint32_t *)&set_value, 1);
                 break;
             }
+        case QCSAP_PARAM_SET_CHANNEL_CHANGE:
+            if ((WLAN_HDD_SOFTAP == pHostapdAdapter->device_mode) ||
+                (WLAN_HDD_P2P_GO == pHostapdAdapter->device_mode)) {
+                hddLog(LOG1, FL("ET Channel Change to new channel= %d"),
+                       set_value);
+                ret = wlansap_set_channel_change(pVosContext, set_value);
+            } else {
+                hddLog(LOGE, FL("Channel %d Change Failed, Device in not in SAP/GO mode"),
+                       set_value);
+                ret = -EINVAL;
+            }
+            break;
         default:
             hddLog(LOGE, FL("Invalid setparam command %d value %d"),
                     sub_cmd, set_value);
@@ -4776,6 +4788,8 @@ static const struct iw_priv_args hostapd_private_args[] = {
       IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0,  "setProximity" },
   { QCSAP_PARAM_CAP_TSF,
      IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0,  "cap_tsf" },
+  {QCSAP_PARAM_SET_CHANNEL_CHANGE,
+   IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0, "setChanChange"},
   { QCSAP_PARAM_SET_WOWL,
       IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0,  "wowl" },
   { QCSAP_IOCTL_GETPARAM,
