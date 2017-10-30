@@ -6394,4 +6394,18 @@ struct sir_channel_chanege_rsp {
    VOS_STATUS status;
 };
 
+/**
+ * struct ecsa_frame_params - ecsa frame params
+ * @switch_mode: switch mode of channel change
+ * @op_class: new channel op class
+ * @new_channel: new channel to shift
+ * @switch_count: channel switch count
+ */
+struct ecsa_frame_params {
+    uint8_t   switch_mode;
+    uint8_t      op_class;
+    uint8_t   new_channel;
+    uint8_t  switch_count;
+};
+
 #endif /* __SIR_API_H */

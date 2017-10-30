@@ -402,6 +402,74 @@ __limProcessChannelSwitchActionFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo
     return;
 } /*** end limProcessChannelSwitchActionFrame() ***/
 
+/**
+ * lim_process_ecsa_action_frame()- Process ECSA Action
+ * Frames.
+ * @mac_ctx: pointer to global mac structure
+ * @rx_packet_info: rx packet meta information
+ * @session_entry: Session entry.
+ *
+ * This function is called when ECSA action frame is received on STA interface.
+ *
+ * Return: void
+ */
+static void
+lim_process_ecsa_action_frame(tpAniSirGlobal mac_ctx,
+		uint8_t *rx_packet_info, tpPESession session_entry)
+{
+    tpSirMacMgmtHdr hdr;
+    uint8_t *body;
+    tDot11fext_channel_switch_action_frame  *ecsa_frame;
+    struct ecsa_frame_params ecsa_req;
+    uint32_t frame_len;
+    uint32_t status;
+
+    hdr = WDA_GET_RX_MAC_HEADER(rx_packet_info);
+    body = WDA_GET_RX_MPDU_DATA(rx_packet_info);
+    frame_len = WDA_GET_RX_PAYLOAD_LEN(rx_packet_info);
+
+    limLog(mac_ctx, LOG1, FL("Received ECSA action frame"));
+
+
+    ecsa_frame = vos_mem_malloc(sizeof(*ecsa_frame));
+    if (!ecsa_frame) {
+        limLog(mac_ctx, LOGE, FL("AllocateMemory failed"));
+        return;
+    }
+
+    /* Unpack channel switch frame */
+    status = dot11fUnpackext_channel_switch_action_frame(mac_ctx,
+                  body, frame_len, ecsa_frame);
+
+    if (DOT11F_FAILED(status)) {
+        limLog(mac_ctx, LOGE, FL("Failed to parse CHANSW action frame (0x%08x, len %d):"),
+               status, frame_len);
+        goto free_ecsa;
+    } else if (DOT11F_WARNED(status)) {
+        limLog(mac_ctx, LOGW, FL("There were warnings while unpacking CHANSW Request (0x%08x, %d bytes):"),
+               status, frame_len);
+    }
+
+    if (session_entry->currentOperChannel ==
+        ecsa_frame->ext_chan_switch_ann_action.new_channel) {
+        limLog(mac_ctx, LOGE, FL("New channel %d is same as old channel ignore req"),
+               ecsa_frame->ext_chan_switch_ann_action.new_channel);
+        goto free_ecsa;
+    }
+
+    ecsa_req.new_channel = ecsa_frame->ext_chan_switch_ann_action.new_channel;
+    ecsa_req.op_class = ecsa_frame->ext_chan_switch_ann_action.op_class;
+    ecsa_req.switch_mode = ecsa_frame->ext_chan_switch_ann_action.switch_mode;
+    ecsa_req.switch_count = ecsa_frame->ext_chan_switch_ann_action.switch_count;
+    limLog(mac_ctx, LOG1, FL("New channel %d op class %d switch mode %d switch count %d"),
+           ecsa_req.new_channel, ecsa_req.op_class,
+           ecsa_req.switch_mode, ecsa_req.switch_count);
+
+    lim_handle_ecsa_req(mac_ctx, &ecsa_req, session_entry);
+free_ecsa:
+    vos_mem_free(ecsa_frame);
+}
+
 
 #ifdef WLAN_FEATURE_11AC
 static void
@@ -2673,7 +2741,13 @@ limProcessActionFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,tpPESession ps
            }
                break;
 #endif
-
+           case SIR_MAC_ACTION_EXT_CHANNEL_SWITCH_ID:
+               if (psessionEntry->limSystemRole == eLIM_STA_ROLE)
+               {
+                   lim_process_ecsa_action_frame(pMac,
+                                                 pRxPacketInfo, psessionEntry);
+               }
+               break;
         default:
             limLog(pMac, LOG1, FL("Unhandled public action frame -- %x "),
                              pActionHdr->actionID);

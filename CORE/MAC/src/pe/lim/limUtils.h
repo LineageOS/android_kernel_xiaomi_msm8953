@@ -203,6 +203,18 @@ void limStopTxAndSwitchChannel(tpAniSirGlobal pMac, tANI_U8 sessionId);
 void limProcessChannelSwitchTimeout(tpAniSirGlobal);
 tSirRetStatus limStartChannelSwitch(tpAniSirGlobal pMac, tpPESession psessionEntry);
 void limUpdateChannelSwitch(tpAniSirGlobal, tpSirProbeRespBeacon, tpPESession psessionEntry);
+/**
+ * lim_handle_ecsa_req()- Process ECSA channel switch request
+ * @mac_ctx: pointer to global mac structure
+ * @ecsa_req: ecsa req
+ * @session: Session entry
+ *
+ * Return: void
+ */
+void lim_handle_ecsa_req(tpAniSirGlobal mac_ctx,
+                         struct ecsa_frame_params *ecsa_req,
+                         tpPESession session);
+
 void limProcessQuietTimeout(tpAniSirGlobal);
 void limProcessQuietBssTimeout(tpAniSirGlobal);
 void limInitOBSSScanParams(tpAniSirGlobal pMac,
@@ -560,6 +572,10 @@ void limInitOperatingClasses(tHalHandle hHal);
 tANI_U8 limGetOPClassFromChannel(tANI_U8 *country,
                                  tANI_U8 channel,
                                  tANI_U8 offset);
+tANI_U8 limGetOffChMaxBwOffsetFromChannel(tANI_U8 *country,
+                                          tANI_U8 channel,
+                                          tANI_U8 peerVHTCapability);
+
 void limParseBeaconForTim(tpAniSirGlobal pMac, tANI_U8* pRxPacketInfo,
                           tpPESession psessionEntry);
 

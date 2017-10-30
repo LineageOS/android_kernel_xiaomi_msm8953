@@ -2311,9 +2311,16 @@ tSirRetStatus sirConvertProbeFrame2Struct(tpAniSirGlobal       pMac,
 
        if ( pr->sec_chan_offset.present )
     {
-        pProbeResp->extChannelSwitchPresent = 1;
+        pProbeResp->sec_chan_offset_present = 1;
         vos_mem_copy ( &pProbeResp->sec_chan_offset, &pr->sec_chan_offset,
                        sizeof(tDot11fIEsec_chan_offset) );
+    }
+    if (pr->ext_chan_switch_ann.present)
+    {
+        pProbeResp->ecsa_present = 1;
+        vos_mem_copy(&pProbeResp->ext_chan_switch_ann,
+                     &pr->ext_chan_switch_ann,
+                     sizeof(tDot11fIEext_chan_switch_ann));
     }
 
     if( pr->TPCReport.present)
@@ -3449,9 +3456,16 @@ sirParseBeaconIE(tpAniSirGlobal        pMac,
 
     if ( pBies->sec_chan_offset.present)
     {
-        pBeaconStruct->extChannelSwitchPresent= 1;
+        pBeaconStruct->sec_chan_offset_present= 1;
         vos_mem_copy( &pBeaconStruct->sec_chan_offset, &pBies->sec_chan_offset,
                       sizeof(tDot11fIEsec_chan_offset));
+    }
+    if (pBies->ext_chan_switch_ann.present)
+    {
+        pBeaconStruct->ecsa_present = 1;
+        vos_mem_copy(&pBeaconStruct->ext_chan_switch_ann,
+                     &pBies->ext_chan_switch_ann,
+                     sizeof(tDot11fIEext_chan_switch_ann));
     }
 
     if ( pBies->Quiet.present )
@@ -3694,12 +3708,18 @@ sirConvertBeaconFrame2Struct(tpAniSirGlobal       pMac,
         vos_mem_copy( &pBeaconStruct->channelSwitchIE, &pBeacon->ChanSwitchAnn,
                                                        sizeof(tDot11fIEChanSwitchAnn) );
     }
-
     if ( pBeacon->sec_chan_offset.present )
     {
-        pBeaconStruct->extChannelSwitchPresent = 1;
+        pBeaconStruct->sec_chan_offset_present = 1;
         vos_mem_copy(&pBeaconStruct->sec_chan_offset, &pBeacon->sec_chan_offset,
                       sizeof(tDot11fIEsec_chan_offset));
+    }
+    if (pBeacon->ext_chan_switch_ann.present)
+    {
+        pBeaconStruct->ecsa_present = 1;
+        vos_mem_copy(&pBeaconStruct->ext_chan_switch_ann,
+                     &pBeacon->ext_chan_switch_ann,
+                     sizeof(tDot11fIEext_chan_switch_ann));
     }
 
     if( pBeacon->TPCReport.present)
