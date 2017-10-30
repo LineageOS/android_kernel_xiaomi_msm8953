@@ -5781,6 +5781,7 @@ static void lim_process_sme_channel_change_request(tpAniSirGlobal mac_ctx,
    uint8_t session_id;      /* PE session_id */
    int8_t max_tx_pwr;
    uint32_t val = 0;
+   uint8_t cb_mode;
 
    if (!msg_buf) {
        limLog(mac_ctx, LOGE, FL("Buffer is Pointing to NULL"));
@@ -5820,15 +5821,55 @@ static void lim_process_sme_channel_change_request(tpAniSirGlobal mac_ctx,
    session_entry->channelChangeReasonCode =
                           LIM_SWITCH_CHANNEL_SAP_ECSA;
 
-   limLog(mac_ctx, LOGE, FL("switch old chnl %d to new chnl %d, cb_mode %d"),
+   limLog(mac_ctx, LOG1, FL("switch old chnl %d to new chnl %d, cb_mode %d"),
           session_entry->currentOperChannel,
           ch_change_req->new_chan,
           ch_change_req->cb_mode);
 
+   cb_mode = ch_change_req->cb_mode;
+
+   if (session_entry->vhtCapability) {
+       if (cb_mode <= PHY_DOUBLE_CHANNEL_HIGH_PRIMARY) {
+           session_entry->vhtTxChannelWidthSet =
+                                    WNI_CFG_VHT_CHANNEL_WIDTH_20_40MHZ;
+           session_entry->apChanWidth = WNI_CFG_VHT_CHANNEL_WIDTH_20_40MHZ;
+           /*
+            * In case of DFS operation, If AP falls back to lower
+            * bandwidth [< 80Mhz] then there is no need of
+            * Center freq segment. So reset it to zero.
+            */
+           if (cfgSetInt(mac_ctx, WNI_CFG_VHT_CHANNEL_CENTER_FREQ_SEGMENT1, 0)
+              != eSIR_SUCCESS)
+              limLog(mac_ctx, LOGE,
+                     FL("couldn't set center freq seg 0 in beacon"));
+           if (cfgSetInt(mac_ctx, WNI_CFG_VHT_CHANNEL_WIDTH,
+                         WNI_CFG_VHT_CHANNEL_WIDTH_20_40MHZ) != eSIR_SUCCESS)
+               limLog(mac_ctx, LOGE, FL("could not set channel width to 20/40 in CFG"));
+           session_entry->apCenterChan = 0;
+       } else {
+           uint32_t center_chan;
+
+           session_entry->vhtTxChannelWidthSet =
+                                     WNI_CFG_VHT_CHANNEL_WIDTH_80MHZ;
+           session_entry->apChanWidth = WNI_CFG_VHT_CHANNEL_WIDTH_80MHZ;
+           center_chan = limGetCenterChannel(mac_ctx, ch_change_req->new_chan,
+                                 cb_mode, WNI_CFG_VHT_CHANNEL_WIDTH_80MHZ);
+           limLog(mac_ctx, LOGW,
+                  FL("***Center Channel for 80MHZ channel width = %d"),
+                  center_chan);
+           session_entry->apCenterChan = center_chan;
+           if (cfgSetInt(mac_ctx, WNI_CFG_VHT_CHANNEL_CENTER_FREQ_SEGMENT1,
+               center_chan) != eSIR_SUCCESS)
+                limLog(mac_ctx, LOGE, FL("could not set center freq seg 0 in beacon"));
+           if (cfgSetInt(mac_ctx, WNI_CFG_VHT_CHANNEL_WIDTH,
+                         WNI_CFG_VHT_CHANNEL_WIDTH_80MHZ) != eSIR_SUCCESS)
+               limLog(mac_ctx, LOGE, FL("could not set channel width to 80 in CFG"));
+       }
+   }
+
    /* Store the New Channel Params in session_entry */
-   session_entry->htSecondaryChannelOffset =
-                         limGetHTCBState(ch_change_req->cb_mode);
-   session_entry->htSupportedChannelWidthSet = (ch_change_req->cb_mode ? 1 : 0);
+   session_entry->htSecondaryChannelOffset = limGetHTCBState(cb_mode);
+   session_entry->htSupportedChannelWidthSet = (cb_mode ? 1 : 0);
    session_entry->htRecommendedTxWidthSet =
                                    session_entry->htSupportedChannelWidthSet;
    session_entry->currentOperChannel = ch_change_req->new_chan;

@@ -286,7 +286,8 @@ sapGotoChannelSel
 #ifdef WLAN_FEATURE_AP_HT40_24G
             if (sapContext->channel > SIR_11B_CHANNEL_END)
 #endif
-                sme_SelectCBMode(hHal, sapPhyMode, sapContext->channel);
+                sme_SelectCBMode(hHal, sapPhyMode,
+                                 sapContext->channel, eHT_MAX_CHANNEL_WIDTH);
         }
     }
 
@@ -512,7 +513,8 @@ disable24GChannelBonding:
 selectChannelBonding:
             if (sapContext->channel > SIR_11B_CHANNEL_END)
 #endif
-                sme_SelectCBMode(hHal, sapPhyMode, sapContext->channel);
+                sme_SelectCBMode(hHal, sapPhyMode,
+                                 sapContext->channel, eHT_MAX_CHANNEL_WIDTH);
 
             /* Fill in the event structure */
             // Eventhough scan was not done, means a user set channel was chosen
@@ -1007,7 +1009,8 @@ static VOS_STATUS wlansap_channel_change_request(ptSapContext sapContext)
    sapContext->csrRoamProfile.ChannelInfo.ChannelList[0] = sapContext->channel;
    vos_status = sme_roam_channel_change_req(hal, sapContext->bssid,
                                sapContext->ecsa_info.new_channel,
-                               &sapContext->csrRoamProfile);
+                               &sapContext->csrRoamProfile,
+                               sapContext->sessionId);
    return vos_status;
 }
 
@@ -1216,7 +1219,8 @@ sapFsm
                 }
                 vosStatus = sme_roam_csa_ie_request(hHal, sapContext->bssid,
                                         sapContext->ecsa_info.new_channel,
-                                        sapContext->csrRoamProfile.phyMode);
+                                        sapContext->csrRoamProfile.phyMode,
+                                        sapContext->sessionId);
             }
             else
             {

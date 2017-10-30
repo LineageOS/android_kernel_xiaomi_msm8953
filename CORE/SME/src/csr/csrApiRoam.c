@@ -12633,9 +12633,16 @@ static void csrRoamPrepareBssParams(tpAniSirGlobal pMac, tANI_U32 sessionId, tCs
             {
                 cbMode = pMac->roam.configParam.channelBondingMode5GHz;
             }
-            smsLog(pMac, LOG1, "## cbMode %d", cbMode);
             pBssConfig->cbMode = cbMode;
             pSession->bssParams.cbMode = cbMode;
+            if (cbMode >= PHY_QUADRUPLE_CHANNEL_20MHZ_LOW_40MHZ_CENTERED)
+                pSession->bssParams.orig_ch_width = eHT_CHANNEL_WIDTH_80MHZ;
+            else if (cbMode > PHY_SINGLE_CHANNEL_CENTERED)
+                pSession->bssParams.orig_ch_width = eHT_CHANNEL_WIDTH_40MHZ;
+            else
+                pSession->bssParams.orig_ch_width = eHT_CHANNEL_WIDTH_20MHZ;
+            smsLog(pMac, LOG1, FL("## cbMode %d orig_width %d"), cbMode,
+                   pSession->bssParams.orig_ch_width);
         }
     }
 }

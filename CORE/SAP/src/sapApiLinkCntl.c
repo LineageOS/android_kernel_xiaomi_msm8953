@@ -280,7 +280,8 @@ void sap_ht2040_timer_cb(v_PVOID_t usrDataForCallback)
     sapPhyMode =
         sapConvertSapPhyModeToCsrPhyMode(sapContext->csrRoamProfile.phyMode);
 
-    sme_SelectCBMode(hHal, sapPhyMode, sapContext->channel);
+    sme_SelectCBMode(hHal, sapPhyMode,
+                     sapContext->channel, eHT_MAX_CHANNEL_WIDTH);
 
     cbMode = sme_GetChannelBondingMode24G(hHal);
 
@@ -710,7 +711,8 @@ eHalStatus sapGet24GOBSSAffectedChannel(tHalHandle halHandle,
     sapPhyMode =
      sapConvertSapPhyModeToCsrPhyMode(psapCtx->csrRoamProfile.phyMode);
 
-    sme_SelectCBMode(halHandle, sapPhyMode, psapCtx->channel);
+    sme_SelectCBMode(halHandle, sapPhyMode,
+                     psapCtx->channel, eHT_MAX_CHANNEL_WIDTH);
 
     cbMode = sme_GetChannelBondingMode24G(halHandle);
 
@@ -1108,7 +1110,8 @@ WLANSAP_ScanCallback
 #ifdef WLAN_FEATURE_AP_HT40_24G
     if (psapContext->channel > SIR_11B_CHANNEL_END)
 #endif
-        sme_SelectCBMode(halHandle, sapPhyMode, psapContext->channel);
+        sme_SelectCBMode(halHandle, sapPhyMode,
+                         psapContext->channel, eHT_MAX_CHANNEL_WIDTH);
 
 #ifdef SOFTAP_CHANNEL_RANGE
     if(psapContext->channelList != NULL)
