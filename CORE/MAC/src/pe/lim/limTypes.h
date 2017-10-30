@@ -716,6 +716,26 @@ tSirResultCodes limMlmAddBss(tpAniSirGlobal, tLimMlmStartReq *,tpPESession psess
 
 tSirRetStatus limSendChannelSwitchMgmtFrame(tpAniSirGlobal, tSirMacAddr, tANI_U8, tANI_U8, tANI_U8, tpPESession);
 
+/**
+ * lim_send_extended_chan_switch_action_frame()- function to send ECSA
+ * action frame over the air .
+ * @mac_ctx: pointer to global mac structure
+ * @peer: Destination mac.
+ * @mode: channel switch mode
+ * @new_op_class: new op class
+ * @new_channel: new channel to switch
+ * @count: channel switch count
+ *
+ * This function is called to send ECSA frame.
+ *
+ * Return: success if frame is sent else return failure
+ */
+tSirRetStatus
+lim_send_extended_chan_switch_action_frame(tpAniSirGlobal mac_ctx,
+   tSirMacAddr peer, uint8_t mode, uint8_t new_op_class,
+   uint8_t new_channel, uint8_t count, tpPESession session_entry);
+
+
 #ifdef WLAN_FEATURE_11AC
 tSirRetStatus limSendVHTOpmodeNotificationFrame(tpAniSirGlobal pMac,tSirMacAddr peer,tANI_U8 nMode, tpPESession  psessionEntry );
 tSirRetStatus limSendVHTChannelSwitchMgmtFrame(tpAniSirGlobal pMac,tSirMacAddr peer,tANI_U8 nChanWidth, tANI_U8 nNewChannel, tANI_U8 ncbMode, tpPESession  psessionEntry );

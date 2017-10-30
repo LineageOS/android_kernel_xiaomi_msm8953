@@ -5627,6 +5627,51 @@ static void lim_register_mgmt_frame_ind_cb(tpAniSirGlobal pMac,
   else
       limLog(pMac, LOGE, FL("sme_req->callback is null"));
 }
+
+/**
+ * lim_send_chan_switch_action_frame() - send channel switch action frame to all
+ * connected peers
+ * @mac_ctx: Pointer to Global MAC structure
+ * @new_channel: new channel
+ * @session_entry: ap session
+ *
+ * Return: None
+ */
+static void lim_send_chan_switch_action_frame(tpAniSirGlobal mac_ctx,
+     uint16_t new_channel, tpPESession session_entry)
+{
+   uint16_t op_class;
+   uint8_t switch_mode = 0, i;
+   tpDphHashNode psta;
+   uint8_t switch_count;
+   tpDphHashNode dph_node_array_ptr;
+   offset_t ch_offset;
+
+   if (session_entry->gLimChannelSwitch.secondarySubBand >=
+      PHY_QUADRUPLE_CHANNEL_20MHZ_LOW_40MHZ_CENTERED)
+         ch_offset = BW80;
+   else
+         ch_offset = session_entry->gLimChannelSwitch.secondarySubBand;
+
+   op_class = limGetOPClassFromChannel(mac_ctx->scan.countryCodeCurrent,
+                                       new_channel, ch_offset);
+
+   switch_mode = session_entry->gLimChannelSwitch.switchMode;
+
+   switch_count = session_entry->gLimChannelSwitch.switchCount;
+   dph_node_array_ptr = session_entry->dph.dphHashTable.pDphNodeArray;
+
+   for (i = 0; i < (mac_ctx->lim.maxStation + 1); i++) {
+        psta = dph_node_array_ptr + i;
+        if (!(psta && psta->added))
+            continue;
+       if (psta->staType == STA_ENTRY_PEER)
+           lim_send_extended_chan_switch_action_frame(mac_ctx, psta->staAddr,
+                                   switch_mode, op_class, new_channel,
+                                   switch_count, session_entry);
+   }
+}
+
 /**
  * lim_process_sme_set_csa_ie_request() - process sme dfs csa ie req
  *
@@ -5696,9 +5741,12 @@ static void lim_process_sme_set_csa_ie_request(tpAniSirGlobal mac_ctx,
        return;
    }
 
-    limSendBeaconInd(mac_ctx, session_entry);
+   limSendBeaconInd(mac_ctx, session_entry);
 
-    limLog(mac_ctx, LOG1, FL("IE count:%d chan:%d secondarySubBand:%d"),
+   lim_send_chan_switch_action_frame(mac_ctx,
+                                      csa_ie_req->new_chan, session_entry);
+
+   limLog(mac_ctx, LOG1, FL("IE count:%d chan:%d secondarySubBand:%d"),
            session_entry->gLimChannelSwitch.switchCount,
            session_entry->gLimChannelSwitch.primaryChannel,
            session_entry->gLimChannelSwitch.secondarySubBand);
