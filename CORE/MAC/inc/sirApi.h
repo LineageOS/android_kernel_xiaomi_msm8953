@@ -6351,4 +6351,47 @@ struct sir_ecsa_ie_req {
    uint8_t bssid[VOS_MAC_ADDR_SIZE];
 };
 
+/**
+ * struct sir_ecsa_ie_complete_ind - structure to send indication that ECSA IE
+ * TX completion in beacon
+ * @session_id: session on which ECSA IE was sent
+ */
+struct sir_ecsa_ie_complete_ind {
+   uint8_t session_id;
+};
+
+/**
+ * struct sir_channel_chanege_req - structure to send channel change req to LIM
+ * @type: type of msg
+ * @len: length of msg
+ * @new_chan: new channel to which switch is requested
+ * @cb_mode:cbmode of the new channel
+ * @bssid: bssid of the AP
+ * @dot11mode: new dot11 mode
+ * @operational_rateset: new rate set
+ * @extended_rateset: new extended rate set
+ */
+struct sir_channel_chanege_req {
+   uint16_t type;
+   uint16_t len;
+   uint8_t new_chan;
+   uint8_t cb_mode;
+   uint8_t bssid[VOS_MAC_ADDR_SIZE];
+   uint32_t dot11mode;
+   tSirMacRateSet operational_rateset;
+   tSirMacRateSet extended_rateset;
+};
+
+/**
+ * struct sir_channel_chanege_rsp - structure for channel change resp from LIM
+ * @sme_session_id: sme session on which channel was changed
+ * @new_channel: new channel to which channel is changed
+ * @status:status of channel change
+ */
+struct sir_channel_chanege_rsp {
+   uint8_t sme_session_id;
+   uint8_t new_channel;
+   VOS_STATUS status;
+};
+
 #endif /* __SIR_API_H */

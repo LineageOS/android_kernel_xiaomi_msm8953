@@ -2837,7 +2837,10 @@ eHalStatus csrRoamCallCallback(tpAniSirGlobal pMac, tANI_U32 sessionId, tCsrRoam
          * failure, decrement bRefAssocStartCnt.
          */
         pSession->bRefAssocStartCnt--;
-    }
+    } else if (u1 == eCSR_ROAM_ECSA_CHAN_CHANGE_RSP && u2 ==
+               eCSR_ROAM_RESULT_NONE)
+        pSession->connectedProfile.operationChannel =
+               pRoamInfo->ap_chan_change_rsp->new_channel;
 
     if(NULL != pSession->callback)
     {
@@ -19670,7 +19673,49 @@ VOS_STATUS csr_roam_send_chan_sw_ie_request(tpAniSirGlobal mac_ctx,
    status = palSendMBMessage(mac_ctx->hHdd, msg);
    if (!VOS_IS_STATUS_SUCCESS(status))
          smsLog(mac_ctx, LOGE,
-                FL(" channel switch req fauiled status %d "), status);
+                FL(" channel switch IE req failed status %d "), status);
    return status;
 }
 
+VOS_STATUS csr_roam_channel_change_req(tpAniSirGlobal mac_ctx,
+   tCsrBssid bssid, uint8_t new_chan, uint8_t cb_mode, tCsrRoamProfile *profile)
+{
+   VOS_STATUS status = VOS_STATUS_SUCCESS;
+   struct sir_channel_chanege_req *msg;
+   tCsrRoamStartBssParams param;
+
+   vos_mem_zero(&param, sizeof(tCsrRoamStartBssParams));
+
+   csrRoamGetBssStartParms(mac_ctx, profile, &param);
+
+   msg = vos_mem_malloc(sizeof(*msg));
+   if (!msg) {
+        smsLog(mac_ctx, LOGE, FL(" Memory alloc failed "));
+        return VOS_STATUS_E_NOMEM;
+   }
+
+   msg->type = eWNI_SME_ECSA_CHAN_CHANGE_REQ;
+   msg->len = sizeof(*msg);
+
+   msg->new_chan = new_chan;
+   msg->cb_mode = cb_mode;
+   vos_mem_copy(msg->bssid, bssid, VOS_MAC_ADDR_SIZE);
+   msg->dot11mode = csrTranslateToWNICfgDot11Mode(mac_ctx,
+                        mac_ctx->roam.configParam.uCfgDot11Mode);
+   if (IS_24G_CH(msg->new_chan) &&
+      (false == mac_ctx->roam.configParam.enableVhtFor24GHz) &&
+      (WNI_CFG_DOT11_MODE_11AC == msg->dot11mode ||
+       WNI_CFG_DOT11_MODE_11AC_ONLY == msg->dot11mode))
+        msg->dot11mode = WNI_CFG_DOT11_MODE_11N;
+
+   vos_mem_copy(&msg->operational_rateset,
+            &param.operationalRateSet, sizeof(msg->operational_rateset));
+   vos_mem_copy(&msg->extended_rateset,
+           &param.extendedRateSet, sizeof(msg->extended_rateset));
+
+   status = palSendMBMessage(mac_ctx->hHdd, msg);
+   if (!VOS_IS_STATUS_SUCCESS(status))
+         smsLog(mac_ctx, LOGE,
+                FL(" channel switch req fauiled status %d "), status);
+   return status;
+}

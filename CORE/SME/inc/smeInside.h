@@ -377,5 +377,17 @@ void csrGetStaticUapsdMask(tpAniSirGlobal pMac, tANI_U8 *staticUapsdMask);
 VOS_STATUS csr_roam_send_chan_sw_ie_request(tpAniSirGlobal mac_ctx,
                           tCsrBssid bssid, uint8_t new_chan, uint8_t cb_mode);
 
+/**
+ * csr_roam_channel_change_req() - Post channel change request to LIM
+ * @mac_ctx:        Global MAC context
+ * @bssid:          BSSID
+ * @new_chan: Channel on which to send the IE
+ * @cb_mode: cb mode
+ * @profile: ap profile
+ *
+ * Return: VOS_STATUS
+ **/
+VOS_STATUS csr_roam_channel_change_req(tpAniSirGlobal mac_ctx,
+  tCsrBssid bssid, uint8_t new_chan, uint8_t cb_mode ,tCsrRoamProfile *profile);
 
 #endif //#if !defined( __SMEINSIDE_H )

@@ -2384,6 +2384,72 @@ eHalStatus sme_UpdateMaxRateInd(tHalHandle hHal,
     return status;
 }
 
+/**
+ * sme_ecsa_msg_processor() - Handle ECSA indication and resp from LIM
+ * @mac_ctx: A pointer to Global MAC structure
+ * @msg_type: Indication/resp type
+ * @msg_buf: Indication/resp buffer
+ *
+ * Return VOS_STATUS
+ */
+static VOS_STATUS sme_ecsa_msg_processor(tpAniSirGlobal mac_ctx,
+   uint16_t msg_type, void *msg_buf)
+{
+   tCsrRoamInfo roam_info = { 0 };
+   struct sir_ecsa_ie_complete_ind *ecsa_ie_cmp_ind;
+   struct sir_channel_chanege_rsp *chan_params;
+   uint32_t session_id = 0;
+   eRoamCmdStatus roamStatus;
+   eCsrRoamResult roamResult;
+
+   switch (msg_type) {
+   case eWNI_SME_ECSA_IE_BEACON_COMP_IND:
+       ecsa_ie_cmp_ind =
+              (struct sir_ecsa_ie_complete_ind *) msg_buf;
+       if (!ecsa_ie_cmp_ind) {
+            smsLog(mac_ctx, LOGE, FL("pMsg is NULL for eWNI_SME_DFS_CSAIE_TX_COMPLETE_IND"));
+            return VOS_STATUS_E_FAILURE;
+       }
+       session_id = ecsa_ie_cmp_ind->session_id;
+       roamStatus = eCSR_ROAM_ECSA_BCN_TX_IND;
+       roamResult = eCSR_ROAM_RESULT_NONE;
+       smsLog(mac_ctx, LOG1, FL("sapdfs: Received eWNI_SME_ECSA_IE_BEACON_COMP_IND for session id [%d]"),
+              session_id);
+       break;
+   case eWNI_SME_ECSA_CHAN_CHANGE_RSP:
+       chan_params = (struct sir_channel_chanege_rsp *)msg_buf;
+       roam_info.ap_chan_change_rsp =
+              vos_mem_malloc(sizeof(struct sir_channel_chanege_rsp));
+       if (!roam_info.ap_chan_change_rsp) {
+            smsLog(mac_ctx, LOGE, FL("failed to allocate ap_chan_change_rsp"));
+            return VOS_STATUS_E_FAILURE;
+       }
+       session_id = chan_params->sme_session_id;
+       roam_info.ap_chan_change_rsp->sme_session_id = session_id;
+       roam_info.ap_chan_change_rsp->new_channel = chan_params->new_channel;
+       if (chan_params->status == VOS_STATUS_SUCCESS) {
+           roam_info.ap_chan_change_rsp->status = VOS_STATUS_SUCCESS;
+           roamResult = eCSR_ROAM_RESULT_NONE;
+       } else {
+           roam_info.ap_chan_change_rsp->status = VOS_STATUS_E_FAILURE;
+           roamResult = eCSR_ROAM_RESULT_FAILURE;
+       }
+       roamStatus = eCSR_ROAM_ECSA_CHAN_CHANGE_RSP;
+       break;
+   default:
+       smsLog(mac_ctx, LOGE, FL("Invalid ECSA message: 0x%x"), msg_type);
+       return VOS_STATUS_E_FAILURE;
+   }
+
+   /* Indicate Radar Event to SAP */
+   csrRoamCallCallback(mac_ctx, session_id, &roam_info, 0,
+                       roamStatus, roamResult);
+   if (roam_info.ap_chan_change_rsp)
+       vos_mem_free(roam_info.ap_chan_change_rsp);
+
+   return VOS_STATUS_SUCCESS;
+}
+
 /*--------------------------------------------------------------------------
 
   \brief sme_ProcessMsg() - The main message processor for SME.
@@ -2871,6 +2937,21 @@ eHalStatus sme_ProcessMsg(tHalHandle hHal, vos_msg_t* pMsg)
                   smsLog(pMac, LOGE,
                           "Empty message for (eWNI_SME_NAN_EVENT),"
                           " nothing to process");
+              }
+              break;
+          case eWNI_SME_ECSA_IE_BEACON_COMP_IND:
+          case eWNI_SME_ECSA_CHAN_CHANGE_RSP:
+              MTRACE(vos_trace(VOS_MODULE_ID_SME,
+                     TRACE_CODE_SME_RX_WDA_MSG, NO_SESSION, pMsg->type));
+              if (pMsg->bodyptr)
+              {
+                  sme_ecsa_msg_processor(pMac, pMsg->type, pMsg->bodyptr);
+                  vos_mem_free(pMsg->bodyptr);
+              }
+              else
+              {
+                  smsLog(pMac, LOGE,
+                         FL("Empty message for (eWNI_SME_ECSA_IE_BEACON_COMP_IND)"));
               }
               break;
 
@@ -15106,6 +15187,27 @@ VOS_STATUS sme_roam_csa_ie_request(tHalHandle hal, tCsrBssid bssid,
        }
        status = csr_roam_send_chan_sw_ie_request(mac_ctx, bssid,
                                                  new_chan, cb_mode);
+       sme_ReleaseGlobalLock(&mac_ctx->sme);
+   }
+   return status;
+}
+
+
+VOS_STATUS sme_roam_channel_change_req(tHalHandle hal, tCsrBssid bssid,
+                                   uint8_t new_chan, tCsrRoamProfile *profile)
+{
+   VOS_STATUS status;
+   tpAniSirGlobal mac_ctx = PMAC_STRUCT(hal);
+   uint8_t cb_mode = 0;
+
+   status = sme_AcquireGlobalLock(&mac_ctx->sme);
+   if (VOS_IS_STATUS_SUCCESS(status)) {
+       if (CSR_IS_CHANNEL_5GHZ(new_chan)) {
+           sme_SelectCBMode(hal, profile->phyMode, new_chan);
+           cb_mode = mac_ctx->roam.configParam.channelBondingMode5GHz;
+       }
+       status = csr_roam_channel_change_req(mac_ctx, bssid, new_chan, cb_mode,
+                                            profile);
        sme_ReleaseGlobalLock(&mac_ctx->sme);
    }
    return status;

@@ -4021,4 +4021,19 @@ eHalStatus sme_del_sta_ba_session_req(tHalHandle hHal,
 VOS_STATUS sme_roam_csa_ie_request(tHalHandle hal, tCsrBssid bssid,
                                    uint8_t new_chan, uint32_t phy_mode);
 
+/**
+ * sme_roam_channel_change_req() - Channel change to new target channel
+ * @hal: handle returned by mac_open
+ * @bssid: SAP bssid
+ * @new_chan: target channel information
+ * @profile: roam profile
+ *
+ * API to Indicate Channel change to new target channel
+ *
+ * Return: VOS_STATUS
+ */
+VOS_STATUS sme_roam_channel_change_req(tHalHandle hal, tCsrBssid bssid,
+                                   uint8_t new_chan, tCsrRoamProfile *profile);
+
+
 #endif //#if !defined( __SME_API_H )

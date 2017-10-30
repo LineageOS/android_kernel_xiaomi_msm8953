@@ -167,6 +167,7 @@ enum eChannelChangeReasonCodes
     LIM_SWITCH_CHANNEL_JOIN,
     LIM_SWITCH_CHANNEL_OPERATION, // Generic change channel
     LIM_SWITCH_CHANNEL_CSA,
+    LIM_SWITCH_CHANNEL_SAP_ECSA,
 };
 
 typedef struct sLimAuthRspTimeout
@@ -1060,6 +1061,26 @@ tSirRetStatus __limProcessSmeNoAUpdate(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf);
 void limProcessRegdDefdSmeReqAfterNOAStart(tpAniSirGlobal pMac);
 void limProcessDisassocAckTimeout(tpAniSirGlobal pMac);
 void limProcessDeauthAckTimeout(tpAniSirGlobal pMac);
+/**
+ * lim_process_ap_ecsa_timeout() -process ECSA timeout which indicate ECSA IE TX
+ * complete in beacon
+ * @mac_ctx - A pointer to Global MAC structure
+ *
+ * Return None
+ */
+void lim_process_ap_ecsa_timeout(tpAniSirGlobal mac_ctx);
+/**
+ * lim_send_sme_ap_channel_switch_resp() -process channel switch resp for ecsa
+ * channel switch req
+ * @mac_ctx - A pointer to Global MAC structure
+ * @session: session on which channel switch was done
+ * @chan_param: channel switch resp params
+ *
+ * Return None
+ */
+void lim_send_sme_ap_channel_switch_resp(tpAniSirGlobal mac_ctx,
+           tpPESession session, tpSwitchChannelParams chan_param);
+
 eHalStatus limSendDisassocCnf(tpAniSirGlobal pMac);
 eHalStatus limSendDeauthCnf(tpAniSirGlobal pMac);
 

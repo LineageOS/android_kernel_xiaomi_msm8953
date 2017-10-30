@@ -4181,6 +4181,10 @@ void limProcessSwitchChannelRsp(tpAniSirGlobal pMac,  void *body)
                 pMac->lim.gpchangeChannelCallback(pMac, status, pMac->lim.gpchangeChannelData, psessionEntry);
             }
             break;
+        case LIM_SWITCH_CHANNEL_SAP_ECSA:
+            lim_send_sme_ap_channel_switch_resp(pMac,
+                                                psessionEntry, pChnlParams);
+            break;
         default:
             break;
     }

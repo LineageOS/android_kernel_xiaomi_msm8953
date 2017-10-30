@@ -5697,13 +5697,109 @@ static void lim_process_sme_set_csa_ie_request(tpAniSirGlobal mac_ctx,
    }
 
     limSendBeaconInd(mac_ctx, session_entry);
-    session_entry->include_ecsa_ie = false;
-    session_entry->include_wide_ch_bw_ie = false;
 
     limLog(mac_ctx, LOG1, FL("IE count:%d chan:%d secondarySubBand:%d"),
            session_entry->gLimChannelSwitch.switchCount,
            session_entry->gLimChannelSwitch.primaryChannel,
            session_entry->gLimChannelSwitch.secondarySubBand);
+
+   mac_ctx->lim.limTimers.g_lim_ap_ecsa_timer.sessionId =
+                                             session_entry->peSessionId;
+   limDeactivateAndChangeTimer(mac_ctx, eLIM_AP_ECSA_TIMER);
+
+   if (tx_timer_activate(&mac_ctx->lim.limTimers.g_lim_ap_ecsa_timer) !=
+        TX_SUCCESS)
+   {
+       limLog(mac_ctx, LOGE, FL("Couldn't activate g_lim_ap_ecsa_timer"));
+       lim_process_ap_ecsa_timeout(mac_ctx);
+   }
+}
+
+/**
+ * lim_process_sme_channel_change_request() - process sme ch change req
+ *
+ * @mac_ctx: Pointer to Global MAC structure
+ * @msg_buf: pointer to the SME message buffer
+ *
+ * This function is called to process SME_CHANNEL_CHANGE_REQ message
+ *
+ * Return: None
+ */
+static void lim_process_sme_channel_change_request(tpAniSirGlobal mac_ctx,
+     uint32_t *msg_buf)
+{
+   struct sir_channel_chanege_req *ch_change_req;
+   tpPESession session_entry;
+   uint8_t session_id;      /* PE session_id */
+   int8_t max_tx_pwr;
+   uint32_t val = 0;
+
+   if (!msg_buf) {
+       limLog(mac_ctx, LOGE, FL("Buffer is Pointing to NULL"));
+       return;
+   }
+   ch_change_req = (struct sir_channel_chanege_req *)msg_buf;
+
+   max_tx_pwr = cfgGetRegulatoryMaxTransmitPower(mac_ctx,
+                     ch_change_req->new_chan);
+
+   if ((max_tx_pwr == WDA_MAX_TXPOWER_INVALID)) {
+       limLog(mac_ctx, LOGE, FL("Invalid Request/max_tx_pwr"));
+       return;
+   }
+
+   session_entry = peFindSessionByBssid(mac_ctx,
+                       ch_change_req->bssid, &session_id);
+   if (!session_entry) {
+       limLog(mac_ctx, LOGE,
+              FL("Session not found for given BSSID" MAC_ADDRESS_STR),
+              MAC_ADDR_ARRAY(ch_change_req->bssid));
+       return;
+   }
+
+   if (session_entry->valid && !LIM_IS_AP_ROLE(session_entry)) {
+       limLog(mac_ctx, LOGE, FL("Invalid SystemRole %d"),
+              GET_LIM_SYSTEM_ROLE(session_entry));
+       return;
+   }
+   if (session_entry->currentOperChannel ==
+                    ch_change_req->new_chan) {
+       limLog(mac_ctx, LOGE, FL("target CH is same as current CH %d"),
+               session_entry->currentOperChannel);
+       return;
+   }
+
+   session_entry->channelChangeReasonCode =
+                          LIM_SWITCH_CHANNEL_SAP_ECSA;
+
+   limLog(mac_ctx, LOGE, FL("switch old chnl %d to new chnl %d, cb_mode %d"),
+          session_entry->currentOperChannel,
+          ch_change_req->new_chan,
+          ch_change_req->cb_mode);
+
+   /* Store the New Channel Params in session_entry */
+   session_entry->htSecondaryChannelOffset =
+                         limGetHTCBState(ch_change_req->cb_mode);
+   session_entry->htSupportedChannelWidthSet = (ch_change_req->cb_mode ? 1 : 0);
+   session_entry->htRecommendedTxWidthSet =
+                                   session_entry->htSupportedChannelWidthSet;
+   session_entry->currentOperChannel = ch_change_req->new_chan;
+   session_entry->limRFBand = limGetRFBand(session_entry->currentOperChannel);
+   /* Initialize 11h Enable Flag */
+   if (SIR_BAND_5_GHZ == session_entry->limRFBand) {
+       if (wlan_cfgGetInt(mac_ctx, WNI_CFG_11H_ENABLED, &val) != eSIR_SUCCESS)
+            limLog(mac_ctx, LOGE, FL("Fail to get WNI_CFG_11H_ENABLED"));
+   }
+
+   session_entry->lim11hEnable = val;
+   session_entry->dot11mode = ch_change_req->dot11mode;
+   vos_mem_copy(&session_entry->rateSet, &ch_change_req->operational_rateset,
+                sizeof(session_entry->rateSet));
+   vos_mem_copy(&session_entry->extRateSet, &ch_change_req->extended_rateset,
+                sizeof(session_entry->extRateSet));
+   limSetChannel(mac_ctx, ch_change_req->new_chan,
+                 session_entry->htSecondaryChannelOffset,
+                 max_tx_pwr, session_entry->peSessionId);
 }
 
 /**
@@ -6068,6 +6164,10 @@ limProcessSmeReqMessages(tpAniSirGlobal pMac, tpSirMsgQ pMsg)
             break;
         case eWNI_SME_SET_CHAN_SW_IE_REQ:
             lim_process_sme_set_csa_ie_request(pMac, pMsgBuf);
+            break;
+        case eWNI_SME_ECSA_CHAN_CHANGE_REQ:
+            lim_process_sme_channel_change_request(pMac, pMsgBuf);
+            break;
         default:
             vos_mem_free((v_VOID_t*)pMsg->bodyptr);
             pMsg->bodyptr = NULL;

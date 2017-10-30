@@ -1138,6 +1138,9 @@ limCleanupMlm(tpAniSirGlobal pMac)
         tx_timer_deactivate(&pMac->lim.limTimers.gLimActiveToPassiveChannelTimer);
         tx_timer_delete(&pMac->lim.limTimers.gLimActiveToPassiveChannelTimer);
 
+        tx_timer_deactivate(&pMac->lim.limTimers.g_lim_ap_ecsa_timer);
+        tx_timer_delete(&pMac->lim.limTimers.g_lim_ap_ecsa_timer);
+
         pMac->lim.gLimTimersCreated = 0;
     }
 
