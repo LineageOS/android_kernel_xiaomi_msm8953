@@ -193,6 +193,7 @@ typedef enum {
     eSAP_MAC_TRIG_STOP_BSS_EVENT,
     eSAP_UNKNOWN_STA_JOIN, /* Event send when a STA in neither white list or black list tries to associate in softap mode */
     eSAP_MAX_ASSOC_EXCEEDED, /* Event send when a new STA is rejected association since softAP max assoc limit has reached */
+    eSAP_CHANNEL_CHANGED_EVENT,
 } eSapHddEvent;
 
 typedef enum {
@@ -374,6 +375,14 @@ typedef struct sap_MaxAssocExceededEvent_s {
     v_MACADDR_t    macaddr;  
 } tSap_MaxAssocExceededEvent;
 
+/**
+ * struct sap_chan_selected - channel change indication to cfg layer
+ * @new_chan: new channel
+ */
+struct sap_chan_selected {
+   uint16_t new_chan;
+};
+
 
 /* 
    This struct will be filled in and passed to tpWLAN_SAPEventCB that is provided during WLANSAP_StartBss call   
@@ -397,6 +406,7 @@ typedef struct sap_Event_s {
         tSap_SendActionCnf                        sapActionCnf;  /* eSAP_SEND_ACTION_CNF */ 
         tSap_UnknownSTAJoinEvent                  sapUnknownSTAJoin; /* eSAP_UNKNOWN_STA_JOIN */
         tSap_MaxAssocExceededEvent                sapMaxAssocExceeded; /* eSAP_MAX_ASSOC_EXCEEDED */
+        struct sap_chan_selected                  sap_chan_selected;
     } sapevt;
 } tSap_Event, *tpSap_Event;
 

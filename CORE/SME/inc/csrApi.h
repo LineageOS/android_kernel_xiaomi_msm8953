@@ -1781,5 +1781,12 @@ eHalStatus csrSetBand(tHalHandle hHal, eCsrBand eBand);
 ---------------------------------------------------------------------------*/
 eCsrBand csrGetCurrentBand (tHalHandle hHal);
 
+/**
+ * csrConvertCBIniValueToPhyCBState() - convert ini CB value to Phy CB val
+ * @cb_ini_value: ini value of cb mode
+ *
+ * Return: phy CB val
+ */
+ePhyChanBondState csrConvertCBIniValueToPhyCBState(v_U32_t cb_ini_val);
 #endif
 

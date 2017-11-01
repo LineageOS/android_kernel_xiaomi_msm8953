@@ -4040,5 +4040,16 @@ VOS_STATUS sme_roam_channel_change_req(tHalHandle hal, tCsrBssid bssid,
                                    uint8_t new_chan, tCsrRoamProfile *profile,
                                    uint8_t sme_session_id);
 
+/**
+ * sme_get_cb_phy_mode_from_cb_ini_mode() - convert ini CB value to Phy CB val
+ * @cb_ini_value: ini value of cb mode
+ *
+ * Return: phy CB val
+ */
+static inline ePhyChanBondState
+sme_get_cb_phy_mode_from_cb_ini_mode(uint32_t cb_ini_value)
+{
+   return csrConvertCBIniValueToPhyCBState(cb_ini_value);
+}
 
 #endif //#if !defined( __SME_API_H )

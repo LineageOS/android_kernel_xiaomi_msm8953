@@ -962,6 +962,14 @@ sapSignalHDDevent
             vos_mem_copy((v_PVOID_t)sapApAppEvent.sapevt.sapMaxAssocExceeded.macaddr.bytes,
                     (v_PVOID_t)pCsrRoamInfo->peerMac, sizeof(v_MACADDR_t));
             break;
+        case eSAP_CHANNEL_CHANGED_EVENT:
+            VOS_TRACE(VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO,
+                    "In %s, SAP event callback event = %s",
+                    __func__, "eSAP_CHANNEL_CHANGE_EVENT");
+            sapApAppEvent.sapHddEventCode = eSAP_CHANNEL_CHANGED_EVENT;
+            sapApAppEvent.sapevt.sap_chan_selected.new_chan =
+                                                sapContext->channel;
+            break;
 
         default:
             VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
@@ -1011,6 +1019,9 @@ static VOS_STATUS wlansap_channel_change_request(ptSapContext sapContext)
                                sapContext->ecsa_info.new_channel,
                                &sapContext->csrRoamProfile,
                                sapContext->sessionId);
+   if (VOS_IS_STATUS_SUCCESS(vos_status))
+       sapSignalHDDevent(sapContext, NULL, eSAP_CHANNEL_CHANGED_EVENT, NULL);
+
    return vos_status;
 }
 
