@@ -5154,13 +5154,14 @@ int hdd_string_to_string_array(char *data, uint8_t *datalist,
     if ((data == NULL) || ( datalist == NULL) || (num_entries == NULL))
         return VOS_STATUS_E_INVAL;
 
-    str = vos_mem_malloc(strlen((char *)data));
+    str = vos_mem_malloc(strlen((char *)data) + 1);
     if (!str) {
        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                  "%s str allocation failed",__func__);
        return -ENOMEM;
     }
     vos_mem_copy(str, data, strlen((char *)data));
+    str[strlen((char *)data)] = '\0';
     temp_str = str;
     /* parse the string */
     while (str && ('\0' != *str) && (num < max_entries)) {
