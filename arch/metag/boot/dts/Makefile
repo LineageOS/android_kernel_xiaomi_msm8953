@@ -18,5 +18,3 @@ targets	+= $(dtb-y)
 .SECONDARY: $(obj)/$(builtindtb-y).dtb.S
 
 dtbs: $(addprefix $(obj)/, $(dtb-y))
-
-clean-files += *.dtb *.dtb.S
