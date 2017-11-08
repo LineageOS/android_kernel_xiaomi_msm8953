@@ -6985,6 +6985,11 @@ static int __iw_get_char_setnone(struct net_device *dev,
                    "%s: pAdapter is NULL!", __func__);
          return -EINVAL;
     }
+
+    if (WLAN_HDD_MONITOR == pAdapter->device_mode ||
+        WLAN_HDD_FTM == pAdapter->device_mode)
+        return ret;
+
     pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
     ret = wlan_hdd_validate_context(pHddCtx);
     if (0 != ret)
