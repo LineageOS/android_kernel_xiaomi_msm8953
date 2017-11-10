@@ -5616,8 +5616,11 @@ __wlan_hdd_cfg80211_get_supported_features(struct wiphy *wiphy,
 #endif
 
 #ifdef WLAN_FEATURE_LINK_LAYER_STATS
+   if ((TRUE == pHddCtx->cfg_ini->fEnableLLStats) &&
+       (TRUE == sme_IsFeatureSupportedByFW(LINK_LAYER_STATS_MEAS))) {
         fset |= WIFI_FEATURE_LINK_LAYER_STATS;
         hddLog(LOG1, FL("Link layer stats is supported by driver"));
+   }
 #endif
 
     skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, sizeof(fset) +
