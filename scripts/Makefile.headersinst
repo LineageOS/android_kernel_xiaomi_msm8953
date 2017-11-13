@@ -127,9 +127,8 @@ hdr-inst := -rR -f $(srctree)/scripts/Makefile.headersinst obj
 $(subdirs):
 	$(Q)$(MAKE) $(hdr-inst)=$(obj)/$@ dst=$(_dst)/$(subst drivers/staging,usr/include/linux/staging,$@)
 
-targets := $(wildcard $(sort $(targets)))
 cmd_files := $(wildcard \
-             $(foreach f,$(targets),$(dir $(f)).$(notdir $(f)).cmd))
+             $(foreach f,$(sort $(targets)),$(dir $(f)).$(notdir $(f)).cmd))
 
 ifneq ($(cmd_files),)
 	include $(cmd_files)
