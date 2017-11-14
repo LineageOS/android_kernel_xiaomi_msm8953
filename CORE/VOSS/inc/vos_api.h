@@ -535,4 +535,14 @@ bool vos_check_arp_target_ip(vos_pkt_t *pPacket);
 void vos_update_arp_fw_tx_delivered(void);
 void vos_update_arp_rx_drop_reorder(void);
 v_U16_t vos_get_rate_from_rateidx(uint32 rateindex);
+
+/**
+ * vos_check_monitor_state() - vos api to check monitor mode capture state
+ *
+ * This function is used to check whether capture of monitor mode is ON/OFF
+ *
+ * Return: TRUE - capture is ON, FALSE - capture is OFF
+ */
+v_BOOL_t vos_check_monitor_state(void);
+
 #endif // if !defined __VOS_NVITEM_H

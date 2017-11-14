@@ -2140,6 +2140,119 @@ static tANI_U8 wlan_hdd_get_session_type( enum nl80211_iftype type )
     return sessionType;
 }
 
+/**
+ * hdd_close_all_adapters_per_mode() - close all adapters per mode
+ * @hdd_ctx: pointer to hdd context
+ * @mode: all adapters to be deleted in this mode
+ *
+ * Return: None
+ */
+static void
+hdd_close_all_adapters_per_mode(hdd_context_t *hdd_ctx,
+				uint32_t mode)
+{
+	hdd_adapter_t *adapter = hdd_get_adapter(hdd_ctx, mode);
+
+	while (adapter) {
+		hdd_stop_adapter(hdd_ctx, adapter, VOS_TRUE);
+		hdd_deinit_adapter(hdd_ctx, adapter, TRUE);
+		hdd_close_adapter(hdd_ctx, adapter, VOS_TRUE);
+
+		adapter = hdd_get_adapter(hdd_ctx, mode);
+	}
+}
+
+static void wlan_hdd_create_p2p_adapter(hdd_context_t *hdd_ctx,
+					tANI_U8 rtnl_held)
+{
+	hdd_adapter_t *p2p_adapter;
+
+	p2p_adapter = hdd_open_adapter(hdd_ctx, WLAN_HDD_P2P_DEVICE, "p2p%d",
+				       &hdd_ctx->p2pDeviceAddress.bytes[0],
+				       rtnl_held);
+	if (!p2p_adapter)
+		hddLog(LOGE,
+		 FL("Failed to do hdd_open_adapter for P2P Device Interface"));
+}
+
+/**
+ * wlan_hdd_add_monitor_check() - check for monitor intf and add if needed
+ * @hdd_ctx: pointer to hdd context
+ * @adapter: output pointer to hold created monitor adapter
+ * @type: type of the interface
+ * @name: name of the interface
+ *
+ * Return: 0 - on success
+ *         1 - on failure
+ */
+static int
+wlan_hdd_add_monitor_check(hdd_context_t *hdd_ctx, hdd_adapter_t **adapter,
+			   enum nl80211_iftype type, const char *name)
+{
+	hdd_adapter_t *sta_adapter;
+	hdd_adapter_t *mon_adapter;
+	uint32_t i;
+
+	*adapter = NULL;
+
+	/*
+	 * If add interface request is for monitor mode, then it can run in
+	 * parallel with only one station interface.
+	 * If there is no existing station interface return error
+	 */
+	if (type != NL80211_IFTYPE_MONITOR)
+		return 0;
+
+	if (!sme_IsFeatureSupportedByFW(STA_MONITOR_SCC)) {
+		hddLog(LOGE, FL("No FW support for STA + MON SCC"));
+		return -EINVAL;
+	}
+
+	if (hdd_ctx->no_of_open_sessions[VOS_MONITOR_MODE]) {
+		hddLog(VOS_TRACE_LEVEL_ERROR,
+		       "%s: monitor mode already exists, only one is possible",
+		       __func__);
+
+		return -EBUSY;
+	}
+
+	/* Ensure there is only one station interface */
+	if (hdd_ctx->no_of_open_sessions[VOS_STA_MODE] != 1) {
+		hddLog(LOGE,
+		 FL("cannot add monitor mode, due to %u sta interfaces"),
+		 hdd_ctx->no_of_open_sessions[VOS_STA_MODE]);
+
+		return -EINVAL;
+	}
+
+	sta_adapter = hdd_get_adapter(hdd_ctx, WLAN_HDD_INFRA_STATION);
+	if (!sta_adapter) {
+		hddLog(LOGE, FL("No station adapter"));
+		return -EINVAL;
+	}
+
+	/* delete all the other interfaces */
+	for (i = VOS_STA_SAP_MODE; i <= VOS_P2P_DEVICE; i++) {
+		if (i == VOS_FTM_MODE || i == VOS_MONITOR_MODE)
+			continue;
+
+		hdd_close_all_adapters_per_mode(hdd_ctx, i);
+	}
+
+	mon_adapter = hdd_open_adapter(hdd_ctx, WLAN_HDD_MONITOR, name,
+				       wlan_hdd_get_intf_addr(hdd_ctx),
+				       VOS_TRUE);
+	if (!mon_adapter) {
+		hddLog(VOS_TRACE_LEVEL_ERROR,"%s: hdd_open_adapter failed",
+		       __func__);
+		wlan_hdd_create_p2p_adapter(hdd_ctx, TRUE);
+		return -EINVAL;
+	}
+
+	*adapter = mon_adapter;
+	return 0;
+}
+
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0))
 struct wireless_dev* __wlan_hdd_add_virtual_intf(
                   struct wiphy *wiphy, const char *name,
@@ -2191,6 +2304,17 @@ int __wlan_hdd_add_virtual_intf( struct wiphy *wiphy, char *name,
 #endif
     }
 
+    if (pHddCtx->concurrency_mode == VOS_STA_MON) {
+        hddLog(VOS_TRACE_LEVEL_ERROR,
+               "%s: STA + MONITOR mode is in progress, cannot add new interface",
+               __func__);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,38))
+       return ERR_PTR(-EINVAL);
+#else
+        return -EBUSY;
+#endif
+    }
+
     pAdapter = hdd_get_adapter(pHddCtx, WLAN_HDD_INFRA_STATION);
     pScanInfo =  &pHddCtx->scan_info;
     if ((pScanInfo != NULL) && (pAdapter != NULL) &&
@@ -2201,6 +2325,18 @@ int __wlan_hdd_add_virtual_intf( struct wiphy *wiphy, char *name,
         hddLog(VOS_TRACE_LEVEL_INFO,
                "%s: Abort Scan while adding virtual interface",__func__);
     }
+
+    ret = wlan_hdd_add_monitor_check(pHddCtx, &pAdapter, type, name);
+    if (ret) {
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,38))
+       return ERR_PTR(-EINVAL);
+#else
+       return ret;
+#endif
+    }
+
+    if (pAdapter)
+        goto return_adapter;
 
     pAdapter = NULL;
     if (pHddCtx->cfg_ini->isP2pDeviceAddrAdministrated &&
@@ -2244,6 +2380,8 @@ int __wlan_hdd_add_virtual_intf( struct wiphy *wiphy, char *name,
         hddLog(LOG1, FL("Interface type = %d"), type);
         hdd_tdls_notify_mode_change(pAdapter, pHddCtx);
     }
+
+return_adapter:
 
     EXIT();
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0))
@@ -2297,6 +2435,54 @@ int wlan_hdd_add_virtual_intf( struct wiphy *wiphy, char *name,
 #endif
 }
 
+/**
+ * hdd_delete_adapter() - stop and close adapter
+ * @hdd_ctx: pointer to hdd context
+ * @adapter: adapter to be deleted
+ * @rtnl_held: rtnl lock held
+ *
+ * Rerurn: None
+ */
+static void
+hdd_delete_adapter(hdd_context_t *hdd_ctx, hdd_adapter_t *adapter,
+		   tANI_U8 rtnl_held)
+{
+	wlan_hdd_release_intf_addr(hdd_ctx, adapter->macAddressCurrent.bytes);
+	hdd_stop_adapter(hdd_ctx, adapter, VOS_TRUE);
+	hdd_close_adapter(hdd_ctx, adapter, rtnl_held);
+}
+
+/**
+ * wlan_hdd_del_monitor() - delete monitor interface
+ * @hdd_ctx: pointer to hdd context
+ * @adapter: adapter to be deleted
+ * @rtnl_held: rtnl lock held
+ *
+ * This function is invoked to delete monitor interface and also
+ * station interface if needed.
+ *
+ * Return: None
+ */
+static void
+wlan_hdd_del_monitor(hdd_context_t *hdd_ctx, hdd_adapter_t *adapter,
+		     tANI_U8 rtnl_held)
+{
+	hdd_adapter_t *monitor_adapter;
+	bool delete_station = false;
+
+	monitor_adapter = hdd_get_adapter(hdd_ctx, WLAN_HDD_MONITOR);
+	if (monitor_adapter != adapter)
+		delete_station = true;
+
+	/* delete the monitor adapter and re-create the p2p-dev adapter */
+	hdd_delete_adapter(hdd_ctx, monitor_adapter, rtnl_held);
+
+	wlan_hdd_create_p2p_adapter(hdd_ctx, rtnl_held);
+
+	if (delete_station)
+		hdd_delete_adapter(hdd_ctx, adapter, rtnl_held);
+}
+
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0))
 int __wlan_hdd_del_virtual_intf( struct wiphy *wiphy, struct wireless_dev *wdev )
 #else
@@ -2308,7 +2494,6 @@ int __wlan_hdd_del_virtual_intf( struct wiphy *wiphy, struct net_device *dev )
 #endif
     hdd_context_t *pHddCtx = (hdd_context_t*) wiphy_priv(wiphy);
     hdd_adapter_t *pAdapter = WLAN_HDD_GET_PRIV_PTR( dev );
-    hdd_adapter_t *pVirtAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
     int status;
 
     ENTER();
@@ -2317,7 +2502,7 @@ int __wlan_hdd_del_virtual_intf( struct wiphy *wiphy, struct net_device *dev )
                      TRACE_CODE_HDD_DEL_VIRTUAL_INTF,
                      pAdapter->sessionId, pAdapter->device_mode));
     hddLog(VOS_TRACE_LEVEL_INFO, "%s: device_mode = %d",
-           __func__,pVirtAdapter->device_mode);
+           __func__,pAdapter->device_mode);
 
     status = wlan_hdd_validate_context(pHddCtx);
 
@@ -2326,11 +2511,11 @@ int __wlan_hdd_del_virtual_intf( struct wiphy *wiphy, struct net_device *dev )
         return status;
     }
 
-    wlan_hdd_release_intf_addr( pHddCtx,
-                                 pVirtAdapter->macAddressCurrent.bytes );
+    if (pHddCtx->concurrency_mode == VOS_STA_MON)
+        wlan_hdd_del_monitor(pHddCtx, pAdapter, TRUE);
+    else
+        hdd_delete_adapter(pHddCtx, pAdapter, TRUE);
 
-    hdd_stop_adapter( pHddCtx, pVirtAdapter, VOS_TRUE);
-    hdd_close_adapter( pHddCtx, pVirtAdapter, TRUE );
     EXIT();
     return 0;
 }
