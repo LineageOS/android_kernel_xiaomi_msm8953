@@ -6225,6 +6225,7 @@ WLANTL_RxFrames
 #endif
   uint8_t            ucMPDUHLen;
   uint16_t           seq_no;
+  u64                pn_num;
   uint16_t           usEtherType = 0;
 
   /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -6411,6 +6412,9 @@ WLANTL_RxFrames
       uDPUSig = WDA_GET_RX_DPUSIG(pvBDHeader);
       ucMPDUHLen = (uint8_t)WDA_GET_RX_MPDU_HEADER_LEN(pvBDHeader);
       seq_no = (uint16_t)WDA_GET_RX_REORDER_CUR_PKT_SEQ_NO(pvBDHeader);
+      pn_num = WDA_GET_RX_REPLAY_COUNT(pvBDHeader);
+
+      vosTempBuff->pn_num = pn_num;
 
       TLLOG2(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_INFO_HIGH,
                  "WLAN TL:Data packet received for STA %d", ucSTAId));
@@ -9696,7 +9700,8 @@ WLANTL_STARxAuth
     WLANTL_MSDUReorder( pTLCb, &vosDataBuff, aucBDHeader, ucSTAId, ucTid );
   }
 
-if(0 == ucUnicastBroadcastType
+if(WLANTL_IS_DATA_FRAME(WDA_GET_RX_TYPE_SUBTYPE(aucBDHeader)) &&
+   (0 == ucUnicastBroadcastType)
 #ifdef FEATURE_ON_CHIP_REORDERING
    && (WLANHAL_IsOnChipReorderingEnabledForTID(pvosGCtx, ucSTAId, ucTid) != TRUE)
 #endif
@@ -9773,30 +9778,36 @@ if(0 == ucUnicastBroadcastType
 
            /* It is not AMSDU frame so perform 
               reaply check for each packet, as
-              each packet contains valid replay counter*/ 
-           status =  WLANTL_IsReplayPacket( ullcurrentReplayCounter, ullpreviousReplayCounter);
-           if(VOS_FALSE == status)
-           {
-                /* Not a replay paket, update previous replay counter in TL CB */    
-                pClientSTA->ullReplayCounter[ucTid] = ullcurrentReplayCounter;
-           }
-           else
-           {
-              VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
-               "WLAN TL: Non-AMSDU Drop the replay packet with PN : [0x%llX]",ullcurrentReplayCounter);
+              each packet contains valid replay counter*/
+           if (vosDataBuff != NULL) {
+              if (vos_is_pkt_chain(vosDataBuff)) {
+                 WLANTL_ReorderReplayCheck(pClientSTA, &vosDataBuff, ucTid);
+              } else {
+                 status =  WLANTL_IsReplayPacket(ullcurrentReplayCounter,
+                                                 ullpreviousReplayCounter);
+                 if(VOS_FALSE == status) {
+                    /* Not a replay paket, update previous replay counter in TL CB */
+                    pClientSTA->ullReplayCounter[ucTid] = ullcurrentReplayCounter;
+                 } else {
+                    VOS_TRACE(VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
+                    "WLAN TL: Non AMSDU Drop replay packet with PN: [0x%llX], prevPN: [0x%llx]",
+                    ullcurrentReplayCounter, ullpreviousReplayCounter);
 
-               pClientSTA->ulTotalReplayPacketsDetected++;
-               VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
-                "WLAN TL: Non-AMSDU total dropped replay packets on STA ID %X is [0x%X]",
-                ucSTAId, pClientSTA->ulTotalReplayPacketsDetected);
+                    pClientSTA->ulTotalReplayPacketsDetected++;
+                    VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
+                    "WLAN TL: Non AMSDU total dropped replay packets on STA ID %X is [0x%X]",
+                    ucSTAId,  pClientSTA->ulTotalReplayPacketsDetected);
 
-               /* Repaly packet, drop the packet */
-               vos_pkt_return_packet(vosDataBuff);
-               return VOS_STATUS_SUCCESS;
-           }
+                    /* Repaly packet, drop the packet */
+                    vos_pkt_return_packet(vosDataBuff);
+                    return VOS_STATUS_SUCCESS;
+                 }
+              }
+          }
       }
-  }
+   }
 }
+
 /*It is a broadast packet DPU has already done replay check for 
   broadcast packets no need to do replay check of these packets*/
 
