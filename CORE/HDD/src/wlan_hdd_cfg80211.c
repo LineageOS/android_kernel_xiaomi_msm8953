@@ -5870,7 +5870,7 @@ __wlan_hdd_cfg80211_get_fw_mem_dump(struct wiphy *wiphy,
        (FALSE == sme_IsFeatureSupportedByFW(MEMORY_DUMP_SUPPORTED)))
     {
        hddLog(VOS_TRACE_LEVEL_INFO, FL("FW dump Logging not supported"));
-       return -EINVAL;
+       return -EOPNOTSUPP;
     }
     /*call common API for FW mem dump req*/
     ret = wlan_hdd_fw_mem_dump_req(pHddCtx);
