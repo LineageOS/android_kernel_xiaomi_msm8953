@@ -3436,6 +3436,13 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                   CFG_SAP_SCAN_BAND_PREFERENCE_MIN,
                   CFG_SAP_SCAN_BAND_PREFERENCE_MAX ),
 
+   REG_VARIABLE(CFG_ENABLE_RTT_SUPPORT, WLAN_PARAM_Integer,
+                  hdd_config_t, enable_rtt_support,
+                  VAR_FLAGS_OPTIONAL,
+                  CFG_ENABLE_RTT_SUPPORT_DEFAULT,
+                  CFG_ENABLE_RTT_SUPPORT_MIN,
+                  CFG_ENABLE_RTT_SUPPORT_MAX ),
+
    REG_VARIABLE( CFG_ENABLE_DYNAMIC_RA_START_RATE_NAME, WLAN_PARAM_Integer,
                   hdd_config_t, enableDynamicRAStartRate,
                   VAR_FLAGS_OPTIONAL |

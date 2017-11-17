@@ -5569,8 +5569,9 @@ __wlan_hdd_cfg80211_get_supported_features(struct wiphy *wiphy,
     }
 
     /* D2D RTT is not supported currently by default */
-    if (sme_IsFeatureSupportedByFW(RTT)) {
-        hddLog(LOG1, FL("RTT is supported by firmware"));
+    if (sme_IsFeatureSupportedByFW(RTT) &&
+              pHddCtx->cfg_ini->enable_rtt_support) {
+        hddLog(LOG1, FL("RTT is supported by firmware and framework"));
         fset |= WIFI_FEATURE_D2AP_RTT;
     }
 
@@ -5652,7 +5653,6 @@ wlan_hdd_cfg80211_get_supported_features(struct wiphy *wiphy,
                                          const void *data, int data_len)
 {
     int ret = 0;
-
     vos_ssr_protect(__func__);
     ret = __wlan_hdd_cfg80211_get_supported_features(wiphy, wdev, data, data_len);
     vos_ssr_unprotect(__func__);
