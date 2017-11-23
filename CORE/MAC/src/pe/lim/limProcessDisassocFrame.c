@@ -107,6 +107,16 @@ limProcessDisassocFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession
         return;
     }
 
+    if (LIM_IS_STA_ROLE(psessionEntry) &&
+       ((eLIM_SME_WT_DISASSOC_STATE == psessionEntry->limSmeState) ||
+        (eLIM_SME_WT_DEAUTH_STATE == psessionEntry->limSmeState))) {
+            PELOGE(limLog(pMac, LOG1,
+                   FL("recevied disaasoc frame in %d limsmestate... droping this"),
+                       psessionEntry->limSmeState);)
+            return;
+    }
+
+
 #ifdef WLAN_FEATURE_11W
     /* PMF: If this session is a PMF session, then ensure that this frame was protected */
     if(psessionEntry->limRmfEnabled  && (WDA_GET_RX_DPU_FEEDBACK(pRxPacketInfo) & DPU_FEEDBACK_UNPROTECTED_ERROR))
