@@ -2659,10 +2659,19 @@ static eHalStatus hdd_AssociationCompletionHandler( hdd_adapter_t *pAdapter, tCs
                 hddLog(VOS_TRACE_LEVEL_INFO,"Restart Sap as SAP channel is %d "
                        "and STA channel is %d", pHostapdAdapter->sessionCtx.ap.operatingChannel,
                        (int)pRoamInfo->pBssDesc->channelId);
-                hdd_hostapd_stop(pHostapdAdapter->dev);
-                if (pHddCtx->cfg_ini->enable_sap_auth_offload)
-                  hdd_force_scc_restart_sap(pHostapdAdapter,
-                      pHddCtx, (int)pRoamInfo->pBssDesc->channelId);
+                if (pHddCtx->cfg_ini->force_scc_with_ecsa)
+                {
+                    wlansap_set_channel_change(
+                       (WLAN_HDD_GET_CTX(pHostapdAdapter))->pvosContext,
+                        (int)pRoamInfo->pBssDesc->channelId, true);
+               }
+               else
+               {
+                    hdd_hostapd_stop(pHostapdAdapter->dev);
+                    if (pHddCtx->cfg_ini->enable_sap_auth_offload)
+                       hdd_force_scc_restart_sap(pHostapdAdapter,
+                             pHddCtx, (int)pRoamInfo->pBssDesc->channelId);
+                }
 
              }
         }

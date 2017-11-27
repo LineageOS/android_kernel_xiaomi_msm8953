@@ -3108,6 +3108,16 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_TRIGGER_NULLFRAME_BEFORE_HB_MAX        (1)
 #define CFG_TRIGGER_NULLFRAME_BEFORE_HB_DEFAULT    (0)
 
+/*
+ * If enabled ecsa will be used to switch channel to force scc else SAP
+ * will be restarted.
+ */
+#define CFG_FORCE_SCC_WITH_ECSA_NAME       "force_scc_with_ecsa"
+#define CFG_FORCE_SCC_WITH_ECSA_MIN        (0)
+#define CFG_FORCE_SCC_WITH_ECSA_MAX        (1)
+#define CFG_FORCE_SCC_WITH_ECSA_DEFAULT    (0)
+
+
 /*--------------------------------------------------------------------------- 
   Type declarations
   -------------------------------------------------------------------------*/ 
@@ -3709,6 +3719,7 @@ typedef struct
    uint32_t                    max_sched_scan_plan_iterations;
    uint32_t                    sta_auth_retries_for_code17;
    uint32_t                    trigger_nullframe_before_hb;
+   bool                        force_scc_with_ecsa;
    uint8_t                     enable_rtt_support;
 } hdd_config_t;
 

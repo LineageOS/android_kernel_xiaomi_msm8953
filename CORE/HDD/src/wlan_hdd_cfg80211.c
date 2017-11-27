@@ -20832,7 +20832,7 @@ static int __wlan_hdd_cfg80211_channel_switch(struct wiphy *wiphy,
         return -ENOTSUPP;
 
    channel = vos_freq_to_chan(csa_params->chandef.chan->center_freq);
-   ret = wlansap_set_channel_change(vos_ctx, channel);
+   ret = wlansap_set_channel_change(vos_ctx, channel, false);
 
    return ret;
 }

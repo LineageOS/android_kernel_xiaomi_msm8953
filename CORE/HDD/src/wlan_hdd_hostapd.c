@@ -2321,7 +2321,7 @@ static __iw_softap_setparam(struct net_device *dev,
                 (WLAN_HDD_P2P_GO == pHostapdAdapter->device_mode)) {
                 hddLog(LOG1, FL("ET Channel Change to new channel= %d"),
                        set_value);
-                ret = wlansap_set_channel_change(pVosContext, set_value);
+                ret = wlansap_set_channel_change(pVosContext, set_value, false);
             } else {
                 hddLog(LOGE, FL("Channel %d Change Failed, Device in not in SAP/GO mode"),
                        set_value);

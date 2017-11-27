@@ -1634,10 +1634,12 @@ void WLANSAP_PopulateDelStaParams(const v_U8_t *mac,
  *
  * @vos_ctx: vos context.
  * @new_channel: target channel number.
+ * @allow_dfs_chan: dont allow dfs channel
  *
  * Return: 0 for success, non zero for failure
  */
-int wlansap_set_channel_change(v_PVOID_t vos_ctx, uint32_t new_channel);
+int wlansap_set_channel_change(v_PVOID_t vos_ctx,
+    uint32_t new_channel, bool allow_dfs_chan);
 
 #ifdef __cplusplus
  }

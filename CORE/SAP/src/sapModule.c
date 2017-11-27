@@ -2488,12 +2488,14 @@ static bool wlansap_validate_phy_mode(uint32_t phy_mode, uint32_t channel)
   return true;
 }
 
-int wlansap_set_channel_change(v_PVOID_t vos_ctx, uint32_t new_channel)
+int wlansap_set_channel_change(v_PVOID_t vos_ctx,
+    uint32_t new_channel, bool allow_dfs_chan)
 {
    ptSapContext sap_ctx;
    tWLAN_SAPEvent sap_event = {0};
    v_PVOID_t hal;
    tpAniSirGlobal mac_ctx;
+   eNVChannelEnabledType chan_state;
 
    sap_ctx = VOS_GET_SAP_CB(vos_ctx);
 
@@ -2516,8 +2518,15 @@ int wlansap_set_channel_change(v_PVOID_t vos_ctx, uint32_t new_channel)
         hddLog(LOGE, FL("channel switch already in progress ignore"));
         return -EALREADY;
    }
-   if (NV_CHANNEL_ENABLE != vos_nv_getChannelEnabledState(new_channel)) {
-        hddLog(LOGE, FL("Invalid channel Ignore channel switch "));
+   chan_state = vos_nv_getChannelEnabledState(new_channel);
+   if ((chan_state == NV_CHANNEL_DISABLE) ||
+       (chan_state == NV_CHANNEL_INVALID)) {
+        hddLog(LOGE,
+               FL("Channel is disabled, Ignore channel switch "));
+        return -EINVAL;
+   } else if (!allow_dfs_chan && (chan_state == NV_CHANNEL_DFS)) {
+        hddLog(LOGE,
+               FL("DFS channel ignore channel switch as allow_dfs_chan is false"));
         return -EINVAL;
    }
 
