@@ -1127,7 +1127,11 @@ typedef struct sSirSmeJoinReq
     tSirSupChnl         supportedChannels;
     bool force_24ghz_in_ht20;
     tSirBssDescription  bssDescription;
-
+    /*
+     * WARNING: Pls make bssDescription as last variable in struct
+     * tSirSmeJoinReq as it has ieFields followed after this bss
+     * description. Adding a variable after this corrupts the ieFields
+     */
 } tSirSmeJoinReq, *tpSirSmeJoinReq;
 
 /// Definition for reponse message to previously issued join request

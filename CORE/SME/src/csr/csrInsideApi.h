@@ -208,8 +208,6 @@ typedef struct tagCsrScanResult
     tANI_S32 AgingCount;    //This BSS is removed when it reaches 0 or less
     tANI_U32 preferValue;   //The bigger the number, the better the BSS. This value override capValue
     tANI_U32 capValue;  //The biggger the better. This value is in use only if we have equal preferValue
-    //This member must be the last in the structure because the end of tSirBssDescription (inside) is an
-    //    array with nonknown size at this time
     
     eCsrEncryptionType ucEncryptionType; //Preferred Encryption type that matched with profile.
     eCsrEncryptionType mcEncryptionType; 
@@ -218,6 +216,12 @@ typedef struct tagCsrScanResult
     int congestionScore;
 #endif
     tCsrScanResultInfo Result;
+    /*
+     * WARNING - Do not add any element here
+     * This member Result must be the last in the structure because the end
+     * of tSirBssDescription (inside) is an array with nonknown size at
+     * this time.
+     */
 }tCsrScanResult;
 
 typedef struct
