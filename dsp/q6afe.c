@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2017, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2018, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -7639,6 +7639,12 @@ int __init afe_init(void)
 
 void afe_exit(void)
 {
+	if (this_afe.apr) {
+		apr_reset(this_afe.apr);
+		atomic_set(&this_afe.state, 0);
+		this_afe.apr = NULL;
+		rtac_set_afe_handle(this_afe.apr);
+	}
 	afe_delete_cal_data();
 
 	config_debug_fs_exit();
