@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013, 2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2013, 2015, 2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -189,6 +189,16 @@ typedef struct {
 
 } hdd_station_info_t;
 
+/**
+ * struct ecsa_info - structure to store ecsa info
+ * @new_channel: new channel to which switch is requested
+ * @channel_switch_in_progress: check if channel switch is in progress
+ */
+struct ecsa_info {
+    uint8_t new_channel;
+    bool channel_switch_in_progress;
+};
+
 typedef struct sSapContext {
 
     vos_lock_t          SapGlobalLock;
@@ -275,6 +285,7 @@ typedef struct sSapContext {
     v_U8_t            ObssScanInterval;
     v_U8_t            ObssTransitionDelayFactor;
 #endif
+    struct ecsa_info ecsa_info;
 } *ptSapContext;
 
 

@@ -320,6 +320,8 @@ typedef struct sPESession           // Added to Support BT-AMP
     /* *********************11H related*****************************/
     //tANI_U32           gLim11hEnable;
     tLimSpecMgmtInfo   gLimSpecMgmt;
+    bool include_ecsa_ie;
+    bool include_wide_ch_bw_ie;
     // CB Primary/Secondary Channel Switch Info
     tLimChannelSwitchInfo  gLimChannelSwitch;
     /* *********************End 11H related*****************************/
