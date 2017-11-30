@@ -1012,6 +1012,7 @@ typedef struct tagCsrRoamSession
     tANI_BOOLEAN fIgnorePMKIDCache;
     tANI_BOOLEAN abortConnection;
     bool dhcp_done;
+    v_TIME_t connect_req_start_time;
 } tCsrRoamSession;
 
 typedef struct tagCsrRoamStruct

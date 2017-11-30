@@ -14080,6 +14080,8 @@ eHalStatus csrSendJoinReqMsg( tpAniSirGlobal pMac, tANI_U32 sessionId, tSirBssDe
     {
         vos_mem_free( pMsg );
     }
+    pMac->roam.roamSession[sessionId].connect_req_start_time =
+                                                   vos_timer_get_system_time();
 
     return( status );
 }

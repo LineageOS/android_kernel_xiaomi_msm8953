@@ -4039,6 +4039,16 @@ VOS_STATUS sme_roam_csa_ie_request(tHalHandle hal, tCsrBssid bssid,
 VOS_STATUS sme_roam_channel_change_req(tHalHandle hal, tCsrBssid bssid,
                                    uint8_t new_chan, tCsrRoamProfile *profile,
                                    uint8_t sme_session_id);
+/**
+ * sme_get_connect_strt_time() - get the connection start time
+ * @hal: hal context
+ * @session_id: session id
+ *
+ * Return: void.
+ */
+v_TIME_t sme_get_connect_strt_time(tHalHandle hal,
+                                              uint8_t session_id);
+
 
 /**
  * sme_get_cb_phy_mode_from_cb_ini_mode() - convert ini CB value to Phy CB val
