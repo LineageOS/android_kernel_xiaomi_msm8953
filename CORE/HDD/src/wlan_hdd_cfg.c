@@ -3950,6 +3950,13 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                CFG_FORCE_SCC_WITH_ECSA_DEFAULT,
                CFG_FORCE_SCC_WITH_ECSA_MIN,
                CFG_FORCE_SCC_WITH_ECSA_MAX ),
+
+  REG_VARIABLE(CFG_STA_SAP_SCC_ON_DFS_CHAN, WLAN_PARAM_HexInteger,
+               hdd_config_t, sta_sap_scc_on_dfs_chan,
+               VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+               CFG_STA_SAP_SCC_ON_DFS_CHAN_DEFAULT,
+               CFG_STA_SAP_SCC_ON_DFS_CHAN_MIN,
+               CFG_STA_SAP_SCC_ON_DFS_CHAN_MAX),
 };
 
 /*
@@ -4605,6 +4612,11 @@ static void print_hdd_cfg(hdd_context_t *pHddCtx)
             "Name = [%s] Value = [%u] ",
             CFG_FORCE_SCC_WITH_ECSA_NAME,
             pHddCtx->cfg_ini->force_scc_with_ecsa);
+
+    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+            "Name = [%s] value = [%u]",
+            CFG_STA_SAP_SCC_ON_DFS_CHAN,
+            pHddCtx->cfg_ini->sta_sap_scc_on_dfs_chan);
 }
 
 
@@ -6618,6 +6630,10 @@ VOS_STATUS hdd_set_sme_config( hdd_context_t *pHddCtx )
            pHddCtx->cfg_ini->sendMgmtPktViaWQ5);
 
    vos_set_multicast_logging(pHddCtx->cfg_ini->multicast_host_msgs);
+
+   smeConfig->csrConfig.sta_sap_scc_on_dfs_chan =
+           pHddCtx->cfg_ini->sta_sap_scc_on_dfs_chan;
+
    halStatus = sme_UpdateConfig( pHddCtx->hHal, smeConfig);
    if ( !HAL_STATUS_SUCCESS( halStatus ) )
    {
