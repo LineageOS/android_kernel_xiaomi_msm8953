@@ -81,7 +81,7 @@
 #endif
 
 
-#define JOIN_FAILURE_TIMEOUT   1000   // in msecs
+#define JOIN_FAILURE_TIMEOUT   300   // in msecs
 /* This overhead is time for sending NOA start to host in case of GO/sending NULL data & receiving ACK 
  * in case of P2P Client and starting actual scanning with init scan req/rsp plus in case of concurrency,
  * taking care of sending null data and receiving ACK to/from AP/Also SetChannel with calibration is taking
@@ -2043,7 +2043,8 @@ __limProcessSmeJoinReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
         {
             limLog(pMac, LOGE, FL("could not retrieve JoinFailureTimer value "
                                    "setting it to default value"));
-            pMlmJoinReq->joinFailureTimeout = JOIN_FAILURE_TIMEOUT;
+            pMlmJoinReq->joinFailureTimeout =
+                                        WNI_CFG_JOIN_FAILURE_TIMEOUT_STADEF;
         }
 
         /* copy operational rate from psessionEntry*/
