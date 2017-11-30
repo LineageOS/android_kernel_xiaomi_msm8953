@@ -5820,6 +5820,7 @@ static void lim_process_sme_channel_change_request(tpAniSirGlobal mac_ctx,
 
    session_entry->channelChangeReasonCode =
                           LIM_SWITCH_CHANNEL_SAP_ECSA;
+   session_entry->channelChangeCSA = LIM_SWITCH_CHANNEL_CSA;
 
    limLog(mac_ctx, LOG1, FL("switch old chnl %d to new chnl %d, cb_mode %d"),
           session_entry->currentOperChannel,
