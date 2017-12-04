@@ -3373,15 +3373,18 @@ eHalStatus csrRoamPrepareBssConfig(tpAniSirGlobal pMac, tCsrRoamProfile *pProfil
         {
              pBssConfig->uHeartBeatThresh = pMac->roam.configParam.HeartbeatThresh24;
         }
-        //Join timeout
-        // if we find a BeaconInterval in the BssDescription, then set the Join Timeout to 
-        // be 10 x the BeaconInterval.                          
-        if ( pBssDesc->beaconInterval )
+        /*
+         * Join timeout, if we find a BeaconInterval in the BssDescription,
+         * then set the Join Timeout to be 3 BeaconInterval.
+         */
+        if (pBssDesc->beaconInterval)
         {
             //Make sure it is bigger than the minimal
-            pBssConfig->uJoinTimeOut = CSR_ROAM_MAX(10 * pBssDesc->beaconInterval, CSR_JOIN_FAILURE_TIMEOUT_MIN);
+            pBssConfig->uJoinTimeOut =
+                                  CSR_ROAM_MAX(3 * pBssDesc->beaconInterval,
+                                                CSR_JOIN_FAILURE_TIMEOUT_MIN);
         }
-        else 
+        else
         {
             pBssConfig->uJoinTimeOut = CSR_JOIN_FAILURE_TIMEOUT_DEFAULT;
         }
