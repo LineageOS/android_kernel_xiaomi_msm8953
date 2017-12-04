@@ -2510,6 +2510,12 @@ int wlansap_set_channel_change(v_PVOID_t vos_ctx,
         return -EINVAL;
    }
    mac_ctx = PMAC_STRUCT(hal);
+
+   if (eSAP_STARTED != sap_ctx->sapsMachine) {
+        hddLog(LOGE, FL("SAP is not in eSAP_STARTED state "));
+        return -EINVAL;
+   }
+
    if (sap_ctx->channel == new_channel) {
         hddLog(LOGE, FL("channel %d already set"), new_channel);
         return -EALREADY;
@@ -2527,11 +2533,6 @@ int wlansap_set_channel_change(v_PVOID_t vos_ctx,
    } else if (!allow_dfs_chan && (chan_state == NV_CHANNEL_DFS)) {
         hddLog(LOGE,
                FL("DFS channel ignore channel switch as allow_dfs_chan is false"));
-        return -EINVAL;
-   }
-
-   if (eSAP_STARTED != sap_ctx->sapsMachine) {
-        hddLog(LOGE, FL("SAP is not in eSAP_STARTED state "));
         return -EINVAL;
    }
    if (!wlansap_validate_phy_mode(sap_ctx->csrRoamProfile.phyMode,

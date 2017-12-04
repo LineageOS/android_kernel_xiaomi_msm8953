@@ -15851,6 +15851,7 @@ int wlan_hdd_disconnect( hdd_adapter_t *pAdapter, u16 reason )
     }
     hdd_connSetConnectionState( pHddStaCtx, eConnectionState_Disconnecting );
     spin_unlock_bh(&pAdapter->lock_for_active_session);
+    vos_flush_delayed_work(&pHddCtx->ecsa_chan_change_work);
 
     VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                   FL( "Set HDD connState to eConnectionState_Disconnecting" ));

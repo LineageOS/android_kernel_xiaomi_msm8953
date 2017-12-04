@@ -15187,3 +15187,16 @@ VOS_STATUS sme_roam_channel_change_req(tHalHandle hal, tCsrBssid bssid,
    return status;
 }
 
+v_TIME_t
+sme_get_connect_strt_time(tHalHandle hal, uint8_t session_id)
+{
+   tpAniSirGlobal mac_ctx = PMAC_STRUCT(hal);
+   tCsrRoamSession *session;
+
+   if (!CSR_IS_SESSION_VALID(mac_ctx, session_id)) {
+       smsLog(mac_ctx, LOGE, FL("session id %d not valid"), session_id);
+       return vos_timer_get_system_time();
+   }
+   session = CSR_GET_SESSION(mac_ctx, session_id);
+   return session->connect_req_start_time;
+}
