@@ -2846,6 +2846,10 @@ eHalStatus csrRoamCallCallback(tpAniSirGlobal pMac, tANI_U32 sessionId, tCsrRoam
         pSession->connectedProfile.operationChannel =
                pRoamInfo->ap_chan_change_rsp->new_channel;
 
+    if (eCSR_ROAM_RESULT_LOSTLINK == u2 ||
+        eCSR_ROAM_LOSTLINK_DETECTED == u1)
+        smsLog(pMac, LOG1, "eCSR_ROAM_RESULT_LOSTLINK ");
+
     if(NULL != pSession->callback)
     {
         if( pRoamInfo )
@@ -9052,6 +9056,13 @@ void csrRoamJoinedStateMsgProcessor( tpAniSirGlobal pMac, void *pMsgBuf )
                                     pRoamInfo->HT40MHzIntoEnabledSta);
 #endif
             pRoamInfo->maxRateFlags = pUpperLayerAssocCnf->rate_flags;
+            pRoamInfo->ch_width = pUpperLayerAssocCnf->ch_width;
+            pRoamInfo->chan_info = pUpperLayerAssocCnf->chan_info;
+            if (pUpperLayerAssocCnf->HTCaps.present)
+                pRoamInfo->ht_caps = pUpperLayerAssocCnf->HTCaps;
+            if (pUpperLayerAssocCnf->VHTCaps.present)
+               pRoamInfo->vht_caps = pUpperLayerAssocCnf->VHTCaps;
+
             if(CSR_IS_INFRA_AP(pRoamInfo->u.pConnectedProfile) )
             {
                 pMac->roam.roamSession[sessionId].connectState = eCSR_ASSOC_STATE_TYPE_INFRA_CONNECTED;
@@ -11348,7 +11359,6 @@ eHalStatus csrRoamLostLink( tpAniSirGlobal pMac, tANI_U32 sessionId, tANI_U32 ty
     tSirSmeDeauthInd *pDeauthIndMsg = NULL;
     tSirSmeDisassocInd *pDisassocIndMsg = NULL;
     eCsrRoamResult result = eCSR_ROAM_RESULT_LOSTLINK;
-    tCsrRoamInfo *pRoamInfo = NULL;
     tCsrRoamInfo roamInfo;
     tANI_BOOLEAN fToRoam;
     tCsrRoamSession *pSession = CSR_GET_SESSION( pMac, sessionId );
@@ -11361,12 +11371,16 @@ eHalStatus csrRoamLostLink( tpAniSirGlobal pMac, tANI_U32 sessionId, tANI_U32 ty
     //Only need to roam for infra station. In this case P2P client will roam as well
     fToRoam = CSR_IS_INFRASTRUCTURE(&pSession->connectedProfile);
     pSession->fCancelRoaming = eANI_BOOLEAN_FALSE;
+    vos_mem_set(&roamInfo, sizeof(tCsrRoamInfo), 0);
     if ( eWNI_SME_DISASSOC_IND == type )
     {
         result = eCSR_ROAM_RESULT_DISASSOC_IND;
         pDisassocIndMsg = (tSirSmeDisassocInd *)pSirMsg;
         pSession->roamingStatusCode = pDisassocIndMsg->statusCode;
         pSession->joinFailStatusCode.reasonCode = pDisassocIndMsg->reasonCode;
+        vos_mem_copy(roamInfo.peerMac, pDisassocIndMsg->peerMacAddr,
+                     sizeof(tSirMacAddr));
+        roamInfo.staId = (tANI_U8)pDisassocIndMsg->staId;
     }
     else if ( eWNI_SME_DEAUTH_IND == type )
     {
@@ -11374,6 +11388,9 @@ eHalStatus csrRoamLostLink( tpAniSirGlobal pMac, tANI_U32 sessionId, tANI_U32 ty
         pDeauthIndMsg = (tSirSmeDeauthInd *)pSirMsg;
         pSession->roamingStatusCode = pDeauthIndMsg->statusCode;
         pSession->joinFailStatusCode.reasonCode = pDeauthIndMsg->reasonCode;
+        vos_mem_copy(roamInfo.peerMac, pDeauthIndMsg->peerMacAddr,
+                     sizeof(tSirMacAddr));
+        roamInfo.staId = (tANI_U8)pDeauthIndMsg->staId;
     }
     else
     {
@@ -11381,11 +11398,16 @@ eHalStatus csrRoamLostLink( tpAniSirGlobal pMac, tANI_U32 sessionId, tANI_U32 ty
         result = eCSR_ROAM_RESULT_NONE;
         pSession->joinFailStatusCode.reasonCode = 1;
     }
-    
-    // call profile lost link routine here
-    if(!CSR_IS_INFRA_AP(&pSession->connectedProfile))
-    {
-        csrRoamCallCallback(pMac, sessionId, NULL, 0, eCSR_ROAM_LOSTLINK_DETECTED, result);
+    roamInfo.statusCode = (tSirResultCodes)pSession->roamingStatusCode;
+    roamInfo.reasonCode = pSession->joinFailStatusCode.reasonCode;
+    smsLog(pMac, LOGW, FL("roamInfo.staId (%d)"), roamInfo.staId);
+
+    if (type == eWNI_SME_DEAUTH_IND || type == eWNI_SME_DISASSOC_IND) {
+        csrRoamCallCallback(pMac, sessionId, &roamInfo, 0,
+                            eCSR_ROAM_LOSTLINK_DETECTED, result);
+    } else if(!CSR_IS_INFRA_AP(&pSession->connectedProfile)) {
+        csrRoamCallCallback(pMac, sessionId, NULL, 0,
+                            eCSR_ROAM_LOSTLINK_DETECTED, result);
     }
     
     if ( eWNI_SME_DISASSOC_IND == type )
@@ -11402,25 +11424,6 @@ eHalStatus csrRoamLostLink( tpAniSirGlobal pMac, tANI_U32 sessionId, tANI_U32 ty
         fToRoam = eANI_BOOLEAN_FALSE;
     }
 
-    //prepare to tell HDD to disconnect
-    vos_mem_set(&roamInfo, sizeof(tCsrRoamInfo), 0);
-    roamInfo.statusCode = (tSirResultCodes)pSession->roamingStatusCode;
-    roamInfo.reasonCode = pSession->joinFailStatusCode.reasonCode;
-    if( eWNI_SME_DISASSOC_IND == type)
-    {
-        //staMacAddr
-        vos_mem_copy(roamInfo.peerMac, pDisassocIndMsg->peerMacAddr,
-                     sizeof(tSirMacAddr));
-        roamInfo.staId = (tANI_U8)pDisassocIndMsg->staId;
-    }
-    else if( eWNI_SME_DEAUTH_IND == type )
-    {
-        //staMacAddr
-        vos_mem_copy(roamInfo.peerMac, pDeauthIndMsg->peerMacAddr,
-                     sizeof(tSirMacAddr));
-        roamInfo.staId = (tANI_U8)pDeauthIndMsg->staId;
-    }
-    smsLog(pMac, LOGW, FL("roamInfo.staId (%d)"), roamInfo.staId);
 
     /* See if we can possibly roam.  If so, start the roaming process and notify HDD
        that we are roaming.  But if we cannot possibly roam, or if we are unable to
@@ -11448,11 +11451,10 @@ eHalStatus csrRoamLostLink( tpAniSirGlobal pMac, tANI_U32 sessionId, tANI_U32 ty
                 {
                    roamInfo.reasonCode = eCsrRoamReasonSmeIssuedForLostLink;
                 }
-                    pRoamInfo = &roamInfo;
                 pSession->roamingReason = ( eWNI_SME_DEAUTH_IND == type ) ? 
                         eCsrLostlinkRoamingDeauth : eCsrLostlinkRoamingDisassoc;
                 pSession->roamingStartTime = (tANI_TIMESTAMP)palGetTickCount(pMac->hHdd);
-                csrRoamCallCallback(pMac, sessionId, pRoamInfo, 0, eCSR_ROAM_ROAMING_START, eCSR_ROAM_RESULT_LOSTLINK);
+                csrRoamCallCallback(pMac, sessionId, &roamInfo, 0, eCSR_ROAM_ROAMING_START, eCSR_ROAM_RESULT_LOSTLINK);
             }
             else
             {
@@ -15373,6 +15375,24 @@ eHalStatus csrSendAssocIndToUpperLayerCnfMsg(   tpAniSirGlobal pMac,
 #endif
         *pBuf = pAssocInd->rate_flags;
         pBuf += sizeof (uint32_t);
+
+        pBuf = (tANI_U8 *)&pMsg->chan_info;
+        vos_mem_copy((void *)pBuf, &pAssocInd->chan_info,
+                     sizeof(tSirSmeChanInfo));
+
+        pBuf = (tANI_U8 *)&pMsg->ch_width;
+        *pBuf = pAssocInd->ch_width;
+
+        if (pAssocInd->HTCaps.present) {
+            pBuf = (tANI_U8 *)&pMsg->HTCaps;
+            vos_mem_copy(pBuf, &pAssocInd->HTCaps, sizeof(pMsg->HTCaps));
+        }
+
+    if (pAssocInd->VHTCaps.present) {
+        pBuf = (tANI_U8 *)&pMsg->VHTCaps;
+        vos_mem_copy(pBuf, &pAssocInd->VHTCaps, sizeof(pMsg->VHTCaps));
+    }
+
         msgQ.type = eWNI_SME_UPPER_LAYER_ASSOC_CNF;
         msgQ.bodyptr = pMsg;
         msgQ.bodyval = 0;

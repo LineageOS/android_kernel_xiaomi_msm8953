@@ -270,18 +270,15 @@ static inline void hdd_connSaveConnectedBssType( hdd_station_ctx_t *pHddStaCtx, 
 }
 
 /**
- * hdd_copy_vht_caps()- copy vht caps info from roam info to
- *  hdd station context.
- * @hdd_sta_ctx: pointer to hdd station context
- * @roam_info: pointer to roam info
+ * hdd_copy_ht_caps()- Populate kernel HT caps structure object
+ * @hdd_ht_cap: HT capabilities of kernel type
+ * @roam_ht_cap: HT capabilities maintained locally within driver
  *
  * Return: None
  */
-static void hdd_copy_ht_caps(hdd_station_ctx_t *hdd_sta_ctx,
-                             tCsrRoamInfo *roam_info)
+void hdd_copy_ht_caps(struct ieee80211_ht_cap *hdd_ht_cap,
+                      tDot11fIEHTCaps *roam_ht_cap)
 {
-    tDot11fIEHTCaps *roam_ht_cap = &roam_info->ht_caps;
-    struct ieee80211_ht_cap *hdd_ht_cap = &hdd_sta_ctx->conn_info.ht_caps;
     uint32_t i, temp_ht_cap;
 
     vos_mem_zero(hdd_ht_cap, sizeof(struct ieee80211_ht_cap));
@@ -320,7 +317,6 @@ static void hdd_copy_ht_caps(hdd_station_ctx_t *hdd_sta_ctx,
         hdd_ht_cap->cap_info |= IEEE80211_HT_CAP_40MHZ_INTOLERANT;
     if (roam_ht_cap->lsigTXOPProtection)
         hdd_ht_cap->cap_info |= IEEE80211_HT_CAP_LSIG_TXOP_PROT;
-
 
     /* 802.11n HT capability AMPDU settings (for ampdu_params_info) */
     if (roam_ht_cap->maxRxAMPDUFactor)
@@ -443,11 +439,13 @@ static void hdd_copy_ht_caps(hdd_station_ctx_t *hdd_sta_ctx,
     for (i = 0; i < IEEE80211_HT_MCS_MASK_LEN; ++i)
         hdd_ht_cap->mcs.rx_mask[i] =
             roam_ht_cap->supportedMCSSet[i];
+
         hdd_ht_cap->mcs.rx_highest =
             ((short) (roam_ht_cap->supportedMCSSet[11]) << 8) |
             ((short) (roam_ht_cap->supportedMCSSet[10]));
         hdd_ht_cap->mcs.tx_params =
             roam_ht_cap->supportedMCSSet[12];
+
 }
 
 
@@ -466,19 +464,15 @@ static void hdd_copy_ht_caps(hdd_station_ctx_t *hdd_sta_ctx,
 #define VHT_CAP_VHT_LINK_ADAPTATION_VHT_MRQ_MFB_SHIFT	26
 
 /**
- * hdd_copy_ht_caps()- copy ht caps info from roam info to
- *  hdd station context.
- * @hdd_sta_ctx: pointer to hdd station context
- * @roam_info: pointer to roam info
+ * hdd_copy_vht_caps()- Populate kernel VHT caps structure object
+ * @hdd_ht_cap: VHT capabilities of kernel type
+ * @roam_ht_cap: VHT capabilities maintained locally within driver
  *
  * Return: None
  */
-static void hdd_copy_vht_caps(hdd_station_ctx_t *hdd_sta_ctx,
-                              tCsrRoamInfo *roam_info)
+void hdd_copy_vht_caps(struct ieee80211_vht_cap *hdd_vht_cap,
+			      tDot11fIEVHTCaps *roam_vht_cap)
 {
-    tDot11fIEVHTCaps *roam_vht_cap = &roam_info->vht_caps;
-    struct ieee80211_vht_cap *hdd_vht_cap =
-                    &hdd_sta_ctx->conn_info.vht_caps;
     uint32_t temp_vht_cap;
 
     vos_mem_zero(hdd_vht_cap, sizeof(struct ieee80211_vht_cap));
@@ -716,13 +710,14 @@ static void hdd_save_bss_info(hdd_adapter_t *adapter,
         hdd_sta_ctx->conn_info.operationChannel);
     if (roam_info->vht_caps.present) {
         hdd_sta_ctx->conn_info.conn_flag.vht_present = true;
-        hdd_copy_vht_caps(hdd_sta_ctx, roam_info);
+        hdd_copy_vht_caps(&hdd_sta_ctx->conn_info.vht_caps,
+                          &roam_info->vht_caps);
     } else {
         hdd_sta_ctx->conn_info.conn_flag.vht_present = false;
     }
     if (roam_info->ht_caps.present) {
         hdd_sta_ctx->conn_info.conn_flag.ht_present = true;
-        hdd_copy_ht_caps(hdd_sta_ctx, roam_info);
+        hdd_copy_ht_caps(&hdd_sta_ctx->conn_info.ht_caps, &roam_info->ht_caps);
     } else {
         hdd_sta_ctx->conn_info.conn_flag.ht_present = false;
     }

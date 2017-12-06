@@ -240,21 +240,22 @@ enum qca_wlan_vendor_attr_get_station {
 
 /**
  * enum qca_wlan_802_11_mode - dot11 mode
- * @QCA_WLAN_802_11_MODE_INVALID: Invalid dot11 mode
- * @QCA_WLAN_802_11_MODE_11A: mode A
  * @QCA_WLAN_802_11_MODE_11B: mode B
  * @QCA_WLAN_802_11_MODE_11G: mode G
  * @QCA_WLAN_802_11_MODE_11N: mode N
+ * @QCA_WLAN_802_11_MODE_11A: mode A
  * @QCA_WLAN_802_11_MODE_11AC: mode AC
+ * @QCA_WLAN_802_11_MODE_INVALID: Invalid dot11 mode
  */
 enum qca_wlan_802_11_mode {
-	QCA_WLAN_802_11_MODE_INVALID,
-	QCA_WLAN_802_11_MODE_11A,
 	QCA_WLAN_802_11_MODE_11B,
 	QCA_WLAN_802_11_MODE_11G,
 	QCA_WLAN_802_11_MODE_11N,
+	QCA_WLAN_802_11_MODE_11A,
 	QCA_WLAN_802_11_MODE_11AC,
+	QCA_WLAN_802_11_MODE_INVALID,
 };
+
 
 /**
  * enum qca_wlan_auth_type - Authentication key management type
@@ -1667,4 +1668,5 @@ int wlan_hdd_cfg80211_del_station(struct wiphy *wiphy,
 
 int wlan_hdd_cfg80211_update_apies(hdd_adapter_t *pHostapdAdapter);
 int wlan_hdd_try_disconnect(hdd_adapter_t *pAdapter);
+void wlan_hdd_sap_get_sta_rssi(hdd_adapter_t *adapter, uint8_t staid, s8 *rssi);
 #endif

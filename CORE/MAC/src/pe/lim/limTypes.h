@@ -274,6 +274,10 @@ typedef struct sLimMlmAssocInd
     tANI_U32             assocReqLength;
     tANI_U8*             assocReqPtr;
     uint32_t             rate_flags;
+    tSirSmeChanInfo      chan_info;
+    tSirMacHTChannelWidth ch_width;
+    tDot11fIEHTCaps HTCaps;
+    tDot11fIEVHTCaps VHTCaps;
 } tLimMlmAssocInd, *tpLimMlmAssocInd;
 
 typedef struct sLimMlmReassocReq

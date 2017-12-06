@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014, 2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -201,6 +201,25 @@ typedef struct
     
 } v_MACADDR_t;
 
+typedef enum {
+    VOS_MODE_11A        = 0,   /* 11a Mode */
+    VOS_MODE_11G        = 1,   /* 11b/g Mode */
+    VOS_MODE_11B        = 2,   /* 11b Mode */
+    VOS_MODE_11GONLY    = 3,   /* 11g only Mode */
+    VOS_MODE_11NA_HT20   = 4,  /* 11a HT20 mode */
+    VOS_MODE_11NG_HT20   = 5,  /* 11g HT20 mode */
+    VOS_MODE_11NA_HT40   = 6,  /* 11a HT40 mode */
+    VOS_MODE_11NG_HT40   = 7,  /* 11g HT40 mode */
+    VOS_MODE_11AC_VHT20 = 8,
+    VOS_MODE_11AC_VHT40 = 9,
+    VOS_MODE_11AC_VHT80 = 10,
+//    VOS_MODE_11AC_VHT160 = 11,
+    VOS_MODE_11AC_VHT20_2G = 11,
+    VOS_MODE_11AC_VHT40_2G = 12,
+    VOS_MODE_11AC_VHT80_2G = 13,
+    VOS_MODE_UNKNOWN    = 14,
+    VOS_MODE_MAX        = 14
+} VOS_WLAN_PHY_MODE;
 
 /// This macro is used to initialize a vOSS MacAddress to the 
 /// broadcast MacAddress.  It is used like this...

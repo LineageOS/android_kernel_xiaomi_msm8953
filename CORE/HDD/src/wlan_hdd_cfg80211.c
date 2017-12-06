@@ -16809,7 +16809,7 @@ static void wlan_hdd_fill_summary_stats(tCsrSummaryStatsInfo *stats,
  *
  * Return: None
  */
-static void
+void
 wlan_hdd_sap_get_sta_rssi(hdd_adapter_t *adapter, uint8_t staid, s8 *rssi)
 {
 	v_CONTEXT_t pVosContext =  (WLAN_HDD_GET_CTX(adapter))->pvosContext;

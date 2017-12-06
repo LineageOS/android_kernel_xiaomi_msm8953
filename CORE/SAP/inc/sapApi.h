@@ -194,6 +194,7 @@ typedef enum {
     eSAP_UNKNOWN_STA_JOIN, /* Event send when a STA in neither white list or black list tries to associate in softap mode */
     eSAP_MAX_ASSOC_EXCEEDED, /* Event send when a new STA is rejected association since softAP max assoc limit has reached */
     eSAP_CHANNEL_CHANGED_EVENT,
+    eSAP_STA_LOSTLINK_DETECTED
 } eSapHddEvent;
 
 typedef enum {
@@ -288,6 +289,10 @@ typedef struct sap_StationAssocReassocCompleteEvent_s {
     tANI_U32     assocRespLength;
     tANI_U8*     assocRespPtr;
     uint32_t rate_flags;
+    tSirSmeChanInfo chan_info;
+    tSirMacHTChannelWidth ch_width;
+    tDot11fIEVHTCaps VHTCaps;
+    tDot11fIEHTCaps HTCaps;
 } tSap_StationAssocReassocCompleteEvent;
 
 typedef struct sap_StationDisassocCompleteEvent_s {

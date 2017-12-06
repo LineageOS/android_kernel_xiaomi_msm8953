@@ -534,4 +534,5 @@ void vos_dump_wdi_events(void);
 bool vos_check_arp_target_ip(vos_pkt_t *pPacket);
 void vos_update_arp_fw_tx_delivered(void);
 void vos_update_arp_rx_drop_reorder(void);
+v_U16_t vos_get_rate_from_rateidx(uint32 rateindex);
 #endif // if !defined __VOS_NVITEM_H

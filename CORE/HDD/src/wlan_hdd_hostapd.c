@@ -1006,7 +1006,109 @@ static VOS_STATUS hdd_chan_change_notify(hdd_adapter_t *hostapd_adapter,
    return VOS_STATUS_SUCCESS;
 }
 
+/**
+ * hdd_convert_dot11mode_from_phymode() - get dot11mode to phymode
+ * @phymode: phy mode
+ *
+ * This function is used to get dot11mode to phymode
+ *
+ * Return: dot11mode
+ */
+static int hdd_convert_dot11mode_from_phymode(int phymode)
+{
+	switch (phymode) {
 
+	case VOS_MODE_11A:
+		return QCA_WLAN_802_11_MODE_11A;
+
+	case VOS_MODE_11B:
+		return QCA_WLAN_802_11_MODE_11B;
+
+	case VOS_MODE_11G:
+	case VOS_MODE_11GONLY:
+		return QCA_WLAN_802_11_MODE_11G;
+
+	case VOS_MODE_11NA_HT20:
+	case VOS_MODE_11NG_HT20:
+	case VOS_MODE_11NA_HT40:
+	case VOS_MODE_11NG_HT40:
+		return QCA_WLAN_802_11_MODE_11N;
+
+	case VOS_MODE_11AC_VHT20:
+	case VOS_MODE_11AC_VHT40:
+	case VOS_MODE_11AC_VHT80:
+	case VOS_MODE_11AC_VHT20_2G:
+	case VOS_MODE_11AC_VHT40_2G:
+	case VOS_MODE_11AC_VHT80_2G:
+#ifdef CONFIG_160MHZ_SUPPORT
+	case VOS_MODE_11AC_VHT80_80:
+	case VOS_MODE_11AC_VHT160:
+#endif
+		return QCA_WLAN_802_11_MODE_11AC;
+
+	default:
+		return QCA_WLAN_802_11_MODE_INVALID;
+	}
+
+}
+
+/**
+ * hdd_fill_station_info() - fill station information
+ * @sap_ctx: sap context
+ * @event: assoc event
+ * This function updates sta information from assoc event
+ *
+ * Return: none
+ */
+static void hdd_fill_station_info(ptSapContext sap_ctx,
+				  tSap_StationAssocReassocCompleteEvent *event)
+{
+	struct hdd_cache_sta_info *sta_info = sap_ctx->cache_sta_info;
+	int i=0;
+
+	/* check if there is any dup entry */
+	while (i < WLAN_MAX_STA_COUNT) {
+		if (vos_mem_compare(sta_info[i].macAddrSTA.bytes,
+				    event->staMac.bytes,
+				    VOS_MAC_ADDR_SIZE)) {
+			vos_mem_zero(&sta_info[i], sizeof(*sta_info));
+			break;
+		}
+		i++;
+	}
+	if (i >= WLAN_MAX_STA_COUNT) {
+		i = 0;
+		while (i < WLAN_MAX_STA_COUNT) {
+			if (sta_info[i].isUsed != TRUE)
+				break;
+			i++;
+		}
+	}
+
+	if (i < WLAN_MAX_STA_COUNT) {
+		sta_info[i].isUsed = TRUE;
+		sta_info[i].ucSTAId = event->staId;
+		vos_mem_copy(sta_info[i].macAddrSTA.bytes,
+			     event->staMac.bytes,
+			      VOS_MAC_ADDR_SIZE);
+		sta_info[i].freq = vos_chan_to_freq(event->chan_info.chan_id);
+		sta_info[i].ch_width = event->ch_width;
+		sta_info[i].nss = 1;
+		sta_info[i].dot11_mode = hdd_convert_dot11mode_from_phymode(
+							event->chan_info.info);
+		if (event->HTCaps.present) {
+			sta_info[i].ht_present = TRUE;
+			hdd_copy_ht_caps(&sta_info[i].ht_caps, &event->HTCaps);
+		}
+		if (event->VHTCaps.present) {
+			sta_info[i].vht_present = TRUE;
+			hdd_copy_vht_caps(&sta_info[i].vht_caps,
+					  &event->VHTCaps);
+		}
+	}
+	else
+		VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR, "reached max staid, stainfo can't be cached");
+}
 
 VOS_STATUS hdd_hostapd_SAPEventCB( tpSap_Event pSapEvent, v_PVOID_t usrDataForCallback)
 {
@@ -1261,6 +1363,9 @@ VOS_STATUS hdd_hostapd_SAPEventCB( tpSap_Event pSapEvent, v_PVOID_t usrDataForCa
                     hddLog(LOGW, FL("Failed to register STA %d "MAC_ADDRESS_STR""),
                                      vos_status, MAC_ADDR_ARRAY(wrqu.addr.sa_data));
             }
+            if (VOS_IS_STATUS_SUCCESS(vos_status))
+                hdd_fill_station_info(pSapCtx,
+                        &pSapEvent->sapevt.sapStationAssocReassocCompleteEvent);
 
             staId =
                 pSapEvent->sapevt.sapStationAssocReassocCompleteEvent.staId;
@@ -1484,6 +1589,28 @@ VOS_STATUS hdd_hostapd_SAPEventCB( tpSap_Event pSapEvent, v_PVOID_t usrDataForCa
 
             return hdd_chan_change_notify(pHostapdAdapter, dev,
                            pSapEvent->sapevt.sap_chan_selected.new_chan);
+    case eSAP_STA_LOSTLINK_DETECTED:
+        {
+            tSap_StationDisassocCompleteEvent *disassoc_comp =
+                    &pSapEvent->sapevt.sapStationDisassocCompleteEvent;
+
+            struct hdd_cache_sta_info *sta_info = hdd_get_cache_stainfo(
+                                              pSapCtx->cache_sta_info,
+                                              disassoc_comp->staMac.bytes);
+           if (!sta_info) {
+               hddLog(LOGE, FL("invalid cache sta info"));
+               return VOS_STATUS_E_FAILURE;
+           }
+
+            WLANTL_GetSAPStaRSSi(pVosContext, disassoc_comp->staId,
+                        &sta_info->rssi);
+            sta_info->rx_rate =
+                    wlan_tl_get_sta_rx_rate(pVosContext, disassoc_comp->staId);
+            if (disassoc_comp->reason != eSAP_USR_INITATED_DISASSOC)
+                sta_info->reason_code = disassoc_comp->reason;
+            return VOS_STATUS_SUCCESS;
+        }
+
         default:
             hddLog(LOG1,"SAP message is not handled");
             goto stopbss;
@@ -5584,3 +5711,32 @@ void hdd_force_scc_restart_sap(hdd_adapter_t *adapter,
   }
   return;
 }
+
+/**
+ * hdd_get_cache_stainfo() - get stainfo for the specified peer
+ * @stainfo: array of station info
+ * @mac_addr: mac address of requested peer
+ *
+ * This function find the stainfo for the peer with mac_addr
+ *
+ * Return: stainfo if found, NULL if not found
+ */
+struct hdd_cache_sta_info *hdd_get_cache_stainfo(
+				struct hdd_cache_sta_info *astainfo,
+				u8 *mac_addr)
+{
+	struct hdd_cache_sta_info *stainfo = NULL;
+	int i;
+
+	for (i = 0; i < WLAN_MAX_STA_COUNT; i++) {
+		if (vos_mem_compare(&astainfo[i].macAddrSTA,
+		    mac_addr,
+		    HDD_MAC_ADDR_LEN)) {
+			stainfo = &astainfo[i];
+			break;
+		}
+	}
+
+	return stainfo;
+}
+
