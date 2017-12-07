@@ -93,9 +93,11 @@ enum {
 
 struct msm_asoc_mach_data {
 	int us_euro_gpio; /* used by gpio driver API */
+	int usbc_en2_gpio; /* used by gpio driver API */
 	int hph_en1_gpio;
 	int hph_en0_gpio;
 	struct device_node *us_euro_gpio_p; /* used by pinctrl API */
+	struct pinctrl *usbc_en2_gpio_p; /* used by pinctrl API */
 	struct device_node *hph_en1_gpio_p; /* used by pinctrl API */
 	struct device_node *hph_en0_gpio_p; /* used by pinctrl API */
 	struct device_node *pdm_gpio_p; /* used by pinctrl API */
