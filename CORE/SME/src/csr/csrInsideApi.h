@@ -94,8 +94,8 @@
 #define CSR_SCAN_AGING_TIME_NOT_CONNECT_W_PS 300     //300 seconds
 #define CSR_SCAN_AGING_TIME_CONNECT_NO_PS 150        //150 seconds
 #define CSR_SCAN_AGING_TIME_CONNECT_W_PS 600         //600 seconds
-#define CSR_JOIN_FAILURE_TIMEOUT_DEFAULT ( 3000 )
-#define CSR_JOIN_FAILURE_TIMEOUT_MIN   (1000)  //minimal value
+#define CSR_JOIN_FAILURE_TIMEOUT_DEFAULT ( 300 )
+#define CSR_JOIN_FAILURE_TIMEOUT_MIN   (300)  //minimal value
 //These are going against the signed RSSI (tANI_S8) so it is between -+127
 #define CSR_BEST_RSSI_VALUE         (-30)   //RSSI >= this is in CAT4
 #define CSR_DEFAULT_RSSI_DB_GAP     30 //every 30 dbm for one category
@@ -208,8 +208,6 @@ typedef struct tagCsrScanResult
     tANI_S32 AgingCount;    //This BSS is removed when it reaches 0 or less
     tANI_U32 preferValue;   //The bigger the number, the better the BSS. This value override capValue
     tANI_U32 capValue;  //The biggger the better. This value is in use only if we have equal preferValue
-    //This member must be the last in the structure because the end of tSirBssDescription (inside) is an
-    //    array with nonknown size at this time
     
     eCsrEncryptionType ucEncryptionType; //Preferred Encryption type that matched with profile.
     eCsrEncryptionType mcEncryptionType; 
@@ -218,6 +216,12 @@ typedef struct tagCsrScanResult
     int congestionScore;
 #endif
     tCsrScanResultInfo Result;
+    /*
+     * WARNING - Do not add any element here
+     * This member Result must be the last in the structure because the end
+     * of tSirBssDescription (inside) is an array with nonknown size at
+     * this time.
+     */
 }tCsrScanResult;
 
 typedef struct

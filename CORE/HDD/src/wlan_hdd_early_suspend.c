@@ -2251,6 +2251,7 @@ VOS_STATUS hdd_wlan_shutdown(void)
         vos_timer_stop(&pHddCtx->tx_rx_trafficTmr);
    }
    vos_flush_delayed_work(&pHddCtx->spoof_mac_addr_work);
+   vos_flush_delayed_work(&pHddCtx->ecsa_chan_change_work);
    vos_flush_work(&pHddCtx->sap_start_work);
    hdd_reset_all_adapters(pHddCtx);
 

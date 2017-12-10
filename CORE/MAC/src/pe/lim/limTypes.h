@@ -167,6 +167,7 @@ enum eChannelChangeReasonCodes
     LIM_SWITCH_CHANNEL_JOIN,
     LIM_SWITCH_CHANNEL_OPERATION, // Generic change channel
     LIM_SWITCH_CHANNEL_CSA,
+    LIM_SWITCH_CHANNEL_SAP_ECSA,
 };
 
 typedef struct sLimAuthRspTimeout
@@ -209,8 +210,13 @@ typedef struct sLimMlmScanCnf
 {
     tSirResultCodes         resultCode;
     tANI_U16                scanResultLength;
-    tSirBssDescription      bssDescription[1];
     tANI_U8                 sessionId;
+    tSirBssDescription      bssDescription[1];
+    /*
+     * WARNING: Pls make bssDescription as last variable in struct
+     * tLimMlmScanCnf as it has ieFields followed after this bss
+     * description. Adding a variable after this corrupts the ieFields
+     */
 } tLimMlmScanCnf, *tpLimMlmScanCnf;
 
 typedef struct sLimScanResult
@@ -710,6 +716,26 @@ tSirResultCodes limMlmAddBss(tpAniSirGlobal, tLimMlmStartReq *,tpPESession psess
 
 tSirRetStatus limSendChannelSwitchMgmtFrame(tpAniSirGlobal, tSirMacAddr, tANI_U8, tANI_U8, tANI_U8, tpPESession);
 
+/**
+ * lim_send_extended_chan_switch_action_frame()- function to send ECSA
+ * action frame over the air .
+ * @mac_ctx: pointer to global mac structure
+ * @peer: Destination mac.
+ * @mode: channel switch mode
+ * @new_op_class: new op class
+ * @new_channel: new channel to switch
+ * @count: channel switch count
+ *
+ * This function is called to send ECSA frame.
+ *
+ * Return: success if frame is sent else return failure
+ */
+tSirRetStatus
+lim_send_extended_chan_switch_action_frame(tpAniSirGlobal mac_ctx,
+   tSirMacAddr peer, uint8_t mode, uint8_t new_op_class,
+   uint8_t new_channel, uint8_t count, tpPESession session_entry);
+
+
 #ifdef WLAN_FEATURE_11AC
 tSirRetStatus limSendVHTOpmodeNotificationFrame(tpAniSirGlobal pMac,tSirMacAddr peer,tANI_U8 nMode, tpPESession  psessionEntry );
 tSirRetStatus limSendVHTChannelSwitchMgmtFrame(tpAniSirGlobal pMac,tSirMacAddr peer,tANI_U8 nChanWidth, tANI_U8 nNewChannel, tANI_U8 ncbMode, tpPESession  psessionEntry );
@@ -1055,6 +1081,26 @@ tSirRetStatus __limProcessSmeNoAUpdate(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf);
 void limProcessRegdDefdSmeReqAfterNOAStart(tpAniSirGlobal pMac);
 void limProcessDisassocAckTimeout(tpAniSirGlobal pMac);
 void limProcessDeauthAckTimeout(tpAniSirGlobal pMac);
+/**
+ * lim_process_ap_ecsa_timeout() -process ECSA timeout which indicate ECSA IE TX
+ * complete in beacon
+ * @mac_ctx - A pointer to Global MAC structure
+ *
+ * Return None
+ */
+void lim_process_ap_ecsa_timeout(tpAniSirGlobal mac_ctx);
+/**
+ * lim_send_sme_ap_channel_switch_resp() -process channel switch resp for ecsa
+ * channel switch req
+ * @mac_ctx - A pointer to Global MAC structure
+ * @session: session on which channel switch was done
+ * @chan_param: channel switch resp params
+ *
+ * Return None
+ */
+void lim_send_sme_ap_channel_switch_resp(tpAniSirGlobal mac_ctx,
+           tpPESession session, tpSwitchChannelParams chan_param);
+
 eHalStatus limSendDisassocCnf(tpAniSirGlobal pMac);
 eHalStatus limSendDeauthCnf(tpAniSirGlobal pMac);
 

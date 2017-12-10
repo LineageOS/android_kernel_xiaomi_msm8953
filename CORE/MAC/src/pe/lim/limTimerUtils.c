@@ -734,6 +734,17 @@ limCreateTimers(tpAniSirGlobal pMac)
         limLog(pMac, LOG1,
                FL("gLimActiveToPassiveChannelTimer not created %d"), cfgValue);
     }
+    cfgValue = WNI_CFG_BEACON_INTERVAL_STADEF;
+    cfgValue = SYS_MS_TO_TICKS(cfgValue);
+    if (tx_timer_create(&pMac->lim.limTimers.g_lim_ap_ecsa_timer,
+                        "AP ECSA TIMER", limTimerHandler,
+                        SIR_LIM_SAP_ECSA_TIMEOUT,
+                        cfgValue, 0,
+                        TX_NO_ACTIVATE) != TX_SUCCESS)
+    {
+        limLog(pMac, LOGW,FL("could not create timer for passive channel to active channel"));
+        goto err_timer;
+    }
 
     return TX_SUCCESS;
 
@@ -772,6 +783,7 @@ limCreateTimers(tpAniSirGlobal pMac)
         tx_timer_delete(&pMac->lim.limTimers.gLimMinChannelTimer);
         tx_timer_delete(&pMac->lim.limTimers.gLimP2pSingleShotNoaInsertTimer);
         tx_timer_delete(&pMac->lim.limTimers.gLimActiveToPassiveChannelTimer);
+        tx_timer_delete(&pMac->lim.limTimers.g_lim_ap_ecsa_timer);
 
         if(NULL != pMac->lim.gLimPreAuthTimerTable.pTable)
         {
@@ -1896,8 +1908,35 @@ limDeactivateAndChangeTimer(tpAniSirGlobal pMac, tANI_U32 timerId)
             return;
         }
         break;
+    case eLIM_AP_ECSA_TIMER:
+        if (tx_timer_deactivate(
+                       &pMac->lim.limTimers.g_lim_ap_ecsa_timer) != TX_SUCCESS)
+        {
+           /*
+            * Could not deactivate SingleShot NOA Insert
+            * timer. Log error.
+            */
+            limLog(pMac, LOGE, FL("Unable to deactivate AP ecsa timer"));
+            return;
+        }
+        if ((psessionEntry = peFindSessionBySessionId(pMac,
+                pMac->lim.limTimers.g_lim_ap_ecsa_timer.sessionId)) == NULL)
+        {
+            limLog(pMac, LOGE,
+                   FL("session does not exist for given SessionId : %d, for AP ecsa timer"),
+                   pMac->lim.limTimers.g_lim_ap_ecsa_timer.sessionId);
+            break;
+        }
+        val = psessionEntry->beaconParams.beaconInterval;
+        val = SYS_MS_TO_TICKS(val);
+        if (tx_timer_change(&pMac->lim.limTimers.g_lim_ap_ecsa_timer,
+                                val, 0) != TX_SUCCESS)
+        {
+                limLog(pMac, LOGE, FL("Unable to change g_lim_ap_ecsa_timer timer"));
+        }
 
-        default:
+        break;
+     default:
             // Invalid timerId. Log error
             break;
     }

@@ -1811,6 +1811,9 @@ struct hdd_context_s
     bool is_ap_mode_wow_supported;
     bool is_fatal_event_log_sup;
 
+    /* work queue ecsa channel change on SAP */
+   struct delayed_work ecsa_chan_change_work;
+
     uint32_t track_arp_ip;
 };
 

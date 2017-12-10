@@ -100,6 +100,11 @@
 #endif
 #endif
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 12, 0)) \
+	|| defined(BACKPORTED_CHANNEL_SWITCH_PRESENT)
+#define CHANNEL_SWITCH_SUPPORTED
+#endif
+
 #define MAX_CHANNEL NUM_2_4GHZ_CHANNELS + NUM_5GHZ_CHANNELS
 
 #define IS_CHANNEL_VALID(channel) ((channel >= 0 && channel < 15) \

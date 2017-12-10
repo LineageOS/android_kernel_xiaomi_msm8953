@@ -3436,6 +3436,13 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                   CFG_SAP_SCAN_BAND_PREFERENCE_MIN,
                   CFG_SAP_SCAN_BAND_PREFERENCE_MAX ),
 
+   REG_VARIABLE(CFG_ENABLE_RTT_SUPPORT, WLAN_PARAM_Integer,
+                  hdd_config_t, enable_rtt_support,
+                  VAR_FLAGS_OPTIONAL,
+                  CFG_ENABLE_RTT_SUPPORT_DEFAULT,
+                  CFG_ENABLE_RTT_SUPPORT_MIN,
+                  CFG_ENABLE_RTT_SUPPORT_MAX ),
+
    REG_VARIABLE( CFG_ENABLE_DYNAMIC_RA_START_RATE_NAME, WLAN_PARAM_Integer,
                   hdd_config_t, enableDynamicRAStartRate,
                   VAR_FLAGS_OPTIONAL |
@@ -3936,6 +3943,13 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                 CFG_TRIGGER_NULLFRAME_BEFORE_HB_DEFAULT,
                 CFG_TRIGGER_NULLFRAME_BEFORE_HB_MIN,
                 CFG_TRIGGER_NULLFRAME_BEFORE_HB_MAX ),
+
+  REG_VARIABLE(CFG_FORCE_SCC_WITH_ECSA_NAME, WLAN_PARAM_Integer,
+               hdd_config_t, force_scc_with_ecsa,
+               VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+               CFG_FORCE_SCC_WITH_ECSA_DEFAULT,
+               CFG_FORCE_SCC_WITH_ECSA_MIN,
+               CFG_FORCE_SCC_WITH_ECSA_MAX ),
 };
 
 /*
@@ -4586,6 +4600,11 @@ static void print_hdd_cfg(hdd_context_t *pHddCtx)
             "Name = [%s] Value = [%u] ",
             CFG_TRIGGER_NULLFRAME_BEFORE_HB_NAME,
             pHddCtx->cfg_ini->trigger_nullframe_before_hb);
+
+    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+            "Name = [%s] Value = [%u] ",
+            CFG_FORCE_SCC_WITH_ECSA_NAME,
+            pHddCtx->cfg_ini->force_scc_with_ecsa);
 }
 
 

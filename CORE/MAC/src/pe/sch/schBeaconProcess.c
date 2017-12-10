@@ -485,7 +485,8 @@ static void __schBeaconProcessForSession( tpAniSirGlobal      pMac,
     {
         /* Channel Switch information element updated */
         if(pBeacon->channelSwitchPresent ||
-            pBeacon->propIEinfo.propChannelSwitchPresent)
+            pBeacon->propIEinfo.propChannelSwitchPresent ||
+            pBeacon->ecsa_present)
         {
             limUpdateChannelSwitch(pMac, pBeacon, psessionEntry);
         }

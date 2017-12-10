@@ -108,6 +108,9 @@ v_U8_t ccpRSNOui08[ HDD_RSN_OUI_SIZE ] = { 0x00, 0x0F, 0xAC, 0x05 };
 
 #define BEACON_FRAME_IES_OFFSET 12
 
+/* The time after add bss, in which SAP should start ECSA to move to SCC */
+#define ECSA_SCC_CHAN_CHANGE_DEFER_INTERVAL 1500
+
 #ifdef WLAN_FEATURE_11W
 void hdd_indicateUnprotMgmtFrame(hdd_adapter_t *pAdapter,
                             tANI_U32 nFrameLength,
@@ -1576,7 +1579,7 @@ static eHalStatus hdd_DisConnectHandler( hdd_adapter_t *pAdapter, tCsrRoamInfo *
        wlan_hdd_decr_active_session(pHddCtx, pAdapter->device_mode);
     }
     spin_unlock_bh(&pAdapter->lock_for_active_session);
-
+    vos_flush_delayed_work(&pHddCtx->ecsa_chan_change_work);
     hdd_clearRoamProfileIe( pAdapter );
 
     hdd_wmm_init( pAdapter );
@@ -2104,6 +2107,35 @@ void hdd_PerformRoamSetKeyComplete(hdd_adapter_t *pAdapter)
         hddLog(LOGE, "%s: Set Key complete failure", __func__);
     }
     pHddStaCtx->roam_info.deferKeyComplete = FALSE;
+}
+
+/**
+ * hdd_schedule_ecsa_chan_change_work() - schedule ecsa chan change work
+ * @hal: hal context
+ * @sta_session_id: sta session id
+ *
+ * Return: void.
+ */
+static void
+hdd_schedule_ecsa_chan_change_work(hdd_context_t *hdd_ctx,
+                                                  uint8_t sta_session_id)
+{
+   v_TIME_t conn_start_time;
+   int32_t time_diff;
+
+   conn_start_time = sme_get_connect_strt_time(hdd_ctx->hHal, sta_session_id);
+   time_diff = vos_timer_get_system_time() - conn_start_time;
+
+   if (time_diff < 0)
+       time_diff = ECSA_SCC_CHAN_CHANGE_DEFER_INTERVAL;
+   else if (time_diff > ECSA_SCC_CHAN_CHANGE_DEFER_INTERVAL)
+       time_diff = 0;
+   else
+       time_diff = ECSA_SCC_CHAN_CHANGE_DEFER_INTERVAL - time_diff;
+
+   hddLog(LOG1, FL("schedule ecsa_chan_change_work after %d ms"), time_diff);
+   schedule_delayed_work(&hdd_ctx->ecsa_chan_change_work,
+                          msecs_to_jiffies(time_diff));
 }
 
 static eHalStatus hdd_AssociationCompletionHandler( hdd_adapter_t *pAdapter, tCsrRoamInfo *pRoamInfo,
@@ -2659,10 +2691,18 @@ static eHalStatus hdd_AssociationCompletionHandler( hdd_adapter_t *pAdapter, tCs
                 hddLog(VOS_TRACE_LEVEL_INFO,"Restart Sap as SAP channel is %d "
                        "and STA channel is %d", pHostapdAdapter->sessionCtx.ap.operatingChannel,
                        (int)pRoamInfo->pBssDesc->channelId);
-                hdd_hostapd_stop(pHostapdAdapter->dev);
-                if (pHddCtx->cfg_ini->enable_sap_auth_offload)
-                  hdd_force_scc_restart_sap(pHostapdAdapter,
-                      pHddCtx, (int)pRoamInfo->pBssDesc->channelId);
+                if (pHddCtx->cfg_ini->force_scc_with_ecsa)
+                {
+                    hdd_schedule_ecsa_chan_change_work(pHddCtx,
+                                                       pAdapter->sessionId);
+                }
+                else
+                {
+                    hdd_hostapd_stop(pHostapdAdapter->dev);
+                    if (pHddCtx->cfg_ini->enable_sap_auth_offload)
+                       hdd_force_scc_restart_sap(pHostapdAdapter,
+                             pHddCtx, (int)pRoamInfo->pBssDesc->channelId);
+                }
 
              }
         }
