@@ -9434,3 +9434,19 @@ int peFindBssIdxFromSmeSessionId(tpAniSirGlobal pMac, tANI_U8 sme_sessionId)
     limLog(pMac, LOG4, FL("Session lookup fails for sme_sessionId: "));
     return(0xFF);
 }
+void limStaDelBASession(tpAniSirGlobal pMac)
+{
+    tANI_U32 i;
+    tpPESession pSessionEntry;
+
+    for (i = 0; i < pMac->lim.maxBssId; i++)
+    {
+        pSessionEntry = peFindSessionBySessionId(pMac, i);
+        if (pSessionEntry &&
+            pSessionEntry->limSystemRole == eLIM_STA_ROLE)
+        {
+            limDeleteBASessions(pMac, pSessionEntry, BA_BOTH_DIRECTIONS,
+                                eSIR_MAC_UNSPEC_FAILURE_REASON);
+        }
+    }
+}

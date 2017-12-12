@@ -10213,7 +10213,7 @@ VOS_STATUS wlan_hdd_set_dhcp_server_offload(hdd_adapter_t *hostapd_adapter,
 	hdd_string_to_u8_array(hdd_ctx->cfg_ini->dhcp_srv_ip,
 			       srv_ip,
 			       &num_entries,
-			       IPADDR_NUM_ENTRIES, ".");
+			       IPADDR_NUM_ENTRIES, ".", false);
 	if (num_entries != IPADDR_NUM_ENTRIES) {
 		hddLog(VOS_TRACE_LEVEL_ERROR,
 		       "%s: incorrect IP address (%s) assigned for DHCP server!",

@@ -3957,6 +3957,18 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                CFG_STA_SAP_SCC_ON_DFS_CHAN_DEFAULT,
                CFG_STA_SAP_SCC_ON_DFS_CHAN_MIN,
                CFG_STA_SAP_SCC_ON_DFS_CHAN_MAX),
+
+  REG_VARIABLE_STRING(CFG_ENABLE_AGG_BTC_SCO_OUI_NAME, WLAN_PARAM_String,
+                      hdd_config_t, enable_aggr_btc_sco_oui,
+                      VAR_FLAGS_OPTIONAL,
+                      (void *) CFG_ENABLE_AGG_BTC_SCO_OUI_DEFAULT),
+
+  REG_VARIABLE(CFG_NUM_BUFF_BTC_SCO_NAME, WLAN_PARAM_Integer,
+               hdd_config_t, num_buff_aggr_btc_sco,
+               VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+               CFG_NUM_BUFF_BTC_SCO_DEFAULT,
+               CFG_NUM_BUFF_BTC_SCO_MIN,
+               CFG_NUM_BUFF_BTC_SCO_MAX ),
 };
 
 /*
@@ -5139,9 +5151,9 @@ static void hdd_set_power_save_config(hdd_context_t *pHddCtx, tSmeConfigParams *
 
 VOS_STATUS hdd_string_to_u8_array(char *str, tANI_U8 *intArray,
 				   tANI_U8 *len, tANI_U8 intArrayMaxLen,
-				   char *seperator)
+				   char *seperator, bool to_hex)
 {
-   char *s = str;
+   char *format, *s = str;
 
    if( str == NULL || intArray == NULL || len == NULL )
    {
@@ -5149,12 +5161,13 @@ VOS_STATUS hdd_string_to_u8_array(char *str, tANI_U8 *intArray,
    }
    *len = 0;
 
+   format = (to_hex) ? "%02x" : "%d";
    while ( (s != NULL) && (*len < intArrayMaxLen) )
    {
       int val;
       //Increment length only if sscanf succesfully extracted one element.
       //Any other return value means error. Ignore it.
-      if( sscanf(s, "%d", &val ) == 1 )
+      if( sscanf(s, format, &val ) == 1 )
       {
          if (val > 255 || val < 0)
              return VOS_STATUS_E_FAILURE;
@@ -6307,7 +6320,6 @@ v_BOOL_t hdd_update_config_dat( hdd_context_t *pHddCtx )
    return fStatus;
 }
 
-
 /**---------------------------------------------------------------------------
 
   \brief hdd_init_set_sme_config() -
@@ -6325,6 +6337,7 @@ VOS_STATUS hdd_set_sme_config( hdd_context_t *pHddCtx )
    VOS_STATUS status = VOS_STATUS_SUCCESS;
    eHalStatus halStatus;
    tpSmeConfigParams smeConfig;
+   tANI_U8 i;
 
    hdd_config_t *pConfig = pHddCtx->cfg_ini;
 
@@ -6545,7 +6558,8 @@ VOS_STATUS hdd_set_sme_config( hdd_context_t *pHddCtx )
    hdd_string_to_u8_array( pConfig->neighborScanChanList,
                                         smeConfig->csrConfig.neighborRoamConfig.neighborScanChanList.channelList,
                                         &smeConfig->csrConfig.neighborRoamConfig.neighborScanChanList.numChannels,
-                                        WNI_CFG_VALID_CHANNEL_LIST_LEN, "," );
+                                        WNI_CFG_VALID_CHANNEL_LIST_LEN, ",",
+                                        false);
 #endif
 
    smeConfig->csrConfig.addTSWhenACMIsOff = pConfig->AddTSWhenACMIsOff;
@@ -6625,7 +6639,15 @@ VOS_STATUS hdd_set_sme_config( hdd_context_t *pHddCtx )
 
    smeConfig->csrConfig.sta_auth_retries_for_code17 =
                         pHddCtx->cfg_ini->sta_auth_retries_for_code17;
+   if (hdd_string_to_u8_array(pHddCtx->cfg_ini->enable_aggr_btc_sco_oui,
+       smeConfig->csrConfig.agg_btc_sco_oui, &i, VENDOR_AP_OUI_SIZE, "-",
+       true) != VOS_STATUS_SUCCESS)
+       vos_mem_set(smeConfig->csrConfig.agg_btc_sco_oui, VENDOR_AP_OUI_SIZE, 0);
 
+   smeConfig->csrConfig.num_ba_buff_btc_sco =
+                        pHddCtx->cfg_ini->num_buff_aggr_btc_sco;
+   smeConfig->csrConfig.num_ba_buff =
+                        pHddCtx->cfg_ini->numBuffAdvert;
    sme_set_mgmt_frm_via_wq5((tHalHandle)(pHddCtx->hHal),
            pHddCtx->cfg_ini->sendMgmtPktViaWQ5);
 

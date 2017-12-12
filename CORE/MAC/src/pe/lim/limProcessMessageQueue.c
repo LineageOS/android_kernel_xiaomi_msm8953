@@ -2547,6 +2547,9 @@ send_chan_switch_resp:
         vos_mem_free((v_VOID_t*)limMsg->bodyptr);
         limMsg->bodyptr = NULL;
         break;
+    case eWNI_SME_STA_DEL_BA_REQ:
+        limStaDelBASession(pMac);
+        break;
     default:
         vos_mem_free((v_VOID_t*)limMsg->bodyptr);
         limMsg->bodyptr = NULL;
