@@ -2924,12 +2924,12 @@ static inline int lim_select_cbmode(tDphHashNode *sta_ds, uint8_t channel,
              channel == 64 || channel == 104 || channel == 112 ||
              channel == 120 || channel == 128 || channel == 136 ||
              channel == 144 || channel == 153 || channel == 161)
-           return PHY_DOUBLE_CHANNEL_LOW_PRIMARY;
+           return PHY_DOUBLE_CHANNEL_HIGH_PRIMARY;
         else if (channel== 36 || channel == 44 || channel == 52 ||
              channel == 60 || channel == 100 || channel == 108 ||
              channel == 116 || channel == 124 || channel == 132 ||
              channel == 140 || channel == 149 || channel == 157)
-           return PHY_DOUBLE_CHANNEL_HIGH_PRIMARY;
+           return PHY_DOUBLE_CHANNEL_LOW_PRIMARY;
         else if (channel == 165)
            return PHY_SINGLE_CHANNEL_CENTERED;
     }
