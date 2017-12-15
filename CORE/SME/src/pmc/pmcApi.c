@@ -1577,6 +1577,7 @@ static void pmcProcessResponse( tpAniSirGlobal pMac, tSirSmeRsp *pMsg )
             {
                 pMac->pmc.pmcState = FULL_POWER;
                 pMac->pmc.isAPWOWExit = TRUE;
+                pMac->pmc.requestFullPowerPending = false;
                 break;
             }
             else
