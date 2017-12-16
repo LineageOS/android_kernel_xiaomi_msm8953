@@ -1345,6 +1345,8 @@ typedef struct tagCsrRoamInfo
     tDot11fIEHTInfo ht_operation;
     bool reassoc;
     struct sir_channel_chanege_rsp *ap_chan_change_rsp;
+    tSirSmeChanInfo chan_info;
+    tSirMacHTChannelWidth ch_width;
 }tCsrRoamInfo;
 
 typedef struct tagCsrFreqScanInfo
@@ -1374,6 +1376,10 @@ typedef struct sSirSmeAssocIndToUpperLayerCnf
     tANI_U8              HT40MHzIntoEnabledSta; //set to true if 40 MHz Intolerant enabled STA
 #endif
     uint32_t             rate_flags;
+    tSirSmeChanInfo      chan_info;
+    tSirMacHTChannelWidth ch_width;
+    tDot11fIEHTCaps HTCaps;
+    tDot11fIEVHTCaps VHTCaps;
 } tSirSmeAssocIndToUpperLayerCnf, *tpSirSmeAssocIndToUpperLayerCnf;
 
 typedef struct tagCsrSummaryStatsInfo
