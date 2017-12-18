@@ -22898,6 +22898,9 @@ WDI_ProcessHALDumpCmdRsp
      return WDI_STATUS_E_FAILURE;
   }
 
+  WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
+             "%s: WDI process HAL dump cmd rsp", __func__);
+
   wdiHALDumpCmdRspCb = (WDI_HALDumpCmdRspCb)pWDICtx->pfncRspCB;
 
   /*Initialize the WDI Response structure */
