@@ -110,6 +110,10 @@
 	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
 };
 
+&dsi_r63350_fhd_vid {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+};
+
 &int_codec {
 	status = "ok";
 };
