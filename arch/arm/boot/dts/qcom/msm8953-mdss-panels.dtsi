@@ -13,6 +13,7 @@
 #include "dsi-panel-nt35532-fhd-video.dtsi"
 #include "dsi-panel-nt35596-fhd-video.dtsi"
 #include "dsi-panel-nt35596-tianma-fhd-video.dtsi"
+#include "dsi-panel-r63350-ebbg-fhd-video.dtsi"
 #include "dsi-panel-sim-video.dtsi"
 #include "dsi-panel-sim-dualmipi-video.dtsi"
 #include "dsi-panel-sim-cmd.dtsi"
