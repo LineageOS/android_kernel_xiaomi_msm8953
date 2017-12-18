@@ -10260,6 +10260,90 @@ VOS_STATUS wlan_hdd_set_dhcp_server_offload(hdd_adapter_t *hostapd_adapter,
 }
 #endif /* DHCP_SERVER_OFFLOAD */
 
+/*
+ * hdd_modify_indoor_channel_state_flags() - modify wiphy flags and cds state
+ * @wiphy_chan: wiphy channel number
+ * @rfChannel: channel hw value
+ * @disable: Disable/enable the flags
+ *
+ * Modify wiphy flags and cds state if channel is indoor.
+ *
+ * Return: void
+ */
+void hdd_modify_indoor_channel_state_flags(struct ieee80211_channel *wiphy_chan,
+    v_U32_t rfChannel, bool disable)
+{
+    v_U32_t channelLoop;
+    eRfChannels channelEnum = INVALID_RF_CHANNEL;
+
+    for (channelLoop = 0; channelLoop <= RF_CHAN_165; channelLoop++) {
+
+        if (rfChannels[channelLoop].channelNum == rfChannel) {
+            channelEnum = (eRfChannels)channelLoop;
+            break;
+        }
+    }
+
+    if (INVALID_RF_CHANNEL == channelEnum)
+        return;
+
+    if (disable) {
+        if (wiphy_chan->flags & IEEE80211_CHAN_INDOOR_ONLY) {
+            wiphy_chan->flags |=
+                IEEE80211_CHAN_DISABLED;
+            regChannels[channelEnum].enabled =
+                NV_CHANNEL_DISABLE;
+        }
+    } else {
+        if (wiphy_chan->flags & IEEE80211_CHAN_INDOOR_ONLY) {
+            wiphy_chan->flags &=
+                    ~IEEE80211_CHAN_DISABLED;
+            /*
+             * Indoor channels are marked as DFS
+             * during regulatory processing
+             */
+
+            regChannels[channelEnum].enabled =
+                    NV_CHANNEL_DFS;
+        }
+    }
+
+}
+
+void hdd_update_indoor_channel(hdd_context_t *hdd_ctx,
+                    bool disable)
+{
+    int band_num;
+    int chan_num;
+    v_U32_t rfChannel;
+    struct ieee80211_channel *wiphy_chan;
+    struct wiphy *wiphy;
+
+    ENTER();
+    hddLog(VOS_TRACE_LEVEL_INFO, "disable: %d", disable);
+
+    wiphy = hdd_ctx->wiphy;
+    for (band_num = 0; band_num < IEEE80211_NUM_BANDS; band_num++) {
+
+        if (wiphy->bands[band_num] == NULL)
+            continue;
+
+        for (chan_num = 0;
+             chan_num < wiphy->bands[band_num]->n_channels;
+             chan_num++) {
+
+            wiphy_chan =
+                &(wiphy->bands[band_num]->channels[chan_num]);
+            rfChannel = wiphy->bands[band_num]->channels[chan_num].hw_value;
+
+            hdd_modify_indoor_channel_state_flags(wiphy_chan, rfChannel,
+                                        disable);
+        }
+    }
+    EXIT();
+}
+
+
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3,4,0))
 static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
                             struct beacon_parameters *params)
@@ -10299,6 +10383,19 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
 
     wlan_hdd_tdls_disable_offchan_and_teardown_links(pHddCtx);
     iniConfig = pHddCtx->cfg_ini;
+
+    /* Mark the indoor channel (passive) to disable */
+    if (iniConfig->disable_indoor_channel) {
+        hdd_update_indoor_channel(pHddCtx, true);
+
+        if (!VOS_IS_STATUS_SUCCESS(
+                sme_update_channel_list((tpAniSirGlobal)pHddCtx->hHal))) {
+            hdd_update_indoor_channel(pHddCtx, false);
+            VOS_TRACE(VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
+                 FL("Can't start BSS: update channel list failed"));
+            return eHAL_STATUS_FAILURE;
+        }
+    }
 
     pHostapdState = WLAN_HDD_GET_HOSTAP_STATE_PTR(pHostapdAdapter);
 
@@ -10890,6 +10987,12 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
 
    return 0;
 error:
+   /* Revert the indoor to passive marking if START BSS fails */
+    if (iniConfig->disable_indoor_channel) {
+        hdd_update_indoor_channel(pHddCtx, false);
+        sme_update_channel_list((tpAniSirGlobal)pHddCtx->hHal);
+    }
+
    clear_bit(SOFTAP_INIT_DONE, &pHostapdAdapter->event_flags);
    return ret;
 }

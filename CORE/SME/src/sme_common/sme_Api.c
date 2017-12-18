@@ -1685,6 +1685,32 @@ eHalStatus sme_UpdateChannelList(tHalHandle hHal)
     return status;
 }
 
+/**
+ * sme_update_channel_list() - Update configured channel list to fwr
+ * This is a synchronous API.
+ *
+ * @mac_ctx - The handle returned by mac_open.
+ *
+ * Return QDF_STATUS  SUCCESS.
+ * FAILURE or RESOURCES  The API finished and failed.
+ */
+VOS_STATUS
+sme_update_channel_list(tpAniSirGlobal pMac)
+{
+    VOS_STATUS status = VOS_STATUS_SUCCESS;
+
+    status = sme_AcquireGlobalLock(&pMac->sme);
+    if (VOS_IS_STATUS_SUCCESS(status)) {
+        csrInitGetChannels(pMac);
+        csrResetCountryInformation(pMac, eANI_BOOLEAN_TRUE, eANI_BOOLEAN_TRUE);
+        csrScanFilterResults(pMac);
+        sme_ReleaseGlobalLock(&pMac->sme);
+    }
+
+    return status;
+}
+
+
 /*--------------------------------------------------------------------------
 
   \brief sme_UpdateConfig() - Change configurations for all SME moduels
