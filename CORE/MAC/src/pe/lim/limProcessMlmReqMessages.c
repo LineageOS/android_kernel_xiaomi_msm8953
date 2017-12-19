@@ -3543,6 +3543,8 @@ void lim_process_ap_ecsa_timeout(tpAniSirGlobal mac_ctx)
      */
     if (session->gLimChannelSwitch.switchCount > 0) {
         session->gLimChannelSwitch.switchCount--;
+        lim_send_chan_switch_action_frame(mac_ctx,
+                 session->gLimChannelSwitch.primaryChannel, session);
         mac_ctx->lim.limTimers.g_lim_ap_ecsa_timer.sessionId =
                                              session->peSessionId;
         limDeactivateAndChangeTimer(mac_ctx, eLIM_AP_ECSA_TIMER);
