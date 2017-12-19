@@ -14014,8 +14014,9 @@ void WDA_HALDumpCmdCallback(WDI_HALDumpCmdRspParamsType *wdiRspParams,
       return ;
    }
 
-   VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
-              "%s: WDA HAL DUMP Resp Received",__func__);
+   VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+             "%s: WDA HALDUMP Rsp Received async: %d",
+             __func__, pWdaParams->wdaHALDumpAsync);
 
    pWDA = pWdaParams->pWdaContext;
    buffer = (tANI_U8 *)pWdaParams->wdaMsgParam;
@@ -14073,6 +14074,15 @@ VOS_STATUS WDA_HALDumpCmdReq(tpAniSirGlobal   pMac, tANI_U32  cmd,
                            "%s: WDA Context Null", __func__);
       return VOS_STATUS_E_RESOURCES;
    }
+
+   vStatus = vos_event_reset(&(pVosContext->wdaCompleteEvent));
+   if (VOS_STATUS_SUCCESS != vStatus)
+   {
+      VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                "%s: Event reset failed - status %d", __func__, vStatus);
+      return VOS_STATUS_E_FAILURE;
+   }
+
    pWdaParams = (tWDA_HalDumpReqParams *)vos_mem_malloc(sizeof(tWDA_HalDumpReqParams)) ;
    if(NULL == pWdaParams)
    {
