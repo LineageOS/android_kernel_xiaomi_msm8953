@@ -200,6 +200,9 @@ when        who    what, where, why
 /*-------------------------------------------------------------------------
   Helper macros
 ---------------------------------------------------------------------------*/
+ /*Checks STAID for MONITOR interface*/
+#define WLANTL_STA_ID_MONIFACE( _staid )( _staid == 253 || _staid == 254 || _staid == 255 )
+
  /*Checks STA index validity*/
 #define WLANTL_STA_ID_INVALID( _staid )( _staid >= WLAN_MAX_STA_COUNT )
 
