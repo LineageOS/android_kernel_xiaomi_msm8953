@@ -1451,6 +1451,14 @@ WLANSAP_RoamCallback
             if (!VOS_IS_STATUS_SUCCESS(vosStatus))
                 halStatus = eHAL_STATUS_FAILURE;
             break;
+        case eCSR_ROAM_LOSTLINK_DETECTED:
+            if (pCsrRoamInfo) {
+                sapSignalHDDevent(sapContext, pCsrRoamInfo,
+                                  eSAP_STA_LOSTLINK_DETECTED,
+                                  (v_PVOID_t)eSAP_STATUS_SUCCESS);
+                return eHAL_STATUS_SUCCESS;
+           }
+
         default:
             VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
                          FL("CSR roamStatus not handled roamStatus = %s (%d)"),

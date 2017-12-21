@@ -9491,6 +9491,7 @@ WLANTL_STARxAuth
   rxRate        = (v_U8_t)WDA_GET_RX_MAC_RATE_IDX(aucBDHeader);
   type          = (v_U8_t)WDA_GET_RX_TYPE(aucBDHeader);
 #endif
+  pClientSTA->rate_idx = (v_U8_t)WDA_GET_RX_MAC_RATE_IDX(aucBDHeader);
 
   /* Fix for a hardware bug. 
    * H/W does not update the tid field in BD header for BAR frames.
@@ -14428,6 +14429,25 @@ void WLANTL_SetARPFWDatapath(void * pvosGCtx, bool flag)
 
    pTLCb->track_arp = flag;
 
+}
+
+v_U16_t wlan_tl_get_sta_rx_rate(void *pvosGCtx, uint8_t ucSTAId)
+{
+	WLANTL_CbType*  pTLCb = NULL;
+	v_U16_t rate = 0;
+
+	pTLCb = VOS_GET_TL_CB(pvosGCtx);
+	if (NULL == pTLCb) {
+		TLLOGE(VOS_TRACE(VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
+			"%s: Invalid TL pointer from pvosGCtx", __func__));
+		return rate;
+	}
+
+	if (pTLCb->atlSTAClients[ucSTAId]->ucExists)
+	    rate = vos_get_rate_from_rateidx(
+		pTLCb->atlSTAClients[ucSTAId]->rate_idx);
+
+	return rate;
 }
 
 void WLANTL_GetSAPStaRSSi(void *pvosGCtx, uint8_t ucSTAId, s8 *rssi)

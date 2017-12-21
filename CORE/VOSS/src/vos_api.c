@@ -3616,6 +3616,16 @@ void get_rate_and_MCS(per_packet_stats *stats, uint32 rateindex)
     stats->MCS.short_gi = ratetbl->short_gi;
 }
 
+v_U16_t vos_get_rate_from_rateidx(uint32 rateindex)
+{
+	v_U16_t rate = 0;
+
+	if (rateindex < STATS_MAX_RATE_INDEX)
+		rate = rateidx_to_rate_bw_preamble_sgi_table[rateindex].rate;
+
+	return rate;
+}
+
 bool vos_isPktStatsEnabled(void)
 {
     bool value;

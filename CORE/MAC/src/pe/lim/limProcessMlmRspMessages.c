@@ -1233,6 +1233,13 @@ limFillAssocIndParams(tpAniSirGlobal pMac, tpLimMlmAssocInd pAssocInd,
 #endif
     // Fill in rate flags
     pSirSmeAssocInd->rate_flags = pAssocInd->rate_flags;
+
+    pSirSmeAssocInd->ch_width = pAssocInd->ch_width;
+    pSirSmeAssocInd->chan_info = pAssocInd->chan_info;
+    if (pAssocInd->HTCaps.present)
+        pSirSmeAssocInd->HTCaps = pAssocInd->HTCaps;
+    if (pAssocInd->VHTCaps.present)
+        pSirSmeAssocInd->VHTCaps = pAssocInd->VHTCaps;
 } /*** end limAssocIndSerDes() ***/
 
 
@@ -1283,6 +1290,7 @@ limProcessMlmAssocInd(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
                FL("call to AllocateMemory failed for eWNI_SME_ASSOC_IND"));
         return;
     }
+    vos_mem_zero(pSirSmeAssocInd, len);
 
     pSirSmeAssocInd->messageType = eWNI_SME_ASSOC_IND;
     limFillAssocIndParams(pMac, (tpLimMlmAssocInd) pMsgBuf, pSirSmeAssocInd, psessionEntry);

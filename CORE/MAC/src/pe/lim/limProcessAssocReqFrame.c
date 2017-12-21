@@ -1663,6 +1663,52 @@ void limSendMlmAssocInd(tpAniSirGlobal pMac, tpDphHashNode pStaDs, tpPESession p
         pMlmAssocInd->beaconPtr = psessionEntry->beacon;
         pMlmAssocInd->beaconLength = psessionEntry->bcnLen;
 
+        pMlmAssocInd->chan_info.chan_id = psessionEntry->currentOperChannel;
+
+        if (psessionEntry->limRFBand == SIR_BAND_2_4_GHZ) {
+            if (psessionEntry->vhtCapability && pAssocReq->VHTCaps.present) {
+                pMlmAssocInd->chan_info.info = MODE_11AC_VHT20_2G;
+                pMlmAssocInd->VHTCaps = pAssocReq->VHTCaps;
+            } else if (psessionEntry->htCapability &&
+                                                 pAssocReq->HTCaps.present) {
+                pMlmAssocInd->chan_info.info = MODE_11NG_HT20;
+                pMlmAssocInd->HTCaps = pAssocReq->HTCaps;
+            } else if (pStaDs->supportedRates.llaRates[0]) {
+                pMlmAssocInd->chan_info.info = MODE_11G;
+            } else {
+                pMlmAssocInd->chan_info.info = MODE_11B;
+            }
+        } else {
+            if (psessionEntry->vhtCapability && pAssocReq->VHTCaps.present) {
+                if ((psessionEntry->vhtTxChannelWidthSet ==
+                                                eHT_CHANNEL_WIDTH_80MHZ) &&
+                                 pAssocReq->HTCaps.supportedChannelWidthSet) {
+                    pMlmAssocInd->chan_info.info = MODE_11AC_VHT80;
+                } else if ((psessionEntry->vhtTxChannelWidthSet ==
+                                                eHT_CHANNEL_WIDTH_40MHZ) &&
+                                  pAssocReq->HTCaps.supportedChannelWidthSet) {
+                    pMlmAssocInd->chan_info.info = MODE_11AC_VHT40;
+                } else
+                    pMlmAssocInd->chan_info.info = MODE_11AC_VHT20;
+                    pMlmAssocInd->VHTCaps = pAssocReq->VHTCaps;
+            } else if (psessionEntry->htCapability &&
+                                pAssocReq->HTCaps.present) {
+                if ((psessionEntry->vhtTxChannelWidthSet ==
+                                                eHT_CHANNEL_WIDTH_40MHZ) &&
+                                  pAssocReq->HTCaps.supportedChannelWidthSet) {
+                    pMlmAssocInd->chan_info.info = MODE_11NA_HT40;
+                } else
+                    pMlmAssocInd->chan_info.info = MODE_11NA_HT20;
+                pMlmAssocInd->HTCaps = pAssocReq->HTCaps;
+            } else
+                pMlmAssocInd->chan_info.info = MODE_11A;
+        }
+
+        pMlmAssocInd->ch_width = eHT_CHANNEL_WIDTH_20MHZ;
+        if (pStaDs->mlmStaContext.htCapability)
+            pMlmAssocInd->ch_width = pStaDs->htSupportedChannelWidthSet ?
+                            eHT_CHANNEL_WIDTH_40MHZ : eHT_CHANNEL_WIDTH_20MHZ;
+
         pMlmAssocInd->rate_flags =
             limGetMaxRateFlags(pStaDs, psessionEntry);
 

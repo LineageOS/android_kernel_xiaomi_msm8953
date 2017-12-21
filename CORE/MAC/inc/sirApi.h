@@ -1202,6 +1202,15 @@ typedef struct sSirSmeProbereq
     tANI_U16           devicePasswdId;
 } tSirSmeProbeReq, *tpSirSmeProbeReq;
 
+typedef struct sSirSmeChanInfo
+{
+    /* channel id */
+    tANI_U8 chan_id;
+    /* channel info described below */
+    tANI_U32 info;
+}tSirSmeChanInfo, *tpSirSmeChanInfo;
+
+
 /// Definition for Association indication from peer
 /// MAC --->
 typedef struct sSirSmeAssocInd
@@ -1236,6 +1245,10 @@ typedef struct sSirSmeAssocInd
     tANI_U32             assocReqLength;
     tANI_U8*             assocReqPtr;
     uint32_t             rate_flags;
+    tSirSmeChanInfo      chan_info;
+    tSirMacHTChannelWidth ch_width;
+    tDot11fIEHTCaps HTCaps;
+    tDot11fIEVHTCaps VHTCaps;
 } tSirSmeAssocInd, *tpSirSmeAssocInd;
 
 
