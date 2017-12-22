@@ -24,8 +24,12 @@ ifeq ($(TARGET_SUPPORTS_WEARABLES),true)
 ifneq ($(findstring device,$(LOCAL_PATH)),)
     WLAN_DLKM := 1
 else
+ifneq ($(findstring vendor,$(LOCAL_PATH)),)
+    WLAN_DLKM := 1
+else
     WLAN_DLKM := 0
 endif # findstring device
+endif
 else
 ifneq ($(findstring vendor,$(LOCAL_PATH)),)
     WLAN_DLKM := 1
