@@ -107,7 +107,7 @@ struct mhi_cb_info {
 
 struct mhi_client_info_t {
 	enum MHI_CLIENT_CHANNEL chan;
-	const struct device const *dev;
+	const struct device *dev;
 	const char *node_name;
 	void (*mhi_client_cb)(struct mhi_cb_info *);
 	bool pre_allocate;

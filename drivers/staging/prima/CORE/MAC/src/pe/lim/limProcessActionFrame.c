@@ -1660,11 +1660,13 @@ tANI_U8 *pBody;
     if (0 == frmAddBARsp.AddBAParameterSet.bufferSize)
         frmAddBARsp.AddBAParameterSet.bufferSize = val;
     else
+    {
         frmAddBARsp.AddBAParameterSet.bufferSize =
                     VOS_MIN(val, frmAddBARsp.AddBAParameterSet.bufferSize);
         limLog( pMac, LOG1,
             FL( "ADDBA RSP  Buffsize = %d" ),
             frmAddBARsp.AddBAParameterSet.bufferSize);
+    }
     // Now, validate the ADDBA Rsp
     if( eSIR_MAC_SUCCESS_STATUS !=
         __limValidateAddBAParameterSet( pMac, pSta,

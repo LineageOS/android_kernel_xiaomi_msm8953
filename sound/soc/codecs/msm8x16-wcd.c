@@ -1863,10 +1863,9 @@ static int msm8x16_wcd_codec_enable_on_demand_supply(
 		}
 		if (atomic_dec_return(&supply->ref) == 0)
 			ret = regulator_disable(supply->supply);
-			if (ret)
-				dev_err(codec->dev, "%s: Failed to disable %s\n",
-					__func__,
-					on_demand_supply_name[w->shift]);
+		if (ret)
+			dev_err(codec->dev, "%s: Failed to disable %s\n",
+				__func__, on_demand_supply_name[w->shift]);
 		break;
 	default:
 		break;
