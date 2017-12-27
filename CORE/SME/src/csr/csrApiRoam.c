@@ -10273,12 +10273,14 @@ void csrRoamCheckForLinkStatusChange( tpAniSirGlobal pMac, tSirSmeRsp *pSirMsg )
 
         case eWNI_SME_SWITCH_CHL_REQ:        // in case of STA, the SWITCH_CHANNEL originates from its AP
             smsLog( pMac, LOGW, FL("eWNI_SME_SWITCH_CHL_REQ from SME"));
+
             pSwitchChnInd = (tpSirSmeSwitchChannelInd)pSirMsg;
             //Update with the new channel id.
             //The channel id is hidden in the statusCode.
             status = csrRoamGetSessionIdFromBSSID( pMac, (tCsrBssid *)pSwitchChnInd->bssId, &sessionId );
             if( HAL_STATUS_SUCCESS( status ) )
             {
+                pRoamInfo = &roamInfo;
                 pSession = CSR_GET_SESSION( pMac, sessionId );
                 if(!pSession)
                 {
@@ -10290,6 +10292,11 @@ void csrRoamCheckForLinkStatusChange( tpAniSirGlobal pMac, tSirSmeRsp *pSirMsg )
                 {
                     pSession->pConnectBssDesc->channelId = (tANI_U8)pSwitchChnInd->newChannelId;
                 }
+                pRoamInfo->chan_info.chan_id =
+                    (tANI_U8)pSwitchChnInd->newChannelId;
+                csrRoamCallCallback(pMac, sessionId, pRoamInfo, 0,
+                        eCSR_ROAM_STA_CHANNEL_SWITCH,
+                        eCSR_ROAM_RESULT_NONE);
             }
             break;
                 
