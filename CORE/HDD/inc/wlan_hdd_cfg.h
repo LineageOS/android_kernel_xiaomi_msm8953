@@ -3117,7 +3117,10 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_FORCE_SCC_WITH_ECSA_MAX        (1)
 #define CFG_FORCE_SCC_WITH_ECSA_DEFAULT    (0)
 
-
+#define CFG_STA_SAP_SCC_ON_DFS_CHAN             "sta_sap_scc_on_dfs_chan"
+#define CFG_STA_SAP_SCC_ON_DFS_CHAN_MIN         (0)
+#define CFG_STA_SAP_SCC_ON_DFS_CHAN_MAX         (1)
+#define CFG_STA_SAP_SCC_ON_DFS_CHAN_DEFAULT     (0)
 /*--------------------------------------------------------------------------- 
   Type declarations
   -------------------------------------------------------------------------*/ 
@@ -3721,6 +3724,7 @@ typedef struct
    uint32_t                    trigger_nullframe_before_hb;
    bool                        force_scc_with_ecsa;
    uint8_t                     enable_rtt_support;
+   uint32_t                    sta_sap_scc_on_dfs_chan;
 } hdd_config_t;
 
 /*--------------------------------------------------------------------------- 
