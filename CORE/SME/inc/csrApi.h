@@ -1248,6 +1248,9 @@ typedef struct tagCsrConfigParam
     tANI_BOOLEAN disable_scan_during_sco;
     uint32_t sta_auth_retries_for_code17;
     uint32_t sta_sap_scc_on_dfs_chan;
+    tANI_U8 agg_btc_sco_oui[3];
+    tANI_U8 num_ba_buff_btc_sco;
+    tANI_U8 num_ba_buff;
 }tCsrConfigParam;
 
 //Tush
