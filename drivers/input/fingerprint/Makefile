@@ -1,0 +1,2 @@
+obj-$(CONFIG_FINGERPRINT_GOODIX_GF3208_MIDO) += goodix_mido/
+obj-$(CONFIG_FINGERPRINT_FPC1020_MIDO) += fpc_mido/
