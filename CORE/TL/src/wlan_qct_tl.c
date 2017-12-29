@@ -722,6 +722,9 @@ WLANTL_Open
   pTLCb->tlConfigInfo.uDelayedTriggerFrmInt =
                 pTLConfig->uDelayedTriggerFrmInt;
 
+  pTLCb->tlConfigInfo.ucIsReplayCheck =
+                pTLConfig->ucIsReplayCheck;
+
   /*------------------------------------------------------------------------
     Allocate internal resources
    ------------------------------------------------------------------------*/
@@ -1523,7 +1526,9 @@ WLANTL_RegisterSTAClient
   vos_copy_macaddr( &pClientSTA->wSTADesc.vSelfMACAddress, &pwSTADescType->vSelfMACAddress);
 
   /* In volans release L replay check is done at TL */
-  pClientSTA->ucIsReplayCheckValid = pwSTADescType->ucIsReplayCheckValid;
+  if (pTLCb->tlConfigInfo.ucIsReplayCheck)
+     pClientSTA->ucIsReplayCheckValid = pwSTADescType->ucIsReplayCheckValid;
+
   pClientSTA->ulTotalReplayPacketsDetected =  0;
 /*Clear replay counters of the STA on all TIDs*/
   for(ucTid = 0; ucTid < WLANTL_MAX_TID ; ucTid++)

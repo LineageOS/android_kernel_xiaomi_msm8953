@@ -2671,6 +2671,7 @@ vos_fetch_tl_cfg_parms
   pTLConfig->ucReorderAgingTime[3] = pConfig->VoReorderAgingTime;/*WLANTL_AC_VO*/
   pTLConfig->uDelayedTriggerFrmInt = pConfig->DelayedTriggerFrmInt;
   pTLConfig->uMinFramesProcThres = pConfig->MinFramesProcThres;
+  pTLConfig->ucIsReplayCheck = pConfig->enablePNReplay;
 
 }
 

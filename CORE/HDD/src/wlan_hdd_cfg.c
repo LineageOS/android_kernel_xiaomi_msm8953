@@ -1375,6 +1375,13 @@ REG_TABLE_ENTRY g_registry_table[] =
                  CFG_REORDER_TIME_VO_MIN,
                  CFG_REORDER_TIME_VO_MAX ),
 
+   REG_VARIABLE( CFG_ENABLE_PN_REPLAY_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, enablePNReplay,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_ENABLE_PN_REPLAY_DEFAULT,
+                 CFG_ENABLE_PN_REPLAY_MIN,
+                 CFG_ENABLE_PN_REPLAY_MAX ),
+
    REG_VARIABLE_STRING( CFG_WOWL_PATTERN_NAME, WLAN_PARAM_String,
                         hdd_config_t, wowlPattern,
                         VAR_FLAGS_OPTIONAL,

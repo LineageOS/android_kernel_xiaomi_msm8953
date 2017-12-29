@@ -1190,6 +1190,11 @@ typedef enum
 #define CFG_REORDER_TIME_VO_MAX                            1000
 #define CFG_REORDER_TIME_VO_DEFAULT                        40
 
+#define CFG_ENABLE_PN_REPLAY_NAME                          "PNreplayCheck"
+#define CFG_ENABLE_PN_REPLAY_MIN                           0
+#define CFG_ENABLE_PN_REPLAY_MAX                           1
+#define CFG_ENABLE_PN_REPLAY_DEFAULT                       0
+
 #if defined WLAN_FEATURE_VOWIFI
 #define CFG_RRM_ENABLE_NAME                              "gRrmEnable"
 #define CFG_RRM_ENABLE_MIN                               (0)
@@ -3456,6 +3461,7 @@ typedef struct
    v_U16_t                      BeReorderAgingTime;
    v_U16_t                      ViReorderAgingTime;
    v_U16_t                      VoReorderAgingTime;
+   v_BOOL_t                     enablePNReplay;
 
    /* Wowl pattern */
    char                        wowlPattern[1024];         
