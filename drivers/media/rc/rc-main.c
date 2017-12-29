@@ -738,7 +738,20 @@ static int ir_open(struct input_dev *idev)
 {
 	struct rc_dev *rdev = input_get_drvdata(idev);
 
+#ifdef CONFIG_MACH_XIAOMI_MIDO
+	int rc = 0;
+
+	mutex_lock(&rdev->lock);
+	if (!rdev->open_count++)
+		rc = rdev->open(rdev);
+	if (rc < 0)
+		rdev->open_count--;
+	mutex_unlock(&rdev->lock);
+
+	return rc;
+#else
 	return rc_open(rdev);
+#endif
 }
 
 void rc_close(struct rc_dev *rdev)
@@ -757,7 +770,17 @@ EXPORT_SYMBOL_GPL(rc_close);
 static void ir_close(struct input_dev *idev)
 {
 	struct rc_dev *rdev = input_get_drvdata(idev);
+
+#ifdef CONFIG_MACH_XIAOMI_MIDO
+	 if (rdev) {
+		mutex_lock(&rdev->lock);
+		if (!--rdev->open_count)
+			rdev->close(rdev);
+		mutex_unlock(&rdev->lock);
+	}
+#else
 	rc_close(rdev);
+#endif
 }
 
 /* class for /sys/class/rc */
