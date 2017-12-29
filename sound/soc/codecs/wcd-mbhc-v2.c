@@ -25,6 +25,9 @@
 #include <linux/input.h>
 #include <linux/firmware.h>
 #include <linux/completion.h>
+#if (defined CONFIG_MACH_XIAOMI_MIDO)
+#include <linux/switch.h>
+#endif
 #include <sound/soc.h>
 #include <sound/jack.h>
 #include "wcd-mbhc-v2.h"
@@ -42,7 +45,11 @@
 #define OCP_ATTEMPT 1
 #define HS_DETECT_PLUG_TIME_MS (3 * 1000)
 #define SPECIAL_HS_DETECT_TIME_MS (2 * 1000)
+#if (defined CONFIG_MACH_XIAOMI_MIDO)
+#define MBHC_BUTTON_PRESS_THRESHOLD_MIN 750
+#else
 #define MBHC_BUTTON_PRESS_THRESHOLD_MIN 250
+#endif
 #define GND_MIC_SWAP_THRESHOLD 4
 #define WCD_FAKE_REMOVAL_MIN_PERIOD_MS 100
 #define HS_VREF_MIN_VAL 1400
@@ -67,9 +74,20 @@ enum wcd_mbhc_cs_mb_en_flag {
 	WCD_MBHC_EN_NONE,
 };
 
+#if (defined CONFIG_MACH_XIAOMI_MIDO)
+static struct switch_dev accdet_data;
+#endif
+
 static void wcd_mbhc_jack_report(struct wcd_mbhc *mbhc,
 				struct snd_soc_jack *jack, int status, int mask)
 {
+#if (defined CONFIG_MACH_XIAOMI_MIDO)
+	if (!status && (jack->jack->type&WCD_MBHC_JACK_MASK)) {
+		switch_set_state(&accdet_data, 0);
+	} else if (jack->jack->type&WCD_MBHC_JACK_MASK) {
+		switch_set_state(&accdet_data, status);
+	}
+#endif
 	snd_soc_jack_report(jack, status, mask);
 }
 
@@ -2378,6 +2396,16 @@ int wcd_mbhc_init(struct wcd_mbhc *mbhc, struct snd_soc_codec *codec,
 
 	pr_debug("%s: enter\n", __func__);
 
+#ifdef CONFIG_MACH_XIAOMI_MIDO
+	accdet_data.name = "h2w";
+	accdet_data.index = 0;
+	accdet_data.state = 0;
+	ret = switch_dev_register(&accdet_data);
+	if (ret) {
+		dev_err(card->dev, "[Accdet]switch_dev_register returned:%d!\n", ret);
+		return -EPERM;
+	}
+#endif
 	ret = of_property_read_u32(card->dev->of_node, hph_switch, &hph_swh);
 	if (ret) {
 		dev_err(card->dev,
@@ -2574,6 +2602,9 @@ err_mbhc_sw_irq:
 		mbhc->mbhc_cb->register_notifier(codec, &mbhc->nblock, false);
 	mutex_destroy(&mbhc->codec_resource_lock);
 err:
+#if (defined CONFIG_MACH_XIAOMI_MIDO)
+	switch_dev_unregister(&accdet_data);
+#endif
 	pr_debug("%s: leave ret %d\n", __func__, ret);
 	return ret;
 }
@@ -2595,6 +2626,9 @@ void wcd_mbhc_deinit(struct wcd_mbhc *mbhc)
 	if (mbhc->mbhc_cb && mbhc->mbhc_cb->register_notifier)
 		mbhc->mbhc_cb->register_notifier(codec, &mbhc->nblock, false);
 	mutex_destroy(&mbhc->codec_resource_lock);
+#if (defined CONFIG_MACH_XIAOMI_MIDO)
+	switch_dev_unregister(&accdet_data);
+#endif
 }
 EXPORT_SYMBOL(wcd_mbhc_deinit);
 
