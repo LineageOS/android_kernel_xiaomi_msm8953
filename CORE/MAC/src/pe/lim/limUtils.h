@@ -427,6 +427,7 @@ tANI_BOOLEAN limIsNOAInsertReqd(tpAniSirGlobal pMac);
 v_U8_t* limGetVendorIEOuiPtr(tpAniSirGlobal pMac, tANI_U8 *oui, tANI_U8 oui_size, tANI_U8 *ie, tANI_U16 ie_len);
 tANI_BOOLEAN limIsconnectedOnDFSChannel(tANI_U8 currentChannel);
 tANI_U8 limGetCurrentOperatingChannel(tpAniSirGlobal pMac);
+void limStaDelBASession(tpAniSirGlobal pMac);
 
 #ifdef WLAN_FEATURE_11AC
 tANI_BOOLEAN limCheckVHTOpModeChange( tpAniSirGlobal pMac,

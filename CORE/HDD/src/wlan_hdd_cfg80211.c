@@ -10213,7 +10213,7 @@ VOS_STATUS wlan_hdd_set_dhcp_server_offload(hdd_adapter_t *hostapd_adapter,
 	hdd_string_to_u8_array(hdd_ctx->cfg_ini->dhcp_srv_ip,
 			       srv_ip,
 			       &num_entries,
-			       IPADDR_NUM_ENTRIES, ".");
+			       IPADDR_NUM_ENTRIES, ".", false);
 	if (num_entries != IPADDR_NUM_ENTRIES) {
 		hddLog(VOS_TRACE_LEVEL_ERROR,
 		       "%s: incorrect IP address (%s) assigned for DHCP server!",
@@ -16252,6 +16252,7 @@ int wlan_hdd_disconnect( hdd_adapter_t *pAdapter, u16 reason )
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
     long ret;
     eConnectionState prev_conn_state;
+    uint32_t wait_time = WLAN_WAIT_TIME_DISCONNECT;
 
     ENTER();
 
@@ -16309,7 +16310,15 @@ int wlan_hdd_disconnect( hdd_adapter_t *pAdapter, u16 reason )
         hddLog(LOG1,
             FL("status = %d, already disconnected"), status);
         result = 0;
-        goto disconnected;
+        /*
+         * Wait here instead of returning directly. This will block the
+         * next connect command and allow processing of the disconnect
+         * in SME else we might hit some race conditions leading to SME
+         * and HDD out of sync. As disconnect is already in progress,
+         * wait here for 1 sec instead of 5 sec.
+         */
+        wait_time = WLAN_WAIT_DISCONNECT_ALREADY_IN_PROGRESS;
+        goto wait_for_disconnect;
     }
     /*
      * Wait here instead of returning directly, this will block the next
@@ -16330,9 +16339,9 @@ int wlan_hdd_disconnect( hdd_adapter_t *pAdapter, u16 reason )
         result = -EINVAL;
         goto disconnected;
     }
-    ret = wait_for_completion_timeout(
-                &pAdapter->disconnect_comp_var,
-                msecs_to_jiffies(WLAN_WAIT_TIME_DISCONNECT));
+wait_for_disconnect:
+    ret = wait_for_completion_timeout(&pAdapter->disconnect_comp_var,
+                                      msecs_to_jiffies(wait_time));
     if (!ret && (eHAL_STATUS_CMD_NOT_QUEUED != status))
     {
         hddLog(LOGE,

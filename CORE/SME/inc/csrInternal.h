@@ -716,6 +716,10 @@ typedef struct tagCsrConfig
     uint32_t edca_vi_aifs;
     uint32_t edca_bk_aifs;
     uint32_t edca_be_aifs;
+    tANI_U8 agg_btc_sco_oui[3];
+    tANI_BOOLEAN agg_btc_sco_enabled;
+    tANI_U8 num_ba_buff_btc_sco;
+    tANI_U8 num_ba_buff;
 }tCsrConfig;
 
 typedef struct tagCsrChannelPowerInfo

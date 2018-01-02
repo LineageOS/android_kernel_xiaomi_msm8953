@@ -5402,6 +5402,8 @@ lim_send_extended_chan_switch_action_frame(tpAniSirGlobal mac_ctx,
        (session_entry->pePersona == VOS_P2P_GO_MODE)) {
          txFlag |= HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME;
    }
+   /* Use peer sta to transmit this frame */
+   txFlag |= HAL_USE_PEER_STA_REQUESTED_MASK;
 
    limLog(mac_ctx, LOG1, FL("Send Ext channel Switch to :"MAC_ADDRESS_STR" with swcount %d, swmode %d , newchannel %d newops %d"),
           MAC_ADDR_ARRAY(mac_hdr->da),

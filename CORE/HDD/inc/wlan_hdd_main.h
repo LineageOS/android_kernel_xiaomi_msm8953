@@ -105,6 +105,7 @@
 
 /** Maximum time(ms)to wait for disconnect to complete **/
 #define WLAN_WAIT_TIME_DISCONNECT  5000
+#define WLAN_WAIT_DISCONNECT_ALREADY_IN_PROGRESS  1000
 #define WLAN_WAIT_TIME_STATS       800
 #define WLAN_WAIT_TIME_POWER       5000
 #define WLAN_WAIT_TIME_COUNTRY     1000
@@ -269,6 +270,8 @@ typedef v_U8_t tWlanHddMacAddr[HDD_MAC_ADDR_LEN];
 #define MDNS_CLASS                                1
 #define MDNS_TTL                                  5
 #endif /* MDNS_OFFLOAD */
+
+#define VENDOR_AP_OUI_SIZE 3
 
 #define HDD_MIN_TX_POWER (-100) /* minimum tx power */
 #define HDD_MAX_TX_POWER (+100)  /* maximum tx power */

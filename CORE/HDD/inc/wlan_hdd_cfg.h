@@ -3121,6 +3121,27 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_STA_SAP_SCC_ON_DFS_CHAN_MIN         (0)
 #define CFG_STA_SAP_SCC_ON_DFS_CHAN_MAX         (1)
 #define CFG_STA_SAP_SCC_ON_DFS_CHAN_DEFAULT     (0)
+
+/*
+ * gEnableAggBTCScoOUI is used to enable aggregation during SCO
+ * with specific AP based on OUI. If set to nothing, feature is
+ * enabled for all APs. Ini supports only single OUI.
+ * ex: gEnableAggBTCScoOUI=74-EA-CB - enable with specific AP
+ */
+#define CFG_ENABLE_AGG_BTC_SCO_OUI_NAME       "gEnableAggBTCScoOUI"
+#define CFG_ENABLE_AGG_BTC_SCO_OUI_DEFAULT    ""
+
+/*
+ * gNumBuffBTCSco is used to set block ack buffer size for
+ * aggregation during SCO. If this is set to 0, aggregation
+ * during SCO feature is disabled. To enable aggregation
+ * during SCO, gNumBuffBTCSco should be set to non zero value.
+ */
+#define CFG_NUM_BUFF_BTC_SCO_NAME       "gNumBuffBTCSco"
+#define CFG_NUM_BUFF_BTC_SCO_MIN        (0)
+#define CFG_NUM_BUFF_BTC_SCO_MAX        (10)
+#define CFG_NUM_BUFF_BTC_SCO_DEFAULT    (0)
+
 /*--------------------------------------------------------------------------- 
   Type declarations
   -------------------------------------------------------------------------*/ 
@@ -3725,6 +3746,8 @@ typedef struct
    bool                        force_scc_with_ecsa;
    uint8_t                     enable_rtt_support;
    uint32_t                    sta_sap_scc_on_dfs_chan;
+   uint8_t                     enable_aggr_btc_sco_oui[9];
+   uint8_t                     num_buff_aggr_btc_sco;
 } hdd_config_t;
 
 /*--------------------------------------------------------------------------- 
@@ -3739,7 +3762,8 @@ VOS_STATUS hdd_execute_config_command(hdd_context_t *pHddCtx, char *command);
 tANI_BOOLEAN hdd_is_okc_mode_enabled(hdd_context_t *pHddCtx);
 
 VOS_STATUS hdd_string_to_u8_array(char *str, tANI_U8 *intArray, tANI_U8 *len,
-				  tANI_U8 intArrayMaxLen, char *seperator);
+                                  tANI_U8 intArrayMaxLen, char *seperator,
+                                  bool to_hex);
 
 #ifdef MDNS_OFFLOAD
 int hdd_string_to_string_array(char *data, uint8_t *datalist,
