@@ -1933,6 +1933,10 @@ static void mdss_dsi_parse_esd_params(struct device_node *np,
 				pr_err("TE-ESD not valid for video mode\n");
 				goto error;
 			}
+#ifdef CONFIG_MACH_XIAOMI_MIDO
+		} else if (!strcmp(string, "TE_check_NT35596")) {
+			ctrl->status_mode = ESD_TE_NT35596;
+#endif
 		} else {
 			pr_err("No valid panel-status-check-mode string\n");
 			goto error;
