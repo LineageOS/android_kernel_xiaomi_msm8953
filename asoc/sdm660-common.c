@@ -3043,10 +3043,30 @@ codec_dai:
 				index = of_property_match_string(cdev->of_node,
 							"asoc-codec-names",
 							PMIC_INT_ANALOG_CODEC);
+				phandle = of_parse_phandle(
+							cdev->of_node,
+							"asoc-codec",
+							index);
+				dai_link[i].codecs[ANA_CDC].of_node =
+								phandle;
+			}
+		}
+		if (pdata->snd_card_val == INT_DIG_SND_CARD) {
+			if ((dai_link[i].id ==
+					MSM_BACKEND_DAI_INT0_MI2S_RX) ||
+			    (dai_link[i].id ==
+					MSM_BACKEND_DAI_INT1_MI2S_RX) ||
+			    (dai_link[i].id ==
+					MSM_BACKEND_DAI_INT2_MI2S_TX) ||
+			    (dai_link[i].id ==
+					MSM_BACKEND_DAI_INT3_MI2S_TX)) {
+				index = of_property_match_string(cdev->of_node,
+							"asoc-codec-names",
+							MSM_INT_DIGITAL_CODEC);
 				phandle = of_parse_phandle(cdev->of_node,
 							   "asoc-codec",
 							   index);
-				dai_link[i].codecs[ANA_CDC].of_node = phandle;
+				dai_link[i].codec_of_node = phandle;
 			}
 		}
 	}
@@ -3342,6 +3362,8 @@ static const struct of_device_id sdm660_asoc_machine_of_match[]  = {
 	  .data = "tasha_codec"},
 	{ .compatible = "qcom,sdm670-asoc-snd-tavil",
 	  .data = "tavil_codec"},
+	{ .compatible = "qcom,qcs605-dig-asoc-snd",
+	  .data = "digital_codec"},
 	{},
 };
 
@@ -3388,6 +3410,11 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 		ret = msm_int_cdc_init(pdev, pdata, &card, &mbhc_cfg);
 		if (ret)
 			goto err;
+	} else if (!strcmp(match->data, "digital_codec")) {
+		pdata->snd_card_val = INT_DIG_SND_CARD;
+		ret = msm_int_cdc_init(pdev, pdata, &card, NULL);
+		if (ret)
+			goto err;
 	} else {
 		dev_err(&pdev->dev,
 			"%s: Not a matching DT sound node\n", __func__);
@@ -3408,6 +3435,11 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 					"qcom,cdc-ext-spk-gpios", 0);
 	}
 
+	if (pdata->snd_card_val == INT_DIG_SND_CARD) {
+		/*reading the gpio configurations from dtsi file*/
+		pdata->dmic_gpio_p = of_parse_phandle(pdev->dev.of_node,
+					"qcom,cdc-dmic-gpios", 0);
+	}
 	pdata->mi2s_gpio_p[PRIM_MI2S] = of_parse_phandle(pdev->dev.of_node,
 					"qcom,pri-mi2s-gpios", 0);
 	pdata->mi2s_gpio_p[SEC_MI2S] = of_parse_phandle(pdev->dev.of_node,
@@ -3479,7 +3511,7 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 			ret);
 		goto err;
 	}
-	if (pdata->snd_card_val != INT_SND_CARD)
+	if (pdata->snd_card_val > INT_MAX_SND_CARD)
 		msm_ext_register_audio_notifier(pdev);
 
 	return 0;
@@ -3510,7 +3542,7 @@ static int msm_asoc_machine_remove(struct platform_device *pdev)
 	struct snd_soc_card *card = platform_get_drvdata(pdev);
 	struct msm_asoc_mach_data *pdata = snd_soc_card_get_drvdata(card);
 
-	if (pdata->snd_card_val == INT_SND_CARD)
+	if (pdata->snd_card_val <= INT_MAX_SND_CARD)
 		mutex_destroy(&pdata->cdc_int_mclk0_mutex);
 
 	if (gpio_is_valid(pdata->us_euro_gpio)) {
@@ -3526,7 +3558,7 @@ static int msm_asoc_machine_remove(struct platform_device *pdev)
 		pdata->hph_en0_gpio = 0;
 	}
 
-	if (pdata->snd_card_val != INT_SND_CARD)
+	if (pdata->snd_card_val > INT_MAX_SND_CARD)
 		audio_notifier_deregister("sdm660");
 
 	snd_soc_unregister_card(card);
