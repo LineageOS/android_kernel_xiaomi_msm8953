@@ -30,6 +30,11 @@ DEFINE_MSM_MUTEX(msm_actuator_mutex);
 #define PARK_LENS_MID_STEP 5
 #define PARK_LENS_SMALL_STEP 3
 #define MAX_QVALUE 4096
+#ifdef CONFIG_MACH_XIAOMI_MIDO
+#define PARK_LENS_QUIET_UPPER_CODE 400
+#define PARK_LENS_QUIET_LOWER_CODE 200
+#define PARK_LENS_QUIET_STEP 25
+#endif
 
 static struct v4l2_file_operations msm_actuator_v4l2_subdev_fops;
 static int32_t msm_actuator_power_up(struct msm_actuator_ctrl_t *a_ctrl);
@@ -844,6 +849,16 @@ static int32_t msm_actuator_park_lens(struct msm_actuator_ctrl_t *a_ctrl)
 	next_lens_pos = a_ctrl->step_position_table[a_ctrl->curr_step_pos];
 	while (next_lens_pos) {
 		/* conditions which help to reduce park lens time */
+#ifdef CONFIG_MACH_XIAOMI_MIDO
+		if (next_lens_pos > PARK_LENS_QUIET_UPPER_CODE)
+			next_lens_pos = PARK_LENS_QUIET_UPPER_CODE;
+		else {
+			if (next_lens_pos > PARK_LENS_QUIET_LOWER_CODE)
+				next_lens_pos -= PARK_LENS_QUIET_STEP;
+			else
+				next_lens_pos = 0;
+  		}
+#else
 		if (next_lens_pos > (a_ctrl->park_lens.max_step *
 			PARK_LENS_LONG_STEP)) {
 			next_lens_pos = next_lens_pos -
@@ -865,6 +880,8 @@ static int32_t msm_actuator_park_lens(struct msm_actuator_ctrl_t *a_ctrl)
 				(next_lens_pos - a_ctrl->park_lens.
 				max_step) : 0;
 		}
+#endif
+
 		a_ctrl->func_tbl->actuator_parse_i2c_params(a_ctrl,
 			next_lens_pos, a_ctrl->park_lens.hw_params,
 			a_ctrl->park_lens.damping_delay);
