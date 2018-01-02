@@ -1604,7 +1604,7 @@ static int hdd_get_cached_station_remote(hdd_context_t *hdd_ctx,
 		VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR, "remote ch put fail");
 		goto fail;
 	}
-	if (nla_put_u32(skb, REMOTE_LAST_RX_RATE, stainfo->rx_rate)) {
+	if (nla_put_u32(skb, REMOTE_LAST_RX_RATE, (stainfo->rx_rate * 100))) {
 		VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR, "rx rate put fail");
 		goto fail;
 	}
