@@ -2081,6 +2081,7 @@ eHalStatus csrChangeDefaultConfigParam(tpAniSirGlobal pMac, tCsrConfigParam *pPa
         pMac->roam.configParam.edca_vi_aifs = pParam->edca_vi_aifs;
         pMac->roam.configParam.edca_bk_aifs = pParam->edca_bk_aifs;
         pMac->roam.configParam.edca_be_aifs = pParam->edca_be_aifs;
+        pMac->sta_sap_scc_on_dfs_chan = pParam->sta_sap_scc_on_dfs_chan;
     }
     
     return status;
@@ -2279,7 +2280,7 @@ eHalStatus csrGetConfigParam(tpAniSirGlobal pMac, tCsrConfigParam *pParam)
         pParam->edca_vi_aifs = pMac->roam.configParam.edca_vi_aifs;
         pParam->edca_bk_aifs = pMac->roam.configParam.edca_bk_aifs;
         pParam->edca_be_aifs = pMac->roam.configParam.edca_be_aifs;
-
+        pParam->sta_sap_scc_on_dfs_chan = pMac->sta_sap_scc_on_dfs_chan;
         status = eHAL_STATUS_SUCCESS;
     }
     return (status);

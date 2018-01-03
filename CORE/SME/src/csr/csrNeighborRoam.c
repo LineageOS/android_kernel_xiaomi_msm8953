@@ -5396,6 +5396,13 @@ eHalStatus csrNeighborRoamCandidateFoundIndHdlr(tpAniSirGlobal pMac, void* pMsg)
 {
     tpCsrNeighborRoamControlInfo    pNeighborRoamInfo = &pMac->roam.neighborRoamInfo;
     eHalStatus status = eHAL_STATUS_SUCCESS;
+
+    if (vos_check_monitor_state())
+    {
+        smsLog(pMac, LOGW, FL("Ignore raom candidate when roam started"));
+        return eHAL_STATUS_FAILURE;
+    }
+
     /* we must be in connected state, if not ignore it */
     if ((eCSR_NEIGHBOR_ROAM_STATE_CONNECTED != pNeighborRoamInfo->neighborRoamState)
         || (pNeighborRoamInfo->uOsRequestedHandoff))

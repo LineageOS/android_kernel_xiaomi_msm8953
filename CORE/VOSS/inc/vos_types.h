@@ -152,6 +152,7 @@ typedef enum
 //bit 1 - ap mode
 //bit 2 - p2p client mode
 //bit 3 - p2p go mode
+//bit 4 - monitor mode
 typedef enum
 {
     VOS_STA=1, 
@@ -159,6 +160,8 @@ typedef enum
     VOS_STA_SAP=3, //to support sta, softAp  mode . This means STA+AP mode
     VOS_P2P_CLIENT=4,
     VOS_P2P_GO=8,
+    VOS_MON=16,
+    VOS_STA_MON=17, /* station and monitor mode together */
     VOS_MAX_CONCURRENCY_PERSONA=4
 } tVOS_CONCURRENCY_MODE;
  

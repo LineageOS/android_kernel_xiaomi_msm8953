@@ -5629,16 +5629,7 @@ static void lim_register_mgmt_frame_ind_cb(tpAniSirGlobal pMac,
       limLog(pMac, LOGE, FL("sme_req->callback is null"));
 }
 
-/**
- * lim_send_chan_switch_action_frame() - send channel switch action frame to all
- * connected peers
- * @mac_ctx: Pointer to Global MAC structure
- * @new_channel: new channel
- * @session_entry: ap session
- *
- * Return: None
- */
-static void lim_send_chan_switch_action_frame(tpAniSirGlobal mac_ctx,
+void lim_send_chan_switch_action_frame(tpAniSirGlobal mac_ctx,
      uint16_t new_channel, tpPESession session_entry)
 {
    uint16_t op_class;
