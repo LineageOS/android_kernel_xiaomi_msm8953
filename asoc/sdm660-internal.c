@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2017, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2015-2018, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -2344,6 +2344,79 @@ static struct snd_soc_dai_link msm_int_wsa_dai[] = {
 	},
 };
 
+static struct snd_soc_dai_link msm_int_compress_capture_dai[] = {
+	{/* hw:x,41 */
+		.name = "Compress9",
+		.stream_name = "Compress9",
+		.cpu_dai_name = "MultiMedia17",
+		.platform_name = "msm-compress-dsp",
+		.dynamic = 1,
+		.dpcm_capture = 1,
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+			    SND_SOC_DPCM_TRIGGER_POST},
+		.codec_dai_name = "snd-soc-dummy-dai",
+		.codec_name = "snd-soc-dummy",
+		.ignore_suspend = 1,
+		.id = MSM_FRONTEND_DAI_MULTIMEDIA17,
+	},
+	{/* hw:x,42 */
+		.name = "Compress10",
+		.stream_name = "Compress10",
+		.cpu_dai_name = "MultiMedia18",
+		.platform_name = "msm-compress-dsp",
+		.dynamic = 1,
+		.dpcm_capture = 1,
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+			    SND_SOC_DPCM_TRIGGER_POST},
+		.codec_dai_name = "snd-soc-dummy-dai",
+		.codec_name = "snd-soc-dummy",
+		.ignore_suspend = 1,
+		.id = MSM_FRONTEND_DAI_MULTIMEDIA18,
+	},
+	{/* hw:x,43 */
+		.name = "Compress11",
+		.stream_name = "Compress11",
+		.cpu_dai_name = "MultiMedia19",
+		.platform_name = "msm-compress-dsp",
+		.dynamic = 1,
+		.dpcm_capture = 1,
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+			    SND_SOC_DPCM_TRIGGER_POST},
+		.codec_dai_name = "snd-soc-dummy-dai",
+		.codec_name = "snd-soc-dummy",
+		.ignore_suspend = 1,
+		.id = MSM_FRONTEND_DAI_MULTIMEDIA19,
+	},
+	{/* hw:x,44 */
+		.name = "Compress12",
+		.stream_name = "Compress12",
+		.cpu_dai_name = "MultiMedia28",
+		.platform_name = "msm-compress-dsp",
+		.dynamic = 1,
+		.dpcm_capture = 1,
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+			    SND_SOC_DPCM_TRIGGER_POST},
+		.codec_dai_name = "snd-soc-dummy-dai",
+		.codec_name = "snd-soc-dummy",
+		.ignore_suspend = 1,
+		.id = MSM_FRONTEND_DAI_MULTIMEDIA28,
+	},
+	{/* hw:x,45 */
+		.name = "Compress13",
+		.stream_name = "Compress13",
+		.cpu_dai_name = "MultiMedia29",
+		.platform_name = "msm-compress-dsp",
+		.dynamic = 1,
+		.dpcm_capture = 1,
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+			    SND_SOC_DPCM_TRIGGER_POST},
+		.codec_dai_name = "snd-soc-dummy-dai",
+		.codec_name = "snd-soc-dummy",
+		.ignore_suspend = 1,
+		.id = MSM_FRONTEND_DAI_MULTIMEDIA29,
+	},
+};
+
 static struct snd_soc_dai_link msm_int_be_dai[] = {
 	/* Backend I2S DAI Links */
 	{
@@ -3046,6 +3119,7 @@ static struct snd_soc_dai_link ext_disp_be_dai_link[] = {
 static struct snd_soc_dai_link msm_int_dai_links[
 ARRAY_SIZE(msm_int_dai) +
 ARRAY_SIZE(msm_int_wsa_dai) +
+ARRAY_SIZE(msm_int_compress_capture_dai) +
 ARRAY_SIZE(msm_int_be_dai) +
 ARRAY_SIZE(msm_mi2s_be_dai_links) +
 ARRAY_SIZE(msm_auxpcm_be_dai_links)+
@@ -3124,6 +3198,10 @@ static struct snd_soc_card *msm_int_populate_sndcard_dailinks(
 		       sizeof(msm_int_wsa_dai));
 		len1 += ARRAY_SIZE(msm_int_wsa_dai);
 	}
+	memcpy(dailink + len1, msm_int_compress_capture_dai,
+		sizeof(msm_int_compress_capture_dai));
+	len1 += ARRAY_SIZE(msm_int_compress_capture_dai);
+
 	memcpy(dailink + len1, msm_int_be_dai, sizeof(msm_int_be_dai));
 	len1 += ARRAY_SIZE(msm_int_be_dai);
 
