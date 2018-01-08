@@ -10455,6 +10455,7 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
                          "%s: Invalid Channel [%d]", __func__, pConfig->channel);
                  return -EINVAL;
             }
+            pConfig->user_config_channel = pConfig->channel;
         }
         else
         {
@@ -10464,7 +10465,8 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
                   WLANSAP_SetChannelRange(hHal, hdd_pConfig->apStartChannelNum,
                        hdd_pConfig->apEndChannelNum,hdd_pConfig->apOperatingBand);
              }
-                   pHddCtx->is_dynamic_channel_range_set = 0;
+             pHddCtx->is_dynamic_channel_range_set = 0;
+             pConfig->user_config_channel = SAP_DEFAULT_24GHZ_CHANNEL;
         }
     }
     else

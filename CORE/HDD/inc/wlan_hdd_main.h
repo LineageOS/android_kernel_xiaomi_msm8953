@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -2282,5 +2282,16 @@ void hdd_disable_roaming(hdd_context_t *hdd_ctx);
 void hdd_restore_roaming(hdd_context_t *hdd_ctx);
 
 int wlan_hdd_check_and_stop_mon(hdd_adapter_t *sta_adapter, bool wait);
+
+/**
+ * hdd_is_sta_sap_scc_allowed_on_dfs_chan() - check if sta+sap scc allowed on
+ * dfs chan
+ * @hdd_ctx: pointer to hdd context
+ *
+ * This function used to check if sta+sap scc allowed on DFS channel.
+ *
+ * Return: None
+ */
+bool hdd_is_sta_sap_scc_allowed_on_dfs_chan(hdd_context_t *hdd_ctx);
 
 #endif    // end #if !defined( WLAN_HDD_MAIN_H )

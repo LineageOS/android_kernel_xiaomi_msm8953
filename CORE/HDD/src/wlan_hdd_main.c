@@ -9899,6 +9899,12 @@ __hdd_force_scc_with_ecsa_handle(struct work_struct *work)
     hdd_adapter_t *sap_adapter;
     hdd_station_ctx_t *sta_ctx;
     hdd_adapter_t *sta_adapter;
+    ptSapContext sap_ctx = NULL;
+    v_CONTEXT_t vos_ctx;
+    tANI_U8 target_channel;
+    tsap_Config_t *sap_config;
+    bool sta_sap_scc_on_dfs_chan;
+    eNVChannelEnabledType chan_state;
     hdd_context_t *hdd_ctx = container_of(to_delayed_work(work),
                                           hdd_context_t,
                                           ecsa_chan_change_work);
@@ -9913,6 +9919,22 @@ __hdd_force_scc_with_ecsa_handle(struct work_struct *work)
         return;
     }
 
+    vos_ctx = hdd_ctx->pvosContext;
+    if (!vos_ctx) {
+        hddLog(LOGE, FL("vos_ctx is NULL"));
+        return;
+    }
+
+    sap_ctx = VOS_GET_SAP_CB(vos_ctx);
+    if (!sap_ctx) {
+        hddLog(LOGE, FL("sap_ctx is NULL"));
+        return;
+    }
+
+    sap_config = &sap_adapter->sessionCtx.ap.sapConfig;
+
+    sta_sap_scc_on_dfs_chan = hdd_is_sta_sap_scc_allowed_on_dfs_chan(hdd_ctx);
+
     sta_adapter = hdd_get_adapter(hdd_ctx,
                                   WLAN_HDD_INFRA_STATION);
     if (!sta_adapter) {
@@ -9922,15 +9944,25 @@ __hdd_force_scc_with_ecsa_handle(struct work_struct *work)
     sta_ctx = WLAN_HDD_GET_STATION_CTX_PTR(sta_adapter);
 
     if (sta_ctx->conn_info.connState != eConnectionState_Associated) {
-        hddLog(LOGE, FL("sta not in connected state %d"),
-               sta_ctx->conn_info.connState);
+        chan_state = vos_nv_getChannelEnabledState(sap_ctx->channel);
+        hddLog(LOG1, FL("sta not in connected state %d, sta_sap_scc_on_dfs_chan %d, chan_state %d"),
+                sta_ctx->conn_info.connState, sta_sap_scc_on_dfs_chan,
+                chan_state);
+        if (sta_sap_scc_on_dfs_chan &&
+                (chan_state == NV_CHANNEL_DFS)) {
+            hddLog(LOG1, FL("Switch SAP to user configured channel"));
+            target_channel = sap_config->user_config_channel;
+            goto switch_channel;
+
+        }
         return;
     }
 
-    hddLog(LOGE, FL("Switch SAP to SCC channel %d"),
-           sta_ctx->conn_info.operationChannel);
-    wlansap_set_channel_change((WLAN_HDD_GET_CTX(sap_adapter))->pvosContext,
-                               sta_ctx->conn_info.operationChannel, true);
+    target_channel = sta_ctx->conn_info.operationChannel;
+switch_channel:
+    hddLog(LOGE, FL("Switch SAP to %d channel"),
+           target_channel);
+    wlansap_set_channel_change(vos_ctx, target_channel, true);
 }
 
 /**
@@ -9948,6 +9980,24 @@ hdd_force_scc_with_ecsa_handle(struct work_struct *work)
     vos_ssr_protect(__func__);
     __hdd_force_scc_with_ecsa_handle(work);
     vos_ssr_unprotect(__func__);
+}
+
+/**
+ * hdd_is_sta_sap_scc_allowed_on_dfs_chan() - check if sta+sap scc allowed on
+ * dfs chan
+ * @hdd_ctx: pointer to hdd context
+ *
+ * This function used to check if sta+sap scc allowed on DFS channel.
+ *
+ * Return: None
+ */
+bool hdd_is_sta_sap_scc_allowed_on_dfs_chan(hdd_context_t *hdd_ctx)
+{
+    if (hdd_ctx->cfg_ini->force_scc_with_ecsa &&
+            hdd_ctx->cfg_ini->sta_sap_scc_on_dfs_chan)
+        return true;
+    else
+        return false;
 }
 
 VOS_STATUS hdd_stop_all_adapters( hdd_context_t *pHddCtx )
