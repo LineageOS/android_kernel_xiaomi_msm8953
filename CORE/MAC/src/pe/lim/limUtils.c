@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -6038,29 +6038,6 @@ void limDelAllBASessions(tpAniSirGlobal pMac)
             limDeleteBASessions(pMac, pSessionEntry, BA_BOTH_DIRECTIONS,
                                 eSIR_MAC_UNSPEC_FAILURE_REASON);
         }
-    }
-}
-
-/** -------------------------------------------------------------
-\fn     limDelAllBASessionsBtc
-\brief  Deletes all the exisitng BA receipent sessions in 2.4GHz
-        band.
-\param  tpAniSirGlobal pMac
-\return None
--------------------------------------------------------------*/
-
-void limDelPerBssBASessionsBtc(tpAniSirGlobal pMac)
-{
-    tANI_U8 sessionId;
-    tpPESession pSessionEntry;
-    pSessionEntry = peFindSessionByBssid(pMac,pMac->btc.btcBssfordisableaggr,
-                                                                &sessionId);
-    if (pSessionEntry)
-    {
-        PELOGW(limLog(pMac, LOGW,
-        "Deleting the BA for session %d as host got BTC event", sessionId);)
-        limDeleteBASessions(pMac, pSessionEntry, BA_BOTH_DIRECTIONS,
-                            eSIR_MAC_PEER_TIMEDOUT_REASON);
     }
 }
 
