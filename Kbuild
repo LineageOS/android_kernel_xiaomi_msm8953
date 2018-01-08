@@ -88,6 +88,8 @@ HAVE_CFG80211 := 0
 endif
 endif
 
+
+ifeq ($(CONFIG_PRIMA_WLAN_BTAMP),y)
 ############ BAP ############
 BAP_DIR :=	CORE/BAP
 BAP_INC_DIR :=	$(BAP_DIR)/inc
@@ -116,6 +118,7 @@ BAP_OBJS := 	$(BAP_SRC_DIR)/bapApiData.o \
 		$(BAP_SRC_DIR)/bapRsnTxRx.o \
 		$(BAP_SRC_DIR)/btampFsm.o \
 		$(BAP_SRC_DIR)/btampHCI.o
+endif
 
 ############ DXE ############
 DXE_DIR :=	CORE/DXE
@@ -136,8 +139,7 @@ HDD_SRC_DIR :=	$(HDD_DIR)/src
 HDD_INC := 	-I$(WLAN_ROOT)/$(HDD_INC_DIR) \
 		-I$(WLAN_ROOT)/$(HDD_SRC_DIR)
 
-HDD_OBJS := 	$(HDD_SRC_DIR)/bap_hdd_main.o \
-		$(HDD_SRC_DIR)/wlan_hdd_assoc.o \
+HDD_OBJS := 	$(HDD_SRC_DIR)/wlan_hdd_assoc.o \
 		$(HDD_SRC_DIR)/wlan_hdd_cfg.o \
 		$(HDD_SRC_DIR)/wlan_hdd_debugfs.o \
 		$(HDD_SRC_DIR)/wlan_hdd_dev_pwr.o \
@@ -155,6 +157,10 @@ HDD_OBJS := 	$(HDD_SRC_DIR)/bap_hdd_main.o \
 		$(HDD_SRC_DIR)/wlan_hdd_wext.o \
 		$(HDD_SRC_DIR)/wlan_hdd_wmm.o \
 		$(HDD_SRC_DIR)/wlan_hdd_wowl.o
+
+ifeq ($(CONFIG_PRIMA_WLAN_BTAMP),y)
+HDD_OBJS += 	$(HDD_SRC_DIR)/bap_hdd_main.o
+endif
 
 ifeq ($(HAVE_CFG80211),1)
 HDD_OBJS +=	$(HDD_SRC_DIR)/wlan_hdd_cfg80211.o \
@@ -500,8 +506,7 @@ RIVA_INC :=	-I$(WLAN_ROOT)/riva/inc
 
 LINUX_INC :=	-Iinclude/linux
 
-INCS :=		$(BAP_INC) \
-		$(DXE_INC) \
+INCS :=		$(DXE_INC) \
 		$(HDD_INC) \
 		$(LINUX_INC) \
 		$(MAC_INC) \
@@ -515,6 +520,10 @@ INCS :=		$(BAP_INC) \
 		$(WDA_INC) \
 		$(WDI_INC)
 
+ifeq ($(CONFIG_PRIMA_WLAN_BTAMP),y)
+INCS +=		$(BAP_INC)
+endif
+
 OBJS :=		$(BAP_OBJS) \
 		$(DXE_OBJS) \
 		$(HDD_OBJS) \
@@ -527,6 +536,10 @@ OBJS :=		$(BAP_OBJS) \
 		$(VOSS_OBJS) \
 		$(WDA_OBJS) \
 		$(WDI_OBJS)
+
+ifeq ($(CONFIG_PRIMA_WLAN_BTAMP),y)
+OBJS += 	$(BAP_OBJS)
+endif
 
 EXTRA_CFLAGS += $(INCS)
 EXTRA_CFLAGS += -fno-pic

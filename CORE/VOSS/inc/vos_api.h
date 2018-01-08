@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -74,6 +74,7 @@
 #include <vos_threads.h>
 #include <vos_timer.h>
 #include <vos_pack_align.h>
+#include <asm/arch_timer.h>
 
 /**
  * enum userspace_log_level - Log level at userspace
@@ -544,5 +545,17 @@ v_U16_t vos_get_rate_from_rateidx(uint32 rateindex);
  * Return: TRUE - capture is ON, FALSE - capture is OFF
  */
 v_BOOL_t vos_check_monitor_state(void);
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0))
+static inline uint64_t __vos_get_log_timestamp(void)
+{
+	return arch_counter_get_cntvct();
+}
+#else
+static inline uint64_t __vos_get_log_timestamp(void)
+{
+	return arch_counter_get_cntpct();
+}
+#endif /* LINUX_VERSION_CODE */
 
 #endif // if !defined __VOS_NVITEM_H
