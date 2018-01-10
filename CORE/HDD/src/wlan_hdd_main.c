@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -7443,23 +7443,11 @@ int __hdd_stop (struct net_device *dev)
    }
 
    if (pHddCtx->concurrency_mode == VOS_STA_MON) {
-       hdd_adapter_t *mon_adapter = hdd_get_adapter(pHddCtx, WLAN_HDD_MONITOR);
-       if (!mon_adapter) {
-           hddLog(LOGE,
-            FL("No valid monitor interface in STA + MON concurrency"));
-           return -EINVAL;
-       }
-
        /*
-        * In STA + Monitor mode concurrency, no point in enabling
-        * monitor interface, when STA interface is stopped
+        * In STA + Monitor mode concurrency, no point in running
+        * capture on monitor interface, when STA interface is stopped
         */
-       ret = hdd_mon_stop(mon_adapter->dev);
-       if (ret) {
-           hddLog(LOGE,
-            FL("Failed to stop Monitor interface in STA + MON concurrency"));
-           return ret;
-       }
+       wlan_hdd_stop_mon(pHddCtx, true);
    }
 
    /* Make sure the interface is marked as closed */
