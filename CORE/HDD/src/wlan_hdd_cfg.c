@@ -6666,6 +6666,8 @@ VOS_STATUS hdd_set_sme_config( hdd_context_t *pHddCtx )
 
    smeConfig->csrConfig.sta_sap_scc_on_dfs_chan =
            pHddCtx->cfg_ini->sta_sap_scc_on_dfs_chan;
+   smeConfig->csrConfig.force_scc_with_ecsa =
+           pHddCtx->cfg_ini->force_scc_with_ecsa;
 
    halStatus = sme_UpdateConfig( pHddCtx->hHal, smeConfig);
    if ( !HAL_STATUS_SUCCESS( halStatus ) )
