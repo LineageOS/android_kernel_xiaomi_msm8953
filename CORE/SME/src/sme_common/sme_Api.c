@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1685,6 +1685,32 @@ eHalStatus sme_UpdateChannelList(tHalHandle hHal)
     return status;
 }
 
+/**
+ * sme_update_channel_list() - Update configured channel list to fwr
+ * This is a synchronous API.
+ *
+ * @mac_ctx - The handle returned by mac_open.
+ *
+ * Return QDF_STATUS  SUCCESS.
+ * FAILURE or RESOURCES  The API finished and failed.
+ */
+VOS_STATUS
+sme_update_channel_list(tpAniSirGlobal pMac)
+{
+    VOS_STATUS status = VOS_STATUS_SUCCESS;
+
+    status = sme_AcquireGlobalLock(&pMac->sme);
+    if (VOS_IS_STATUS_SUCCESS(status)) {
+        csrInitGetChannels(pMac);
+        csrResetCountryInformation(pMac, eANI_BOOLEAN_TRUE, eANI_BOOLEAN_TRUE);
+        csrScanFilterResults(pMac);
+        sme_ReleaseGlobalLock(&pMac->sme);
+    }
+
+    return status;
+}
+
+
 /*--------------------------------------------------------------------------
 
   \brief sme_UpdateConfig() - Change configurations for all SME moduels
@@ -2654,6 +2680,9 @@ eHalStatus sme_ProcessMsg(tHalHandle hHal, vos_msg_t* pMsg)
                        pMac->isCoexScoIndSet = 1;
                        pMac->scan.fRestartIdleScan = eANI_BOOLEAN_FALSE;
                        pMac->scan.fCancelIdleScan = eANI_BOOLEAN_TRUE;
+
+                       vosMessage.type = eWNI_SME_STA_DEL_BA_REQ;
+                       vos_mq_post_message(VOS_MQ_ID_PE, &vosMessage);
                    }
                    else if (pSmeCoexInd->coexIndType == SIR_COEX_IND_TYPE_ENABLE_AGGREGATION_IN_2p4)
                    {

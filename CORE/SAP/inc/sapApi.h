@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013, 2016-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2013, 2016-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -437,7 +437,8 @@ typedef struct sap_Config {
     v_MACADDR_t     deny_mac[MAX_ACL_MAC_ADDRESS]; /* MAC filtering */
     v_MACADDR_t     self_macaddr; //self macaddress or BSSID
    
-    v_U8_t          channel;         /* Operation channel */
+    v_U8_t          channel;               /* Operation channel */
+    v_U8_t          user_config_channel;   /* user configured channel */
     v_U8_t          max_num_sta;     /* maximum number of STAs in station table */
     v_U8_t          dtim_period;     /* dtim interval */
     v_U8_t          num_accept_mac;

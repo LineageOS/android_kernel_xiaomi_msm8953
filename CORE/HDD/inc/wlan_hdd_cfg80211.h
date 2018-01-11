@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1586,6 +1586,34 @@ extern void wlan_hdd_cfg80211_update_replayCounterCallback(void *callbackContext
 #endif
 void* wlan_hdd_change_country_code_cb(void *pAdapter);
 void hdd_select_cbmode( hdd_adapter_t *pAdapter,v_U8_t operationChannel);
+
+/*
+ * hdd_update_indoor_channel() - enable/disable indoor channel
+ * @hdd_ctx: hdd context
+ * @disable: whether to enable / disable indoor channel
+ *
+ * enable/disable indoor channel in wiphy/cds
+ *
+ * Return: void
+ */
+void hdd_update_indoor_channel(hdd_context_t *hdd_ctx,
+    bool disable);
+
+/*
+ * hdd_modify_indoor_channel_state_flags() - modify wiphy flags and cds state
+ * @wiphy_chan: wiphy channel number
+ * @rfChannel: channel hw value
+ * @disable: Disable/enable the flags
+ *
+ * Modify wiphy flags and cds state if channel is indoor.
+ *
+ * Return: void
+ */
+void hdd_modify_indoor_channel_state_flags(
+    struct ieee80211_channel *wiphy_chan,
+    v_U32_t rfChannel,
+    bool disable);
+
 
 v_U8_t* wlan_hdd_cfg80211_get_ie_ptr(
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))

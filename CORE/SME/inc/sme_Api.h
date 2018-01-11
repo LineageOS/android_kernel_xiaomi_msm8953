@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -762,6 +762,9 @@ tCsrScanResultInfo *sme_ScanResultGetNext(tHalHandle,
     \return eHalStatus     
   ---------------------------------------------------------------------------*/
 eHalStatus sme_ScanResultPurge(tHalHandle hHal, tScanResultHandle hScanResult);
+
+VOS_STATUS sme_update_channel_list(tpAniSirGlobal pMac);
+
 
 /* ---------------------------------------------------------------------------
     \fn sme_ScanGetPMKIDCandidateList

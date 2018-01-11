@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -208,6 +208,14 @@ REG_TABLE_ENTRY g_registry_table[] =
                  CFG_RTS_THRESHOLD_DEFAULT,
                  CFG_RTS_THRESHOLD_MIN,
                  CFG_RTS_THRESHOLD_MAX ),
+
+   REG_VARIABLE(CFG_MARK_INDOOR_AS_DISABLE_NAME,
+                 WLAN_PARAM_Integer,
+                 hdd_config_t, disable_indoor_channel,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_MARK_INDOOR_AS_DISABLE_DEFAULT,
+                 CFG_MARK_INDOOR_AS_DISABLE_MIN,
+                 CFG_MARK_INDOOR_AS_DISABLE_MAX),
 
    REG_VARIABLE( CFG_FRAG_THRESHOLD_NAME, WLAN_PARAM_Integer,
                  hdd_config_t, FragmentationThreshold,
@@ -4413,6 +4421,9 @@ static void print_hdd_cfg(hdd_context_t *pHddCtx)
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
           "Name = [gEnableDelAck] Value = [%u] ",
           pHddCtx->cfg_ini->enable_delack);
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+          "Name = [g_mark_indoor_as_disable] Value = [%u]",
+          pHddCtx->cfg_ini->disable_indoor_channel);
   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
           "Name = [disableBarWakeUp] Value = [%u] ",
           pHddCtx->cfg_ini->disableBarWakeUp);
