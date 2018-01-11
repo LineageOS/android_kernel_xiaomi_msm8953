@@ -4191,6 +4191,47 @@ eHalStatus hdd_smeRoamCallback( void *pContext, tCsrRoamInfo *pRoamInfo, tANI_U3
               else
                   hddLog(LOG1, FL("UPDATE_SCAN_RESULT returned NULL"));
          }
+       case eCSR_ROAM_STA_CHANNEL_SWITCH:
+         {
+             hdd_adapter_t *pHostapdAdapter = NULL;
+             pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+             pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
+
+             if (!pHddCtx || !pHddStaCtx) {
+                 hddLog(LOG1, FL("Invalid pHddCtx or pHddStaCtx"));
+                 break;
+             }
+
+             hddLog(LOG1, FL("eCSR_ROAM_STA_CHANNEL_SWITCH: new channel %hu"),
+                     pRoamInfo->chan_info.chan_id);
+
+             pHddStaCtx->conn_info.operationChannel =
+                 pRoamInfo->chan_info.chan_id;
+
+             pHostapdAdapter = hdd_get_adapter(pHddCtx, WLAN_HDD_SOFTAP);
+             if (pHostapdAdapter &&
+                    (test_bit(SOFTAP_BSS_STARTED,
+                    &pHostapdAdapter->event_flags)))
+             {
+                 /* Restart SAP if its operating channel is different
+                  * from AP channel.
+                  */
+                 hddLog(VOS_TRACE_LEVEL_INFO,"SAP chan %d, STA chan %d, force_scc_with_ecsa %d",
+                         pHostapdAdapter->sessionCtx.ap.operatingChannel,
+                         pRoamInfo->chan_info.chan_id,
+                         pHddCtx->cfg_ini->force_scc_with_ecsa);
+                 if ((pHddCtx->cfg_ini->force_scc_with_ecsa ) &&
+                         (pHostapdAdapter->sessionCtx.ap.operatingChannel !=
+                          pRoamInfo->chan_info.chan_id))
+                 {
+                     hdd_schedule_ecsa_chan_change_work(pHddCtx,
+                             pAdapter->sessionId);
+                 }
+                 else
+                     hddLog(LOG1, FL("SAP restart not required"));
+             } else
+                 hddLog(LOG1, FL("SAP not active, nothing to do"));
+         }
          break;
        default:
             break;
