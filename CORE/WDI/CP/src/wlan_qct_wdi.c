@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -21924,8 +21924,6 @@ WDI_ProcessMissedBeaconInd
   WDI_EventInfoType*     pEventData
 )
 {
-  WDI_Status           wdiStatus;
-  eHalStatus           halStatus;
   WDI_LowLevelIndType  wdiInd;
   tpHalMissedBeaconIndParams halMissedBeaconIndParams;
   /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -21946,8 +21944,6 @@ WDI_ProcessMissedBeaconInd
     Extract indication and send it to UMAC
   -------------------------------------------------------------------------*/
   /*! TO DO: Parameters need to be unpacked according to HAL struct*/
-  halStatus = *((eHalStatus*)pEventData->pEventData);
-  wdiStatus   =   WDI_HAL_2_WDI_STATUS(halStatus);
 
   /*Fill in the indication parameters*/
   wdiInd.wdiIndicationType = WDI_MISSED_BEACON_IND;
