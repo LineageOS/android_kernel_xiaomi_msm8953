@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -397,7 +397,8 @@ enum {
      WNI_CFG_BTC_DISABLE_WLAN_LINK_CRITICAL,
      WNI_CFG_DISABLE_SCAN_DURING_SCO,
      WNI_CFG_ENABLE_TX_RX_AGGREGATION,
-     WNI_CFG_TRIGGER_NULLFRAME_BEFORE_HB
+     WNI_CFG_TRIGGER_NULLFRAME_BEFORE_HB,
+     WNI_CFG_ENABLE_POWERSAVE_OFFLOAD
 };
 
 /*
@@ -1946,8 +1947,13 @@ enum {
 #define WNI_CFG_TRIGGER_NULLFRAME_BEFORE_HB_MAX 1
 #define WNI_CFG_TRIGGER_NULLFRAME_BEFORE_HB_DEF 0
 
-#define CFG_PARAM_MAX_NUM        364
-#define CFG_STA_IBUF_MAX_SIZE    298
+/* QWLAN_HAL_CFG_ENABLE_POWERSAVE_OFFLOAD */
+#define WNI_CFG_ENABLE_POWERSAVE_OFFLOAD_MIN  1
+#define WNI_CFG_ENABLE_POWERSAVE_OFFLOAD_MAX  2
+#define WNI_CFG_ENABLE_POWERSAVE_OFFLOAD_DEF  1
+
+#define CFG_PARAM_MAX_NUM        365
+#define CFG_STA_IBUF_MAX_SIZE    299
 #define CFG_STA_SBUF_MAX_SIZE    3389
 
 #define CFG_STA_MAGIC_DWORD    0xbeefbeef
