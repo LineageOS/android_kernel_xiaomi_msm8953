@@ -3977,6 +3977,13 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                CFG_NUM_BUFF_BTC_SCO_DEFAULT,
                CFG_NUM_BUFF_BTC_SCO_MIN,
                CFG_NUM_BUFF_BTC_SCO_MAX ),
+
+  REG_VARIABLE(CFG_ENABLE_POWERSAVE_OFFLOAD_NAME, WLAN_PARAM_Integer,
+                hdd_config_t, enable_power_save_offload,
+                VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                CFG_ENABLE_POWERSAVE_OFFLOAD_DEFAULT,
+                CFG_ENABLE_POWERSAVE_OFFLOAD_MIN,
+                CFG_ENABLE_POWERSAVE_OFFLOAD_MAX),
 };
 
 /*
@@ -4640,6 +4647,11 @@ static void print_hdd_cfg(hdd_context_t *pHddCtx)
             "Name = [%s] value = [%u]",
             CFG_STA_SAP_SCC_ON_DFS_CHAN,
             pHddCtx->cfg_ini->sta_sap_scc_on_dfs_chan);
+
+    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+            "Name = [%s] Value = [%u] ",
+            CFG_ENABLE_POWERSAVE_OFFLOAD_NAME,
+            pHddCtx->cfg_ini->enable_power_save_offload);
 }
 
 
@@ -6328,6 +6340,15 @@ v_BOOL_t hdd_update_config_dat( hdd_context_t *pHddCtx )
       fStatus = FALSE;
       hddLog(LOGE, "Couldn't pass WNI_CFG_TRIGGER_NULLFRAME_BEFORE_HB to CCM");
    }
+
+   if(ccmCfgSetInt(pHddCtx->hHal, WNI_CFG_ENABLE_POWERSAVE_OFFLOAD,
+                   pConfig->enable_power_save_offload, NULL,
+                   eANI_BOOLEAN_FALSE)
+       ==eHAL_STATUS_FAILURE)
+   {
+      fStatus = FALSE;
+      hddLog(LOGE, "Couldn't pass WNI_CFG_ENABLE_POWERSAVE_OFFLOAD to CCM");
+   }
    return fStatus;
 }
 
@@ -6666,6 +6687,8 @@ VOS_STATUS hdd_set_sme_config( hdd_context_t *pHddCtx )
 
    smeConfig->csrConfig.sta_sap_scc_on_dfs_chan =
            pHddCtx->cfg_ini->sta_sap_scc_on_dfs_chan;
+   smeConfig->csrConfig.force_scc_with_ecsa =
+           pHddCtx->cfg_ini->force_scc_with_ecsa;
 
    halStatus = sme_UpdateConfig( pHddCtx->hHal, smeConfig);
    if ( !HAL_STATUS_SUCCESS( halStatus ) )

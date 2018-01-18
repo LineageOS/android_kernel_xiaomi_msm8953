@@ -3169,6 +3169,12 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_NUM_BUFF_BTC_SCO_MAX        (10)
 #define CFG_NUM_BUFF_BTC_SCO_DEFAULT    (0)
 
+/* Value for ENABLE_POWERSAVE_OFFLOAD*/
+#define CFG_ENABLE_POWERSAVE_OFFLOAD_NAME       "gEnablePowerSaveOffload"
+#define CFG_ENABLE_POWERSAVE_OFFLOAD_MIN        (1)
+#define CFG_ENABLE_POWERSAVE_OFFLOAD_MAX        (2)
+#define CFG_ENABLE_POWERSAVE_OFFLOAD_DEFAULT    (1)
+
 /*--------------------------------------------------------------------------- 
   Type declarations
   -------------------------------------------------------------------------*/ 
@@ -3777,6 +3783,7 @@ typedef struct
    uint8_t                     num_buff_aggr_btc_sco;
    /* control marking indoor channel passive to disable */
    bool                        disable_indoor_channel;
+   uint32_t                    enable_power_save_offload;
 
 } hdd_config_t;
 

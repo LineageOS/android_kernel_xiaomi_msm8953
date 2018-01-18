@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013,2016,2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -281,11 +281,12 @@
 #define QWLAN_HAL_CFG_BTC_DISABLE_WLAN_LINK_CRITICAL         223
 #define QWLAN_HAL_CFG_DISABLE_SCAN_DURING_SCO                224
 #define QWLAN_HAL_CFG_TRIGGER_NULLFRAME_BEFORE_HB            225
+#define QWLAN_HAL_CFG_ENABLE_POWERSAVE_OFFLOAD               226
 
-#define QWLAN_HAL_CFG_MAX_PARAMS                             226
+#define QWLAN_HAL_CFG_MAX_PARAMS                             227
 
 /* Total number of Integer CFGs. This is used while allocating the memory for TLV */
-#define QWLAN_HAL_CFG_INTEGER_PARAM                     226
+#define QWLAN_HAL_CFG_INTEGER_PARAM                     227
 
 /*-------------------------------------------------------------------------
   Configuration Parameter min, max, defaults

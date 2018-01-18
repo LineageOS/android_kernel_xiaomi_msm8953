@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013, 2016-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2013, 2016-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -261,6 +261,7 @@ sapGotoChannelSel
     tHalHandle hHal;
     tANI_U8   channel;
     uint32_t operating_band = 0;
+    tpAniSirGlobal pMac;
 
     hHal = (tHalHandle)vos_get_context( VOS_MODULE_ID_SME, sapContext->pvosGCtx);
     if (NULL == hHal)
@@ -271,6 +272,8 @@ sapGotoChannelSel
         return VOS_STATUS_E_FAULT;
     }
 
+    pMac = PMAC_STRUCT( hHal );
+
     sapPhyMode =
       sapConvertSapPhyModeToCsrPhyMode(sapContext->csrRoamProfile.phyMode);
 
@@ -278,6 +281,14 @@ sapGotoChannelSel
     if (vos_get_concurrency_mode() == VOS_STA_SAP)
     {
         channel = sme_GetConcurrentOperationChannel(hHal);
+
+        if (pMac->sta_sap_scc_on_dfs_chan && pMac->force_scc_with_ecsa &&
+            vos_nv_getChannelEnabledState(channel) == NV_CHANNEL_DISABLE) {
+            VOS_TRACE(VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
+                      FL("Channel:%d disabled, SAP not allowed to operate"),
+                      sapContext->channel);
+            return VOS_STATUS_E_INVAL;
+        }
 
         if (channel)
         { /*if a valid channel is returned then use concurrent channel.

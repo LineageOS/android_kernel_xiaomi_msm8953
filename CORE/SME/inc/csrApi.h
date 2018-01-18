@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1252,6 +1252,7 @@ typedef struct tagCsrConfigParam
     tANI_U8 agg_btc_sco_oui[3];
     tANI_U8 num_ba_buff_btc_sco;
     tANI_U8 num_ba_buff;
+    bool force_scc_with_ecsa;
 }tCsrConfigParam;
 
 //Tush

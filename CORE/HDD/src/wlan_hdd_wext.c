@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -9240,11 +9240,14 @@ static int __iw_set_host_offload(struct net_device *dev,
         }
     }
 
-    /* Execute offload request. The reason that we can copy the request information
-       from the ioctl structure to the SME structure is that they are laid out
-       exactly the same.  Otherwise, each piece of information would have to be
-       copied individually. */
-    memcpy(&offloadRequest, pRequest, wrqu->data.length);
+    vos_mem_zero(&offloadRequest, sizeof(offloadRequest));
+    offloadRequest.offloadType = pRequest->offloadType;
+    offloadRequest.enableOrDisable = pRequest->enableOrDisable;
+    vos_mem_copy(&offloadRequest.params, &pRequest->params,
+                 sizeof(pRequest->params));
+    vos_mem_copy(&offloadRequest.bssId, &pRequest->bssId.bytes,
+                 VOS_MAC_ADDRESS_LEN);
+
     if (eHAL_STATUS_SUCCESS != sme_SetHostOffload(WLAN_HDD_GET_HAL_CTX(pAdapter),
                                         pAdapter->sessionId, &offloadRequest))
     {
