@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1605,6 +1605,33 @@ typedef enum
 #define CFG_STA_AUTH_RETRIES_FOR_CODE17_MAX       ( 5 )
 #define CFG_STA_AUTH_RETRIES_FOR_CODE17_DEFAULT   ( 0 )
 
+/*
+ * <ini>
+ * g_mark_indoor_as_disable - Enable/Disable Indoor channel
+ * @Min: 0
+ * @Max: 1
+ * @Default: 0
+ *
+ * This ini is used to mark the Indoor channel as
+ * disable when SAP start and revert it on SAP stop,
+ * so SAP will not turn on indoor channel and
+ * sta will not scan/associate and roam on indoor
+ * channels.
+ *
+ * Related: If g_mark_indoor_as_disable set, turn the
+ * indoor channels to disable and update Wiphy & fw.
+ *
+ * Supported Feature: SAP/STA
+ *
+ * Usage: External
+ *
+ * </ini>
+ */
+#define CFG_MARK_INDOOR_AS_DISABLE_NAME     "g_mark_indoor_as_disable"
+#define CFG_MARK_INDOOR_AS_DISABLE_MIN      (0)
+#define CFG_MARK_INDOOR_AS_DISABLE_MAX      (1)
+#define CFG_MARK_INDOOR_AS_DISABLE_DEFAULT  (0)
+
 typedef enum
 {
     eHDD_LINK_SPEED_REPORT_ACTUAL = 0,
@@ -3142,6 +3169,12 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_NUM_BUFF_BTC_SCO_MAX        (10)
 #define CFG_NUM_BUFF_BTC_SCO_DEFAULT    (0)
 
+/* Value for ENABLE_POWERSAVE_OFFLOAD*/
+#define CFG_ENABLE_POWERSAVE_OFFLOAD_NAME       "gEnablePowerSaveOffload"
+#define CFG_ENABLE_POWERSAVE_OFFLOAD_MIN        (1)
+#define CFG_ENABLE_POWERSAVE_OFFLOAD_MAX        (2)
+#define CFG_ENABLE_POWERSAVE_OFFLOAD_DEFAULT    (1)
+
 /*--------------------------------------------------------------------------- 
   Type declarations
   -------------------------------------------------------------------------*/ 
@@ -3748,6 +3781,10 @@ typedef struct
    uint32_t                    sta_sap_scc_on_dfs_chan;
    uint8_t                     enable_aggr_btc_sco_oui[9];
    uint8_t                     num_buff_aggr_btc_sco;
+   /* control marking indoor channel passive to disable */
+   bool                        disable_indoor_channel;
+   uint32_t                    enable_power_save_offload;
+
 } hdd_config_t;
 
 /*--------------------------------------------------------------------------- 
