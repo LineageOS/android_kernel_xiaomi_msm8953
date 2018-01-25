@@ -433,7 +433,7 @@
                         aw2013,red {
                                 aw2013,name = "red";
                                 aw2013,id = <0>;
-                                aw2013,max-brightness = <150>;
+                                aw2013,max-brightness = <255>;
                                 aw2013,max-current = <1>;
                                 aw2013,rise-time-ms = <3>;
                                 aw2013,hold-time-ms = <1>;
@@ -444,7 +444,7 @@
                         aw2013,green {
                                 aw2013,name = "green";
                                 aw2013,id = <1>;
-                                aw2013,max-brightness = <150>;
+                                aw2013,max-brightness = <255>;
                                 aw2013,max-current = <1>;
                                 aw2013,rise-time-ms = <3>;
                                 aw2013,hold-time-ms = <1>;
@@ -455,7 +455,7 @@
                         aw2013,blue {
                                 aw2013,name = "blue";
                                 aw2013,id = <2>;
-                                aw2013,max-brightness = <150>;
+                                aw2013,max-brightness = <255>;
                                 aw2013,max-current = <1>;
                                 aw2013,rise-time-ms = <3>;
                                 aw2013,hold-time-ms = <1>;
