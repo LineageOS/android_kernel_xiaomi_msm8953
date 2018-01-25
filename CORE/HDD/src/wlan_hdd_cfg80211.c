@@ -10347,6 +10347,173 @@ void hdd_update_indoor_channel(hdd_context_t *hdd_ctx,
     EXIT();
 }
 
+/*
+ * FUNCTION: wlan_hdd_disconnect
+ * This function is used to issue a disconnect request to SME
+ */
+int wlan_hdd_disconnect( hdd_adapter_t *pAdapter, u16 reason )
+{
+    int status, result = 0;
+    hdd_station_ctx_t *pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
+    hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+    long ret;
+    eConnectionState prev_conn_state;
+    uint32_t wait_time = WLAN_WAIT_TIME_DISCONNECT;
+
+    ENTER();
+
+    status = wlan_hdd_validate_context(pHddCtx);
+    if (0 != status)
+    {
+        return status;
+    }
+    /* Indicate sme of disconnect so that in progress connection or preauth
+     * can be aborted
+     */
+    sme_abortConnection(WLAN_HDD_GET_HAL_CTX(pAdapter),
+                            pAdapter->sessionId);
+    pHddCtx->isAmpAllowed = VOS_TRUE;
+
+    /* Need to apply spin lock before decreasing active sessions
+     * as there can be chance for double decrement if context switch
+     * Calls  hdd_DisConnectHandler.
+     */
+
+    prev_conn_state = pHddStaCtx->conn_info.connState;
+
+    spin_lock_bh(&pAdapter->lock_for_active_session);
+    if (eConnectionState_Associated ==  pHddStaCtx->conn_info.connState)
+    {
+        wlan_hdd_decr_active_session(pHddCtx, pAdapter->device_mode);
+    }
+    hdd_connSetConnectionState( pHddStaCtx, eConnectionState_Disconnecting );
+    spin_unlock_bh(&pAdapter->lock_for_active_session);
+    vos_flush_delayed_work(&pHddCtx->ecsa_chan_change_work);
+
+    VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                  FL( "Set HDD connState to eConnectionState_Disconnecting" ));
+
+    INIT_COMPLETION(pAdapter->disconnect_comp_var);
+
+    /*
+     * stop tx queues before deleting STA/BSS context from the firmware.
+     * tx has to be disabled because the firmware can get busy dropping
+     * the tx frames after BSS/STA has been deleted and will not send
+     * back a response resulting in WDI timeout
+     */
+    hddLog(VOS_TRACE_LEVEL_INFO, FL("Disabling queues"));
+    netif_tx_disable(pAdapter->dev);
+    netif_carrier_off(pAdapter->dev);
+
+    wlan_hdd_check_and_stop_mon(pAdapter, true);
+
+    /*issue disconnect*/
+    status = sme_RoamDisconnect( WLAN_HDD_GET_HAL_CTX(pAdapter),
+                                 pAdapter->sessionId, reason);
+    if((eHAL_STATUS_CMD_NOT_QUEUED == status) &&
+             prev_conn_state != eConnectionState_Connecting)
+    {
+        hddLog(LOG1,
+            FL("status = %d, already disconnected"), status);
+        result = 0;
+        /*
+         * Wait here instead of returning directly. This will block the
+         * next connect command and allow processing of the disconnect
+         * in SME else we might hit some race conditions leading to SME
+         * and HDD out of sync. As disconnect is already in progress,
+         * wait here for 1 sec instead of 5 sec.
+         */
+        wait_time = WLAN_WAIT_DISCONNECT_ALREADY_IN_PROGRESS;
+        goto wait_for_disconnect;
+    }
+    /*
+     * Wait here instead of returning directly, this will block the next
+     * connect command and allow processing of the scan for ssid and
+     * the previous connect command in CSR. Else we might hit some
+     * race conditions leading to SME and HDD out of sync.
+     */
+    else if(eHAL_STATUS_CMD_NOT_QUEUED == status)
+    {
+        hddLog(LOG1,
+            FL("Already disconnected or connect was in sme/roam pending list and removed by disconnect"));
+    }
+    else if ( 0 != status )
+    {
+        hddLog(LOGE,
+               FL("csrRoamDisconnect failure, returned %d"),
+               (int)status);
+        result = -EINVAL;
+        goto disconnected;
+    }
+wait_for_disconnect:
+    ret = wait_for_completion_timeout(&pAdapter->disconnect_comp_var,
+                                      msecs_to_jiffies(wait_time));
+    if (!ret && (eHAL_STATUS_CMD_NOT_QUEUED != status))
+    {
+        hddLog(LOGE,
+              "%s: Failed to disconnect, timed out", __func__);
+        result = -ETIMEDOUT;
+    }
+disconnected:
+     hddLog(LOG1,
+              FL("Set HDD connState to eConnectionState_NotConnected"));
+    pHddStaCtx->conn_info.connState = eConnectionState_NotConnected;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)
+    /* Sending disconnect event to userspace for kernel version < 3.11
+     * is handled by __cfg80211_disconnect call to __cfg80211_disconnected
+     */
+    hddLog(LOG1, FL("Send disconnected event to userspace"));
+
+    wlan_hdd_cfg80211_indicate_disconnect(pAdapter->dev, true,
+                                          WLAN_REASON_UNSPECIFIED);
+#endif
+
+    EXIT();
+    return result;
+}
+
+/*
+ * hdd_check_and_disconnect_sta_on_invalid_channel() - Disconnect STA if it is
+ * on indoor channel
+ * @hdd_ctx: pointer to hdd context
+ *
+ * STA should be disconnected before starting the SAP if it is on indoor
+ * channel.
+ *
+ * Return: void
+ */
+void hdd_check_and_disconnect_sta_on_invalid_channel(hdd_context_t *hdd_ctx)
+{
+
+    hdd_adapter_t *sta_adapter;
+    tANI_U8 sta_chan;
+
+    sta_chan = hdd_get_operating_channel(hdd_ctx, WLAN_HDD_INFRA_STATION);
+
+    if (!sta_chan) {
+        hddLog(LOG1, FL("STA not connected"));
+        return;
+    }
+
+    hddLog(LOG1, FL("STA connected on chan %hu"), sta_chan);
+
+    if (sme_IsChannelValid(hdd_ctx->hHal, sta_chan)) {
+        hddLog(LOG1, FL("STA connected on chan %hu and it is valid"),
+                sta_chan);
+        return;
+    }
+
+    sta_adapter = hdd_get_adapter(hdd_ctx, WLAN_HDD_INFRA_STATION);
+
+    if (!sta_adapter) {
+        hddLog(LOG1, FL("STA adapter doesn't exist"));
+        return;
+    }
+
+    hddLog(LOG1, FL("chan %hu not valid, issue disconnect"), sta_chan);
+    /* Issue Disconnect request */
+    wlan_hdd_disconnect(sta_adapter, eCSR_DISCONNECT_REASON_DEAUTH);
+}
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3,4,0))
 static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
@@ -10399,6 +10566,10 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
                  FL("Can't start BSS: update channel list failed"));
             return eHAL_STATUS_FAILURE;
         }
+
+        /* check if STA is on indoor channel */
+        if (hdd_is_sta_sap_scc_allowed_on_dfs_chan(pHddCtx))
+            hdd_check_and_disconnect_sta_on_invalid_channel(pHddCtx);
     }
 
     pHostapdState = WLAN_HDD_GET_HOSTAP_STATE_PTR(pHostapdAdapter);
@@ -16421,132 +16592,6 @@ static int wlan_hdd_cfg80211_connect( struct wiphy *wiphy,
 
     return ret;
 }
-
-/*
- * FUNCTION: wlan_hdd_disconnect
- * This function is used to issue a disconnect request to SME
- */
-int wlan_hdd_disconnect( hdd_adapter_t *pAdapter, u16 reason )
-{
-    int status, result = 0;
-    hdd_station_ctx_t *pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
-    hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
-    long ret;
-    eConnectionState prev_conn_state;
-    uint32_t wait_time = WLAN_WAIT_TIME_DISCONNECT;
-
-    ENTER();
-
-    status = wlan_hdd_validate_context(pHddCtx);
-    if (0 != status)
-    {
-        return status;
-    }
-    /* Indicate sme of disconnect so that in progress connection or preauth
-     * can be aborted
-     */
-    sme_abortConnection(WLAN_HDD_GET_HAL_CTX(pAdapter),
-                            pAdapter->sessionId);
-    pHddCtx->isAmpAllowed = VOS_TRUE;
-
-    /* Need to apply spin lock before decreasing active sessions
-     * as there can be chance for double decrement if context switch
-     * Calls  hdd_DisConnectHandler.
-     */
-
-    prev_conn_state = pHddStaCtx->conn_info.connState;
-
-    spin_lock_bh(&pAdapter->lock_for_active_session);
-    if (eConnectionState_Associated ==  pHddStaCtx->conn_info.connState)
-    {
-        wlan_hdd_decr_active_session(pHddCtx, pAdapter->device_mode);
-    }
-    hdd_connSetConnectionState( pHddStaCtx, eConnectionState_Disconnecting );
-    spin_unlock_bh(&pAdapter->lock_for_active_session);
-    vos_flush_delayed_work(&pHddCtx->ecsa_chan_change_work);
-
-    VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-                  FL( "Set HDD connState to eConnectionState_Disconnecting" ));
-
-    INIT_COMPLETION(pAdapter->disconnect_comp_var);
-
-    /*
-     * stop tx queues before deleting STA/BSS context from the firmware.
-     * tx has to be disabled because the firmware can get busy dropping
-     * the tx frames after BSS/STA has been deleted and will not send
-     * back a response resulting in WDI timeout
-     */
-    hddLog(VOS_TRACE_LEVEL_INFO, FL("Disabling queues"));
-    netif_tx_disable(pAdapter->dev);
-    netif_carrier_off(pAdapter->dev);
-
-    wlan_hdd_check_and_stop_mon(pAdapter, true);
-
-    /*issue disconnect*/
-    status = sme_RoamDisconnect( WLAN_HDD_GET_HAL_CTX(pAdapter),
-                                 pAdapter->sessionId, reason);
-    if((eHAL_STATUS_CMD_NOT_QUEUED == status) &&
-             prev_conn_state != eConnectionState_Connecting)
-    {
-        hddLog(LOG1,
-            FL("status = %d, already disconnected"), status);
-        result = 0;
-        /*
-         * Wait here instead of returning directly. This will block the
-         * next connect command and allow processing of the disconnect
-         * in SME else we might hit some race conditions leading to SME
-         * and HDD out of sync. As disconnect is already in progress,
-         * wait here for 1 sec instead of 5 sec.
-         */
-        wait_time = WLAN_WAIT_DISCONNECT_ALREADY_IN_PROGRESS;
-        goto wait_for_disconnect;
-    }
-    /*
-     * Wait here instead of returning directly, this will block the next
-     * connect command and allow processing of the scan for ssid and
-     * the previous connect command in CSR. Else we might hit some
-     * race conditions leading to SME and HDD out of sync.
-     */
-    else if(eHAL_STATUS_CMD_NOT_QUEUED == status)
-    {
-        hddLog(LOG1,
-            FL("Already disconnected or connect was in sme/roam pending list and removed by disconnect"));
-    }
-    else if ( 0 != status )
-    {
-        hddLog(LOGE,
-               FL("csrRoamDisconnect failure, returned %d"),
-               (int)status);
-        result = -EINVAL;
-        goto disconnected;
-    }
-wait_for_disconnect:
-    ret = wait_for_completion_timeout(&pAdapter->disconnect_comp_var,
-                                      msecs_to_jiffies(wait_time));
-    if (!ret && (eHAL_STATUS_CMD_NOT_QUEUED != status))
-    {
-        hddLog(LOGE,
-              "%s: Failed to disconnect, timed out", __func__);
-        result = -ETIMEDOUT;
-    }
-disconnected:
-     hddLog(LOG1,
-              FL("Set HDD connState to eConnectionState_NotConnected"));
-    pHddStaCtx->conn_info.connState = eConnectionState_NotConnected;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)
-    /* Sending disconnect event to userspace for kernel version < 3.11
-     * is handled by __cfg80211_disconnect call to __cfg80211_disconnected
-     */
-    hddLog(LOG1, FL("Send disconnected event to userspace"));
-
-    wlan_hdd_cfg80211_indicate_disconnect(pAdapter->dev, true,
-                                          WLAN_REASON_UNSPECIFIED);
-#endif
-
-    EXIT();
-    return result;
-}
-
 
 /*
  * FUNCTION: __wlan_hdd_cfg80211_disconnect
