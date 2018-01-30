@@ -14317,7 +14317,6 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
     int ret = 0;
     bool aborted = false;
     long waitRet = 0;
-    tANI_U8 i;
     hdd_context_t *pHddCtx;
 
     ENTER();
@@ -14437,21 +14436,22 @@ static eHalStatus hdd_cfg80211_scan_done_callback(tHalHandle halHandle,
      * is needed or not on station interface. If last station
      *  scan time and new station scan time is less then
      * last_scan_timestamp ; driver will return cached scan.
+     * Also only last_scan_timestamp is updated here last_scan_channellist
+     * is updated on receiving scan request itself to make sure kernel
+     * allocated scan request(scan_req) object is not dereferenced here,
+     * because interface down, where kernel frees scan_req, may happen any
+     * time while driver is processing scan_done_callback. So it's better
+     * not to access scan_req in this routine.
      */
-    if (req->no_cck == FALSE && status == eCSR_SCAN_SUCCESS) // no_cck will be set during p2p find
-    {
-        pScanInfo->last_scan_timestamp = vos_timer_get_system_time();
-
-        if ( req->n_channels )
-        {
-            for (i = 0; i < req->n_channels ; i++ )
-            {
-                pHddCtx->scan_info.last_scan_channelList[i] = req->channels[i]->hw_value;
-            }
-            /* store no of channel scanned */
-            pHddCtx->scan_info.last_scan_numChannels= req->n_channels;
+    if (pScanInfo->no_cck == FALSE) { // no_cck will be set during p2p find
+        if (status == eCSR_SCAN_SUCCESS)
+            pScanInfo->last_scan_timestamp = vos_timer_get_system_time();
+        else {
+                vos_mem_zero(pHddCtx->scan_info.last_scan_channelList,
+                             sizeof(pHddCtx->scan_info.last_scan_channelList));
+                pHddCtx->scan_info.last_scan_numChannels = 0;
+                pScanInfo->last_scan_timestamp = 0;
         }
-
     }
 
     /*
@@ -15180,6 +15180,12 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
     pScanInfo->sessionId = pAdapter->sessionId;
     pAdapter->request = request;
     pScanInfo->scanId = scanId;
+    pScanInfo->no_cck = request->no_cck;
+    pHddCtx->scan_info.last_scan_numChannels = request->n_channels;
+    for (i = 0; i < pHddCtx->scan_info.last_scan_numChannels; i++) {
+         pHddCtx->scan_info.last_scan_channelList[i] =
+             request->channels[i]->hw_value;
+    }
 
     complete(&pScanInfo->scan_req_completion_event);
 
