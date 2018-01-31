@@ -3965,6 +3965,34 @@ static int create_linux_regulatory_entry(struct wiphy *wiphy,
 
 }
 
+static void
+wlan_hdd_disable_fcc_5600_5640(hdd_context_t *hdd_ctx, struct wiphy *wiphy,
+			       struct regulatory_request *request)
+{
+	struct ieee80211_channel *channels;
+	uint32_t no_channels;
+	uint32_t i;
+
+	if (cur_reg_domain != REGDOMAIN_FCC ||
+	    !hdd_ctx->cfg_ini->gEnableStrictRegulatoryForFCC ||
+	    !wiphy->bands[HDD_NL80211_BAND_5GHZ])
+		return;
+
+	channels = wiphy->bands[HDD_NL80211_BAND_5GHZ]->channels;
+	no_channels = wiphy->bands[HDD_NL80211_BAND_5GHZ]->n_channels;
+
+	for (i = 0; i < no_channels; i++) {
+		if (channels[i].center_freq != 5600 &&
+		    channels[i].center_freq != 5620 &&
+		    channels[i].center_freq != 5640)
+			continue;
+
+		channels[i].flags |= IEEE80211_CHAN_DISABLED;
+		if (request->initiator == NL80211_REGDOM_SET_BY_DRIVER)
+			channels[i].orig_flags |= IEEE80211_CHAN_DISABLED;
+	}
+}
+
 /*
  * Function: wlan_hdd_linux_reg_notifier
  * This function is called from cfg80211 core to provide regulatory settings
@@ -4157,6 +4185,8 @@ int __wlan_hdd_linux_reg_notifier(struct wiphy *wiphy,
              }
           }
        }
+
+       wlan_hdd_disable_fcc_5600_5640(pHddCtx, wiphy, request);
     }
 do_comp:
     if ((request->initiator == NL80211_REGDOM_SET_BY_DRIVER) ||
