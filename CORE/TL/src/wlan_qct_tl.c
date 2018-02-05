@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -6176,13 +6176,24 @@ static bool WLANTL_StaMonRX(WLANTL_CbType* pTLCb, vos_pkt_t *pFrame,
    tpSirMacMgmtHdr pHdr = NULL;
    v_MACADDR_t *peerMacAddr = NULL;
    uint8_t i = 0;
-
-   if (vos_check_monitor_state() == false || WLANTL_STA_ID_MONIFACE(sta_id) == 0)
-      return false;
+   uint8_t addr1_index = WDA_GET_RX_ADDR1_IDX(pRxMetadata);
+   bool tp_data = false;
 
    pHdr = (tpSirMacMgmtHdr)pRxMetadata->mpduHeaderPtr;
+   peerMacAddr = (v_MACADDR_t *)pHdr->da;
 
-   if (WLANTL_IS_MGMT_FRAME(WDA_GET_RX_TYPE_SUBTYPE(pRxMetadata))) {
+   if (vos_check_monitor_state() == false)
+       return false;
+
+   if ((addr1_index == 254) &&
+       WLANTL_IS_DATA_FRAME(WDA_GET_RX_TYPE_SUBTYPE(pRxMetadata)) &&
+       !pRxMetadata->bcast) {
+       tp_data = true;
+   } else if (WLANTL_STA_ID_MONIFACE(sta_id) == 0) {
+       return false;
+   }
+
+   if (WLANTL_IS_MGMT_FRAME(WDA_GET_RX_TYPE_SUBTYPE(pRxMetadata)) || tp_data) {
 
       if (pRxMetadata->bcast)
          return false;
@@ -6196,15 +6207,21 @@ static bool WLANTL_StaMonRX(WLANTL_CbType* pTLCb, vos_pkt_t *pFrame,
             break;
       }
 
-      if (i == WLAN_MAX_STA_COUNT)
+      if (i == WLAN_MAX_STA_COUNT) {
+          if (tp_data)
+              return true;
+
          return false;
+      }
 
       pClientSTA = pTLCb->atlSTAClients[i];
-      peerMacAddr = (v_MACADDR_t *)pHdr->da;
 
       if (vos_is_macaddr_equal(peerMacAddr,
-          &pClientSTA->wSTADesc.vSelfMACAddress) ||
-          vos_is_macaddr_equal(peerMacAddr, &pTLCb->spoofMacAddr.spoofMac))
+          &pClientSTA->wSTADesc.vSelfMACAddress))
+         return false;
+
+      if (vos_is_macaddr_equal(peerMacAddr, &pTLCb->spoofMacAddr.spoofMac) &&
+          !tp_data)
           return false;
    }
 
