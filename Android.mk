@@ -153,9 +153,13 @@ LOCAL_MODULE_KBUILD_NAME  := wlan.ko
 LOCAL_MODULE_TAGS         := debug
 LOCAL_MODULE_DEBUG_ENABLE := true
 ifeq ($(PRODUCT_VENDOR_MOVE_ENABLED), true)
-LOCAL_MODULE_PATH         := $(TARGET_OUT_VENDOR)/lib/modules/$(WLAN_CHIPSET)
+    ifeq ($(WIFI_DRIVER_INSTALL_TO_KERNEL_OUT),true)
+        LOCAL_MODULE_PATH := $(KERNEL_MODULES_OUT)
+    else
+        LOCAL_MODULE_PATH := $(TARGET_OUT_VENDOR)/lib/modules/$(WLAN_CHIPSET)
+    endif
 else
-LOCAL_MODULE_PATH         := $(TARGET_OUT)/lib/modules/$(WLAN_CHIPSET)
+    LOCAL_MODULE_PATH         := $(TARGET_OUT)/lib/modules/$(WLAN_CHIPSET)
 endif # PRODUCT_VENDOR_MOVE_ENABLED
 include $(DLKM_DIR)/AndroidKernelModule.mk
 ###########################################################
