@@ -1112,6 +1112,7 @@ tSirRetStatus uMacPostCtrlMsg(void* pSirGlobal, tSirMbMsg* pMb);
 #define WDA_BEACON_FILTER_IND          SIR_HAL_BEACON_FILTER_IND
 #define WDA_VOWIFI_MODE                SIR_HAL_VOWIFI_MODE
 #define WDA_QPOWER                     SIR_HAL_QPOWER
+#define WDA_LOW_POWER_MODE             SIR_HAL_LOW_POWER_MODE
 
 /// PE <-> HAL WOWL messages
 #define WDA_WOWL_ADD_BCAST_PTRN        SIR_HAL_WOWL_ADD_BCAST_PTRN
