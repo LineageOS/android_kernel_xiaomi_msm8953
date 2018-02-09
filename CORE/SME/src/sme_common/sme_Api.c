@@ -483,7 +483,7 @@ tSmeCmd *smeGetCommandBuffer( tpAniSirGlobal pMac )
         else
         {
            /* Trigger SSR */
-           vos_wlanRestart();
+           vos_wlanRestart(VOS_GET_MSG_BUFF_FAILURE);
         }
     }
 
@@ -12801,7 +12801,7 @@ void activeListCmdTimeoutHandle(void *userData)
        if (!(vos_isLoadUnloadInProgress() ||
            vos_is_logp_in_progress(VOS_MODULE_ID_SME, NULL)))
        {
-          vos_wlanRestart();
+          vos_wlanRestart(VOS_ACTIVE_LIST_TIMEOUT);
        }
     }
 }

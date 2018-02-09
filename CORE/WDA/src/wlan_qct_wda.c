@@ -9869,7 +9869,7 @@ void WDA_ExitImpsReqCallback(WDI_Status status, void* pUserData)
        {
            VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
                   FL("reload wlan driver"));
-           wpalWlanReload();
+           wpalWlanReload(VOS_WDI_FAILURE);
        }
    }
    return;
@@ -15038,7 +15038,7 @@ VOS_STATUS WDA_TxPacket(tWDA_CbContext *pWDA,
       {
          VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
                    "%s: Request system recovery", __func__);
-         vos_wlanRestart();
+         vos_wlanRestart(VOS_TRANSMISSIONS_TIMEOUT);
       }
       status = VOS_STATUS_E_FAILURE;
    }
