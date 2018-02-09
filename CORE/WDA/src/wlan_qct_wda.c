@@ -8611,9 +8611,18 @@ VOS_STATUS WDA_ProcessSendBeacon(tWDA_CbContext *pWDA,
    WDI_Status status = WDI_STATUS_SUCCESS ;
    WDI_SendBeaconParamsType wdiSendBeaconReqParam; 
    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
-                                          "------> %s " ,__func__);
+                        "------> %s beaconLength %d" ,
+                        __func__, pSendbeaconParams->beaconLength);
    vos_mem_copy(wdiSendBeaconReqParam.wdiSendBeaconParamsInfo.macBSSID, 
                               pSendbeaconParams->bssId, sizeof(tSirMacAddr));
+
+   if (pSendbeaconParams->beaconLength > WDI_BEACON_TEMPLATE_SIZE) {
+         VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                      "%s: length %d greater than WDI_BEACON_TEMPLATE_SIZE" ,
+                      __func__, pSendbeaconParams->beaconLength);
+        VOS_ASSERT(0);
+        pSendbeaconParams->beaconLength = WDI_BEACON_TEMPLATE_SIZE;
+   }
    wdiSendBeaconReqParam.wdiSendBeaconParamsInfo.beaconLength = 
                               pSendbeaconParams->beaconLength;
    wdiSendBeaconReqParam.wdiSendBeaconParamsInfo.timIeOffset = 
@@ -8668,8 +8677,9 @@ VOS_STATUS WDA_ProcessUpdateProbeRspTemplate(tWDA_CbContext *pWDA,
    WDI_Status status = WDI_STATUS_SUCCESS;
    WDI_UpdateProbeRspTemplateParamsType *wdiSendProbeRspParam =
          vos_mem_malloc(sizeof(WDI_UpdateProbeRspTemplateParamsType));
-   VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
-                                          "------> %s " ,__func__);
+   VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                "------> %s probeRespTemplateLen %d" ,__func__,
+                pSendProbeRspParams->probeRespTemplateLen);
 
    if (!wdiSendProbeRspParam)
    {
