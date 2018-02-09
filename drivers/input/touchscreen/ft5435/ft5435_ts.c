@@ -1453,25 +1453,27 @@ static int ft5435_ts_suspend(struct device *dev)
 		return 0;
 	}
 
-	disable_irq(data->client->irq);
-
 	/* release all touches */
 	for (i = 0; i < data->pdata->num_max_touches; i++) {
 		input_mt_slot(data->input_dev, i);
 		input_mt_report_slot_state(data->input_dev, MT_TOOL_FINGER, 0);
 	}
 	input_mt_report_pointer_emulation(data->input_dev, false);
+	__clear_bit(BTN_TOUCH, data->input_dev->keybit);
 	input_sync(data->input_dev);
 
 #if defined(FOCALTECH_TP_GESTURE)
 	{
 		if (gesture_func_on) {
-			enable_irq(data->client->irq);
+			enable_irq_wake(data->client->irq);
 			ft_tp_suspend(data);
 			return 0;
 		}
 	}
 #endif
+
+	disable_irq(data->client->irq);
+
 	if (gpio_is_valid(data->pdata->reset_gpio)) {
 		gpio_set_value_cansleep(data->pdata->reset_gpio, 1);
 		msleep(300);
@@ -1498,8 +1500,6 @@ static int ft5435_ts_resume(struct device *dev)
 {
 	struct ft5435_ts_data *data = g_ft5435_ts_data;
 
-
-
 	if (!data->suspended) {
 		dev_dbg(dev, "Already in awake state\n");
 		return 0;
@@ -1507,7 +1507,11 @@ static int ft5435_ts_resume(struct device *dev)
 
 	/* release all touches */
 	input_mt_report_slot_state(data->input_dev, MT_TOOL_FINGER, 0);
+	__set_bit(BTN_TOUCH, data->input_dev->keybit);
 	input_sync(data->input_dev);
+
+	if (gesture_func_on)
+                disable_irq_wake(data->client->irq);
 
 /*hw rst*/
 	if (gpio_is_valid(data->pdata->reset_gpio)) {
