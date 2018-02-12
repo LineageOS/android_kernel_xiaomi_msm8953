@@ -2777,6 +2777,11 @@ static int msm_anlg_cdc_hphl_dac_event(struct snd_soc_dapm_widget *w,
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
+		/*
+		 * Add 2ms sleep to fix PA wrong state issue
+		 * during back2back hph disable-enable
+		 */
+		usleep_range(2000, 2100);
 		if (get_codec_version(sdm660_cdc) > CAJON)
 			snd_soc_update_bits(codec,
 				MSM89XX_PMIC_ANALOG_RX_HPH_CNP_EN,
@@ -2890,6 +2895,11 @@ static int msm_anlg_cdc_hphr_dac_event(struct snd_soc_dapm_widget *w,
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
+		/*
+		 * Add 2ms sleep to fix PA wrong state issue
+		 * during back2back hph disable-enable
+		 */
+		usleep_range(2000, 2100);
 		if (sdm660_cdc->hph_mode == HD2_MODE)
 			msm_anlg_cdc_dig_notifier_call(codec,
 					DIG_CDC_EVENT_PRE_RX2_INT_ON);
