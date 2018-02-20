@@ -462,6 +462,32 @@ static int hdd_hostapd_driver_command(hdd_adapter_t *pAdapter,
        ret = hdd_enable_disable_ca_event(pHddCtx, command, 16);
    }
 
+   /*
+    * command should be a string having format
+    * SET_DISABLE_CHANNEL_LIST <num of channels>
+    * <channels separated by spaces>
+    */
+   else if (strncmp(command, "SET_DISABLE_CHANNEL_LIST", 24) == 0) {
+        tANI_U8 *ptr = command;
+
+        ret = hdd_drv_cmd_validate(command, 24);
+        if (ret)
+            goto exit;
+
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                  " Received Command to disable Channels for in %s",
+                  __func__);
+       ret = hdd_parse_disable_chan_cmd(pAdapter, ptr);
+    }
+
+    else {
+        MTRACE(vos_trace(VOS_MODULE_ID_HDD,
+                         TRACE_CODE_HDD_UNSUPPORTED_IOCTL,
+                         pAdapter->sessionId, 0));
+        hddLog(VOS_TRACE_LEVEL_WARN, FL("Unsupported GUI command %s"),
+                command);
+    }
+
 exit:
    if (command)
    {

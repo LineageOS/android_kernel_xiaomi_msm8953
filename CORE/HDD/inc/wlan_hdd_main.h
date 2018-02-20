@@ -1558,6 +1558,17 @@ struct hdd_offloaded_packets_ctx
 
 /** Adapter stucture definition */
 
+struct hdd_cache_channel_info {
+	int channel_num;
+	int reg_status;
+	int wiphy_status;
+};
+
+struct hdd_cache_channels {
+	int num_channels;
+	struct hdd_cache_channel_info *channel_info;
+};
+
 struct hdd_context_s
 {
    /** Global VOS context  */
@@ -1844,6 +1855,9 @@ struct hdd_context_s
     v_BOOL_t roaming_ini_original;
 
     uint32_t track_arp_ip;
+
+    struct hdd_cache_channels *orginal_channels;
+    struct mutex cache_channel_lock;
 };
 
 typedef enum  {
@@ -2327,5 +2341,14 @@ hdd_wlan_nla_put_u64(struct sk_buff *skb, int attrtype, u64 value)
 	return nla_put_u64_64bit(skb, attrtype, value, NL80211_ATTR_PAD);
 }
 #endif
+
+/*
+ * hdd_parse_disable_chn_cmd() - Parse the channel list received
+ * in command.
+ * @adapter: pointer to hdd adapter
+ *
+ * @return: 0 on success, Error code on failure
+ */
+int hdd_parse_disable_chan_cmd(hdd_adapter_t *adapter, tANI_U8 *ptr);
 
 #endif    // end #if !defined( WLAN_HDD_MAIN_H )
