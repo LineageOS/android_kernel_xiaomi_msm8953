@@ -6676,6 +6676,9 @@ VOS_STATUS hdd_set_sme_config( hdd_context_t *pHddCtx )
        true) != VOS_STATUS_SUCCESS)
        vos_mem_set(smeConfig->csrConfig.agg_btc_sco_oui, VENDOR_AP_OUI_SIZE, 0);
 
+   /* Disable aggrigation if value is 0 or 1 (CFG_NUM_BUFF_BTC_SCO_INVALID) */
+   if (pHddCtx->cfg_ini->num_buff_aggr_btc_sco == CFG_NUM_BUFF_BTC_SCO_INVALID)
+       pHddCtx->cfg_ini->num_buff_aggr_btc_sco = CFG_NUM_BUFF_BTC_SCO_MIN;
    smeConfig->csrConfig.num_ba_buff_btc_sco =
                         pHddCtx->cfg_ini->num_buff_aggr_btc_sco;
    smeConfig->csrConfig.num_ba_buff =

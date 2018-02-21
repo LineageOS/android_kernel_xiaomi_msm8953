@@ -3160,14 +3160,17 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 
 /*
  * gNumBuffBTCSco is used to set block ack buffer size for
- * aggregation during SCO. If this is set to 0, aggregation
+ * aggregation during SCO. If this is set to 0 or 1, aggregation
  * during SCO feature is disabled. To enable aggregation
- * during SCO, gNumBuffBTCSco should be set to non zero value.
+ * during SCO, gNumBuffBTCSco should be set to be greater than 1.
  */
+#define CFG_NUM_BUFF_BTC_SCO_INVALID     1
+
 #define CFG_NUM_BUFF_BTC_SCO_NAME       "gNumBuffBTCSco"
 #define CFG_NUM_BUFF_BTC_SCO_MIN        (0)
 #define CFG_NUM_BUFF_BTC_SCO_MAX        (10)
 #define CFG_NUM_BUFF_BTC_SCO_DEFAULT    (0)
+
 
 /* Value for ENABLE_POWERSAVE_OFFLOAD*/
 #define CFG_ENABLE_POWERSAVE_OFFLOAD_NAME       "gEnablePowerSaveOffload"

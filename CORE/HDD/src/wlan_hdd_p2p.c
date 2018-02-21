@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -2253,23 +2253,30 @@ wlan_hdd_add_monitor_check(hdd_context_t *hdd_ctx, hdd_adapter_t **adapter,
 	return 0;
 }
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0))
-struct wireless_dev* __wlan_hdd_add_virtual_intf(
-                  struct wiphy *wiphy, const char *name,
-                  enum nl80211_iftype type,
-                  u32 *flags, struct vif_params *params )
-#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0))
-struct wireless_dev* __wlan_hdd_add_virtual_intf(
-                  struct wiphy *wiphy, char *name, enum nl80211_iftype type,
-                  u32 *flags, struct vif_params *params )
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0))
+static struct wireless_dev *
+__wlan_hdd_add_virtual_intf(struct wiphy *wiphy,
+			    const char *name,
+			    unsigned char name_assign_type,
+			    enum nl80211_iftype type,
+			    u32 *flags,
+			    struct vif_params *params)
 #elif (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,38))
-struct net_device* __wlan_hdd_add_virtual_intf(
-                  struct wiphy *wiphy, char *name, enum nl80211_iftype type,
-                  u32 *flags, struct vif_params *params )
+static struct net_device *
+__wlan_hdd_add_virtual_intf(struct wiphy *wiphy,
+			    const char *name,
+			    unsigned char name_assign_type,
+			    enum nl80211_iftype type,
+			    u32 *flags,
+			    struct vif_params *params)
 #else
-int __wlan_hdd_add_virtual_intf( struct wiphy *wiphy, char *name,
-                               enum nl80211_iftype type,
-                               u32 *flags, struct vif_params *params )
+static int
+__wlan_hdd_add_virtual_intf(struct wiphy *wiphy,
+			    const char *name,
+			    unsigned char name_assign_type,
+			    enum nl80211_iftype type,
+			    u32 *flags,
+			    struct vif_params *params)
 #endif
 {
     hdd_context_t *pHddCtx = (hdd_context_t*) wiphy_priv(wiphy);
@@ -2393,47 +2400,129 @@ return_adapter:
 #endif
 }
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0))
-struct wireless_dev* wlan_hdd_add_virtual_intf(
-                  struct wiphy *wiphy, const char *name,
-                  enum nl80211_iftype type,
-                  u32 *flags, struct vif_params *params )
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
+struct wireless_dev *wlan_hdd_add_virtual_intf(struct wiphy *wiphy,
+					       const char *name,
+					       unsigned char name_assign_type,
+					       enum nl80211_iftype type,
+					       struct vif_params *params)
+{
+	struct wireless_dev *wdev;
+
+	vos_ssr_protect(__func__);
+	wdev = __wlan_hdd_add_virtual_intf(wiphy, name, name_assign_type,
+					   type, &params->flags, params);
+	vos_ssr_unprotect(__func__);
+
+	return wdev;
+}
+#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0)) || \
+	defined(WITH_BACKPORTS)
+/**
+ * wlan_hdd_add_virtual_intf() - Add virtual interface wrapper
+ * @wiphy: wiphy pointer
+ * @name: User-visible name of the interface
+ * @name_assign_type: the name of assign type of the netdev
+ * @nl80211_iftype: (virtual) interface types
+ * @flags: monitor mode configuration flags (not used)
+ * @vif_params: virtual interface parameters (not used)
+ *
+ * Return: the pointer of wireless dev, otherwise ERR_PTR.
+ */
+struct wireless_dev *wlan_hdd_add_virtual_intf(struct wiphy *wiphy,
+                                               const char *name,
+                                               unsigned char name_assign_type,
+                                               enum nl80211_iftype type,
+                                               u32 *flags,
+                                               struct vif_params *params)
+{
+        struct wireless_dev *wdev;
+
+        vos_ssr_protect(__func__);
+        wdev = __wlan_hdd_add_virtual_intf(wiphy, name, name_assign_type,
+                                           type, flags, params);
+        vos_ssr_unprotect(__func__);
+        return wdev;
+
+}
+#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0))
+/**
+ * wlan_hdd_add_virtual_intf() - Add virtual interface wrapper
+ * @wiphy: wiphy pointer
+ * @name: User-visible name of the interface
+ * @nl80211_iftype: (virtual) interface types
+ * @flags: monitor mode configuration flags (not used)
+ * @vif_params: virtual interface parameters (not used)
+ *
+ * Return: the pointer of wireless dev, otherwise ERR_PTR.
+ */
+struct wireless_dev *wlan_hdd_add_virtual_intf(struct wiphy *wiphy,
+                                               const char *name,
+                                               enum nl80211_iftype type,
+                                               u32 *flags,
+                                               struct vif_params *params)
+{
+        struct wireless_dev *wdev;
+        unsigned char name_assign_type = 0;
+
+        vos_ssr_protect(__func__);
+        wdev = __wlan_hdd_add_virtual_intf(wiphy, name, name_assign_type,
+                                           type, flags, params);
+        vos_ssr_unprotect(__func__);
+        return wdev;
+
+}
+
 #elif (LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0))
 struct wireless_dev* wlan_hdd_add_virtual_intf(
                   struct wiphy *wiphy, char *name, enum nl80211_iftype type,
                   u32 *flags, struct vif_params *params )
-#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,38))
-struct net_device* wlan_hdd_add_virtual_intf(
-                  struct wiphy *wiphy, char *name, enum nl80211_iftype type,
-                  u32 *flags, struct vif_params *params )
-#else
-int wlan_hdd_add_virtual_intf( struct wiphy *wiphy, char *name,
-                               enum nl80211_iftype type,
-                               u32 *flags, struct vif_params *params )
-#endif
 {
-#if ((LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0)))
-    struct wireless_dev* wdev;
-#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,38))
-    struct net_device* ndev;
-#else
-    int ret;
-#endif
-    vos_ssr_protect(__func__);
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0))
-    wdev = __wlan_hdd_add_virtual_intf(wiphy, name, type, flags, params);
-    vos_ssr_unprotect(__func__);
-    return wdev;
-#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,38))
-    ndev = __wlan_hdd_add_virtual_intf(wiphy, name, type, flags, params);
-    vos_ssr_unprotect(__func__);
-    return ndev;
-#else
-    ret  = __wlan_hdd_add_virtual_intf(wiphy, name, type, flags, params);
-    vos_ssr_unprotect(__func__);
-    return ret;
-#endif
+        struct wireless_dev *wdev;
+        unsigned char name_assign_type = 0;
+
+        vos_ssr_protect(__func__);
+        wdev = __wlan_hdd_add_virtual_intf(wiphy, (const char *)name,
+                                           name_assign_type,
+                                           type, flags, params);
+        vos_ssr_unprotect(__func__);
+        return wdev;
+
 }
+
+#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,38))
+struct net_device* wlan_hdd_add_virtual_intf(struct wiphy *wiphy,
+					     char *name,
+					     enum nl80211_iftype type,
+					     u32 *flags,
+					     struct vif_params *params)
+{
+	struct net_device *ndev;
+	unsigned char name_assign_type = 0;
+
+	vos_ssr_protect(__func__);
+	ndev = __wlan_hdd_add_virtual_intf(wiphy, (const char *)name, name_assign_type,
+                                           type, flags, params);
+        vos_ssr_unprotect(__func__);
+        return wdev;
+
+}
+#else
+int wlan_hdd_add_virtual_intf(struct wiphy *wiphy, char *name,
+			      enum nl80211_iftype type,
+			      u32 *flags, struct vif_params *params)
+{
+	int ret;
+	unsigned char name_assign_type = 0;
+
+	vos_ssr_protect(__func__);
+	ret = __wlan_hdd_add_virtual_intf(wiphy, (const char *)name, name_assign_type,
+                                           type, flags, params);
+        vos_ssr_unprotect(__func__);
+
+        return ret;
+}
+#endif
 
 /**
  * hdd_delete_adapter() - stop and close adapter
@@ -2723,12 +2812,12 @@ void __hdd_indicate_mgmt_frame(hdd_adapter_t *pAdapter,
     if( rxChan <= MAX_NO_OF_2_4_CHANNELS )
     {
         freq = ieee80211_channel_to_frequency( rxChan,
-                IEEE80211_BAND_2GHZ);
+                HDD_NL80211_BAND_2GHZ);
     }
     else
     {
         freq = ieee80211_channel_to_frequency( rxChan,
-                IEEE80211_BAND_5GHZ);
+                HDD_NL80211_BAND_5GHZ);
     }
 
     cfgState = WLAN_HDD_GET_CFG_STATE_PTR( pAdapter );

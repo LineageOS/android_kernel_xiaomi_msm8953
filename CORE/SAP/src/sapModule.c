@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1192,6 +1192,8 @@ WLANSAP_ModifyACL
                             MAC_ADDR_ARRAY(pPeerStaMac));
                 } else
                 {
+                    struct tagCsrDelStaParams delStaParams;
+
                     if (staInWhiteList)
                     {
                         //remove it from white list before adding to the white list
@@ -1199,6 +1201,15 @@ WLANSAP_ModifyACL
                                 "Present in white list so first remove from it");
                         sapRemoveMacFromACL(pSapCtx->acceptMacList, &pSapCtx->nAcceptMac, staWLIndex);
                     }
+                    /*
+                     * If we are adding a client to the black list;
+                     * if its connected, send deauth
+                     */
+                    WLANSAP_PopulateDelStaParams(pPeerStaMac,
+                            eSIR_MAC_DEAUTH_LEAVING_BSS_REASON,
+                            SIR_MAC_MGMT_DEAUTH >> 4,
+                            &delStaParams);
+                    WLANSAP_DeauthSta(pSapCtx->pvosGCtx, &delStaParams);
                     VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO,
                             "... Now add to black list");
                     sapAddMacToACL(pSapCtx->denyMacList, &pSapCtx->nDenyMac, pPeerStaMac);

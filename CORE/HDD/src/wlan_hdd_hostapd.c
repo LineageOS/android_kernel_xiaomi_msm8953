@@ -1383,7 +1383,7 @@ VOS_STATUS hdd_hostapd_SAPEventCB( tpSap_Event pSapEvent, v_PVOID_t usrDataForCa
                    hddLog(LOGE, FL("Failed to start AP inactivity timer"));
             }
 #ifdef WLAN_OPEN_SOURCE
-            if (wake_lock_active(&pHddCtx->sap_wake_lock))
+            if (vos_wake_lock_active(&pHddCtx->sap_wake_lock))
             {
                vos_wake_lock_release(&pHddCtx->sap_wake_lock,
                                       WIFI_POWER_EVENT_WAKELOCK_SAP);
@@ -1410,7 +1410,9 @@ VOS_STATUS hdd_hostapd_SAPEventCB( tpSap_Event pSapEvent, v_PVOID_t usrDataForCa
                     staInfo->assoc_req_ies =
                         (const u8 *)&pSapEvent->sapevt.sapStationAssocReassocCompleteEvent.ies[0];
                     staInfo->assoc_req_ies_len = iesLen;
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,0,31))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,0,31)) && \
+	((LINUX_VERSION_CODE < KERNEL_VERSION(4, 0, 0)) && \
+	!defined(WITH_BACKPORTS))
                     staInfo->filled |= STATION_INFO_ASSOC_REQ_IES;
 #endif
                     cfg80211_new_sta(dev,

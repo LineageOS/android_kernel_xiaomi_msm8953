@@ -54,9 +54,15 @@
 #include <wlan_hdd_wmm.h>
 #include <wlan_hdd_cfg.h>
 #include <linux/spinlock.h>
-#ifdef WLAN_OPEN_SOURCE
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)) && \
+	defined(WLAN_OPEN_SOURCE)
+#include <linux/device.h>
+#include <linux/pm_wakeup.h>
+#else
 #include <linux/wakelock.h>
 #endif
+
 #include <wlan_hdd_ftm.h>
 #ifdef FEATURE_WLAN_TDLS
 #include "wlan_hdd_tdls.h"
@@ -71,6 +77,17 @@
 /** Number of attempts to detect/remove card */
 #define LIBRA_CARD_INSERT_DETECT_MAX_COUNT      5
 #define LIBRA_CARD_REMOVE_DETECT_MAX_COUNT      5
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)) || \
+	defined(CFG80211_REMOVE_IEEE80211_BACKPORT)
+#define HDD_NL80211_BAND_2GHZ   NL80211_BAND_2GHZ
+#define HDD_NL80211_BAND_5GHZ   NL80211_BAND_5GHZ
+#define HDD_NUM_NL80211_BANDS   NUM_NL80211_BANDS
+#else
+#define HDD_NL80211_BAND_2GHZ   IEEE80211_BAND_2GHZ
+#define HDD_NL80211_BAND_5GHZ   IEEE80211_BAND_5GHZ
+#define HDD_NUM_NL80211_BANDS   ((enum nl80211_band)IEEE80211_NUM_BANDS)
+#endif
 
 /** Number of Tx Queues. This should be same as the one
  *  used in TL WLANTL_NUM_TX_QUEUES */
@@ -1024,6 +1041,7 @@ typedef struct hdd_scaninfo_s
    v_TIME_t     last_scan_timestamp;
    tANI_U8 last_scan_channelList[WNI_CFG_VALID_CHANNEL_LIST_LEN];
    tANI_U8 last_scan_numChannels;
+   bool no_cck;
 
 }hdd_scaninfo_t;
 
@@ -2293,5 +2311,19 @@ int wlan_hdd_check_and_stop_mon(hdd_adapter_t *sta_adapter, bool wait);
  * Return: None
  */
 bool hdd_is_sta_sap_scc_allowed_on_dfs_chan(hdd_context_t *hdd_ctx);
+
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 7, 0))
+static inline int
+hdd_wlan_nla_put_u64(struct sk_buff *skb, int attrtype, u64 value)
+{
+	return nla_put_u64(skb, attrtype, value);
+}
+#else
+static inline int
+hdd_wlan_nla_put_u64(struct sk_buff *skb, int attrtype, u64 value)
+{
+	return nla_put_u64_64bit(skb, attrtype, value, NL80211_ATTR_PAD);
+}
+#endif
 
 #endif    // end #if !defined( WLAN_HDD_MAIN_H )
