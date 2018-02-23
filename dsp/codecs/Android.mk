@@ -7,8 +7,12 @@ ifeq ($(call is-board-platform,sdm845),true)
 AUDIO_SELECT  := CONFIG_SND_SOC_SDM845=m
 endif
 
-ifeq ($(call is-board-platform-in-list,msm8953 sdm670 qcs605),true)
+ifeq ($(call is-board-platform-in-list,sdm670 qcs605),true)
 AUDIO_SELECT  := CONFIG_SND_SOC_SDM670=m
+endif
+
+ifeq ($(call is-board-platform-in-list,msm8953),true)
+AUDIO_SELECT  := CONFIG_SND_SOC_SDM450=m
 endif
 
 AUDIO_CHIPSET := audio

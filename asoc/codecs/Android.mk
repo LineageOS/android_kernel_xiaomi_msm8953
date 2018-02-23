@@ -7,8 +7,12 @@ ifeq ($(call is-board-platform,sdm845),true)
 AUDIO_SELECT  := CONFIG_SND_SOC_SDM845=m
 endif
 
-ifeq ($(call is-board-platform-in-list,msm8953 sdm670 qcs605),true)
+ifeq ($(call is-board-platform-in-list,sdm670 qcs605),true)
 AUDIO_SELECT  := CONFIG_SND_SOC_SDM670=m
+endif
+
+ifeq ($(call is-board-platform-in-list,msm8953),true)
+AUDIO_SELECT  := CONFIG_SND_SOC_SDM450=m
 endif
 
 AUDIO_CHIPSET := audio
@@ -56,7 +60,7 @@ LOCAL_MODULE_DEBUG_ENABLE := true
 LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
 include $(DLKM_DIR)/AndroidKernelModule.mk
 ###########################################################
-ifeq ($(call is-board-platform-in-list,sdm670 qcs605),true)
+ifeq ($(call is-board-platform-in-list,msm8953 sdm670 qcs605),true)
 include $(CLEAR_VARS)
 LOCAL_MODULE              := $(AUDIO_CHIPSET)_wcd_cpe.ko
 LOCAL_MODULE_KBUILD_NAME  := wcd_cpe_dlkm.ko
@@ -66,6 +70,7 @@ LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
 include $(DLKM_DIR)/AndroidKernelModule.mk
 endif
 ###########################################################
+ifeq ($(call is-board-platform-in-list, sdm670 qcs605),true)
 include $(CLEAR_VARS)
 LOCAL_MODULE              := $(AUDIO_CHIPSET)_wcd_spi.ko
 LOCAL_MODULE_KBUILD_NAME  := wcd_spi_dlkm.ko
@@ -73,6 +78,7 @@ LOCAL_MODULE_TAGS         := optional
 LOCAL_MODULE_DEBUG_ENABLE := true
 LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
 include $(DLKM_DIR)/AndroidKernelModule.mk
+endif
 ###########################################################
 ifeq ($(call is-board-platform-in-list,msm8953 sdm670 qcs605),true)
 include $(CLEAR_VARS)
@@ -91,6 +97,16 @@ LOCAL_MODULE_TAGS         := optional
 LOCAL_MODULE_DEBUG_ENABLE := true
 LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
 include $(DLKM_DIR)/AndroidKernelModule.mk
+###########################################################
+ifeq ($(call is-board-platform-in-list,msm8953),true)
+include $(CLEAR_VARS)
+LOCAL_MODULE              := $(AUDIO_CHIPSET)_wsa881x_analog.ko
+LOCAL_MODULE_KBUILD_NAME  := wsa881x_analog_dlkm.ko
+LOCAL_MODULE_TAGS         := optional
+LOCAL_MODULE_DEBUG_ENABLE := true
+LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
+include $(DLKM_DIR)/AndroidKernelModule.mk
+endif
 ###########################################################
 include $(CLEAR_VARS)
 LOCAL_MODULE              := $(AUDIO_CHIPSET)_stub.ko

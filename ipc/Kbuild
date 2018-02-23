@@ -16,7 +16,9 @@ endif
 ifeq ($(CONFIG_ARCH_SDM670), y)
 	TARGET_KERNEL_VERSION := 4.9
 endif
-
+ifeq ($(CONFIG_ARCH_SDM450), y)
+	TARGET_KERNEL_VERSION := 4.9
+endif
 KDIR := $(TOP)/kernel/msm-$(TARGET_KERNEL_VERSION)
 
 ifeq ($(KERNEL_BUILD), 1)
@@ -35,9 +37,9 @@ ifeq ($(KERNEL_BUILD), 0)
 		INCS    +=  -include $(AUDIO_ROOT)/config/sdm670autoconf.h
 	endif
 	ifeq ($(CONFIG_ARCH_SDM450), y)
-		include $(AUDIO_ROOT)/config/sdm670auto.conf
+		include $(AUDIO_ROOT)/config/sdm450auto.conf
 		export
-		INCS    +=  -include $(AUDIO_ROOT)/config/sdm670autoconf.h
+		INCS    +=  -include $(AUDIO_ROOT)/config/sdm450autoconf.h
 	endif
 endif
 
@@ -66,6 +68,11 @@ COMMON_DIR :=	include
 COMMON_INC :=	-I$(AUDIO_ROOT)/$(COMMON_DIR)
 
 ############ IPC ############
+ifdef CONFIG_MSM_QDSP6_APRV2
+APRV_GLINK += apr.o
+APRV_GLINK += apr_v2.o
+APRV_GLINK += apr_tal.o
+endif
 
 ifdef CONFIG_MSM_QDSP6_APRV2_GLINK
 APRV_GLINK += apr.o
@@ -162,6 +169,7 @@ CDEFINES += -DMULTI_IF_NAME=\"$(CHIP_NAME)\"
 endif
 
 # Module information used by KBuild framework
+obj-$(CONFIG_MSM_QDSP6_APRV2) += apr_dlkm.o
 obj-$(CONFIG_MSM_QDSP6_APRV2_GLINK) += apr_dlkm.o
 obj-$(CONFIG_MSM_QDSP6_APRV3_GLINK) += apr_dlkm.o
 apr_dlkm-y := $(APRV_GLINK)

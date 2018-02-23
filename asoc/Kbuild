@@ -26,9 +26,9 @@ ifeq ($(KERNEL_BUILD), 0)
 		INCS    +=  -include $(AUDIO_ROOT)/config/sdm670autoconf.h
 	endif
 	ifeq ($(CONFIG_ARCH_SDM450), y)
-		include $(AUDIO_ROOT)/config/sdm670auto.conf
+		include $(AUDIO_ROOT)/config/sdm450auto.conf
 		export
-		INCS    +=  -include $(AUDIO_ROOT)/config/sdm670autoconf.h
+		INCS    +=  -include $(AUDIO_ROOT)/config/sdm450autoconf.h
 	endif
 	ifeq ($(CONFIG_ARCH_SDXPOORWILLS), y)
 		include $(AUDIO_ROOT)/config/sdxpoorwillsauto.conf
@@ -88,6 +88,11 @@ endif
 # for SDXPOORWILLS sound card driver
 ifdef CONFIG_SND_SOC_MACHINE_SDXPOORWILLS
 	MACHINE_OBJS += sdxpoorwills.o
+endif
+
+# for SDM450 sound card driver
+ifdef CONFIG_SND_SOC_SDM450
+	MACHINE_OBJS += msm8952.o
 endif
 
 ifdef CONFIG_SND_SOC_CPE
@@ -174,6 +179,9 @@ endif
 # Module information used by KBuild framework
 obj-$(CONFIG_SND_SOC_QDSP6V2) += platform_dlkm.o
 platform_dlkm-y := $(PLATFORM_OBJS)
+
+obj-$(CONFIG_SND_SOC_SDM450) += machine_dlkm.o
+machine_dlkm-y := $(MACHINE_OBJS)
 
 obj-$(CONFIG_SND_SOC_MACHINE_SDM845) += machine_dlkm.o
 machine_dlkm-y := $(MACHINE_OBJS)
