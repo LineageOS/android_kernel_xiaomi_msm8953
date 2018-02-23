@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2017, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -91,7 +91,8 @@ enum {
 	BAND_MAX,
 };
 
-#if IS_ENABLED(CONFIG_SND_SOC_DIGITAL_CDC)
+#if (IS_ENABLED(CONFIG_SND_SOC_DIGITAL_CDC) || \
+	 IS_ENABLED(CONFIG_SND_SOC_DIGITAL_CDC_LEGACY))
 extern void msm_dig_cdc_hph_comp_cb(
 		int (*codec_hph_comp_gpio)(
 			bool enable, struct snd_soc_codec *codec),

@@ -232,7 +232,7 @@ extern int msm_anlg_cdc_mclk_enable(struct snd_soc_codec *codec,
 extern int msm_anlg_cdc_hs_detect(struct snd_soc_codec *codec,
 		    struct wcd_mbhc_config *mbhc_cfg);
 extern void msm_anlg_cdc_hs_detect_exit(struct snd_soc_codec *codec);
-extern void sdm660_cdc_update_int_spk_boost(bool enable);
+extern void msm_anlg_cdc_update_int_spk_boost(bool enable);
 extern void msm_anlg_cdc_spk_ext_pa_cb(
 		int (*codec_spk_ext_pa)(struct snd_soc_codec *codec,
 		int enable), struct snd_soc_codec *codec);
@@ -253,7 +253,7 @@ static inline void msm_anlg_cdc_hs_detect_exit(struct snd_soc_codec *codec)
 {
 
 }
-static inline void sdm660_cdc_update_int_spk_boost(bool enable)
+static inline void msm_anlg_cdc_update_int_spk_boost(bool enable)
 {
 
 }
