@@ -50,16 +50,6 @@ LOCAL_MODULE_DEBUG_ENABLE := true
 LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
 include $(DLKM_DIR)/AndroidKernelModule.mk
 ###########################################################
-ifeq ($(call is-board-platform-in-list,msm8953 sdm670 qcs605),true)
-include $(CLEAR_VARS)
-LOCAL_MODULE              := $(AUDIO_CHIPSET)_cpe_lsm.ko
-LOCAL_MODULE_KBUILD_NAME  := cpe_lsm_dlkm.ko
-LOCAL_MODULE_TAGS         := optional
-LOCAL_MODULE_DEBUG_ENABLE := true
-LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
-include $(DLKM_DIR)/AndroidKernelModule.mk
-endif
-###########################################################
 include $(CLEAR_VARS)
 LOCAL_MODULE              := $(AUDIO_CHIPSET)_machine_$(TARGET).ko
 LOCAL_MODULE_KBUILD_NAME  := machine_dlkm.ko
