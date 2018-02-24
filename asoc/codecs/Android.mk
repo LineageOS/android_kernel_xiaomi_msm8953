@@ -12,7 +12,8 @@ AUDIO_SELECT  := CONFIG_SND_SOC_SDM670=m
 endif
 
 ifeq ($(call is-board-platform-in-list,msm8953),true)
-AUDIO_SELECT  := CONFIG_SND_SOC_SDM450=m
+AUDIO_SELECT  += CONFIG_SND_SOC_SDM450=m
+AUDIO_SELECT  += CONFIG_SND_SOC_EXT_CODEC_SDM450=m
 endif
 
 AUDIO_CHIPSET := audio
