@@ -21,9 +21,15 @@
 #include <linux/platform_device.h>
 #include <linux/gpio.h>
 #include <linux/of_gpio.h>
-#include <dt-bindings/clock/qcom,audio-ext-clk.h>
+#include <dt-bindings/clock/msm-clocks-8996.h>
 #include <dsp/q6afe-v2.h>
 #include "audio-ext-clk.h"
+
+enum audio_clk_mux {
+	PMI_CLK,
+	AP_CLK2,
+	LPASS_MCLK,
+};
 
 struct pinctrl_info {
 	struct pinctrl *pinctrl;
@@ -37,12 +43,14 @@ struct audio_ext_ap_clk {
 	struct clk c;
 };
 
-struct audio_ext_pmi_clk {
-	int gpio;
+struct audio_ext_ap_clk2 {
+	bool enabled;
+	struct pinctrl_info pnctrl_info;
 	struct clk c;
 };
 
-struct audio_ext_ap_clk2 {
+struct audio_ext_pmi_clk {
+	int gpio;
 	bool enabled;
 	struct pinctrl_info pnctrl_info;
 	struct clk c;
@@ -60,6 +68,48 @@ static struct afe_clk_set clk2_config = {
 static inline struct audio_ext_ap_clk *to_audio_ap_clk(struct clk *clk)
 {
 	return container_of(clk, struct audio_ext_ap_clk, c);
+}
+
+static inline struct audio_ext_pmi_clk *to_audio_pmi_clk(struct clk *clk)
+{
+	return container_of(clk, struct audio_ext_pmi_clk, c);
+}
+
+static int audio_ext_pmi_clk_prepare(struct clk *clk)
+{
+	struct audio_ext_pmi_clk *audio_pmi_clk = to_audio_pmi_clk(clk);
+	struct pinctrl_info *pnctrl_info = &audio_pmi_clk->pnctrl_info;
+	int ret;
+
+	if (!pnctrl_info->pinctrl || !pnctrl_info->active) {
+		pr_err("%s: pinctrl state not defined\n", __func__);
+		return -EINVAL;
+	}
+
+	ret = pinctrl_select_state(pnctrl_info->pinctrl,
+					pnctrl_info->active);
+	if (ret) {
+		pr_err("%s: active state select failed with %d\n",
+			__func__, ret);
+		return -EIO;
+	}
+	return 0;
+}
+
+static void audio_ext_pmi_clk_unprepare(struct clk *clk)
+{
+	struct audio_ext_pmi_clk *audio_pmi_clk = to_audio_pmi_clk(clk);
+	struct pinctrl_info *pnctrl_info = &audio_pmi_clk->pnctrl_info;
+	int ret;
+
+	if (!pnctrl_info->pinctrl || !pnctrl_info->active)
+		pr_err("%s: pinctrl state not defined\n", __func__);
+
+	ret = pinctrl_select_state(pnctrl_info->pinctrl,
+					pnctrl_info->sleep);
+	if (ret)
+		pr_err("%s: sleep state select failed with %d\n",
+			__func__, ret);
 }
 
 static int audio_ext_clk_prepare(struct clk *clk)
@@ -145,14 +195,10 @@ static const struct clk_ops audio_ext_ap_clk2_ops = {
 	.unprepare = audio_ext_clk2_unprepare,
 };
 
-static struct audio_ext_pmi_clk audio_pmi_clk = {
-	.gpio = -EINVAL,
-	.c = {
-		.dbg_name = "audio_ext_pmi_clk",
-		CLK_INIT(audio_pmi_clk.c),
-	},
+static const struct clk_ops audio_ext_pmi_clk_ops = {
+	.prepare = audio_ext_pmi_clk_prepare,
+	.unprepare = audio_ext_pmi_clk_unprepare,
 };
-
 static struct audio_ext_pmi_clk audio_pmi_lnbb_clk = {
 	.gpio = -EINVAL,
 	.c = {
@@ -178,20 +224,40 @@ static struct audio_ext_ap_clk2 audio_ap_clk2 = {
 	},
 };
 
+static struct audio_ext_pmi_clk audio_pmi_clk = {
+	.c = {
+		.dbg_name = "audio_ext_pmi_clk",
+		.ops = &audio_ext_pmi_clk_ops,
+		CLK_INIT(audio_pmi_clk.c),
+	},
+};
+
 static struct clk_lookup audio_ref_clock[] = {
 	CLK_LIST(audio_ap_clk),
 	CLK_LIST(audio_pmi_clk),
-	CLK_LIST(audio_pmi_lnbb_clk),
 	CLK_LIST(audio_ap_clk2),
 };
 
-static int audio_get_pinctrl(struct platform_device *pdev)
+static int audio_get_pinctrl(struct platform_device *pdev,
+		enum audio_clk_mux mux)
 {
+	struct device *dev =  &pdev->dev;
 	struct pinctrl_info *pnctrl_info;
 	struct pinctrl *pinctrl;
 	int ret;
 
-	pnctrl_info = &audio_ap_clk2.pnctrl_info;
+	switch (mux) {
+	case PMI_CLK:
+		pnctrl_info = &audio_pmi_clk.pnctrl_info;
+		break;
+	case AP_CLK2:
+		pnctrl_info = &audio_ap_clk2.pnctrl_info;
+		break;
+	default:
+		dev_err(dev, "%s Not a valid MUX ID: %d\n",
+			__func__, mux);
+		return -EINVAL;
+	}
 
 	if (pnctrl_info->pinctrl) {
 		dev_dbg(&pdev->dev, "%s: already requested before\n",
@@ -238,70 +304,49 @@ static int audio_ref_clk_probe(struct platform_device *pdev)
 {
 	int clk_gpio;
 	int ret;
-	struct clk *audio_clk;
+	struct clk *div_clk1;
 
 	clk_gpio = of_get_named_gpio(pdev->dev.of_node,
 				     "qcom,audio-ref-clk-gpio", 0);
 	if (clk_gpio > 0) {
-		ret = gpio_request(clk_gpio, "EXT_CLK");
-		if (ret) {
-			dev_err(&pdev->dev,
-				"Request ext clk gpio failed %d, err:%d\n",
-				clk_gpio, ret);
-			goto err;
-		}
 		if (of_property_read_bool(pdev->dev.of_node,
 					"qcom,node_has_rpm_clock")) {
-			audio_clk = clk_get(&pdev->dev, NULL);
-			if (IS_ERR(audio_clk)) {
+			div_clk1 = clk_get(&pdev->dev, "osr_clk");
+			if (IS_ERR(div_clk1)) {
 				dev_err(&pdev->dev, "Failed to get RPM div clk\n");
-				ret = PTR_ERR(audio_clk);
-				goto err_gpio;
+				ret = PTR_ERR(div_clk1);
+				goto err_clk_register;
 			}
-			audio_pmi_clk.c.parent = audio_clk;
+			audio_pmi_clk.c.parent = div_clk1;
 			audio_pmi_clk.gpio = clk_gpio;
-		} else
-			audio_ap_clk.gpio = clk_gpio;
-
-	} else {
-		if (of_property_read_bool(pdev->dev.of_node,
-					"qcom,node_has_rpm_clock")) {
-			audio_clk = clk_get(&pdev->dev, NULL);
-			if (IS_ERR(audio_clk)) {
-				dev_err(&pdev->dev, "Failed to get lnbbclk2\n");
-				ret = PTR_ERR(audio_clk);
-				goto err;
+			ret = audio_get_pinctrl(pdev, PMI_CLK);
+			if (ret) {
+				dev_err(&pdev->dev, "%s: Parsing pinctrl %s failed\n",
+					__func__, "PMI_CLK");
+				goto err_clk_register;
 			}
-			audio_pmi_lnbb_clk.c.parent = audio_clk;
-			audio_pmi_lnbb_clk.gpio = -EINVAL;
+		}
+		ret = audio_get_pinctrl(pdev, AP_CLK2);
+		if (ret) {
+			dev_err(&pdev->dev, "%s: Parsing pinctrl %s failed\n",
+						__func__, "AP_CLK2");
+			goto err_clk_register;
 		}
 	}
-
-	ret = audio_get_pinctrl(pdev);
-	if (ret)
-		dev_dbg(&pdev->dev, "%s: Parsing pinctrl failed\n",
-			__func__);
-
 	ret = of_msm_clock_register(pdev->dev.of_node, audio_ref_clock,
-			      ARRAY_SIZE(audio_ref_clock));
+					ARRAY_SIZE(audio_ref_clock));
 	if (ret) {
-		dev_err(&pdev->dev, "%s: audio ref clock register failed\n",
-			__func__);
-		goto err_gpio;
+		dev_err(&pdev->dev, "%s: clock register failed\n", __func__);
+		goto err_clk_register;
 	}
-
-	return 0;
-
-err_gpio:
-	gpio_free(clk_gpio);
-
-err:
+err_clk_register:
 	return ret;
 }
 
 static int audio_ref_clk_remove(struct platform_device *pdev)
 {
 	struct pinctrl_info *pnctrl_info = &audio_ap_clk2.pnctrl_info;
+	struct pinctrl_info *pmi_pnctrl_info = &audio_pmi_clk.pnctrl_info;
 
 	if (audio_pmi_clk.gpio > 0)
 		gpio_free(audio_pmi_clk.gpio);
@@ -311,6 +356,11 @@ static int audio_ref_clk_remove(struct platform_device *pdev)
 	if (pnctrl_info->pinctrl) {
 		devm_pinctrl_put(pnctrl_info->pinctrl);
 		pnctrl_info->pinctrl = NULL;
+	}
+
+	if (pmi_pnctrl_info->pinctrl) {
+		devm_pinctrl_put(pmi_pnctrl_info->pinctrl);
+		pmi_pnctrl_info->pinctrl = NULL;
 	}
 
 	return 0;

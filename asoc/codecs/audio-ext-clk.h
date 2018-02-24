@@ -13,7 +13,17 @@
 #ifndef __AUDIO_EXT_CLK_H_
 #define __AUDIO_EXT_CLK_H_
 
+#if IS_ENABLED(CONFIG_COMMON_CLK_MSM)
 int audio_ref_clk_platform_init(void);
 void audio_ref_clk_platform_exit(void);
-
+#else
+static inline int audio_ref_clk_platform_init(void)
+{
+	return 0;
+}
+static inline void audio_ref_clk_platform_exit(void)
+{
+}
 #endif
+
+#endif /*__AUDIO_EXT_CLK_H_*/
