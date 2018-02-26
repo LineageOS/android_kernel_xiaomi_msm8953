@@ -12412,6 +12412,7 @@ VOS_STATUS WDA_ProcessKeepAliveReq(tWDA_CbContext *pWDA,
          sizeof(WDI_KeepAliveReqParamsType)) ;
    tWDA_ReqParams *pWdaParams;
 
+    vos_mem_zero(wdiKeepAliveInfo, sizeof(WDI_KeepAliveReqParamsType));
     VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
                                           "------> %s " ,__func__);
     if(NULL == wdiKeepAliveInfo) 
