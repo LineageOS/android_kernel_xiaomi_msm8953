@@ -1121,6 +1121,8 @@ static eHalStatus limSendHalStartScanOffloadReq(tpAniSirGlobal pMac,
     tSirMsgQ msg;
     tANI_U16 i, len;
     tSirRetStatus rc = eSIR_SUCCESS;
+    if (pScanReq->channelList.numChannels > SIR_ESE_MAX_MEAS_IE_REQS)
+        pScanReq->channelList.numChannels = SIR_ESE_MAX_MEAS_IE_REQS;
 
     /* The tSirScanOffloadReq will reserve the space for first channel,
        so allocate the memory for (numChannels - 1) and uIEFieldLen */
