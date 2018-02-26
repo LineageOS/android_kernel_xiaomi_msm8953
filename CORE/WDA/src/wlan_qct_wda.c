@@ -15854,7 +15854,7 @@ VOS_STATUS WDA_ProcessFwrMemDumpReq(tWDA_CbContext * pWDA,
    /* Store param pointer as passed in by caller */
    pWdaParams->wdaMsgParam = pFwrMemDumpReq;
 
-   status = WDI_FwrMemDumpReq(pWdiFwrMemDumpReq,
+   wstatus = WDI_FwrMemDumpReq(pWdiFwrMemDumpReq,
                               (WDI_FwrMemDumpCb)WDA_FwrMemDumpRespCallback,
                               pWdaParams);
 
