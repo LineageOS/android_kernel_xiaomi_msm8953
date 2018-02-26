@@ -38974,6 +38974,10 @@ WDI_Status WDI_ProcessSetAllowedActionFramesInd(WDI_ControlBlockType *pWDICtx,
         WDI_ASSERT(0);
         return WDI_STATUS_E_FAILURE;
     }
+    /*-----------------------------------------------------------------------
+      Get message buffer
+    -----------------------------------------------------------------------*/
+    usLen = sizeof(tHalAllowedActionFrames);
 
     if ((WDI_STATUS_SUCCESS != WDI_GetMessageBuffer(pWDICtx,
                                         WDI_SET_ALLOWED_ACTION_FRAMES_IND,
