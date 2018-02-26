@@ -11634,9 +11634,11 @@ VOS_STATUS WDA_ProcessWlanSuspendInd(tWDA_CbContext *pWDA,
    wdiSuspendParams.wdiReqStatusCB = WDA_ProcessWlanSuspendIndCallback;
 
    pWdaParams = (tWDA_ReqParams *)vos_mem_malloc(sizeof(tWDA_ReqParams));
-   if (!pWdaParams)
+   if (!pWdaParams) {
        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                                          "%s memory allocation failed" ,__func__);
+                  "%s memory allocation failed" ,__func__);
+       return VOS_STATUS_E_FAILURE;
+   }
    pWdaParams->pWdaContext = pWDA;
    pWdaParams->wdaMsgParam = pWlanSuspendParam;
    wdiSuspendParams.pUserData = pWdaParams;
@@ -15550,6 +15552,11 @@ VOS_STATUS  WDA_Process_apfind_set_cmd(tWDA_CbContext *pWDA,
 
     wdi_ap_find_cmd = (struct WDI_APFind_cmd *)vos_mem_malloc(
             sizeof(struct hal_apfind_request) + ap_find_req->request_data_len);
+    if (!wdi_ap_find_cmd) {
+        VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                   "%s memory allocation failed" ,__func__);
+        return VOS_STATUS_E_FAILURE;
+    }
 
     wdi_ap_find_cmd->data_len = ap_find_req->request_data_len;
     vos_mem_copy(wdi_ap_find_cmd->data, ap_find_req->request_data,
