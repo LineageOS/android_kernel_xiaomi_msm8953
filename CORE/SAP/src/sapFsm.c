@@ -1261,6 +1261,7 @@ sapFsm
                      VOS_TRACE(VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
                                  "In %s, NULL hHal in state %s, msg %d",
                                   __func__, "eSAP_STARTING", msg);
+                    return eHAL_STATUS_INVALID_PARAMETER;
                 }
                 vosStatus = sme_roam_csa_ie_request(hHal, sapContext->bssid,
                                         sapContext->ecsa_info.new_channel,

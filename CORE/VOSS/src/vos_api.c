@@ -3898,7 +3898,7 @@ void vos_update_arp_fw_tx_delivered(void)
       pAdapterNode = pNext;
    }
    if (pAdapter)
-       pAdapter->hdd_stats.hddArpStats.tx_host_fw_sent++;
+      pAdapter->hdd_stats.hddArpStats.tx_host_fw_sent++;
 }
 
 /**
@@ -3938,9 +3938,8 @@ void vos_update_arp_rx_drop_reorder(void)
       status = hdd_get_next_adapter (pHddCtx, pAdapterNode, &pNext);
       pAdapterNode = pNext;
    }
-
    if (pAdapter)
-       pAdapter->hdd_stats.hddArpStats.rx_host_drop_reorder++;
+      pAdapter->hdd_stats.hddArpStats.rx_host_drop_reorder++;
 }
 
 v_BOOL_t vos_check_monitor_state(void)

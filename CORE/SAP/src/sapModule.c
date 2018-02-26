@@ -558,25 +558,20 @@ VOS_STATUS WLANSAP_get_sessionId
 )
 {
     ptSapContext  pSapCtx = NULL;
-    VOS_STATUS status = VOS_STATUS_SUCCESS;
-
     pSapCtx = VOS_GET_SAP_CB(pvosGCtx);
 
     if ( NULL == pSapCtx )
     {
         VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH,
                    "%s: Invalid SAP pointer from pvosGCtx", __func__);
-        status = VOS_STATUS_E_INVAL;
+        return VOS_STATUS_E_INVAL;
     }
 
-    if (pSapCtx->sapsMachine == eSAP_STARTED) {
-       *sessionId = pSapCtx->sessionId;
-        status = VOS_STATUS_SUCCESS;
-     }
-    else
-        status = VOS_STATUS_E_FAILURE;
+    if (pSapCtx->sapsMachine != eSAP_STARTED)
+        return VOS_STATUS_E_FAILURE;
 
-    return status;
+    *sessionId = pSapCtx->sessionId;
+    return VOS_STATUS_SUCCESS;
 }
 /*==========================================================================
   FUNCTION    WLANSAP_StartBss
