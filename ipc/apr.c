@@ -25,6 +25,7 @@
 #include <linux/platform_device.h>
 #include <linux/sysfs.h>
 #include <linux/device.h>
+#include <linux/of.h>
 #include <linux/slab.h>
 #include <linux/ipc_logging.h>
 #include <soc/qcom/subsystem_restart.h>
@@ -36,6 +37,7 @@
 
 #define APR_PKT_IPC_LOG_PAGE_CNT 2
 
+static struct device *apr_dev_ptr;
 static struct apr_q6 q6;
 static struct apr_client client[APR_DEST_MAX][APR_CLIENT_MAX];
 static void *apr_pkt_ctx;
@@ -43,6 +45,7 @@ static wait_queue_head_t dsp_wait;
 static wait_queue_head_t modem_wait;
 static bool is_modem_up;
 static bool is_initial_boot;
+static bool is_child_devices_loaded;
 /* Subsystem restart: QDSP6 data, functions */
 static struct workqueue_struct *apr_reset_workqueue;
 static void apr_reset_deregister(struct work_struct *work);
@@ -284,6 +287,33 @@ static void apr_adsp_up(void)
 	if (apr_cmpxchg_q6_state(APR_SUBSYS_DOWN, APR_SUBSYS_LOADED) ==
 							APR_SUBSYS_DOWN)
 		wake_up(&dsp_wait);
+
+	if (!is_child_devices_loaded) {
+		struct platform_device *pdev;
+		struct device_node *node;
+		int ret;
+
+		for_each_child_of_node(apr_dev_ptr->of_node, node) {
+			pdev = platform_device_alloc(node->name, -1);
+			if (!pdev) {
+				dev_err(apr_dev_ptr, "%s: pdev memory alloc failed\n",
+					__func__);
+				return;
+			}
+			pdev->dev.parent = apr_dev_ptr;
+			pdev->dev.of_node = node;
+
+			ret = platform_device_add(pdev);
+			if (ret) {
+				dev_err(apr_dev_ptr,
+					"%s: Cannot add platform device\n",
+					__func__);
+				platform_device_put(pdev);
+				return;
+			}
+		}
+		is_child_devices_loaded = true;
+	}
 }
 
 int apr_wait_for_device_up(int dest_id)
@@ -1092,7 +1122,25 @@ static int __init apr_debug_init(void)
 )
 #endif
 
-static int __init apr_init(void)
+static void apr_cleanup(void)
+{
+	int i, j, k;
+
+	subsys_notif_deregister("apr_modem");
+	subsys_notif_deregister("apr_adsp");
+	if (apr_reset_workqueue)
+		destroy_workqueue(apr_reset_workqueue);
+	mutex_destroy(&q6.lock);
+	for (i = 0; i < APR_DEST_MAX; i++) {
+		for (j = 0; j < APR_CLIENT_MAX; j++) {
+			mutex_destroy(&client[i][j].m_lock);
+			for (k = 0; k < APR_SVC_MAX; k++)
+				mutex_destroy(&client[i][j].svc[k].m_lock);
+		}
+	}
+}
+
+static int apr_probe(struct platform_device *pdev)
 {
 	int i, j, k;
 
@@ -1125,15 +1173,46 @@ static int __init apr_init(void)
 			      &modem_service_nb);
 
 	apr_tal_init();
+	apr_dev_ptr = &pdev->dev;
 	return apr_debug_init();
+}
+
+static int apr_remove(struct platform_device *pdev)
+{
+	apr_cleanup();
+	return 0;
+}
+
+static const struct of_device_id apr_machine_of_match[]  = {
+	{ .compatible = "qcom,msm-audio-apr", },
+	{},
+};
+
+static struct platform_driver apr_driver = {
+	.probe = apr_probe,
+	.remove = apr_remove,
+	.driver = {
+		.name = "audio_apr",
+		.owner = THIS_MODULE,
+		.of_match_table = apr_machine_of_match,
+	}
+};
+
+static int __init apr_init(void)
+{
+	platform_driver_register(&apr_driver);
+	apr_dummy_init();
+	return 0;
 }
 module_init(apr_init);
 
-void __exit apr_exit(void)
+static void __exit apr_exit(void)
 {
-	subsys_notif_deregister("apr_modem");
-	subsys_notif_deregister("apr_adsp");
+	apr_dummy_exit();
+	platform_driver_unregister(&apr_driver);
 }
 module_exit(apr_exit);
-MODULE_DESCRIPTION("APR module");
+
+MODULE_DESCRIPTION("APR DRIVER");
 MODULE_LICENSE("GPL v2");
+MODULE_DEVICE_TABLE(of, apr_machine_of_match);
