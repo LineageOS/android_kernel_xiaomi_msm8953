@@ -3825,13 +3825,15 @@ static int sdm660_cdc_notifier_service_cb(struct notifier_block *nb,
 	bool timedout;
 	unsigned long timeout;
 	static bool initial_boot = true;
+	struct audio_notifier_cb_data *cb_data = ptr;
 
 	codec = sdm660_cdc_priv->codec;
 	dev_dbg(codec->dev, "%s: Service opcode 0x%lx\n", __func__, opcode);
 
 	switch (opcode) {
 	case AUDIO_NOTIFIER_SERVICE_DOWN:
-		if (initial_boot) {
+		if (initial_boot &&
+			cb_data->service == AUDIO_NOTIFIER_PDR_SERVICE) {
 			initial_boot = false;
 			break;
 		}
@@ -3840,7 +3842,8 @@ static int sdm660_cdc_notifier_service_cb(struct notifier_block *nb,
 		msm_anlg_cdc_device_down(codec);
 		break;
 	case AUDIO_NOTIFIER_SERVICE_UP:
-		if (initial_boot)
+		if (initial_boot &&
+			cb_data->service == AUDIO_NOTIFIER_PDR_SERVICE)
 			initial_boot = false;
 		dev_dbg(codec->dev,
 			"ADSP is about to power up. bring up codec\n");
