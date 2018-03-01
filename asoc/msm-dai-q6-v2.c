@@ -2215,6 +2215,38 @@ static int msm_dai_q6_usb_audio_endian_cfg_get(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
+static int msm_dai_q6_usb_audio_svc_interval_put(struct snd_kcontrol *kcontrol,
+					 struct snd_ctl_elem_value *ucontrol)
+{
+	struct msm_dai_q6_dai_data *dai_data = kcontrol->private_data;
+	u32 val = ucontrol->value.integer.value[0];
+
+	if (!dai_data) {
+		pr_err("%s: dai_data is NULL\n", __func__);
+		return -EINVAL;
+	}
+	dai_data->port_config.usb_audio.service_interval = val;
+	pr_debug("%s: new service interval = %u\n",  __func__,
+		dai_data->port_config.usb_audio.service_interval);
+	return 0;
+}
+
+static int msm_dai_q6_usb_audio_svc_interval_get(struct snd_kcontrol *kcontrol,
+					struct snd_ctl_elem_value *ucontrol)
+{
+	struct msm_dai_q6_dai_data *dai_data = kcontrol->private_data;
+
+	if (!dai_data) {
+		pr_err("%s: dai_data is NULL\n", __func__);
+		return -EINVAL;
+	}
+	ucontrol->value.integer.value[0] =
+		 dai_data->port_config.usb_audio.service_interval;
+	pr_debug("%s: service interval = %d\n",  __func__,
+		     dai_data->port_config.usb_audio.service_interval);
+	return 0;
+}
+
 static int  msm_dai_q6_afe_enc_cfg_info(struct snd_kcontrol *kcontrol,
 					struct snd_ctl_elem_info *uinfo)
 {
@@ -2571,6 +2603,10 @@ static const struct snd_kcontrol_new usb_audio_cfg_controls[] = {
 	SOC_SINGLE_EXT("USB_AUDIO_TX endian", 0, 0, 1, 0,
 			msm_dai_q6_usb_audio_endian_cfg_get,
 			msm_dai_q6_usb_audio_endian_cfg_put),
+	SOC_SINGLE_EXT("USB_AUDIO_RX service_interval", SND_SOC_NOPM, 0,
+			UINT_MAX, 0,
+			msm_dai_q6_usb_audio_svc_interval_get,
+			msm_dai_q6_usb_audio_svc_interval_put),
 };
 
 static const struct snd_kcontrol_new avd_drift_config_controls[] = {
@@ -2666,6 +2702,9 @@ static int msm_dai_q6_dai_probe(struct snd_soc_dai *dai)
 				 dai_data));
 		rc = snd_ctl_add(dai->component->card->snd_card,
 				 snd_ctl_new1(&usb_audio_cfg_controls[1],
+				 dai_data));
+		rc = snd_ctl_add(dai->component->card->snd_card,
+				 snd_ctl_new1(&usb_audio_cfg_controls[4],
 				 dai_data));
 		break;
 	case AFE_PORT_ID_USB_TX:
