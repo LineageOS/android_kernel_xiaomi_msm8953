@@ -901,6 +901,38 @@ static void smeProcessNanReq(tpAniSirGlobal pMac, tSmeCmd *pCommand )
     }
 }
 
+
+/**
+ * sme_set_vowifi_mode() - Set VOWIFI mode
+ * @pMac - context handler
+ * @enable - boolean value that determines the state
+ *
+ * The function sends the VOWIFI to firmware received
+ * via driver command
+ */
+void sme_set_vowifi_mode(tpAniSirGlobal pMac, bool enable)
+{
+    tSirMsgQ msgQ;
+    tSirRetStatus retCode = eSIR_SUCCESS;
+
+    vos_mem_zero(&msgQ, sizeof(tSirMsgQ));
+    msgQ.type = WDA_VOWIFI_MODE;
+    msgQ.reserved = 0;
+    msgQ.bodyval = enable;
+
+    retCode = wdaPostCtrlMsg(pMac, &msgQ);
+    if(eSIR_SUCCESS != retCode)
+    {
+        smsLog(pMac, LOGE,
+           FL("Posting WDA_VOWIFI_MODE to WDA failed, reason=%X"),
+           retCode);
+    }
+    else
+    {
+        smsLog(pMac, LOG1, FL("posted WDA_VOWIFI_MODE command"));
+    }
+}
+
 tANI_BOOLEAN smeProcessCommand( tpAniSirGlobal pMac )
 {
     tANI_BOOLEAN fContinue = eANI_BOOLEAN_FALSE;

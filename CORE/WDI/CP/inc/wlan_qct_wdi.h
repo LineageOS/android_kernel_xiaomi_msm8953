@@ -12292,6 +12292,15 @@ WDI_SetRtsCtsHTVhtInd
   wpt_uint32 rtsCtsVal
 );
 
+/**
+ * WDI_set_vowifi_mode_ind() - Set VOWIFI mode request
+ *
+ * @enable - boolean value that determines the state
+ *
+ * Return: success if the value is sent
+ */
+WDI_Status WDI_set_vowifi_mode_ind(wpt_boolean enable);
+
 WDI_Status
 WDI_FWLoggingDXEdoneInd
 (

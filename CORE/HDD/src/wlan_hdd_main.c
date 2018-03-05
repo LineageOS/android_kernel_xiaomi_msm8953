@@ -249,6 +249,7 @@ static int hdd_ParseUserParams(tANI_U8 *pValue, tANI_U8 **ppArg);
 #endif /* WLAN_FEATURE_RMC */
 void wlan_hdd_restart_timer_cb(v_PVOID_t usrDataForCallback);
 void hdd_set_wlan_suspend_mode(bool suspend);
+void hdd_set_vowifi_mode(hdd_context_t *hdd_ctx, bool enable);
 
 v_U16_t hdd_select_queue(struct net_device *dev,
     struct sk_buff *skb
@@ -864,6 +865,26 @@ static int hdd_parse_setrmcactionperiod_command(tANI_U8 *pValue,
        "uActionPeriod: %d", *pActionPeriod);
 
     return 0;
+}
+/*
+ * hdd_set_vowifi_mode() - Process the VOWIFI command and invoke the SME api
+ *
+ * @hHal: context handler
+ * @enable: Value to be sent as a part of the VOWIFI command
+ *
+ * Return: void
+ */
+void hdd_set_vowifi_mode(hdd_context_t *hdd_ctx, bool enable)
+{
+    tANI_U8 sta_chan;
+
+    sta_chan = hdd_get_operating_channel(hdd_ctx, WLAN_HDD_INFRA_STATION);
+
+    if (CSR_IS_CHANNEL_24GHZ(sta_chan))
+        sme_set_vowifi_mode(hdd_ctx->hHal, enable);
+    else
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+               "VoWiFi command rejected as not connected in 2.4GHz");
 }
 
 /* Function header left blank Intentionally */
@@ -3654,6 +3675,22 @@ static int hdd_driver_command(hdd_adapter_t *pAdapter,
 
            ret = sapSetPreferredChannel(ptr);
        }
+
+       else if (strncmp(command, "VOWIFIMODE", 10) == 0)
+       {
+           tANI_U8 *ptr;
+
+           ret = hdd_drv_cmd_validate(command, 10);
+           if (ret)
+               goto exit;
+
+           VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                   "Received Command for VOWIFI mode in %s", __func__);
+
+           ptr = (tANI_U8*)command + 11;
+           hdd_set_vowifi_mode(pHddCtx, *ptr - '0');
+        }
+
        else if(strncmp(command, "SETSUSPENDMODE", 14) == 0)
        {
            int suspend = 0;
