@@ -9064,6 +9064,16 @@ hdd_adapter_t* hdd_open_adapter( hdd_context_t *pHddCtx, tANI_U8 session_type,
 
          hdd_set_conparam( 1 );
 
+         // Workqueue which gets scheduled in IPv4 notification callback.
+         vos_init_work(&pAdapter->ipv4NotifierWorkQueue,
+                       hdd_ipv4_notifier_work_queue);
+
+#ifdef WLAN_NS_OFFLOAD
+         // Workqueue which gets scheduled in IPv6 notification callback.
+         vos_init_work(&pAdapter->ipv6NotifierWorkQueue,
+                       hdd_ipv6_notifier_work_queue);
+#endif
+
          if (WLAN_HDD_P2P_GO == session_type)
          {
              /* Initialize the work queue to
@@ -9724,6 +9734,12 @@ VOS_STATUS hdd_stop_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter,
             pAdapter->sessionCtx.ap.beacon = NULL;
          }
          mutex_unlock(&pHddCtx->sap_lock);
+
+#ifdef WLAN_NS_OFFLOAD
+         vos_flush_work(&pAdapter->ipv6NotifierWorkQueue);
+#endif
+         vos_flush_work(&pAdapter->ipv4NotifierWorkQueue);
+
          break;
 
       case WLAN_HDD_MONITOR:
