@@ -9221,8 +9221,11 @@ void hdd_monPostMsgCb(tANI_U32 *magic, struct completion *cmpVar)
 void hdd_init_mon_mode (hdd_adapter_t *pAdapter)
  {
     hdd_mon_ctx_t *pMonCtx = NULL;
-    pMonCtx = WLAN_HDD_GET_MONITOR_CTX_PTR(pAdapter);
 
+    spin_lock_init(&pAdapter->sta_hash_lock);
+    pAdapter->is_sta_id_hash_initialized = VOS_FALSE;
+
+    pMonCtx = WLAN_HDD_GET_MONITOR_CTX_PTR(pAdapter);
     pMonCtx->state = 0;
     pMonCtx->ChannelNo = 1;
     pMonCtx->ChannelBW = 20;
@@ -14676,7 +14679,6 @@ void wlan_hdd_incr_active_session(hdd_context_t *pHddCtx, tVOS_CON_MODE mode)
    case VOS_P2P_CLIENT_MODE:
    case VOS_P2P_GO_MODE:
    case VOS_STA_SAP_MODE:
-   case VOS_MONITOR_MODE:
         pHddCtx->no_of_active_sessions[mode]++;
         break;
    default:
@@ -14711,7 +14713,6 @@ void wlan_hdd_decr_active_session(hdd_context_t *pHddCtx, tVOS_CON_MODE mode)
    case VOS_P2P_CLIENT_MODE:
    case VOS_P2P_GO_MODE:
    case VOS_STA_SAP_MODE:
-   case VOS_MONITOR_MODE:
         if (pHddCtx->no_of_active_sessions[mode] > 0)
             pHddCtx->no_of_active_sessions[mode]--;
         else
