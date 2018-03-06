@@ -10830,7 +10830,8 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
     iniConfig = pHddCtx->cfg_ini;
 
     /* Mark the indoor channel (passive) to disable */
-    if (iniConfig->disable_indoor_channel) {
+    if (iniConfig->disable_indoor_channel &&
+                pHostapdAdapter->device_mode == WLAN_HDD_SOFTAP) {
         hdd_update_indoor_channel(pHddCtx, true);
 
         if (!VOS_IS_STATUS_SUCCESS(
@@ -11452,7 +11453,8 @@ error:
     if (pHostapdAdapter->device_mode == WLAN_HDD_SOFTAP)
         wlan_hdd_restore_channels(pHddCtx);
    /* Revert the indoor to passive marking if START BSS fails */
-    if (iniConfig->disable_indoor_channel) {
+    if (iniConfig->disable_indoor_channel &&
+                   pHostapdAdapter->device_mode == WLAN_HDD_SOFTAP) {
         hdd_update_indoor_channel(pHddCtx, false);
         sme_update_channel_list((tpAniSirGlobal)pHddCtx->hHal);
     }
