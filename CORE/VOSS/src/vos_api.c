@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -3830,7 +3830,7 @@ void vos_update_arp_fw_tx_delivered(void)
 {
    v_CONTEXT_t pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
    hdd_context_t *pHddCtx = NULL;
-   hdd_adapter_t * pAdapter;
+   hdd_adapter_t * pAdapter = NULL;
    hdd_adapter_list_node_t *pAdapterNode = NULL, *pNext = NULL;
    uint8_t status;
 
@@ -3857,8 +3857,8 @@ void vos_update_arp_fw_tx_delivered(void)
       status = hdd_get_next_adapter (pHddCtx, pAdapterNode, &pNext);
       pAdapterNode = pNext;
    }
-
-   pAdapter->hdd_stats.hddArpStats.tx_host_fw_sent++;
+   if (pAdapter)
+       pAdapter->hdd_stats.hddArpStats.tx_host_fw_sent++;
 }
 
 /**
@@ -3871,7 +3871,7 @@ void vos_update_arp_rx_drop_reorder(void)
 {
    v_CONTEXT_t pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
    hdd_context_t *pHddCtx = NULL;
-   hdd_adapter_t * pAdapter;
+   hdd_adapter_t * pAdapter = NULL;
    hdd_adapter_list_node_t *pAdapterNode = NULL, *pNext = NULL;
    uint8_t status;
 
@@ -3899,7 +3899,8 @@ void vos_update_arp_rx_drop_reorder(void)
       pAdapterNode = pNext;
    }
 
-   pAdapter->hdd_stats.hddArpStats.rx_host_drop_reorder++;
+   if (pAdapter)
+       pAdapter->hdd_stats.hddArpStats.rx_host_drop_reorder++;
 }
 
 v_BOOL_t vos_check_monitor_state(void)
