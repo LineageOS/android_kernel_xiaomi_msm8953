@@ -8166,7 +8166,7 @@ static void hdd_get_nud_stats_cb(void *data, rsp_stats *rsp)
 {
 
     hdd_adapter_t *adapter = (hdd_adapter_t *)data;
-    hdd_context_t *hdd_ctx = WLAN_HDD_GET_CTX(adapter);
+    hdd_context_t *hdd_ctx;
     struct hdd_nud_stats_context *context;
     int status;
 
@@ -8175,13 +8175,14 @@ static void hdd_get_nud_stats_cb(void *data, rsp_stats *rsp)
     if (NULL == adapter)
         return;
 
-    status = wlan_hdd_validate_context(hdd_ctx);
-    if (0 != status) {
+    if (!rsp) {
+        hddLog(LOGE, FL("data is null"));
         return;
     }
 
-    if (!rsp) {
-        hddLog(LOGE, FL("data is null"));
+    hdd_ctx = WLAN_HDD_GET_CTX(adapter);
+    status = wlan_hdd_validate_context(hdd_ctx);
+    if (0 != status) {
         return;
     }
 
