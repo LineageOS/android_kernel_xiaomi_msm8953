@@ -72,6 +72,7 @@ ifdef CONFIG_MSM_QDSP6_APRV2
 APRV_GLINK += apr.o
 APRV_GLINK += apr_v2.o
 APRV_GLINK += apr_tal.o
+APRV_GLINK += apr_dummy.o
 endif
 
 ifdef CONFIG_MSM_QDSP6_APRV2_GLINK
