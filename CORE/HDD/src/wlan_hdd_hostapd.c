@@ -479,7 +479,33 @@ static int hdd_hostapd_driver_command(hdd_adapter_t *pAdapter,
                   __func__);
        ret = hdd_parse_disable_chan_cmd(pAdapter, ptr);
     }
+    else if (strncmp(command, "GET_DISABLE_CHANNEL_LIST", 24) == 0) {
+         char extra[128] = {0};
+         int len;
 
+         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+             " Received Command to get disable Channels list %s",
+             __func__);
+
+         len = hdd_get_disable_ch_list(pHddCtx, extra, sizeof(extra));
+         if (len == 0) {
+             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                       FL("disable channel list are not yet programed"));
+             ret = -EINVAL;
+             goto exit;
+         }
+
+         len = VOS_MIN(priv_data->total_len, len + 1);
+         if (copy_to_user(priv_data->buf, &extra, len)) {
+            VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+               "%s: failed to copy data to user buffer", __func__);
+            ret = -EFAULT;
+            goto exit;
+         }
+
+         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                   FL("data:%s"), extra);
+    }
     else {
         MTRACE(vos_trace(VOS_MODULE_ID_HDD,
                          TRACE_CODE_HDD_UNSUPPORTED_IOCTL,

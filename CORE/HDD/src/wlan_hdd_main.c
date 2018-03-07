@@ -3436,6 +3436,46 @@ parse_done:
 	return ret;
 }
 
+int hdd_get_disable_ch_list(hdd_context_t *hdd_ctx, tANI_U8 *buf,
+			    tANI_U8 buf_len)
+{
+	struct hdd_cache_channel_info *ch_list;
+	unsigned char i, num_ch;
+	int len = 0;
+
+	mutex_lock(&hdd_ctx->cache_channel_lock);
+	if (hdd_ctx->orginal_channels &&
+	    hdd_ctx->orginal_channels->num_channels) {
+		num_ch = hdd_ctx->orginal_channels->num_channels;
+
+		if (num_ch == 0) {
+			mutex_unlock(&hdd_ctx->cache_channel_lock);
+			VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+				  FL("no disable channels programed"));
+			return 0;
+		}
+
+		len = scnprintf(buf, buf_len, "%s %hhu",
+				"GET_DISABLE_CHANNEL_LIST", num_ch);
+
+		ch_list = hdd_ctx->orginal_channels->channel_info;
+		if (!ch_list) {
+			mutex_unlock(&hdd_ctx->cache_channel_lock);
+			VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+				  FL("disable channel list is NULL"));
+			return 0;
+		}
+
+		for (i = 0; (i < num_ch) && len <= buf_len; i++) {
+			len += scnprintf(buf + len, buf_len - len,
+			" %d", ch_list[i].channel_num);
+		}
+	}
+	mutex_unlock(&hdd_ctx->cache_channel_lock);
+
+	return len;
+}
+
 static int hdd_driver_command(hdd_adapter_t *pAdapter,
                               hdd_priv_data_t *ppriv_data)
 {
@@ -6512,7 +6552,33 @@ static int hdd_driver_command(hdd_adapter_t *pAdapter,
             if (ret)
                 goto exit;
        }
+       else if (strncmp(command, "GET_DISABLE_CHANNEL_LIST", 24) == 0) {
+            char extra[128] = {0};
+            int len;
 
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                " Received Command to get disable Channels list %s",
+                __func__);
+
+            len = hdd_get_disable_ch_list(pHddCtx, extra, sizeof(extra));
+            if (len == 0) {
+                VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                          FL("disable channel list are not yet programed"));
+                ret = -EINVAL;
+                goto exit;
+            }
+
+            len = VOS_MIN(priv_data.total_len, len + 1);
+            if (copy_to_user(priv_data.buf, &extra, len)) {
+               VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  "%s: failed to copy data to user buffer", __func__);
+               ret = -EFAULT;
+               goto exit;
+            }
+
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                      FL("data:%s"), extra);
+       }
        else {
            MTRACE(vos_trace(VOS_MODULE_ID_HDD,
                             TRACE_CODE_HDD_UNSUPPORTED_IOCTL,

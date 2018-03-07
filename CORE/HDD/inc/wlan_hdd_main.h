@@ -2363,4 +2363,16 @@ hdd_wlan_nla_put_u64(struct sk_buff *skb, int attrtype, u64 value)
  */
 int hdd_parse_disable_chan_cmd(hdd_adapter_t *adapter, tANI_U8 *ptr);
 
+/*
+ * hdd_parse_disable_chn_cmd() - get disable channel list
+ * in command.
+ * @hdd_ctx: hdd context
+ * @buf: buffer to hold disable channel list
+ * @buf_len: buffer length
+ *
+ * @return: length of data copied to buf
+ */
+int hdd_get_disable_ch_list(hdd_context_t *hdd_ctx, tANI_U8 *buf,
+                            tANI_U8 buf_len);
+
 #endif    // end #if !defined( WLAN_HDD_MAIN_H )
