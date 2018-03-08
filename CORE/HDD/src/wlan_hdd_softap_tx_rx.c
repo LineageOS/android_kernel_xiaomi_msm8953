@@ -2031,7 +2031,10 @@ VOS_STATUS hdd_softap_RegisterSTA( hdd_adapter_t *pAdapter,
   
       pSapCtx->aStaInfo[staId].tlSTAState = WLANTL_STA_AUTHENTICATED;
       pAdapter->sessionCtx.ap.uIsAuthenticated = VOS_TRUE;
-   }                                            
+      if (!vos_is_macaddr_broadcast(pPeerMacAddress))
+          vosStatus = wlan_hdd_send_sta_authorized_event(pAdapter, pHddCtx,
+                                                         pPeerMacAddress);
+   }
    else
    {
 

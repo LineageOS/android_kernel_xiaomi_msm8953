@@ -475,6 +475,7 @@ enum qca_nl80211_vendor_subcmds_index {
     QCA_NL80211_VENDOR_SUBCMD_EXTSCAN_HOTLIST_AP_LOST_INDEX,
     QCA_NL80211_VENDOR_SUBCMD_NUD_STATS_GET_INDEX,
     QCA_NL80211_VENDOR_SUBCMD_HANG_REASON_INDEX,
+    QCA_NL80211_VENDOR_SUBCMD_LINK_PROPERTIES_INDEX,
 };
 
 /**
@@ -1377,6 +1378,10 @@ enum qca_wlan_vendor_attr_link_properties {
     QCA_WLAN_VENDOR_ATTR_LINK_PROPERTIES_RATE_FLAGS = 2,
     /* Unsigned 32bit value for operating frequency */
     QCA_WLAN_VENDOR_ATTR_LINK_PROPERTIES_FREQ       = 3,
+    /* Unsigned 32bit value for STA flags*/
+    QCA_WLAN_VENDOR_ATTR_LINK_PROPERTIES_STA_FLAGS  = 4,
+    /*  An array of 6 Unsigned 8bit values for the STA MAC address*/
+    QCA_WLAN_VENDOR_ATTR_LINK_PROPERTIES_STA_MAC  = 5,
 
     /* KEEP LAST */
     QCA_WLAN_VENDOR_ATTR_LINK_PROPERTIES_AFTER_LAST,
@@ -1803,4 +1808,18 @@ int wlan_hdd_cfg80211_del_station(struct wiphy *wiphy,
 int wlan_hdd_cfg80211_update_apies(hdd_adapter_t *pHostapdAdapter);
 int wlan_hdd_try_disconnect(hdd_adapter_t *pAdapter);
 void wlan_hdd_sap_get_sta_rssi(hdd_adapter_t *adapter, uint8_t staid, s8 *rssi);
+
+/*
+ *wlan_hdd_send_sta_authorized_event: Function to send station authorized
+ *event to user space in case of SAP
+ *@pAdapter: Pointer to the adapter
+ *@pHddCtx:  HDD Context
+ *@mac_addr: MAC address of the STA for whic the Authorized event needs to
+ *           be sent
+ *This api is used to send station authorized event to user space
+ */
+VOS_STATUS wlan_hdd_send_sta_authorized_event(hdd_adapter_t *adapter,
+                                              hdd_context_t *hdd_ctx,
+                                              const v_MACADDR_t *mac_addr);
+
 #endif

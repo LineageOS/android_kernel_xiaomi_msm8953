@@ -8862,6 +8862,10 @@ struct nl80211_vendor_cmd_info wlan_hdd_cfg80211_vendor_events[] =
         .vendor_id = QCA_NL80211_VENDOR_ID,
         .subcmd = QCA_NL80211_VENDOR_SUBCMD_HANG,
     },
+    [QCA_NL80211_VENDOR_SUBCMD_LINK_PROPERTIES_INDEX] = {
+         .vendor_id = QCA_NL80211_VENDOR_ID,
+         .subcmd = QCA_NL80211_VENDOR_SUBCMD_LINK_PROPERTIES,
+    },
 };
 
 /*
@@ -12768,6 +12772,59 @@ error:
 }
 #endif
 
+VOS_STATUS wlan_hdd_send_sta_authorized_event(
+					hdd_adapter_t *adapter,
+					hdd_context_t *hdd_ctx,
+					const v_MACADDR_t *mac_addr)
+{
+	struct sk_buff *vendor_event;
+	uint32_t sta_flags = 0;
+	VOS_STATUS status;
+
+	ENTER();
+
+	if (!hdd_ctx) {
+		hddLog(VOS_TRACE_LEVEL_ERROR, FL("HDD context is null"));
+		return -EINVAL;
+	}
+
+	vendor_event =
+		cfg80211_vendor_event_alloc(
+			hdd_ctx->wiphy, &adapter->wdev, sizeof(sta_flags) +
+			VOS_MAC_ADDR_SIZE + NLMSG_HDRLEN,
+			QCA_NL80211_VENDOR_SUBCMD_LINK_PROPERTIES_INDEX,
+			GFP_KERNEL);
+	if (!vendor_event) {
+		hddLog(VOS_TRACE_LEVEL_ERROR,
+		       FL("cfg80211_vendor_event_alloc failed"));
+		return -EINVAL;
+	}
+
+	sta_flags |= BIT(NL80211_STA_FLAG_AUTHORIZED);
+
+	status = nla_put_u32(vendor_event,
+			     QCA_WLAN_VENDOR_ATTR_LINK_PROPERTIES_STA_FLAGS,
+			     sta_flags);
+	if (status) {
+		hddLog(VOS_TRACE_LEVEL_ERROR, FL("STA flag put fails"));
+		kfree_skb(vendor_event);
+		return VOS_STATUS_E_FAILURE;
+	}
+	status = nla_put(vendor_event,
+			 QCA_WLAN_VENDOR_ATTR_LINK_PROPERTIES_STA_MAC,
+			 VOS_MAC_ADDR_SIZE, mac_addr->bytes);
+	if (status) {
+		hddLog(VOS_TRACE_LEVEL_ERROR, FL("STA MAC put fails"));
+		kfree_skb(vendor_event);
+		return VOS_STATUS_E_FAILURE;
+	}
+
+	cfg80211_vendor_event(vendor_event, GFP_KERNEL);
+
+	EXIT();
+	return 0;
+}
+
 static int __wlan_hdd_change_station(struct wiphy *wiphy,
                                          struct net_device *dev,
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
@@ -12835,6 +12892,10 @@ static int __wlan_hdd_change_station(struct wiphy *wiphy,
                          "%s: Not able to change TL state to AUTHENTICATED", __func__);
                 return -EINVAL;
             }
+            status = wlan_hdd_send_sta_authorized_event(pAdapter, pHddCtx,
+                                                        &STAMacAddress);
+            if (status != VOS_STATUS_SUCCESS)
+                return -EINVAL;
         }
     }
     else if ((pAdapter->device_mode == WLAN_HDD_INFRA_STATION)
