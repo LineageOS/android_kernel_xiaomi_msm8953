@@ -38,6 +38,11 @@ struct tx_mute_work {
 	struct delayed_work dwork;
 };
 
+struct msm_cap_mode {
+	u8 micbias1_cap_mode;
+	u8 micbias2_cap_mode;
+};
+
 struct msm_dig_priv {
 	struct snd_soc_codec *codec;
 	u32 comp_enabled[MSM89XX_RX_MAX];

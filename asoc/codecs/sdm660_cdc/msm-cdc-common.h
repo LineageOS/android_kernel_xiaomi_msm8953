@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2017, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -63,5 +63,6 @@ enum dig_cdc_notify_event {
 	DIG_CDC_EVENT_POST_RX2_INT_OFF,
 	DIG_CDC_EVENT_SSR_DOWN,
 	DIG_CDC_EVENT_SSR_UP,
+	DIG_CDC_EVENT_CAP_CONFIGURE,
 	DIG_CDC_EVENT_LAST,
 };
