@@ -132,7 +132,7 @@ v_VOID_t WLANTL_ReorderingAgingTimerExpierCB
    WDI_DS_RxMetaInfoType       *pRxMetadata;
    vos_pkt_t                   *pCurrent;
    vos_pkt_t                   *pNext;
-   v_S15_t                      seq;
+   v_S15_t                      seq = 0;
    v_U32_t                      cIndex;
    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 

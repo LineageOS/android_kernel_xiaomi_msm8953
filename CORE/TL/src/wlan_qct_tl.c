@@ -14483,8 +14483,8 @@ void WLANTL_RegisterFwdEapol(v_PVOID_t pvosGCtx,
    WLANTL_CbType* pTLCb = NULL;
    pTLCb = VOS_GET_TL_CB(pvosGCtx);
 
-   pTLCb->pfnEapolFwd = pfnFwdEapol;
-
+   if (pTLCb)
+      pTLCb->pfnEapolFwd = pfnFwdEapol;
 }
 
  /**
