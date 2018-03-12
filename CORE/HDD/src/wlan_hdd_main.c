@@ -3200,6 +3200,242 @@ static inline void hdd_assign_reassoc_handoff(tCsrHandoffRequest *handoffInfo)
 }
 #endif
 
+/**
+ * wlan_hdd_free_cache_channels() - Free the cache channels list
+ * @hdd_ctx: Pointer to HDD context
+ *
+ * Return: None
+ */
+
+static void wlan_hdd_free_cache_channels(hdd_context_t *hdd_ctx)
+{
+	mutex_lock(&hdd_ctx->cache_channel_lock);
+	hdd_ctx->orginal_channels->num_channels = 0;
+	vos_mem_free(hdd_ctx->orginal_channels->channel_info);
+	hdd_ctx->orginal_channels->channel_info = NULL;
+	vos_mem_free(hdd_ctx->orginal_channels);
+	hdd_ctx->orginal_channels = NULL;
+	mutex_unlock(&hdd_ctx->cache_channel_lock);
+}
+
+/**
+ * hdd_alloc_chan_cache() - Allocate the memory to cache the channel
+ * info for the channels received in command SET_DISABLE_CHANNEL_LIST
+ * @hdd_ctx: Pointer to HDD context
+ * @num_chan: Number of channels for which memory needs to
+ * be allocated
+ *
+ * Return: 0 on success and error code on failure
+ */
+
+int hdd_alloc_chan_cache(hdd_context_t *hdd_ctx, int num_chan)
+{
+	if (NULL ==  hdd_ctx->orginal_channels) {
+		hdd_ctx->orginal_channels =
+			vos_mem_malloc(sizeof(struct hdd_cache_channels));
+		if (NULL ==  hdd_ctx->orginal_channels) {
+			hddLog(VOS_TRACE_LEVEL_ERROR,
+			       "In %s, VOS_MALLOC_ERR", __func__);
+			return -EINVAL;
+		}
+		hdd_ctx->orginal_channels->num_channels = num_chan;
+		hdd_ctx->orginal_channels->channel_info =
+					vos_mem_malloc(num_chan *
+					sizeof(struct hdd_cache_channel_info));
+		if (NULL ==  hdd_ctx->orginal_channels->channel_info) {
+			hddLog(VOS_TRACE_LEVEL_ERROR,
+			       "In %s, VOS_MALLOC_ERR", __func__);
+			hdd_ctx->orginal_channels->num_channels = 0;
+			vos_mem_free(hdd_ctx->orginal_channels);
+			hdd_ctx->orginal_channels = NULL;
+			return -EINVAL;
+		}
+	} else {
+		/* Same command comes multiple times */
+		struct hdd_cache_channel_info *temp_chan_info;
+
+		if (hdd_ctx->orginal_channels->num_channels + num_chan >
+								MAX_CHANNEL) {
+			hddLog(VOS_TRACE_LEVEL_ERROR,
+			       "%s: Invalid Number of channel received",
+			       __func__);
+			return -EINVAL;
+		}
+
+		temp_chan_info = vos_mem_malloc((
+					hdd_ctx->orginal_channels->
+						num_channels + num_chan) *
+					sizeof(struct hdd_cache_channel_info));
+		if (NULL ==  temp_chan_info) {
+			hddLog(VOS_TRACE_LEVEL_ERROR,
+			       "In %s, VOS_MALLOC_ERR",
+			       __func__);
+			return -EINVAL;
+		}
+
+		vos_mem_copy(temp_chan_info, hdd_ctx->orginal_channels->
+			     channel_info, hdd_ctx->orginal_channels->
+			     num_channels *
+			     sizeof(struct hdd_cache_channel_info));
+
+		hdd_ctx->orginal_channels->num_channels += num_chan;
+		vos_mem_free(hdd_ctx->orginal_channels->channel_info);
+		hdd_ctx->orginal_channels->channel_info = temp_chan_info;
+		temp_chan_info = NULL;
+	}
+	return 0;
+
+}
+
+
+int hdd_parse_disable_chan_cmd(hdd_adapter_t *adapter, tANI_U8 *ptr)
+{
+	v_PVOID_t pvosGCtx = vos_get_global_context(VOS_MODULE_ID_HDD, NULL);
+	hdd_context_t *hdd_ctx = vos_get_context(VOS_MODULE_ID_HDD, pvosGCtx);
+	tANI_U8 *param;
+	int j, tempInt, index = 0, ret = 0;
+
+	if (NULL == pvosGCtx) {
+		hddLog(VOS_TRACE_LEVEL_FATAL,
+		       "VOS Global Context is NULL");
+		return -EINVAL;
+	}
+
+	if (NULL == hdd_ctx) {
+		hddLog(VOS_TRACE_LEVEL_FATAL, "HDD Context is NULL");
+		return -EINVAL;
+	}
+
+	param = strchr(ptr, ' ');
+	/*no argument after the command*/
+	if (NULL == param)
+		return -EINVAL;
+
+	/*no space after the command*/
+	else if (SPACE_ASCII_VALUE != *param)
+		return -EINVAL;
+
+	param++;
+
+	/*removing empty spaces*/
+	while ((SPACE_ASCII_VALUE  == *param) && ('\0' !=  *param))
+		param++;
+
+	/*no argument followed by spaces*/
+	if ('\0' == *param)
+		return -EINVAL;
+
+	/*getting the first argument ie the number of channels*/
+	if (sscanf(param, "%d ", &tempInt) != 1) {
+		hddLog(VOS_TRACE_LEVEL_ERROR,
+		       "%s: Cannot get number of channels from input",
+		       __func__);
+		return -EINVAL;
+	}
+
+	if (tempInt < 0 || tempInt > MAX_CHANNEL) {
+		hddLog(VOS_TRACE_LEVEL_ERROR,
+		       "%s: Invalid Number of channel received", __func__);
+		return -EINVAL;
+	}
+
+	hddLog(VOS_TRACE_LEVEL_INFO_HIGH,
+	       "%s: Number of channel to disable are: %d",
+	       __func__, tempInt);
+
+	if (!tempInt) {
+		if (!wlan_hdd_restore_channels(hdd_ctx)) {
+			/*
+			 * Free the cache channels only when the command is
+			 * received with num channels as 0
+			 */
+			wlan_hdd_free_cache_channels(hdd_ctx);
+		}
+		return 0;
+	}
+
+	mutex_lock(&hdd_ctx->cache_channel_lock);
+	if (hdd_alloc_chan_cache(hdd_ctx, tempInt)) {
+		ret = -ENOMEM;
+		goto parse_done;
+	}
+	index = hdd_ctx->orginal_channels->num_channels - tempInt;
+
+	for (j = index; j < hdd_ctx->orginal_channels->num_channels; j++) {
+		/*
+		 * param pointing to the beginning of first space
+		 * after number of channels
+		 */
+		param = strpbrk(param, " ");
+		/*no channel list after the number of channels argument*/
+		if (NULL == param) {
+			hddLog(VOS_TRACE_LEVEL_ERROR,
+			       "%s, Invalid No of channel provided in the list",
+			       __func__);
+			ret = -EINVAL;
+			goto parse_done;
+		}
+
+		param++;
+
+		/*removing empty space*/
+		while ((SPACE_ASCII_VALUE == *param) && ('\0' != *param))
+			param++;
+
+		if ('\0' == *param) {
+			hddLog(VOS_TRACE_LEVEL_ERROR,
+			       "%s, No channel is provided in the list",
+				__func__);
+			ret = -EINVAL;
+			goto parse_done;
+
+		}
+
+		if (sscanf(param, "%d ", &tempInt) != 1) {
+			hddLog(VOS_TRACE_LEVEL_ERROR,
+			       "%s: Cannot read channel number",
+			       __func__);
+			ret = -EINVAL;
+			goto parse_done;
+
+		}
+
+		if (!IS_CHANNEL_VALID(tempInt)) {
+			hddLog(VOS_TRACE_LEVEL_ERROR,
+			       "%s: Invalid channel number received",
+			       __func__);
+			ret = -EINVAL;
+			goto parse_done;
+
+		}
+
+		hddLog(VOS_TRACE_LEVEL_INFO, "%s: channel[%d] = %d", __func__,
+		       j, tempInt);
+		hdd_ctx->orginal_channels->channel_info[j].channel_num =
+								tempInt;
+	}
+
+	/*extra arguments check*/
+	param = strchr(param, ' ');
+	if (NULL != param) {
+		while ((SPACE_ASCII_VALUE == *param) && ('\0' != *param))
+			param++;
+
+		if ('\0' !=  *param) {
+			hddLog(VOS_TRACE_LEVEL_ERROR,
+			       "%s: Invalid argument received", __func__);
+			ret = -EINVAL;
+			goto parse_done;
+		}
+	}
+
+parse_done:
+	mutex_unlock(&hdd_ctx->cache_channel_lock);
+	EXIT();
+
+	return ret;
+}
+
 static int hdd_driver_command(hdd_adapter_t *pAdapter,
                               hdd_priv_data_t *ppriv_data)
 {
@@ -6258,6 +6494,25 @@ static int hdd_driver_command(hdd_adapter_t *pAdapter,
 
            ret = hdd_enable_disable_ca_event(pHddCtx, command, 16);
        }
+       /*
+        * command should be a string having format
+        * SET_DISABLE_CHANNEL_LIST <num of channels>
+        * <channels separated by spaces>
+        */
+       else if (strncmp(command, "SET_DISABLE_CHANNEL_LIST", 24) == 0) {
+            tANI_U8 *ptr = command;
+            ret = hdd_drv_cmd_validate(command, 24);
+            if (ret)
+                goto exit;
+
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                " Received Command to disable Channels %s",
+                __func__);
+            ret = hdd_parse_disable_chan_cmd(pAdapter, ptr);
+            if (ret)
+                goto exit;
+       }
+
        else {
            MTRACE(vos_trace(VOS_MODULE_ID_HDD,
                             TRACE_CODE_HDD_UNSUPPORTED_IOCTL,
@@ -13407,6 +13662,7 @@ int hdd_wlan_startup(struct device *dev )
 
    hdd_assoc_registerFwdEapolCB(pVosContext);
 
+   mutex_init(&pHddCtx->cache_channel_lock);
    goto success;
 
 err_open_cesium_nl_sock:

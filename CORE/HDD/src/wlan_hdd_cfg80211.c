@@ -10625,6 +10625,165 @@ void hdd_check_and_disconnect_sta_on_invalid_channel(hdd_context_t *hdd_ctx)
     wlan_hdd_disconnect(sta_adapter, eCSR_DISCONNECT_REASON_DEAUTH);
 }
 
+int wlan_hdd_restore_channels(hdd_context_t *hdd_ctx)
+{
+	struct hdd_cache_channels *cache_chann;
+	struct wiphy *wiphy;
+	int freq, status, rfChannel;
+	int i, band_num, channel_num;
+	struct ieee80211_channel *wiphy_channel;
+
+	ENTER();
+
+	if (!hdd_ctx) {
+		hddLog(VOS_TRACE_LEVEL_FATAL, "HDD Context is NULL");
+		return -EINVAL;
+	}
+
+	wiphy = hdd_ctx->wiphy;
+
+	mutex_lock(&hdd_ctx->cache_channel_lock);
+
+	cache_chann = hdd_ctx->orginal_channels;
+
+	if (!cache_chann || !cache_chann->num_channels) {
+		hddLog(VOS_TRACE_LEVEL_INFO,
+		       "%s channel list is NULL or num channels are zero",
+		       __func__);
+		mutex_unlock(&hdd_ctx->cache_channel_lock);
+		return -EINVAL;
+	}
+
+	for (i = 0; i < cache_chann->num_channels; i++) {
+		status = hdd_wlan_get_freq(
+				cache_chann->channel_info[i].channel_num,
+				&freq);
+
+		for (band_num = 0; band_num < IEEE80211_NUM_BANDS; band_num++) {
+			for (channel_num = 0; channel_num <
+				wiphy->bands[band_num]->n_channels;
+				channel_num++) {
+				wiphy_channel = &(wiphy->bands[band_num]->
+							channels[channel_num]);
+				if (wiphy_channel->center_freq == freq) {
+					rfChannel = wiphy_channel->hw_value;
+					/*
+					 *Restore the orginal states
+					 *of the channels
+					 */
+					vos_nv_set_channel_state(
+						rfChannel,
+						cache_chann->
+						channel_info[i].reg_status);
+					wiphy_channel->flags =
+						cache_chann->
+						channel_info[i].wiphy_status;
+					break;
+				}
+			}
+			if (channel_num < wiphy->bands[band_num]->n_channels)
+				break;
+		}
+	}
+
+	mutex_unlock(&hdd_ctx->cache_channel_lock);
+
+	status = sme_update_channel_list((tpAniSirGlobal)hdd_ctx->hHal);
+	if (status)
+		hddLog(VOS_TRACE_LEVEL_ERROR, "Can't Restore channel list");
+	EXIT();
+
+	return 0;
+}
+
+/*
+ * wlan_hdd_disable_channels() - Cache the the channels
+ * and current state of the channels from the channel list
+ * received in the command and disable the channels on the
+ * wiphy and NV table.
+ * @hdd_ctx: Pointer to hdd context
+ *
+ * @return: 0 on success, Error code on failure
+ */
+
+static int wlan_hdd_disable_channels(hdd_context_t *hdd_ctx)
+{
+	struct hdd_cache_channels *cache_chann;
+	struct wiphy *wiphy;
+	int freq, status, rfChannel;
+	int i, band_num, band_ch_num;
+	struct ieee80211_channel *wiphy_channel;
+
+	if (!hdd_ctx) {
+		hddLog(VOS_TRACE_LEVEL_FATAL, "HDD Context is NULL");
+		return -EINVAL;
+	}
+
+	wiphy = hdd_ctx->wiphy;
+
+	mutex_lock(&hdd_ctx->cache_channel_lock);
+	cache_chann = hdd_ctx->orginal_channels;
+
+	if (!cache_chann || !cache_chann->num_channels) {
+		hddLog(VOS_TRACE_LEVEL_INFO,
+		       "%s channel list is NULL or num channels are zero",
+		       __func__);
+		mutex_unlock(&hdd_ctx->cache_channel_lock);
+		return -EINVAL;
+	}
+
+	for (i = 0; i < cache_chann->num_channels; i++) {
+		status = hdd_wlan_get_freq(
+				cache_chann->channel_info[i].channel_num,
+				&freq);
+
+		for (band_num = 0; band_num < IEEE80211_NUM_BANDS;
+							band_num++) {
+			for (band_ch_num = 0; band_ch_num <
+					wiphy->bands[band_num]->n_channels;
+					band_ch_num++) {
+				wiphy_channel = &(wiphy->bands[band_num]->
+							channels[band_ch_num]);
+				if (wiphy_channel->center_freq == freq) {
+					rfChannel = wiphy_channel->hw_value;
+					/*
+					 * Cache the current states of
+					 * the channels
+					 */
+					cache_chann->
+					channel_info[i].reg_status =
+						vos_nv_getChannelEnabledState(
+							rfChannel);
+
+					cache_chann->
+						channel_info[i].wiphy_status =
+							wiphy_channel->flags;
+					hddLog(VOS_TRACE_LEVEL_INFO,
+					"Disable channel %d reg_stat %d wiphy_stat 0x%x",
+					cache_chann->
+						channel_info[i].channel_num,
+					cache_chann->
+						channel_info[i].reg_status,
+					wiphy_channel->flags);
+
+					vos_nv_set_channel_state(
+							rfChannel,
+							NV_CHANNEL_DISABLE);
+					wiphy_channel->flags |=
+						IEEE80211_CHAN_DISABLED;
+					break;
+				}
+			}
+			if (band_ch_num < wiphy->bands[band_num]->n_channels)
+				break;
+		}
+	}
+
+	mutex_unlock(&hdd_ctx->cache_channel_lock);
+	sme_update_channel_list((tpAniSirGlobal)hdd_ctx->hHal);
+	return 0;
+}
+
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3,4,0))
 static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
                             struct beacon_parameters *params)
@@ -10680,6 +10839,12 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
         /* check if STA is on indoor channel */
         if (hdd_is_sta_sap_scc_allowed_on_dfs_chan(pHddCtx))
             hdd_check_and_disconnect_sta_on_invalid_channel(pHddCtx);
+    }
+
+    if (pHostapdAdapter->device_mode == WLAN_HDD_SOFTAP) {
+        /* Disable the channels received in command SET_DISABLE_CHANNEL_LIST*/
+        wlan_hdd_disable_channels(pHddCtx);
+        hdd_check_and_disconnect_sta_on_invalid_channel(pHddCtx);
     }
 
     pHostapdState = WLAN_HDD_GET_HOSTAP_STATE_PTR(pHostapdAdapter);
@@ -10738,7 +10903,8 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
             {
                  hddLog(VOS_TRACE_LEVEL_ERROR,
                          "%s: Invalid Channel [%d]", __func__, pConfig->channel);
-                 return -EINVAL;
+                 ret = -EINVAL;
+                 goto error;
             }
             pConfig->user_config_channel = pConfig->channel;
         }
@@ -10803,7 +10969,8 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
         if(pIe[1] < (2 + WPS_OUI_TYPE_SIZE))
         {
             hddLog( VOS_TRACE_LEVEL_ERROR, "**Wps Ie Length is too small***");
-            return -EINVAL;
+            ret = -EINVAL;
+            goto error;
         }
         else if(memcmp(&pIe[2], WPS_OUI_TYPE, WPS_OUI_TYPE_SIZE) == 0)
         {
@@ -10929,7 +11096,8 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
 
     if (pConfig->RSNWPAReqIELength > sizeof(pConfig->RSNWPAReqIE)) {
         hddLog( VOS_TRACE_LEVEL_ERROR, "**RSNWPAReqIELength is too large***");
-        return -EINVAL;
+        ret = -EINVAL;
+        goto error;
     }
 
     pConfig->SSIDinfo.ssidHidden = VOS_FALSE;
@@ -11057,7 +11225,8 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
     if ( 0 != wlan_hdd_cfg80211_update_apies(pHostapdAdapter))
     {
         hddLog(LOGE, FL("SAP Not able to set AP IEs"));
-        return -EINVAL;
+        ret = -EINVAL;
+        goto error;
     }
 
     //Uapsd Enabled Bit
@@ -11098,7 +11267,8 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
 
     if (vos_max_concurrent_connections_reached()) {
         hddLog(VOS_TRACE_LEVEL_INFO, FL("Reached max concurrent connections"));
-        return -EINVAL;
+        ret = -EINVAL;
+        goto error;
     }
 
     pConfig->persona = pHostapdAdapter->device_mode;
@@ -11274,6 +11444,8 @@ static int wlan_hdd_cfg80211_start_bss(hdd_adapter_t *pHostapdAdapter,
 
    return 0;
 error:
+    if (pHostapdAdapter->device_mode == WLAN_HDD_SOFTAP)
+        wlan_hdd_restore_channels(pHddCtx);
    /* Revert the indoor to passive marking if START BSS fails */
     if (iniConfig->disable_indoor_channel) {
         hdd_update_indoor_channel(pHddCtx, false);
