@@ -938,7 +938,7 @@ static struct cal_block_data *msm_routing_find_topology(int path,
 	}
 	pr_debug("%s: Can't find topology for path %d, app %d, acdb_id %d defaulting to search by path\n",
 		__func__, path, app_type, acdb_id);
-	return msm_routing_find_topology_by_path(cal_index, path);
+	return msm_routing_find_topology_by_path(path, cal_index);
 }
 
 static int msm_routing_get_adm_topology(int fedai_id, int session_type,
