@@ -2471,11 +2471,25 @@ static __iw_softap_setparam(struct net_device *dev,
                 break;
             }
         case QCSAP_PARAM_SET_CHANNEL_CHANGE:
-            if ((WLAN_HDD_SOFTAP == pHostapdAdapter->device_mode) ||
-                (WLAN_HDD_P2P_GO == pHostapdAdapter->device_mode)) {
+            if (WLAN_HDD_SOFTAP == pHostapdAdapter->device_mode) {
+                ptSapContext sap_ctx;
+
+                sap_ctx = VOS_GET_SAP_CB(pVosContext);
+                if (!sap_ctx) {
+                    hddLog(LOGE, FL("sap_ctx is NULL"));
+                    return -EINVAL;
+                }
+                ret = wlansap_chk_n_set_chan_change_in_progress(sap_ctx);
+                if (ret)
+                    return ret;
+                INIT_COMPLETION(sap_ctx->ecsa_info.chan_switch_comp);
                 hddLog(LOG1, FL("ET Channel Change to new channel= %d"),
                        set_value);
                 ret = wlansap_set_channel_change(pVosContext, set_value, false);
+                if (ret) {
+                       wlansap_reset_chan_change_in_progress(sap_ctx);
+                       complete(&sap_ctx->ecsa_info.chan_switch_comp);
+                }
             } else {
                 hddLog(LOGE, FL("Channel %d Change Failed, Device in not in SAP/GO mode"),
                        set_value);

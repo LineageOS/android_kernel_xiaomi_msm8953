@@ -74,6 +74,10 @@
 /*--------------------------------------------------------------------------- 
   Preprocessor definitions and constants
   -------------------------------------------------------------------------*/
+
+/* SAP channel change wait time in ms */
+#define HDD_SAP_CHAN_CNG_WAIT_TIME 1500
+
 /** Number of attempts to detect/remove card */
 #define LIBRA_CARD_INSERT_DETECT_MAX_COUNT      5
 #define LIBRA_CARD_REMOVE_DETECT_MAX_COUNT      5
@@ -2316,6 +2320,14 @@ void hdd_disable_roaming(hdd_context_t *hdd_ctx);
 void hdd_restore_roaming(hdd_context_t *hdd_ctx);
 
 int wlan_hdd_check_and_stop_mon(hdd_adapter_t *sta_adapter, bool wait);
+
+/**
+ * hdd_wait_for_ecsa_complete() - wait if ecsa is in progress
+ * @hdd_ctx: hdd context
+ *
+ * Return: int.
+ */
+int hdd_wait_for_ecsa_complete(hdd_context_t *hdd_ctx);
 
 /**
  * hdd_is_sta_sap_scc_allowed_on_dfs_chan() - check if sta+sap scc allowed on

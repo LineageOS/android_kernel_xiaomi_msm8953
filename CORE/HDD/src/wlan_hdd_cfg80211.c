@@ -11692,6 +11692,8 @@ static int __wlan_hdd_cfg80211_stop_ap (struct wiphy *wiphy,
         mutex_lock(&pHddCtx->sap_lock);
         if(test_bit(SOFTAP_BSS_STARTED, &pAdapter->event_flags))
         {
+            vos_flush_delayed_work(&pHddCtx->ecsa_chan_change_work);
+            hdd_wait_for_ecsa_complete(pHddCtx);
             if ( VOS_STATUS_SUCCESS == (status = WLANSAP_StopBss(pHddCtx->pvosContext) ) )
             {
                 hdd_hostapd_state_t *pHostapdState = WLAN_HDD_GET_HOSTAP_STATE_PTR(pAdapter);
@@ -15800,7 +15802,10 @@ int wlan_hdd_cfg80211_connect_start( hdd_adapter_t  *pAdapter,
                    FL("Set HDD connState to eConnectionState_Connecting"));
             hdd_connSetConnectionState(WLAN_HDD_GET_STATION_CTX_PTR(pAdapter),
                                                  eConnectionState_Connecting);
+            vos_flush_delayed_work(&pHddCtx->ecsa_chan_change_work);
+            hdd_wait_for_ecsa_complete(pHddCtx);
         }
+
         status = sme_RoamConnect( WLAN_HDD_GET_HAL_CTX(pAdapter),
                             pAdapter->sessionId, pRoamProfile, &roamId);
 
@@ -21897,6 +21902,7 @@ static int __wlan_hdd_cfg80211_channel_switch(struct wiphy *wiphy,
    hdd_context_t *hdd_ctx;
    uint8_t channel;
    int ret;
+   ptSapContext sap_ctx;
    v_CONTEXT_t vos_ctx;
 
    hddLog(LOGE, FL("Set Freq %d"), csa_params->chandef.chan->center_freq);
@@ -21912,12 +21918,28 @@ static int __wlan_hdd_cfg80211_channel_switch(struct wiphy *wiphy,
        return -EINVAL;
    }
 
-   if ((WLAN_HDD_SOFTAP != adapter->device_mode) &&
-       (WLAN_HDD_P2P_GO != adapter->device_mode))
+   if (WLAN_HDD_SOFTAP != adapter->device_mode)
         return -ENOTSUPP;
+
+   sap_ctx = VOS_GET_SAP_CB(vos_ctx);
+   if (!sap_ctx) {
+       hddLog(LOGE, FL("sap_ctx is NULL"));
+       return -EINVAL;
+   }
+
+   ret = wlansap_chk_n_set_chan_change_in_progress(sap_ctx);
+   if (ret)
+       return ret;
+
+   INIT_COMPLETION(sap_ctx->ecsa_info.chan_switch_comp);
 
    channel = vos_freq_to_chan(csa_params->chandef.chan->center_freq);
    ret = wlansap_set_channel_change(vos_ctx, channel, false);
+
+   if (ret) {
+       wlansap_reset_chan_change_in_progress(sap_ctx);
+       complete(&sap_ctx->ecsa_info.chan_switch_comp);
+   }
 
    return ret;
 }
