@@ -10663,7 +10663,8 @@ int wlan_hdd_restore_channels(hdd_context_t *hdd_ctx)
 				cache_chann->channel_info[i].channel_num,
 				&freq);
 
-		for (band_num = 0; band_num < IEEE80211_NUM_BANDS; band_num++) {
+		for (band_num = 0; band_num < HDD_NUM_NL80211_BANDS;
+		     band_num++) {
 			for (channel_num = 0; channel_num <
 				wiphy->bands[band_num]->n_channels;
 				channel_num++) {
@@ -10741,7 +10742,7 @@ static int wlan_hdd_disable_channels(hdd_context_t *hdd_ctx)
 				cache_chann->channel_info[i].channel_num,
 				&freq);
 
-		for (band_num = 0; band_num < IEEE80211_NUM_BANDS;
+		for (band_num = 0; band_num < HDD_NUM_NL80211_BANDS;
 							band_num++) {
 			for (band_ch_num = 0; band_ch_num <
 					wiphy->bands[band_num]->n_channels;

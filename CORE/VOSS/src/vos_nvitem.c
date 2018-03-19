@@ -4845,15 +4845,15 @@ int __wlan_hdd_crda_reg_notifier(struct wiphy *wiphy,
                  k = wiphy->bands[HDD_NL80211_BAND_2GHZ]->n_channels + j;
 
                  if ((wiphy->bands[HDD_NL80211_BAND_5GHZ]->channels[j].center_freq == 5260 ||
-                      wiphy->bands[IEEE80211_BAND_5GHZ]->channels[j].center_freq == 5280 ||
-                      wiphy->bands[IEEE80211_BAND_5GHZ]->channels[j].center_freq == 5300 ||
-                      wiphy->bands[IEEE80211_BAND_5GHZ]->channels[j].center_freq == 5320 ||
-                      wiphy->bands[IEEE80211_BAND_5GHZ]->channels[j].center_freq == 5500 ||
-                      wiphy->bands[IEEE80211_BAND_5GHZ]->channels[j].center_freq == 5520) &&
+                      wiphy->bands[HDD_NL80211_BAND_5GHZ]->channels[j].center_freq == 5280 ||
+                      wiphy->bands[HDD_NL80211_BAND_5GHZ]->channels[j].center_freq == 5300 ||
+                      wiphy->bands[HDD_NL80211_BAND_5GHZ]->channels[j].center_freq == 5320 ||
+                      wiphy->bands[HDD_NL80211_BAND_5GHZ]->channels[j].center_freq == 5500 ||
+                      wiphy->bands[HDD_NL80211_BAND_5GHZ]->channels[j].center_freq == 5520) &&
                      ((regChannels[k].enabled == NV_CHANNEL_ENABLE) ||
                       (regChannels[k].enabled == NV_CHANNEL_DFS)))
                  {
-                     wiphy->bands[IEEE80211_BAND_5GHZ]->channels[j].flags |= IEEE80211_CHAN_RADAR;
+                     wiphy->bands[HDD_NL80211_BAND_5GHZ]->channels[j].flags |= IEEE80211_CHAN_RADAR;
                  }
              }
          }
