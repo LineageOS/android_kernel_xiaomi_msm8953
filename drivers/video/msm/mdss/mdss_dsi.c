@@ -45,8 +45,9 @@ static struct mdss_dsi_data *mdss_dsi_res;
 
 static struct pm_qos_request mdss_dsi_pm_qos_request;
 
-#ifdef CONFIG_MACH_XIAOMI_MIDO
+#if (defined CONFIG_MACH_XIAOMI_MIDO) || (defined CONFIG_MACH_XIAOMI_TISSOT)
 int panel_suspend_reset_flag = 0;
+int panel_suspend_power_flag = 0;
 #endif
 
 static void mdss_dsi_pm_qos_add_request(struct mdss_dsi_ctrl_pdata *ctrl_pdata)
@@ -276,7 +277,12 @@ static int mdss_dsi_regulator_init(struct platform_device *pdev,
 	return rc;
 }
 
-static int mdss_dsi_panel_power_off(struct mdss_panel_data *pdata)
+#ifdef CONFIG_MACH_XIAOMI_TISSOT
+extern int ft8716_suspend;
+extern int  ft8716_gesture_func_on;
+int acc_vreg = 0;
+#endif
+int mdss_dsi_panel_power_off(struct mdss_panel_data *pdata)
 {
 	int ret = 0;
 	struct mdss_dsi_ctrl_pdata *ctrl_pdata = NULL;
@@ -303,17 +309,36 @@ static int mdss_dsi_panel_power_off(struct mdss_panel_data *pdata)
 	if (2 == panel_suspend_reset_flag)
 		msleep(1); //dealy 2ms
 
-	if (3 == panel_suspend_reset_flag)
+	if (4 == panel_suspend_reset_flag)
 		msleep(4); //delay 4ms
 #endif
 
-	ret = msm_dss_enable_vreg(
+#ifdef CONFIG_MACH_XIAOMI_TISSOT
+	if ((panel_suspend_power_flag != 3) && acc_vreg) {
+#endif
+		ret = msm_dss_enable_vreg(
 		ctrl_pdata->panel_power_data.vreg_config,
 		ctrl_pdata->panel_power_data.num_vreg, 0);
-	if (ret)
-		pr_err("%s: failed to disable vregs for %s\n",
+#ifdef CONFIG_MACH_XIAOMI_TISSOT
+		acc_vreg--;
+#endif
+		if (ret)
+			pr_err("%s: failed to disable vregs for %s\n",
 			__func__, __mdss_dsi_pm_name(DSI_PANEL_PM));
+#ifdef CONFIG_MACH_XIAOMI_TISSOT
+	} else {
+		if (!ft8716_gesture_func_on && ft8716_suspend && acc_vreg) {
+			ret = msm_dss_enable_vreg(
+					ctrl_pdata->panel_power_data.vreg_config,
+					ctrl_pdata->panel_power_data.num_vreg, 0);
+			acc_vreg--;
+			if (ret)
+				pr_err("%s: failed to disable vregs for %s\n",
+					 __func__, __mdss_dsi_pm_name(DSI_PANEL_PM));
+		}
+	}
 
+#endif
 end:
 	return ret;
 }
@@ -331,14 +356,23 @@ static int mdss_dsi_panel_power_on(struct mdss_panel_data *pdata)
 	ctrl_pdata = container_of(pdata, struct mdss_dsi_ctrl_pdata,
 				panel_data);
 
-	ret = msm_dss_enable_vreg(
+#ifdef CONFIG_MACH_XIAOMI_TISSOT
+	if (!acc_vreg) {
+#endif
+		ret = msm_dss_enable_vreg(
 		ctrl_pdata->panel_power_data.vreg_config,
 		ctrl_pdata->panel_power_data.num_vreg, 1);
-	if (ret) {
-		pr_err("%s: failed to enable vregs for %s\n",
-			__func__, __mdss_dsi_pm_name(DSI_PANEL_PM));
-		return ret;
+#ifdef CONFIG_MACH_XIAOMI_TISSOT
+		acc_vreg++;
+#endif
+		if (ret) {
+			pr_err("%s: failed to enable vregs for %s\n",
+				__func__, __mdss_dsi_pm_name(DSI_PANEL_PM));
+			return ret;
+		}
+#ifdef CONFIG_MACH_XIAOMI_TISSOT
 	}
+#endif
 
 	/*
 	 * If continuous splash screen feature is enabled, then we need to
@@ -2905,12 +2939,18 @@ static struct device_node *mdss_dsi_find_panel_of_node(
 		if (!strcmp(panel_name, NONE_PANEL))
 			goto exit;
 
-#ifdef CONFIG_MACH_XIAOMI_MIDO
-		if (!strcmp(panel_name, "qcom,mdss_dsi_otm1911_fhd_video"))
+#if (defined CONFIG_MACH_XIAOMI_MIDO) || (defined CONFIG_MACH_XIAOMI_TISSOT)
+		if (!strcmp(panel_name, "qcom,mdss_dsi_td4310_fhd_video")) {
+			panel_suspend_reset_flag = 1;
+			panel_suspend_power_flag = 1;
+		} else if (!strcmp(panel_name, "qcom,mdss_dsi_otm1911_fhd_video")) {
 			panel_suspend_reset_flag = 2;
-
-		if (!strcmp(panel_name, "qcom,mdss_dsi_ili9885_boe_fhd_video"))
+			panel_suspend_power_flag = 2;
+		} else if (!strcmp(panel_name, "qcom,mdss_dsi_ft8716_fhd_video")) {
 			panel_suspend_reset_flag = 3;
+			panel_suspend_power_flag = 3;
+		} else if (!strcmp(panel_name, "qcom,mdss_dsi_ili9885_boe_fhd_video"))
+			panel_suspend_reset_flag = 4;
 #endif
 
 		mdss_node = of_parse_phandle(pdev->dev.of_node,
@@ -3187,6 +3227,10 @@ end:
 	return rc;
 }
 
+#ifdef CONFIG_MACH_XIAOMI_TISSOT
+struct mdss_panel_data *panel_data;
+#endif
+
 static int mdss_dsi_ctrl_probe(struct platform_device *pdev)
 {
 	int rc = 0;
@@ -3279,6 +3323,10 @@ static int mdss_dsi_ctrl_probe(struct platform_device *pdev)
 	} else {
 		ctrl_pdata->bklt_ctrl = UNKNOWN_CTRL;
 	}
+
+#ifdef CONFIG_MACH_XIAOMI_TISSOT
+	panel_data = &ctrl_pdata->panel_data;
+#endif
 
 	rc = dsi_panel_device_register(pdev, dsi_pan_node, ctrl_pdata);
 	if (rc) {
