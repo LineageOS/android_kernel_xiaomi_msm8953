@@ -34,7 +34,7 @@
 #ifndef _SYNAPTICS_DSX_H_
 #define _SYNAPTICS_DSX_H_
 
-#define PLATFORM_DRIVER_NAME "synaptics_dsx"
+#define PLATFORM_DRIVER_NAME "synaptics_dsx_v21"
 #define STYLUS_DRIVER_NAME "synaptics_dsx_stylus"
 #define ACTIVE_PEN_DRIVER_NAME "synaptics_dsx_active_pen"
 #define PROXIMITY_DRIVER_NAME "synaptics_dsx_proximity"
@@ -85,12 +85,14 @@ struct synaptics_dsx_board_data {
 	bool x_flip;
 	bool y_flip;
 	bool swap_axes;
+	int irq;
 	int irq_gpio;
 	int irq_on_state;
 	int power_gpio;
 	int power_on_state;
 	int reset_gpio;
 	int reset_on_state;
+	int display_reset_gpio;
 	int max_y_for_2d;
 	unsigned long irq_flags;
 	unsigned short i2c_addr;
