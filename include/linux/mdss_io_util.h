@@ -118,7 +118,7 @@ int mdss_i2c_byte_read(struct i2c_client *client, uint8_t slave_addr,
 		       uint8_t reg_offset, uint8_t *read_buf);
 int mdss_i2c_byte_write(struct i2c_client *client, uint8_t slave_addr,
 			uint8_t reg_offset, uint8_t *value);
-#ifdef CONFIG_MACH_XIAOMI_TISSOT
+#if (defined CONFIG_MACH_XIAOMI_TIFFANY) || (defined CONFIG_MACH_XIAOMI_TISSOT)
 int mdss_prim_panel_fb_unblank(int timeout);
 #endif
 
