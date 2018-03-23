@@ -1,0 +1,81 @@
+/* Copyright (c) 2015-2017, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+#include <dt-bindings/msm/power-on.h>
+
+&spmi_bus {
+
+	qcom,pmi8950@2 {
+		pmi8950_vadc: vadc@3100 {
+			chan@10 {
+				label = "pcba_vadc";
+				reg = <0x10>;
+				qcom,decimation = <0>;
+				qcom,pre-div-channel-scaling = <0>; //1:1
+				qcom,calibration-type = "ratiometric";
+				qcom,scale-function = <0>;
+				qcom,hw-settle-time = <1>;
+				qcom,fast-avg-setup = <2>;
+			};
+		};
+
+		pmi8950_mpps: mpps {
+			mpp@a000 {
+				qcom,mode = <4>; /* AIN input */
+				qcom,invert = <1>; /* Enable MPP */
+				com,ain-route = <0>; /* AMUX 5 */
+				qcom,master-en = <1>;
+				qcom,src-sel = <0>; /* Function constant */
+				status = "okay";
+			};
+		};
+
+		pmi8950_charger: qcom,qpnp-smbcharger {
+			qcom,iterm-ma = <200>;
+			qcom,float-voltage-mv = <4380>;
+			qcom,resume-delta-mv = <50>;
+			qcom,charge-unknown-battery;
+			/delete-property/ qcom,autoadjust-vfloat;
+			qcom,override-usb-current;
+			qcom,fastchg-current-comp = <900>;
+			qcom,float-voltage-comp = <15>;
+
+		};
+
+		pmi8950_fg: qcom,fg {
+			/delete-property/ qcom,resume-soc;
+			qcom,resume-soc-raw = <254>;
+			qcom,fg-iterm-ma = <300>;
+			qcom,fg-chg-iterm-ma = <200>;
+			qcom,fg-cutoff-voltage-mv = <3400>;
+			qcom,irq-volt-empty-mv = <3100>;
+			qcom,fg-use-vbat-low-empty-soc;
+			qcom,hold-soc-while-full;
+			qcom,fg-cc-cv-threshold-mv =<4370>;
+			qcom,vbat-estimate-diff-mv = <250>;
+
+		};
+	};
+
+	qcom,pmi8950@3 {
+		wled: qcom,leds@d800 {
+			qcom,en-cabc;
+		};
+
+		pmi_haptic: qcom,haptics@c000 {
+			qcom,actuator-type = <1>;
+			qcom,use-play-irq;
+			qcom,use-sc-irq;
+		};
+
+	};
+};
