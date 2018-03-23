@@ -48,7 +48,9 @@
 #define MSM_EEPROM_MEMORY_MAP_MAX_SIZE  80
 #define MSM_EEPROM_MAX_MEM_MAP_CNT      8
 
+#ifndef CONFIG_MACH_XIAOMI_MIDO
 #define MSM_SENSOR_BYPASS_VIDEO_NODE    1
+#endif
 
 enum msm_sensor_camera_id_t {
 	CAMERA_0,
@@ -302,7 +304,9 @@ struct msm_camera_sensor_slave_info {
 	unsigned char  is_init_params_valid;
 	struct msm_sensor_init_params sensor_init_params;
 	enum msm_sensor_output_format_t output_format;
+#ifndef CONFIG_MACH_XIAOMI_MIDO
 	uint8_t bypass_video_node_creation;
+#endif
 };
 
 struct msm_camera_i2c_reg_array {
