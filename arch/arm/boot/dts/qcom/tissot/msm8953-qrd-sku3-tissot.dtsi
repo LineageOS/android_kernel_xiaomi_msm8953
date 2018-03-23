@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2015-2016, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+&mdss_dsi0 {
+	qcom,dsi-pref-prim-pan = <&dsi_otm1911_fhd_vid>;
+};
+
+&int_codec {
+	status = "ok";
+};
+
+&pm8953_diangu_dig {
+	status = "ok";
+};
+
+&pm8953_diangu_analog {
+	status = "ok";
+};
+
+&ext_codec {
+	status = "disable";
+};
+
+&slim_msm {
+	status = "disable";
+};
+
+&dai_slim {
+	status = "disable";
+};
+
+&wcd9xxx_intc {
+	status = "disable";
+};
+
+&clock_audio {
+	status = "disable";
+};
+
+&wcd9335 {
+	status = "disable";
+};
+
+&wcd_rst_gpio {
+	status = "disable";
+};
