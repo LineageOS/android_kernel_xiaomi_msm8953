@@ -1,0 +1,119 @@
+/*
+ * Copyright (c) 2015-2016, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+
+&int_codec {
+	qcom,msm-spk-ext-pa = <&tlmm 141 0>;
+	qcom,msm-mbhc-hphl-swh = <1>;
+	qcom,msm-mbhc-gnd-swh = <1>;
+
+	qcom,msm-gpios =
+		"pri_i2s",
+		"ext_pa_gpio",
+		"quin_i2s",
+		"comp_gpio";
+	qcom,pinctrl-names =
+		"all_off",
+		"pri_i2s_act",
+		"ext_pa_gpio_act",
+		"pri_i2s_ext_pa_gpio_act",
+		"quin_act",
+		"quin_pri_i2s_act",
+		"quin_ext_pa_gpio_act",
+		"quin_ext_pa_gpio_pri_i2s_act",
+		"comp_gpio_act",
+		"comp_gpio_pri_i2s_act",
+		"comp_gpio_ext_pa_gpio_act",
+		"comp_gpio_pri_i2s_ext_pa_gpio_act",
+		"comp_gpio_quin_act",
+		"comp_gpio_quin_pri_i2s_act",
+		"comp_gpio_quin_ext_pa_gpio_act",
+		"comp_gpio_quin_ext_pa_gpio_pri_i2s_act";
+
+
+	pinctrl-names =
+		"all_off",
+		"pri_i2s_act",
+		"ext_pa_gpio_act",
+		"pri_i2s_ext_pa_gpio_act",
+		"quin_act",
+		"quin_pri_i2s_act",
+		"quin_ext_pa_gpio_act",
+		"quin_ext_pa_gpio_pri_i2s_act",
+		"comp_gpio_act",
+		"comp_gpio_pri_i2s_act",
+		"comp_gpio_ext_pa_gpio_act",
+		"comp_gpio_pri_i2s_ext_pa_gpio_act",
+		"comp_gpio_quin_act",
+		"comp_gpio_quin_pri_i2s_act",
+		"comp_gpio_quin_ext_pa_gpio_act",
+		"comp_gpio_quin_ext_pa_gpio_pri_i2s_act";
+
+	pinctrl-0 = <&cdc_pdm_lines_sus &cdc_pdm_comp_lines_sus
+		&cdc_pdm_lines_2_sus &cross_conn_det_sus
+		&pri_tlmm_lines_sus &pri_tlmm_ws_sus &ext_pa_power_off>;
+	pinctrl-1 = <&cdc_pdm_lines_act &cdc_pdm_comp_lines_sus
+		&cdc_pdm_lines_2_act  &ext_pa_power_off
+		&pri_tlmm_lines_sus &pri_tlmm_ws_sus>;
+	pinctrl-2 = <&cdc_pdm_lines_sus &cdc_pdm_comp_lines_sus
+		&cdc_pdm_lines_2_sus &ext_pa_power_on
+		&pri_tlmm_lines_sus &pri_tlmm_ws_sus>;
+	pinctrl-3 = <&cdc_pdm_lines_act &cdc_pdm_comp_lines_sus
+		&cdc_pdm_lines_2_act &ext_pa_power_on
+		&pri_tlmm_lines_sus &pri_tlmm_ws_sus>;
+	pinctrl-4 = <&cdc_pdm_lines_sus &cdc_pdm_comp_lines_sus
+		&cdc_pdm_lines_2_sus  &ext_pa_power_off
+		&pri_tlmm_lines_act &pri_tlmm_ws_act>;
+	pinctrl-5 = <&cdc_pdm_lines_act &cdc_pdm_comp_lines_sus
+		&cdc_pdm_lines_2_act &ext_pa_power_off
+		&pri_tlmm_lines_act &pri_tlmm_ws_act>;
+	pinctrl-6 = <&cdc_pdm_lines_sus &cdc_pdm_comp_lines_sus
+		&cdc_pdm_lines_2_sus &ext_pa_power_on
+		&pri_tlmm_lines_act &pri_tlmm_ws_act>;
+	pinctrl-7 = <&cdc_pdm_lines_act &cdc_pdm_comp_lines_sus
+		&cdc_pdm_lines_2_act &ext_pa_power_on
+		&pri_tlmm_lines_act &pri_tlmm_ws_act>;
+	pinctrl-8 = <&cdc_pdm_lines_sus &cdc_pdm_comp_lines_act
+		&cdc_pdm_lines_2_sus  &ext_pa_power_off
+		&pri_tlmm_lines_sus &pri_tlmm_ws_sus>;
+	pinctrl-9 = <&cdc_pdm_lines_act &cdc_pdm_comp_lines_act
+		&cdc_pdm_lines_2_act  &ext_pa_power_off
+		&pri_tlmm_lines_sus &pri_tlmm_ws_sus>;
+	pinctrl-10 = <&cdc_pdm_lines_sus &cdc_pdm_comp_lines_act
+		&cdc_pdm_lines_2_sus  &ext_pa_power_on
+		&pri_tlmm_lines_sus &pri_tlmm_ws_sus>;
+	pinctrl-11 = <&cdc_pdm_lines_act &cdc_pdm_comp_lines_act
+		&cdc_pdm_lines_2_act  &ext_pa_power_on
+		&pri_tlmm_lines_sus &pri_tlmm_ws_sus>;
+	pinctrl-12 = <&cdc_pdm_lines_sus &cdc_pdm_comp_lines_act
+		&cdc_pdm_lines_2_sus  &ext_pa_power_off
+		&pri_tlmm_lines_act &pri_tlmm_ws_act>;
+	pinctrl-13 = <&cdc_pdm_lines_act &cdc_pdm_comp_lines_act
+		&cdc_pdm_lines_2_act  &ext_pa_power_off
+		&pri_tlmm_lines_act &pri_tlmm_ws_act>;
+	pinctrl-14 = <&cdc_pdm_lines_sus &cdc_pdm_comp_lines_act
+		&cdc_pdm_lines_2_sus  &ext_pa_power_on
+		&pri_tlmm_lines_act &pri_tlmm_ws_act>;
+	pinctrl-15 = <&cdc_pdm_lines_act &cdc_pdm_comp_lines_act
+		&cdc_pdm_lines_2_act  &ext_pa_power_on
+		&pri_tlmm_lines_act &pri_tlmm_ws_act>;
+
+	/delete-property/ asoc-wsa-codec-names;
+	/delete-property/ asoc-wsa-codec-prefixes;
+
+	/delete-property/ msm-vdd-wsa-switch-supply;
+	/delete-property/ qcom,cdc-us-euro-gpios;
+	/delete-property/ qcom,msm-vdd-wsa-switch-voltage;
+	/delete-property/ qcom,msm-vdd-wsa-switch-current;
+};
+
