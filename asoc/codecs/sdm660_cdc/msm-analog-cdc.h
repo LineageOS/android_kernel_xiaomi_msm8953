@@ -18,6 +18,7 @@
 #include "../wcd-mbhc-v2.h"
 #include "../wcdcal-hwdep.h"
 #include "sdm660-cdc-registers.h"
+#include "msm-digital-cdc.h"
 
 #define MICBIAS_EXT_BYP_CAP 0x00
 #define MICBIAS_NO_EXT_BYP_CAP 0x01
@@ -219,6 +220,7 @@ struct sdm660_cdc_priv {
 	struct platform_device *pdev_child_devices
 		[ANLG_CDC_CHILD_DEVICES_MAX];
 	int child_count;
+	struct msm_cap_mode cap_mode;
 };
 
 struct sdm660_cdc_pdata {
