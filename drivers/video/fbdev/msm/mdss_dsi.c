@@ -138,7 +138,7 @@ void mdss_dump_dsi_debug_bus(u32 bus_dump_flag,
 	pr_info("========End DSI Debug Bus=========\n");
 }
 
-#ifdef CONFIG_MACH_XIAOMI_TISSOT
+#if (defined CONFIG_MACH_XIAOMI_TIFFANY) || (defined CONFIG_MACH_XIAOMI_TISSOT)
 int panel_suspend_reset_flag = 0;
 int panel_suspend_power_flag = 0;
 #endif
@@ -368,7 +368,7 @@ static int mdss_dsi_regulator_init(struct platform_device *pdev,
 	return rc;
 }
 
-#ifdef CONFIG_MACH_XIAOMI_TISSOT
+#if (defined CONFIG_MACH_XIAOMI_TIFFANY) || (defined CONFIG_MACH_XIAOMI_TISSOT)
 extern int ft8716_suspend;
 extern int  ft8716_gesture_func_on;
 int acc_vreg = 0;
@@ -404,19 +404,19 @@ int mdss_dsi_panel_power_off(struct mdss_panel_data *pdata)
 	if (mdss_dsi_pinctrl_set_state(ctrl_pdata, false))
 		pr_debug("reset disable: pinctrl not enabled\n");
 
-#ifdef CONFIG_MACH_XIAOMI_TISSOT
+#if (defined CONFIG_MACH_XIAOMI_TIFFANY) || (defined CONFIG_MACH_XIAOMI_TISSOT)
 	if ((panel_suspend_power_flag != 3) && acc_vreg) {
 #endif
 		ret = msm_mdss_enable_vreg(
 		ctrl_pdata->panel_power_data.vreg_config,
 		ctrl_pdata->panel_power_data.num_vreg, 0);
-#ifdef CONFIG_MACH_XIAOMI_TISSOT
+#if (defined CONFIG_MACH_XIAOMI_TIFFANY) || (defined CONFIG_MACH_XIAOMI_TISSOT)
 		acc_vreg--;
 #endif
 		if (ret)
 			pr_err("%s: failed to disable vregs for %s\n",
 			__func__, __mdss_dsi_pm_name(DSI_PANEL_PM));
-#ifdef CONFIG_MACH_XIAOMI_TISSOT
+#if (defined CONFIG_MACH_XIAOMI_TIFFANY) || (defined CONFIG_MACH_XIAOMI_TISSOT)
 	} else {
 		if (!ft8716_gesture_func_on && ft8716_suspend && acc_vreg) {
 			ret = msm_mdss_enable_vreg(
@@ -456,13 +456,13 @@ static int mdss_dsi_panel_power_on(struct mdss_panel_data *pdata)
 					__func__);
 	}
 
-#ifdef CONFIG_MACH_XIAOMI_TISSOT
+#if (defined CONFIG_MACH_XIAOMI_TIFFANY) || (defined CONFIG_MACH_XIAOMI_TISSOT)
 	if (!acc_vreg) {
 #endif
 		ret = msm_mdss_enable_vreg(
 		ctrl_pdata->panel_power_data.vreg_config,
 		ctrl_pdata->panel_power_data.num_vreg, 1);
-#ifdef CONFIG_MACH_XIAOMI_TISSOT
+#if (defined CONFIG_MACH_XIAOMI_TIFFANY) || (defined CONFIG_MACH_XIAOMI_TISSOT)
 		acc_vreg++;
 #endif
 		if (ret) {
@@ -470,7 +470,7 @@ static int mdss_dsi_panel_power_on(struct mdss_panel_data *pdata)
 				__func__, __mdss_dsi_pm_name(DSI_PANEL_PM));
 			return ret;
 		}
-#ifdef CONFIG_MACH_XIAOMI_TISSOT
+#if (defined CONFIG_MACH_XIAOMI_TIFFANY) || (defined CONFIG_MACH_XIAOMI_TISSOT)
 	}
 #endif
 
@@ -3033,7 +3033,7 @@ static struct device_node *mdss_dsi_find_panel_of_node(
 		if (!strcmp(panel_name, NONE_PANEL))
 			goto exit;
 
-#ifdef CONFIG_MACH_XIAOMI_TISSOT
+#if (defined CONFIG_MACH_XIAOMI_TIFFANY) || (defined CONFIG_MACH_XIAOMI_TISSOT)
 		if (!strcmp(panel_name, "qcom,mdss_dsi_td4310_fhd_video")) {
 			panel_suspend_reset_flag = 1;
 			panel_suspend_power_flag = 1;
@@ -3043,7 +3043,8 @@ static struct device_node *mdss_dsi_find_panel_of_node(
 		} else if (!strcmp(panel_name, "qcom,mdss_dsi_ft8716_fhd_video")) {
 			panel_suspend_reset_flag = 3;
 			panel_suspend_power_flag = 3;
-		}
+		} else if (!strcmp(panel_name, "qcom,mdss_dsi_ili9885_boe_fhd_video"))
+			panel_suspend_reset_flag = 4;
 #endif
 
 		mdss_node = of_parse_phandle(pdev->dev.of_node,
@@ -3320,7 +3321,7 @@ end:
 	return rc;
 }
 
-#ifdef CONFIG_MACH_XIAOMI_TISSOT
+#if (defined CONFIG_MACH_XIAOMI_TIFFANY) || (defined CONFIG_MACH_XIAOMI_TISSOT)
 struct mdss_panel_data *panel_data;
 #endif
 
@@ -3426,7 +3427,7 @@ static int mdss_dsi_ctrl_probe(struct platform_device *pdev)
 		ctrl_pdata->bklt_ctrl = UNKNOWN_CTRL;
 	}
 
-#ifdef CONFIG_MACH_XIAOMI_TISSOT
+#if (defined CONFIG_MACH_XIAOMI_TIFFANY) || (defined CONFIG_MACH_XIAOMI_TISSOT)
 	panel_data = &ctrl_pdata->panel_data;
 #endif
 
