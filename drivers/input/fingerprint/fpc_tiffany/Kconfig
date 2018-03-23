@@ -1,0 +1,5 @@
+config FINGERPRINT_FPC1020_TIFFANY
+	tristate "FingerPrint Cards fingerprint driver support"
+	depends on INPUT_FINGERPRINT
+	help
+	  Say Y here to enable fpc fingerprint driver support!
