@@ -3064,7 +3064,7 @@ void hdd_tx_rx_pkt_cnt_stat_timer_handler( void *phddctx)
 void hdd_rx_fwd_eapol(v_VOID_t *vosContext, vos_pkt_t *pVosPacket)
 {
    hdd_context_t *pHddCtx = NULL;
-   hdd_adapter_t * pAdapter;
+   hdd_adapter_t * pAdapter = NULL;
    hdd_adapter_list_node_t *pAdapterNode = NULL, *pNext = NULL;
    struct sk_buff *skb = NULL;
    uint8_t proto_type;
