@@ -1275,6 +1275,7 @@ int __wlan_hdd_mgmt_tx( struct wiphy *wiphy, struct net_device *dev,
     struct net_device *dev = wdev->netdev;
 #endif
     hdd_adapter_t *pAdapter = WLAN_HDD_GET_PRIV_PTR( dev );
+    hdd_adapter_t *pGoAdapter;
     hdd_cfg80211_state_t *cfgState = WLAN_HDD_GET_CFG_STATE_PTR( pAdapter );
     hdd_remain_on_chan_ctx_t *pRemainChanCtx = NULL;
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX( pAdapter );
@@ -1443,6 +1444,14 @@ int __wlan_hdd_mgmt_tx( struct wiphy *wiphy, struct net_device *dev,
     {
         home_ch = pAdapter->sessionCtx.station.conn_info.operationChannel;
     }
+    else
+    {
+        pGoAdapter = hdd_get_adapter(pHddCtx, WLAN_HDD_P2P_GO);
+        if (pGoAdapter && test_bit(SOFTAP_BSS_STARTED,
+                                   &pGoAdapter->event_flags))
+            home_ch = pGoAdapter->sessionCtx.ap.operatingChannel;
+    }
+
     //If GO adapter exists and operating on same frequency
     //then we will not request remain on channel
     if (ieee80211_frequency_to_channel(chan->center_freq) == home_ch)
