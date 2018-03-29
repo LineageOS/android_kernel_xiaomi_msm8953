@@ -454,7 +454,7 @@ static const struct snd_soc_dapm_widget msm_int_dapm_widgets[] = {
 
 static const struct snd_soc_dapm_widget msm_int_dig_dapm_widgets[] = {
 	SND_SOC_DAPM_SUPPLY_S("INT_MCLK0", -1, SND_SOC_NOPM, 0, 0,
-	msm_int_dig_mclk0_event, SND_SOC_DAPM_POST_PMD),
+	msm_int_dig_mclk0_event, SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMD),
 	SND_SOC_DAPM_MIC("Digital Mic1", msm_dmic_event),
 	SND_SOC_DAPM_MIC("Digital Mic2", msm_dmic_event),
 	SND_SOC_DAPM_MIC("Digital Mic3", msm_dmic_event),
@@ -1035,14 +1035,13 @@ static int msm_int_dig_mclk0_event(struct snd_soc_dapm_widget *w,
 	pdata = snd_soc_card_get_drvdata(codec->component.card);
 	pr_debug("%s: event = %d\n", __func__, event);
 	switch (event) {
+	case SND_SOC_DAPM_PRE_PMU:
+		msm_digcdc_mclk_enable(codec, 1, true);
+		msm_int_enable_dig_cdc_clk(codec, 1, true);
+		break;
 	case SND_SOC_DAPM_POST_PMD:
-		pr_debug("%s: mclk_res_ref = %d\n",
-				__func__, atomic_read(
-				&pdata->int_mclk0_rsc_ref));
-		if (atomic_read(&pdata->int_mclk0_rsc_ref) == 0) {
-			pr_debug("%s: disabling MCLK\n", __func__);
-			msm_int_enable_dig_cdc_clk(codec, 0, true);
-		}
+		msm_digcdc_mclk_enable(codec, 0, true);
+		msm_int_enable_dig_cdc_clk(codec, 0, true);
 		break;
 	default:
 		pr_err("%s: invalid DAPM event %d\n", __func__, event);
@@ -1250,11 +1249,6 @@ static int msm_int_dig_mi2s_snd_startup(struct snd_pcm_substream *substream)
 	if (ret < 0) {
 		pr_err("%s: failed to enable sclk %d\n",
 				__func__, ret);
-		return ret;
-	}
-	ret =  msm_int_enable_dig_cdc_clk(codec, 1, true);
-	if (ret < 0) {
-		pr_err("%s: failed to enable mclk\n", __func__);
 		return ret;
 	}
 	ret = snd_soc_dai_set_fmt(cpu_dai, SND_SOC_DAIFMT_CBS_CFS);
