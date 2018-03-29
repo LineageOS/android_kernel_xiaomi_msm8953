@@ -130,6 +130,8 @@ extern void msm_dig_cdc_hph_comp_cb(
 		struct snd_soc_codec *codec);
 int msm_dig_codec_info_create_codec_entry(struct snd_info_entry *codec_root,
 					  struct snd_soc_codec *codec);
+extern int msm_digcdc_mclk_enable(struct snd_soc_codec *codec,
+				int mclk_enable, bool dapm);
 #else /* CONFIG_SND_SOC_DIGITAL_CDC */
 static inline void msm_dig_cdc_hph_comp_cb(
 		int (*codec_hph_comp_gpio)(
@@ -141,6 +143,11 @@ static inline void msm_dig_cdc_hph_comp_cb(
 static inline int msm_dig_codec_info_create_codec_entry(
 				struct snd_info_entry *codec_root,
 				struct snd_soc_codec *codec)
+{
+	return 0;
+}
+static inline int msm_digcdc_mclk_enable(struct snd_soc_codec *codec,
+				int mclk_enable, bool dapm)
 {
 	return 0;
 }

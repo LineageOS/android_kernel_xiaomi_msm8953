@@ -83,6 +83,33 @@ enum {
 	IIR_MAX,
 };
 
+/*
+ * msm_digcdc_mclk_enable - add mclk support in digital codec
+ * @codec: codec instance
+ * @mclk_enable: mclk enable/disable
+ * @dapm: check for dapm widget
+ */
+int msm_digcdc_mclk_enable(struct snd_soc_codec *codec,
+			int mclk_enable, bool dapm)
+{
+	dev_dbg(codec->dev, "%s: mclk_enable = %u, dapm = %d\n",
+			__func__, mclk_enable, dapm);
+	if (mclk_enable) {
+		snd_soc_update_bits(codec,
+			MSM89XX_CDC_CORE_CLK_MCLK_CTL, 0x01, 0x01);
+		snd_soc_update_bits(codec,
+			MSM89XX_CDC_CORE_TOP_CTL, 0x01, 0x01);
+	} else {
+		snd_soc_update_bits(codec,
+			MSM89XX_CDC_CORE_TOP_CTL, 0x01, 0x00);
+		snd_soc_update_bits(codec,
+			MSM89XX_CDC_CORE_CLK_MCLK_CTL, 0x01, 0x00);
+	}
+
+	return 0;
+}
+EXPORT_SYMBOL(msm_digcdc_mclk_enable);
+
 static int msm_digcdc_clock_control(bool flag)
 {
 	int ret = -EINVAL;
@@ -250,7 +277,8 @@ static int msm_dig_cdc_codec_config_compander(struct snd_soc_codec *codec,
 
 	if (SND_SOC_DAPM_EVENT_ON(event)) {
 		/* compander is not enabled */
-		if (!dig_cdc->comp_enabled[interp_n]) {
+		if (!dig_cdc->comp_enabled[interp_n] &&
+			dig_cdc->set_compander_mode) {
 			dig_cdc->set_compander_mode(dig_cdc->handle, 0x00);
 			return 0;
 		};
@@ -272,7 +300,8 @@ static int msm_dig_cdc_codec_config_compander(struct snd_soc_codec *codec,
 				return 0;
 			}
 		}
-		dig_cdc->set_compander_mode(dig_cdc->handle, 0x08);
+		if (dig_cdc->set_compander_mode)
+			dig_cdc->set_compander_mode(dig_cdc->handle, 0x08);
 		/* Enable Compander Clock */
 		snd_soc_update_bits(codec,
 			MSM89XX_CDC_CORE_COMP0_B2_CTL, 0x0F, 0x09);
@@ -617,7 +646,8 @@ static void tx_hpf_corner_freq_callback(struct work_struct *work)
 
 	dev_dbg(codec->dev, "%s(): decimator %u hpf_cut_of_freq 0x%x\n",
 		 __func__, hpf_work->decimator, (unsigned int)hpf_cut_of_freq);
-	msm_dig_cdc->update_clkdiv(msm_dig_cdc->handle, 0x51);
+	if (msm_dig_cdc->update_clkdiv)
+		msm_dig_cdc->update_clkdiv(msm_dig_cdc->handle, 0x51);
 
 	snd_soc_update_bits(codec, tx_mux_ctl_reg, 0x30, hpf_cut_of_freq << 4);
 }
@@ -972,7 +1002,8 @@ static int msm_dig_cdc_codec_enable_dec(struct snd_soc_dapm_widget *w,
 			snd_soc_update_bits(codec, tx_mux_ctl_reg, 0x30,
 					    CF_MIN_3DB_150HZ << 4);
 		}
-		msm_dig_cdc->update_clkdiv(msm_dig_cdc->handle, 0x42);
+		if (msm_dig_cdc->update_clkdiv)
+			msm_dig_cdc->update_clkdiv(msm_dig_cdc->handle, 0x42);
 		break;
 	case SND_SOC_DAPM_POST_PMU:
 		/* enable HPF */
@@ -1837,7 +1868,7 @@ static const struct snd_soc_dapm_widget msm_dig_dapm_widgets[] = {
 	SND_SOC_DAPM_SUPPLY("TX_I2S_CLK",
 		MSM89XX_CDC_CORE_CLK_TX_I2S_CTL, 4, 0, NULL, 0),
 
-	SND_SOC_DAPM_SUPPLY("DIGITAL_REGULATOR", SND_SOC_NOPM,
+	SND_SOC_DAPM_MICBIAS_E("DIGITAL_REGULATOR", SND_SOC_NOPM,
 		ON_DEMAND_DIGITAL, 0,
 		msm_dig_cdc_enable_on_demand_supply,
 		SND_SOC_DAPM_PRE_PMU |
