@@ -15274,3 +15274,10 @@ sme_get_connect_strt_time(tHalHandle hal, uint8_t session_id)
    session = CSR_GET_SESSION(mac_ctx, session_id);
    return session->connect_req_start_time;
 }
+
+void sme_request_imps(tHalHandle hal)
+{
+   tpAniSirGlobal mac_ctx = PMAC_STRUCT(hal);
+
+   csrScanStartIdleScan(mac_ctx);
+}

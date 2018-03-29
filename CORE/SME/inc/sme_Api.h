@@ -4066,4 +4066,12 @@ sme_get_cb_phy_mode_from_cb_ini_mode(uint32_t cb_ini_value)
    return csrConvertCBIniValueToPhyCBState(cb_ini_value);
 }
 
+/**
+ * sme_request_imps() - Send IMPS request
+ * @hal: hal context
+ *
+ * Return: void
+ */
+void sme_request_imps(tHalHandle hal);
+
 #endif //#if !defined( __SME_API_H )

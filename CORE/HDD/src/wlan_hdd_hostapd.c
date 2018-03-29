@@ -1727,6 +1727,11 @@ stopbss :
         if (eSAP_STOP_BSS_EVENT == sapEvent)
             vos_event_set(&pHostapdState->vosEvent);
 
+        if (hdd_is_any_session_connected(pHddCtx) == VOS_STATUS_E_FAILURE) {
+            hdd_enable_bmps_imps(pHddCtx);
+            sme_request_imps(pHddCtx->hHal);
+        }
+
         /* notify userspace that the BSS has stopped */
         memset(&we_custom_event, '\0', sizeof(we_custom_event));
         memcpy(&we_custom_event, stopBssEvent, event_len);
