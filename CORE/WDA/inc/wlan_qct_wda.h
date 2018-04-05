@@ -1144,8 +1144,6 @@ tSirRetStatus uMacPostCtrlMsg(void* pSirGlobal, tSirMbMsg* pMb);
 
 #define WDA_SET_MAX_TX_POWER_PER_BAND_REQ \
         SIR_HAL_SET_MAX_TX_POWER_PER_BAND_REQ
-#define WDA_SET_MAX_TX_POWER_PER_BAND_RSP \
-        SIR_HAL_SET_MAX_TX_POWER_PER_BAND_RSP
 
 #define WDA_SEND_MSG_COMPLETE          SIR_HAL_SEND_MSG_COMPLETE 
 
