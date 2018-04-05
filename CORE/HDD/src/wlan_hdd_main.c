@@ -878,13 +878,28 @@ void hdd_set_vowifi_mode(hdd_context_t *hdd_ctx, bool enable)
 {
     tANI_U8 sta_chan;
 
+    if (!hdd_ctx->cfg_ini) {
+        hddLog(LOGE, "cfg_ini got NULL");
+        return;
+    }
+
     sta_chan = hdd_get_operating_channel(hdd_ctx, WLAN_HDD_INFRA_STATION);
 
-    if (CSR_IS_CHANNEL_24GHZ(sta_chan))
+    if (CSR_IS_CHANNEL_24GHZ(sta_chan)) {
         sme_set_vowifi_mode(hdd_ctx->hHal, enable);
-    else
+        if (enable && hdd_ctx->cfg_ini->dynSplitscan) {
+            hdd_ctx->is_vowifi_enabled = true;
+            hdd_ctx->issplitscan_enabled = TRUE;
+            sme_enable_disable_split_scan(hdd_ctx->hHal,
+                        hdd_ctx->cfg_ini->nNumStaChanCombinedConc,
+                        hdd_ctx->cfg_ini->nNumP2PChanCombinedConc);
+        } else {
+            hdd_ctx->is_vowifi_enabled = false;
+        }
+    } else {
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                "VoWiFi command rejected as not connected in 2.4GHz");
+    }
 }
 
 /* Function header left blank Intentionally */
