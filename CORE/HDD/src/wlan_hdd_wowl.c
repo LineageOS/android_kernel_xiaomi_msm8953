@@ -43,9 +43,6 @@
  * Preprocessor Definitions and Constants
  * -------------------------------------------------------------------------*/
 
-#define WOWL_PTRN_MAX_SIZE          128
-#define WOWL_PTRN_MASK_MAX_SIZE      16
-#define WOWL_MAX_PTRNS_ALLOWED       16
 #define WOWL_INTER_PTRN_TOKENIZER   ';'
 #define WOWL_INTRA_PTRN_TOKENIZER   ':'
 

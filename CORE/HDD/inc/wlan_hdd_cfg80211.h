@@ -121,6 +121,9 @@
 #define NUM_RADIOS  0x1
 #endif /* WLAN_FEATURE_LINK_LAYER_STATS */
 
+#define WOWL_PTRN_MAX_SIZE          128
+#define WOWL_PTRN_MASK_MAX_SIZE      16
+#define WOWL_MAX_PTRNS_ALLOWED       16
 
 typedef struct {
    u8 element_id;
