@@ -8,8 +8,8 @@ TARGET := sdm845
 AUDIO_SELECT  := CONFIG_SND_SOC_SDM845=m
 endif
 
-ifeq ($(call is-board-platform-in-list,sdm670 qcs605),true)
-TARGET := sdm670
+ifeq ($(call is-board-platform-in-list,sdm710 qcs605),true)
+TARGET := sdm710
 AUDIO_SELECT  := CONFIG_SND_SOC_SDM670=m
 endif
 
@@ -21,7 +21,7 @@ endif
 
 AUDIO_CHIPSET := audio
 # Build/Package only in case of supported target
-ifeq ($(call is-board-platform-in-list,msm8953 msm8937 sdm845 sdm670 qcs605),true)
+ifeq ($(call is-board-platform-in-list,msm8953 msm8937 sdm845 sdm710 qcs605),true)
 
 LOCAL_PATH := $(call my-dir)
 
@@ -56,7 +56,7 @@ LOCAL_MODULE_DEBUG_ENABLE := true
 LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
 include $(DLKM_DIR)/AndroidKernelModule.mk
 ###########################################################
-ifeq ($(call is-board-platform-in-list,msm8953 msm8937 sdm670 qcs605),true)
+ifeq ($(call is-board-platform-in-list,msm8953 msm8937 sdm710 qcs605),true)
 include $(CLEAR_VARS)
 LOCAL_MODULE              := $(AUDIO_CHIPSET)_cpe_lsm.ko
 LOCAL_MODULE_KBUILD_NAME  := cpe_lsm_dlkm.ko

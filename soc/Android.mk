@@ -7,7 +7,7 @@ ifeq ($(call is-board-platform,sdm845),true)
 AUDIO_SELECT  := CONFIG_SND_SOC_SDM845=m
 endif
 
-ifeq ($(call is-board-platform-in-list,sdm670 qcs605),true)
+ifeq ($(call is-board-platform-in-list,sdm710 qcs605),true)
 AUDIO_SELECT  := CONFIG_SND_SOC_SDM670=m
 endif
 
@@ -17,7 +17,7 @@ endif
 
 AUDIO_CHIPSET := audio
 # Build/Package only in case of supported target
-ifeq ($(call is-board-platform-in-list,msm8953 msm8937 sdm845 sdm670 qcs605),true)
+ifeq ($(call is-board-platform-in-list,msm8953 msm8937 sdm845 sdm710 qcs605),true)
 
 LOCAL_PATH := $(call my-dir)
 
@@ -44,7 +44,7 @@ KBUILD_OPTIONS += BOARD_PLATFORM=$(TARGET_BOARD_PLATFORM)
 KBUILD_OPTIONS += $(AUDIO_SELECT)
 
 ###########################################################
-ifeq ($(call is-board-platform-in-list, sdm670 qcs605),true)
+ifeq ($(call is-board-platform-in-list, sdm710 qcs605),true)
 include $(CLEAR_VARS)
 LOCAL_MODULE              := $(AUDIO_CHIPSET)_pinctrl_lpi.ko
 LOCAL_MODULE_KBUILD_NAME  := pinctrl_lpi_dlkm.ko
