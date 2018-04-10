@@ -617,6 +617,7 @@ WDI_ReqProcFuncType  pfnReqProcTbl[WDI_MAX_UMAC_IND] =
   NULL,
 #endif
   WDI_process_vowifi_request,         /* WDI_SET_VOWIFI_IND */
+  WDI_process_qpower_request,         /* WDI_SET_QPOWER */
 
 };
 
@@ -9051,6 +9052,65 @@ WDI_process_vowifi_request(WDI_ControlBlockType* pWDICtx,
   return (wdiStatus != WDI_STATUS_SUCCESS) ? wdiStatus:WDI_STATUS_SUCCESS_SYNC;
 }
 
+WDI_Status
+WDI_process_qpower_request(WDI_ControlBlockType* pWDICtx,
+                           WDI_EventInfoType* pEventData)
+{
+  wpt_uint8* pSendBuffer = NULL;
+  wpt_uint16 usDataOffset = 0;
+  wpt_uint16 usSendSize = 0;
+  uint8_t *enable;
+  tHalQpower hal_qpower_msg;
+  WDI_Status wdiStatus;
+
+  /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+  WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
+               "%s", __func__);
+
+  /*-------------------------------------------------------------------------
+    Sanity check
+  -------------------------------------------------------------------------*/
+  if (( NULL == pEventData ) || ( NULL == pEventData->pEventData ) ) {
+      WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_FATAL,
+             "%s: Invalid parameters", __func__);
+      WDI_ASSERT(0);
+      return WDI_STATUS_E_FAILURE;
+  }
+  enable = (uint8_t*)pEventData->pEventData;
+
+  /*-----------------------------------------------------------------------
+    Get message buffer
+  -----------------------------------------------------------------------*/
+  if (( WDI_STATUS_SUCCESS != WDI_GetMessageBuffer( pWDICtx,
+                                     WDI_SET_QPOWER,
+                                      sizeof(tHalQpowerParams),
+                          &pSendBuffer, &usDataOffset, &usSendSize))||
+       ( usSendSize < (usDataOffset + sizeof(tHalQpowerParams) )))
+  {
+      WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_FATAL,
+              "Unable to get send buffer QPOWER ind %pK ",
+               pEventData);
+      WDI_ASSERT(0);
+      return WDI_STATUS_E_FAILURE;
+  }
+
+  hal_qpower_msg.qpowerParams.enable = *enable;
+
+  wpalMemoryCopy( pSendBuffer+usDataOffset,
+                  &hal_qpower_msg.qpowerParams,
+                  sizeof(hal_qpower_msg.qpowerParams));
+
+  pWDICtx->pReqStatusUserData = NULL;
+  pWDICtx->pfncRspCB = NULL;
+
+  /*-------------------------------------------------------------------------
+    Send QPOWER Request to HAL
+  -------------------------------------------------------------------------*/
+  wdiStatus =  WDI_SendIndication(pWDICtx, pSendBuffer, usSendSize);
+  return (wdiStatus != WDI_STATUS_SUCCESS) ? wdiStatus:WDI_STATUS_SUCCESS_SYNC;
+}
+
 /**
  @brief Process End Scan Request function (called when Main FSM
         allows it)
@@ -11561,6 +11621,26 @@ WDI_Status WDI_set_vowifi_mode_ind(wpt_boolean enable)
     wdiEventData.wdiRequest      = WDI_SET_VOWIFI_IND;
     wdiEventData.pEventData      = (void *) &enable;
     wdiEventData.uEventDataSize  = sizeof(wpt_boolean);
+    wdiEventData.pCBfnc          = NULL;
+    wdiEventData.pUserData       = NULL;
+
+    return WDI_PostMainEvent(&gWDICb, WDI_REQUEST_EVENT, &wdiEventData);
+}
+
+WDI_Status WDI_set_qpower(uint8_t enable)
+{
+    WDI_EventInfoType wdiEventData;
+
+    if (eWLAN_PAL_FALSE == gWDIInitialized )
+    {
+        WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                 "WDI API call before module is initialized - Fail request");
+        return WDI_STATUS_E_NOT_ALLOWED;
+    }
+
+    wdiEventData.wdiRequest      = WDI_SET_QPOWER;
+    wdiEventData.pEventData      = (void *) &enable;
+    wdiEventData.uEventDataSize  = sizeof(uint8_t);
     wdiEventData.pCBfnc          = NULL;
     wdiEventData.pUserData       = NULL;
 
@@ -25237,6 +25317,8 @@ WDI_2_HAL_REQ_TYPE
        return WLAN_HAL_SET_RTS_CTS_HTVHT_IND;
   case WDI_SET_VOWIFI_IND:
        return WLAN_HAL_VOWIFI_IND;
+    case WDI_SET_QPOWER:
+       return WLAN_HAL_QPOWER_ENABLE_BY_HOST_IND;
   case WDI_MON_START_REQ:
        return WLAN_HAL_ENABLE_MONITOR_MODE_REQ;
   case WDI_MON_STOP_REQ:

@@ -232,6 +232,8 @@ sme_SetLinkLayerStatsIndCB
 #endif /* WLAN_FEATURE_LINK_LAYER_STATS */
 
 void sme_set_vowifi_mode(tpAniSirGlobal pMac, bool enable);
+void sme_set_qpower(tpAniSirGlobal pMac, uint8_t enable);
+
 #ifdef WLAN_FEATURE_EXTSCAN
 /* ---------------------------------------------------------------------------
     \fn sme_GetValidChannelsByBand
