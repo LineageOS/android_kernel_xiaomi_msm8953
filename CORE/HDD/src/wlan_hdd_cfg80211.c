@@ -12812,7 +12812,11 @@ VOS_STATUS wlan_hdd_send_sta_authorized_event(
 
 	vendor_event =
 		cfg80211_vendor_event_alloc(
-			hdd_ctx->wiphy, &adapter->wdev, sizeof(sta_flags) +
+			hdd_ctx->wiphy,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0))
+			&adapter->wdev,
+#endif
+			sizeof(sta_flags) +
 			VOS_MAC_ADDR_SIZE + NLMSG_HDRLEN,
 			QCA_NL80211_VENDOR_SUBCMD_LINK_PROPERTIES_INDEX,
 			GFP_KERNEL);
