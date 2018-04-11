@@ -52,7 +52,7 @@ LOCAL_MODULE_DEBUG_ENABLE := true
 LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
 include $(DLKM_DIR)/AndroidKernelModule.mk
 ###########################################################
-ifeq ($(call is-board-platform-in-list,msm8953 sdm845 sdm670 qcs605),true)
+ifeq ($(call is-board-platform-in-list,msm8953 sdm845 sdm710 qcs605),true)
 include $(CLEAR_VARS)
 LOCAL_MODULE              := $(AUDIO_CHIPSET)_wglink.ko
 LOCAL_MODULE_KBUILD_NAME  := wglink_dlkm.ko
