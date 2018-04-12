@@ -1748,6 +1748,26 @@ typedef enum
 #define CFG_ENABLE_TCP_DELACK_MAX            (1)
 #define CFG_ENABLE_TCP_DELACK_DEFAULT        (1)
 
+#define CFG_BTC_2M_DYN_LONG_WLAN_LEN_NAME      "gBTC2MDynLongWLAN"
+#define CFG_BTC_2M_DYN_LONG_WLAN_LEN_MIN       (15000)
+#define CFG_BTC_2M_DYN_LONG_WLAN_LEN_MAX       (55000)
+#define CFG_BTC_2M_DYN_LONG_WLAN_LEN_DEFAULT   (35000)
+
+#define CFG_BTC_2M_DYN_LONG_BT_LEN_NAME        "gBTC2MDynLongBT"
+#define CFG_BTC_2M_DYN_LONG_BT_LEN_MIN         (15000)
+#define CFG_BTC_2M_DYN_LONG_BT_LEN_MAX         (25000)
+#define CFG_BTC_2M_DYN_LONG_BT_LEN_DEFAULT     (25000)
+
+#define CFG_BTC_2M_DYN_LONG_BT_EXT_LEN_NAME        "gBTC2MDynLongBTExt"
+#define CFG_BTC_2M_DYN_LONG_BT_EXT_LEN_MIN         (5000)
+#define CFG_BTC_2M_DYN_LONG_BT_EXT_LEN_MAX         (15000)
+#define CFG_BTC_2M_DYN_LONG_BT_EXT_LEN_DEFAULT     (15000)
+
+#define CFG_BTC_2M_DYN_LONG_NUM_BT_EXT_NAME        "gBTC2MDynLongNumBTExt"
+#define CFG_BTC_2M_DYN_LONG_NUM_BT_EXT_MIN          (5)
+#define CFG_BTC_2M_DYN_LONG_NUM_BT_EXT_MAX          (15)
+#define CFG_BTC_2M_DYN_LONG_NUM_BT_EXT_DEFAULT      (15)
+
 #ifdef SAP_AUTH_OFFLOAD
 /* Enable/Disable SAP Authentication offload
  * Default: enable
@@ -3183,6 +3203,8 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_ENABLE_POWERSAVE_OFFLOAD_MAX        (2)
 #define CFG_ENABLE_POWERSAVE_OFFLOAD_DEFAULT    (1)
 
+
+
 /*--------------------------------------------------------------------------- 
   Type declarations
   -------------------------------------------------------------------------*/ 
@@ -3793,6 +3815,10 @@ typedef struct
    /* control marking indoor channel passive to disable */
    bool                        disable_indoor_channel;
    uint32_t                    enable_power_save_offload;
+   uint32_t                    btc_dyn_wlan_len;
+   uint32_t                    btc_dyn_bt_len;
+   uint32_t                    btc_dyn_bt_ext_len;
+   uint32_t                    btc_dyn_num_bt_ext;
 
 } hdd_config_t;
 

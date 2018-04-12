@@ -2483,6 +2483,66 @@ VOS_STATUS WDA_prepareConfigTLV(v_PVOID_t pVosContext,
 
    tlvStruct = (tHalCfg *)( (tANI_U8 *) tlvStruct
                             + sizeof(tHalCfg) + tlvStruct->length);
+
+   /* QWLAN_HAL_CFG_BTC_2M_DYN_LONG_WLAN_LEN */
+   tlvStruct->type = QWLAN_HAL_CFG_BTC_2M_DYN_LONG_WLAN_LEN;
+   tlvStruct->length = sizeof(tANI_U32);
+   configDataValue = (tANI_U32 *)(tlvStruct + 1);
+   if(wlan_cfgGetInt(pMac, WNI_CFG_BTC_2M_DYN_LONG_WLAN_LEN,
+                     configDataValue) != eSIR_SUCCESS)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                 "Failed to get WNI_CFG_BTC_2M_DYN_LONG_WLAN_LEN");
+      goto handle_failure;
+   }
+
+   tlvStruct = (tHalCfg *)( (tANI_U8 *) tlvStruct
+                            + sizeof(tHalCfg) + tlvStruct->length);
+
+   /* QWLAN_HAL_CFG_BTC_2M_DYN_LONG_BT_LEN */
+   tlvStruct->type = QWLAN_HAL_CFG_BTC_2M_DYN_LONG_BT_LEN;
+   tlvStruct->length = sizeof(tANI_U32);
+   configDataValue = (tANI_U32 *)(tlvStruct + 1);
+   if(wlan_cfgGetInt(pMac, WNI_CFG_BTC_2M_DYN_LONG_BT_LEN,
+                     configDataValue) != eSIR_SUCCESS)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                 "Failed to get WNI_CFG_BTC_2M_DYN_LONG_BT_LEN");
+      goto handle_failure;
+   }
+
+   tlvStruct = (tHalCfg *)( (tANI_U8 *) tlvStruct
+                            + sizeof(tHalCfg) + tlvStruct->length);
+
+   /* QWLAN_HAL_CFG_BTC_2M_DYN_LONG_BT_EXT_LEN */
+   tlvStruct->type = QWLAN_HAL_CFG_BTC_2M_DYN_LONG_BT_EXT_LEN;
+   tlvStruct->length = sizeof(tANI_U32);
+   configDataValue = (tANI_U32 *)(tlvStruct + 1);
+   if(wlan_cfgGetInt(pMac, WNI_CFG_BTC_2M_DYN_LONG_BT_EXT_LEN,
+                     configDataValue) != eSIR_SUCCESS)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                 "Failed to get WNI_CFG_BTC_2M_DYN_LONG_BT_EXT_LEN");
+      goto handle_failure;
+   }
+
+   tlvStruct = (tHalCfg *)( (tANI_U8 *) tlvStruct
+                            + sizeof(tHalCfg) + tlvStruct->length);
+
+   /* QWLAN_HAL_CFG_BTC_2M_DYN_LONG_NUM_BT_EXT */
+   tlvStruct->type = QWLAN_HAL_CFG_BTC_2M_DYN_LONG_NUM_BT_EXT;
+   tlvStruct->length = sizeof(tANI_U32);
+   configDataValue = (tANI_U32 *)(tlvStruct + 1);
+   if(wlan_cfgGetInt(pMac, WNI_CFG_BTC_2M_DYN_LONG_NUM_BT_EXT,
+                     configDataValue) != eSIR_SUCCESS)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+                 "Failed to get WNI_CFG_BTC_2M_DYN_LONG_NUM_BT_EXT");
+      goto handle_failure;
+   }
+
+   tlvStruct = (tHalCfg *)( (tANI_U8 *) tlvStruct
+                            + sizeof(tHalCfg) + tlvStruct->length);
    wdiStartParams->usConfigBufferLen = (tANI_U8 *)tlvStruct - tlvStructStart;
 #ifdef WLAN_DEBUG
    {
