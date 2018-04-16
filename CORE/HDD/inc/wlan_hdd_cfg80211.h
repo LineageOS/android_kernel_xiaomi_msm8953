@@ -100,6 +100,13 @@
 #endif
 #endif
 
+/*
+ * Max number of supported csa_counters in beacons
+ * and probe responses. Set to the same value as
+ * IEEE80211_MAX_CSA_COUNTERS_NUM
+ */
+#define WLAN_HDD_MAX_NUM_CSA_COUNTERS 2
+
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 12, 0)) \
 	|| defined(BACKPORTED_CHANNEL_SWITCH_PRESENT)
 #define CHANNEL_SWITCH_SUPPORTED
