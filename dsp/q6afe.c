@@ -131,6 +131,7 @@ static struct afe_ctl this_afe;
 
 #define TIMEOUT_MS 1000
 #define Q6AFE_MAX_VOLUME 0x3FFF
+#define HS_USB_INTERVAL_US 125
 
 static int pcm_afe_instance[2];
 static int proxy_afe_instance[2];
@@ -2968,6 +2969,25 @@ int afe_port_send_usb_dev_param(u16 port_id, union afe_port_config *afe_config)
 		pr_err("%s: AFE device param cmd LPCM_FMT failed %d\n",
 			__func__, ret);
 		ret = -EINVAL;
+		goto exit;
+	}
+
+	config.pdata.param_id = AFE_PARAM_ID_PORT_LATENCY_MODE_CONFIG;
+	config.pdata.param_size = sizeof(config.latency_config);
+	config.latency_config.minor_version =
+		AFE_API_MINOR_VERSION_USB_AUDIO_LATENCY_MODE;
+	if (afe_config->usb_audio.service_interval > 0 &&
+		afe_config->usb_audio.service_interval <= HS_USB_INTERVAL_US)
+		config.latency_config.mode = AFE_PORT_LOW_LATENCY_MODE;
+	else
+		config.latency_config.mode = AFE_PORT_DEFAULT_LATENCY_MODE;
+
+	ret = afe_apr_send_pkt(&config, &this_afe.wait[index]);
+	if (ret) {
+		pr_debug("%s: AFE device param cmd latency mode failed %d\n",
+			__func__, ret);
+		/* latency mode is an optimization, not a requirement */
+		ret = 0;
 		goto exit;
 	}
 
