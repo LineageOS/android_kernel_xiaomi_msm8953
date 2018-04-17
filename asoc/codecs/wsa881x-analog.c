@@ -233,7 +233,7 @@ static int wsa881x_i2c_read_device(struct wsa881x_pdata *wsa881x,
 	struct i2c_msg *msg;
 	int ret = 0;
 	u8 reg_addr = 0;
-	u8 dest[5];
+	u8 dest[5] = {0};
 
 	wsa881x_index = get_i2c_wsa881x_device_index(reg);
 	if (wsa881x_index < 0) {
