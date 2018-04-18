@@ -8721,6 +8721,7 @@ eHalStatus limAssocRspTxCompleteCnf(tpAniSirGlobal pMac, void *pData)
                 pNode, &pNext );
         pNode = pNext;
         pNext = NULL;
+        tmp_tx_context = NULL;
       }
       else
       {
@@ -8730,7 +8731,7 @@ eHalStatus limAssocRspTxCompleteCnf(tpAniSirGlobal pMac, void *pData)
       }
     }
 
-    if (!tmp_tx_context) {
+    if (!pNode) {
         limLog(pMac, LOGE, FL("context is NULL"));
         return eHAL_STATUS_SUCCESS;
     }

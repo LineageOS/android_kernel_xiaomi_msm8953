@@ -462,6 +462,58 @@ static int hdd_hostapd_driver_command(hdd_adapter_t *pAdapter,
        ret = hdd_enable_disable_ca_event(pHddCtx, command, 16);
    }
 
+   /*
+    * command should be a string having format
+    * SET_DISABLE_CHANNEL_LIST <num of channels>
+    * <channels separated by spaces>
+    */
+   else if (strncmp(command, "SET_DISABLE_CHANNEL_LIST", 24) == 0) {
+        tANI_U8 *ptr = command;
+
+        ret = hdd_drv_cmd_validate(command, 24);
+        if (ret)
+            goto exit;
+
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                  " Received Command to disable Channels for in %s",
+                  __func__);
+       ret = hdd_parse_disable_chan_cmd(pAdapter, ptr);
+    }
+    else if (strncmp(command, "GET_DISABLE_CHANNEL_LIST", 24) == 0) {
+         char extra[128] = {0};
+         int len;
+
+         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+             " Received Command to get disable Channels list %s",
+             __func__);
+
+         len = hdd_get_disable_ch_list(pHddCtx, extra, sizeof(extra));
+         if (len == 0) {
+             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                       FL("disable channel list are not yet programed"));
+             ret = -EINVAL;
+             goto exit;
+         }
+
+         len = VOS_MIN(priv_data->total_len, len + 1);
+         if (copy_to_user(priv_data->buf, &extra, len)) {
+            VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+               "%s: failed to copy data to user buffer", __func__);
+            ret = -EFAULT;
+            goto exit;
+         }
+
+         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                   FL("data:%s"), extra);
+    }
+    else {
+        MTRACE(vos_trace(VOS_MODULE_ID_HDD,
+                         TRACE_CODE_HDD_UNSUPPORTED_IOCTL,
+                         pAdapter->sessionId, 0));
+        hddLog(VOS_TRACE_LEVEL_WARN, FL("Unsupported GUI command %s"),
+                command);
+    }
+
 exit:
    if (command)
    {
@@ -1675,6 +1727,11 @@ stopbss :
         if (eSAP_STOP_BSS_EVENT == sapEvent)
             vos_event_set(&pHostapdState->vosEvent);
 
+        if (hdd_is_any_session_connected(pHddCtx) == VOS_STATUS_E_FAILURE) {
+            hdd_enable_bmps_imps(pHddCtx);
+            sme_request_imps(pHddCtx->hHal);
+        }
+
         /* notify userspace that the BSS has stopped */
         memset(&we_custom_event, '\0', sizeof(we_custom_event));
         memcpy(&we_custom_event, stopBssEvent, event_len);
@@ -2445,11 +2502,25 @@ static __iw_softap_setparam(struct net_device *dev,
                 break;
             }
         case QCSAP_PARAM_SET_CHANNEL_CHANGE:
-            if ((WLAN_HDD_SOFTAP == pHostapdAdapter->device_mode) ||
-                (WLAN_HDD_P2P_GO == pHostapdAdapter->device_mode)) {
+            if (WLAN_HDD_SOFTAP == pHostapdAdapter->device_mode) {
+                ptSapContext sap_ctx;
+
+                sap_ctx = VOS_GET_SAP_CB(pVosContext);
+                if (!sap_ctx) {
+                    hddLog(LOGE, FL("sap_ctx is NULL"));
+                    return -EINVAL;
+                }
+                ret = wlansap_chk_n_set_chan_change_in_progress(sap_ctx);
+                if (ret)
+                    return ret;
+                INIT_COMPLETION(sap_ctx->ecsa_info.chan_switch_comp);
                 hddLog(LOG1, FL("ET Channel Change to new channel= %d"),
                        set_value);
                 ret = wlansap_set_channel_change(pVosContext, set_value, false);
+                if (ret) {
+                       wlansap_reset_chan_change_in_progress(sap_ctx);
+                       complete(&sap_ctx->ecsa_info.chan_switch_comp);
+                }
             } else {
                 hddLog(LOGE, FL("Channel %d Change Failed, Device in not in SAP/GO mode"),
                        set_value);

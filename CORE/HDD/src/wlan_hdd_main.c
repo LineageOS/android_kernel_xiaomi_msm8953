@@ -120,6 +120,7 @@ int wlan_hdd_ftm_start(hdd_context_t *pAdapter);
 #endif
 #include "wlan_hdd_debugfs.h"
 #include "sapInternal.h"
+#include "wlan_hdd_request_manager.h"
 
 #ifdef MODULE
 #define WLAN_MODULE_NAME  module_name(THIS_MODULE)
@@ -248,6 +249,7 @@ static int hdd_ParseUserParams(tANI_U8 *pValue, tANI_U8 **ppArg);
 #endif /* WLAN_FEATURE_RMC */
 void wlan_hdd_restart_timer_cb(v_PVOID_t usrDataForCallback);
 void hdd_set_wlan_suspend_mode(bool suspend);
+void hdd_set_vowifi_mode(hdd_context_t *hdd_ctx, bool enable);
 
 v_U16_t hdd_select_queue(struct net_device *dev,
     struct sk_buff *skb
@@ -863,6 +865,26 @@ static int hdd_parse_setrmcactionperiod_command(tANI_U8 *pValue,
        "uActionPeriod: %d", *pActionPeriod);
 
     return 0;
+}
+/*
+ * hdd_set_vowifi_mode() - Process the VOWIFI command and invoke the SME api
+ *
+ * @hHal: context handler
+ * @enable: Value to be sent as a part of the VOWIFI command
+ *
+ * Return: void
+ */
+void hdd_set_vowifi_mode(hdd_context_t *hdd_ctx, bool enable)
+{
+    tANI_U8 sta_chan;
+
+    sta_chan = hdd_get_operating_channel(hdd_ctx, WLAN_HDD_INFRA_STATION);
+
+    if (CSR_IS_CHANNEL_24GHZ(sta_chan))
+        sme_set_vowifi_mode(hdd_ctx->hHal, enable);
+    else
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+               "VoWiFi command rejected as not connected in 2.4GHz");
 }
 
 /* Function header left blank Intentionally */
@@ -3200,6 +3222,282 @@ static inline void hdd_assign_reassoc_handoff(tCsrHandoffRequest *handoffInfo)
 }
 #endif
 
+/**
+ * wlan_hdd_free_cache_channels() - Free the cache channels list
+ * @hdd_ctx: Pointer to HDD context
+ *
+ * Return: None
+ */
+
+static void wlan_hdd_free_cache_channels(hdd_context_t *hdd_ctx)
+{
+	mutex_lock(&hdd_ctx->cache_channel_lock);
+	hdd_ctx->orginal_channels->num_channels = 0;
+	vos_mem_free(hdd_ctx->orginal_channels->channel_info);
+	hdd_ctx->orginal_channels->channel_info = NULL;
+	vos_mem_free(hdd_ctx->orginal_channels);
+	hdd_ctx->orginal_channels = NULL;
+	mutex_unlock(&hdd_ctx->cache_channel_lock);
+}
+
+/**
+ * hdd_alloc_chan_cache() - Allocate the memory to cache the channel
+ * info for the channels received in command SET_DISABLE_CHANNEL_LIST
+ * @hdd_ctx: Pointer to HDD context
+ * @num_chan: Number of channels for which memory needs to
+ * be allocated
+ *
+ * Return: 0 on success and error code on failure
+ */
+
+int hdd_alloc_chan_cache(hdd_context_t *hdd_ctx, int num_chan)
+{
+	if (NULL ==  hdd_ctx->orginal_channels) {
+		hdd_ctx->orginal_channels =
+			vos_mem_malloc(sizeof(struct hdd_cache_channels));
+		if (NULL ==  hdd_ctx->orginal_channels) {
+			hddLog(VOS_TRACE_LEVEL_ERROR,
+			       "In %s, VOS_MALLOC_ERR", __func__);
+			return -EINVAL;
+		}
+		hdd_ctx->orginal_channels->num_channels = num_chan;
+		hdd_ctx->orginal_channels->channel_info =
+					vos_mem_malloc(num_chan *
+					sizeof(struct hdd_cache_channel_info));
+		if (NULL ==  hdd_ctx->orginal_channels->channel_info) {
+			hddLog(VOS_TRACE_LEVEL_ERROR,
+			       "In %s, VOS_MALLOC_ERR", __func__);
+			hdd_ctx->orginal_channels->num_channels = 0;
+			vos_mem_free(hdd_ctx->orginal_channels);
+			hdd_ctx->orginal_channels = NULL;
+			return -EINVAL;
+		}
+	} else {
+		/* Same command comes multiple times */
+		struct hdd_cache_channel_info *temp_chan_info;
+
+		if (hdd_ctx->orginal_channels->num_channels + num_chan >
+								MAX_CHANNEL) {
+			hddLog(VOS_TRACE_LEVEL_ERROR,
+			       "%s: Invalid Number of channel received",
+			       __func__);
+			return -EINVAL;
+		}
+
+		temp_chan_info = vos_mem_malloc((
+					hdd_ctx->orginal_channels->
+						num_channels + num_chan) *
+					sizeof(struct hdd_cache_channel_info));
+		if (NULL ==  temp_chan_info) {
+			hddLog(VOS_TRACE_LEVEL_ERROR,
+			       "In %s, VOS_MALLOC_ERR",
+			       __func__);
+			return -EINVAL;
+		}
+
+		vos_mem_copy(temp_chan_info, hdd_ctx->orginal_channels->
+			     channel_info, hdd_ctx->orginal_channels->
+			     num_channels *
+			     sizeof(struct hdd_cache_channel_info));
+
+		hdd_ctx->orginal_channels->num_channels += num_chan;
+		vos_mem_free(hdd_ctx->orginal_channels->channel_info);
+		hdd_ctx->orginal_channels->channel_info = temp_chan_info;
+		temp_chan_info = NULL;
+	}
+	return 0;
+
+}
+
+
+int hdd_parse_disable_chan_cmd(hdd_adapter_t *adapter, tANI_U8 *ptr)
+{
+	v_PVOID_t pvosGCtx = vos_get_global_context(VOS_MODULE_ID_HDD, NULL);
+	hdd_context_t *hdd_ctx = vos_get_context(VOS_MODULE_ID_HDD, pvosGCtx);
+	tANI_U8 *param;
+	int j, tempInt, index = 0, ret = 0;
+
+	if (NULL == pvosGCtx) {
+		hddLog(VOS_TRACE_LEVEL_FATAL,
+		       "VOS Global Context is NULL");
+		return -EINVAL;
+	}
+
+	if (NULL == hdd_ctx) {
+		hddLog(VOS_TRACE_LEVEL_FATAL, "HDD Context is NULL");
+		return -EINVAL;
+	}
+
+	param = strchr(ptr, ' ');
+	/*no argument after the command*/
+	if (NULL == param)
+		return -EINVAL;
+
+	/*no space after the command*/
+	else if (SPACE_ASCII_VALUE != *param)
+		return -EINVAL;
+
+	param++;
+
+	/*removing empty spaces*/
+	while ((SPACE_ASCII_VALUE  == *param) && ('\0' !=  *param))
+		param++;
+
+	/*no argument followed by spaces*/
+	if ('\0' == *param)
+		return -EINVAL;
+
+	/*getting the first argument ie the number of channels*/
+	if (sscanf(param, "%d ", &tempInt) != 1) {
+		hddLog(VOS_TRACE_LEVEL_ERROR,
+		       "%s: Cannot get number of channels from input",
+		       __func__);
+		return -EINVAL;
+	}
+
+	if (tempInt < 0 || tempInt > MAX_CHANNEL) {
+		hddLog(VOS_TRACE_LEVEL_ERROR,
+		       "%s: Invalid Number of channel received", __func__);
+		return -EINVAL;
+	}
+
+	hddLog(VOS_TRACE_LEVEL_INFO_HIGH,
+	       "%s: Number of channel to disable are: %d",
+	       __func__, tempInt);
+
+	if (!tempInt) {
+		if (!wlan_hdd_restore_channels(hdd_ctx)) {
+			/*
+			 * Free the cache channels only when the command is
+			 * received with num channels as 0
+			 */
+			wlan_hdd_free_cache_channels(hdd_ctx);
+		}
+		return 0;
+	}
+
+	mutex_lock(&hdd_ctx->cache_channel_lock);
+	if (hdd_alloc_chan_cache(hdd_ctx, tempInt)) {
+		ret = -ENOMEM;
+		goto parse_done;
+	}
+	index = hdd_ctx->orginal_channels->num_channels - tempInt;
+
+	for (j = index; j < hdd_ctx->orginal_channels->num_channels; j++) {
+		/*
+		 * param pointing to the beginning of first space
+		 * after number of channels
+		 */
+		param = strpbrk(param, " ");
+		/*no channel list after the number of channels argument*/
+		if (NULL == param) {
+			hddLog(VOS_TRACE_LEVEL_ERROR,
+			       "%s, Invalid No of channel provided in the list",
+			       __func__);
+			ret = -EINVAL;
+			goto parse_done;
+		}
+
+		param++;
+
+		/*removing empty space*/
+		while ((SPACE_ASCII_VALUE == *param) && ('\0' != *param))
+			param++;
+
+		if ('\0' == *param) {
+			hddLog(VOS_TRACE_LEVEL_ERROR,
+			       "%s, No channel is provided in the list",
+				__func__);
+			ret = -EINVAL;
+			goto parse_done;
+
+		}
+
+		if (sscanf(param, "%d ", &tempInt) != 1) {
+			hddLog(VOS_TRACE_LEVEL_ERROR,
+			       "%s: Cannot read channel number",
+			       __func__);
+			ret = -EINVAL;
+			goto parse_done;
+
+		}
+
+		if (!IS_CHANNEL_VALID(tempInt)) {
+			hddLog(VOS_TRACE_LEVEL_ERROR,
+			       "%s: Invalid channel number received",
+			       __func__);
+			ret = -EINVAL;
+			goto parse_done;
+
+		}
+
+		hddLog(VOS_TRACE_LEVEL_INFO, "%s: channel[%d] = %d", __func__,
+		       j, tempInt);
+		hdd_ctx->orginal_channels->channel_info[j].channel_num =
+								tempInt;
+	}
+
+	/*extra arguments check*/
+	param = strchr(param, ' ');
+	if (NULL != param) {
+		while ((SPACE_ASCII_VALUE == *param) && ('\0' != *param))
+			param++;
+
+		if ('\0' !=  *param) {
+			hddLog(VOS_TRACE_LEVEL_ERROR,
+			       "%s: Invalid argument received", __func__);
+			ret = -EINVAL;
+			goto parse_done;
+		}
+	}
+
+parse_done:
+	mutex_unlock(&hdd_ctx->cache_channel_lock);
+	EXIT();
+
+	return ret;
+}
+
+int hdd_get_disable_ch_list(hdd_context_t *hdd_ctx, tANI_U8 *buf,
+			    tANI_U8 buf_len)
+{
+	struct hdd_cache_channel_info *ch_list;
+	unsigned char i, num_ch;
+	int len = 0;
+
+	mutex_lock(&hdd_ctx->cache_channel_lock);
+	if (hdd_ctx->orginal_channels &&
+	    hdd_ctx->orginal_channels->num_channels) {
+		num_ch = hdd_ctx->orginal_channels->num_channels;
+
+		if (num_ch == 0) {
+			mutex_unlock(&hdd_ctx->cache_channel_lock);
+			VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+				  FL("no disable channels programed"));
+			return 0;
+		}
+
+		len = scnprintf(buf, buf_len, "%s %hhu",
+				"GET_DISABLE_CHANNEL_LIST", num_ch);
+
+		ch_list = hdd_ctx->orginal_channels->channel_info;
+		if (!ch_list) {
+			mutex_unlock(&hdd_ctx->cache_channel_lock);
+			VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+				  FL("disable channel list is NULL"));
+			return 0;
+		}
+
+		for (i = 0; (i < num_ch) && len <= buf_len; i++) {
+			len += scnprintf(buf + len, buf_len - len,
+			" %d", ch_list[i].channel_num);
+		}
+	}
+	mutex_unlock(&hdd_ctx->cache_channel_lock);
+
+	return len;
+}
+
 static int hdd_driver_command(hdd_adapter_t *pAdapter,
                               hdd_priv_data_t *ppriv_data)
 {
@@ -3377,6 +3675,22 @@ static int hdd_driver_command(hdd_adapter_t *pAdapter,
 
            ret = sapSetPreferredChannel(ptr);
        }
+
+       else if (strncmp(command, "VOWIFIMODE", 10) == 0)
+       {
+           tANI_U8 *ptr;
+
+           ret = hdd_drv_cmd_validate(command, 10);
+           if (ret)
+               goto exit;
+
+           VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                   "Received Command for VOWIFI mode in %s", __func__);
+
+           ptr = (tANI_U8*)command + 11;
+           hdd_set_vowifi_mode(pHddCtx, *ptr - '0');
+        }
+
        else if(strncmp(command, "SETSUSPENDMODE", 14) == 0)
        {
            int suspend = 0;
@@ -6258,6 +6572,51 @@ static int hdd_driver_command(hdd_adapter_t *pAdapter,
 
            ret = hdd_enable_disable_ca_event(pHddCtx, command, 16);
        }
+       /*
+        * command should be a string having format
+        * SET_DISABLE_CHANNEL_LIST <num of channels>
+        * <channels separated by spaces>
+        */
+       else if (strncmp(command, "SET_DISABLE_CHANNEL_LIST", 24) == 0) {
+            tANI_U8 *ptr = command;
+            ret = hdd_drv_cmd_validate(command, 24);
+            if (ret)
+                goto exit;
+
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                " Received Command to disable Channels %s",
+                __func__);
+            ret = hdd_parse_disable_chan_cmd(pAdapter, ptr);
+            if (ret)
+                goto exit;
+       }
+       else if (strncmp(command, "GET_DISABLE_CHANNEL_LIST", 24) == 0) {
+            char extra[128] = {0};
+            int len;
+
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                " Received Command to get disable Channels list %s",
+                __func__);
+
+            len = hdd_get_disable_ch_list(pHddCtx, extra, sizeof(extra));
+            if (len == 0) {
+                VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                          FL("disable channel list are not yet programed"));
+                ret = -EINVAL;
+                goto exit;
+            }
+
+            len = VOS_MIN(priv_data.total_len, len + 1);
+            if (copy_to_user(priv_data.buf, &extra, len)) {
+               VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  "%s: failed to copy data to user buffer", __func__);
+               ret = -EFAULT;
+               goto exit;
+            }
+
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                      FL("data:%s"), extra);
+       }
        else {
            MTRACE(vos_trace(VOS_MODULE_ID_HDD,
                             TRACE_CODE_HDD_UNSUPPORTED_IOCTL,
@@ -8899,8 +9258,11 @@ void hdd_monPostMsgCb(tANI_U32 *magic, struct completion *cmpVar)
 void hdd_init_mon_mode (hdd_adapter_t *pAdapter)
  {
     hdd_mon_ctx_t *pMonCtx = NULL;
-    pMonCtx = WLAN_HDD_GET_MONITOR_CTX_PTR(pAdapter);
 
+    spin_lock_init(&pAdapter->sta_hash_lock);
+    pAdapter->is_sta_id_hash_initialized = VOS_FALSE;
+
+    pMonCtx = WLAN_HDD_GET_MONITOR_CTX_PTR(pAdapter);
     pMonCtx->state = 0;
     pMonCtx->ChannelNo = 1;
     pMonCtx->ChannelBW = 20;
@@ -9957,28 +10319,38 @@ __hdd_force_scc_with_ecsa_handle(struct work_struct *work)
         hddLog(LOGE, FL("sta_adapter is NULL"));
         return;
     }
-    sta_ctx = WLAN_HDD_GET_STATION_CTX_PTR(sta_adapter);
 
-    if (sta_ctx->conn_info.connState != eConnectionState_Associated) {
-        chan_state = vos_nv_getChannelEnabledState(sap_ctx->channel);
-        hddLog(LOG1, FL("sta not in connected state %d, sta_sap_scc_on_dfs_chan %d, chan_state %d"),
-                sta_ctx->conn_info.connState, sta_sap_scc_on_dfs_chan,
-                chan_state);
-        if (sta_sap_scc_on_dfs_chan &&
-                (chan_state == NV_CHANNEL_DFS)) {
-            hddLog(LOG1, FL("Switch SAP to user configured channel"));
-            target_channel = sap_config->user_config_channel;
-            goto switch_channel;
-
-        }
+    if (wlansap_chk_n_set_chan_change_in_progress(sap_ctx))
         return;
+    INIT_COMPLETION(sap_ctx->ecsa_info.chan_switch_comp);
+
+    sta_ctx = WLAN_HDD_GET_STATION_CTX_PTR(sta_adapter);
+    if (sta_ctx->conn_info.connState != eConnectionState_Associated) {
+        if (sta_ctx->conn_info.connState == eConnectionState_NotConnected) {
+            chan_state = vos_nv_getChannelEnabledState(sap_ctx->channel);
+            hddLog(LOG1, FL("sta not in connected state %d, sta_sap_scc_on_dfs_chan %d, chan_state %d"),
+                   sta_ctx->conn_info.connState, sta_sap_scc_on_dfs_chan,
+                   chan_state);
+            if (sta_sap_scc_on_dfs_chan &&
+                (chan_state == NV_CHANNEL_DFS)) {
+               hddLog(LOGE, FL("Switch SAP to user configured channel"));
+               target_channel = sap_config->user_config_channel;
+               goto switch_channel;
+            }
+        }
+        goto abort;
     }
 
     target_channel = sta_ctx->conn_info.operationChannel;
 switch_channel:
     hddLog(LOGE, FL("Switch SAP to %d channel"),
            target_channel);
-    wlansap_set_channel_change(vos_ctx, target_channel, true);
+    if (!wlansap_set_channel_change(vos_ctx, target_channel, true))
+        return;
+
+abort:
+   wlansap_reset_chan_change_in_progress(sap_ctx);
+   complete(&sap_ctx->ecsa_info.chan_switch_comp);
 }
 
 /**
@@ -9997,6 +10369,45 @@ hdd_force_scc_with_ecsa_handle(struct work_struct *work)
     __hdd_force_scc_with_ecsa_handle(work);
     vos_ssr_unprotect(__func__);
 }
+
+int hdd_wait_for_ecsa_complete(hdd_context_t *hdd_ctx)
+{
+    int ret;
+    ptSapContext sap_ctx = NULL;
+    v_CONTEXT_t vos_ctx;
+
+    vos_ctx = hdd_ctx->pvosContext;
+    if (!vos_ctx) {
+        hddLog(LOGE, FL("vos_ctx is NULL"));
+        return 0;
+    }
+
+    sap_ctx = VOS_GET_SAP_CB(vos_ctx);
+    if (!sap_ctx) {
+        hddLog(LOG1, FL("sap_ctx is NULL"));
+        return 0;
+    }
+    if(!sap_ctx->isSapSessionOpen) {
+        hddLog(LOG1, FL("sap session not opened, SAP in state %d"),
+               sap_ctx->sapsMachine);
+        return 0;
+    }
+
+    if (!wlansap_get_change_in_progress(sap_ctx)) {
+       hddLog(LOG1, FL("channel switch not in progress"));
+       return 0;
+    }
+    ret = wait_for_completion_timeout(&sap_ctx->ecsa_info.chan_switch_comp,
+                                  msecs_to_jiffies(HDD_SAP_CHAN_CNG_WAIT_TIME));
+    if (!ret)
+    {
+        hddLog(LOGE, FL("Timeout waiting for SAP channel switch"));
+        return ret;
+    }
+
+    return 0;
+}
+
 
 /**
  * hdd_is_sta_sap_scc_allowed_on_dfs_chan() - check if sta+sap scc allowed on
@@ -10112,7 +10523,9 @@ VOS_STATUS hdd_reset_all_adapters( hdd_context_t *pHddCtx )
       }
 
       pAdapter->sessionCtx.station.hdd_ReassocScenario = VOS_FALSE;
-      pAdapter->sessionCtx.monitor.state = MON_MODE_STOP;
+
+      if (pAdapter->device_mode == WLAN_HDD_MONITOR)
+          pAdapter->sessionCtx.monitor.state = MON_MODE_STOP;
 
       hdd_deinit_tx_rx(pAdapter);
 
@@ -10355,6 +10768,7 @@ VOS_STATUS hdd_start_all_adapters( hdd_context_t *pHddCtx )
    VOS_STATUS status;
    hdd_adapter_t      *pAdapter;
    eConnectionState  connState;
+   v_CONTEXT_t pVosContext;
 
    ENTER();
 
@@ -10431,8 +10845,18 @@ VOS_STATUS hdd_start_all_adapters( hdd_context_t *pHddCtx )
             break;
 
          case WLAN_HDD_MONITOR:
-            /* monitor interface start */
+            pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+
+            hddLog(VOS_TRACE_LEVEL_INFO, FL("[SSR] monitor mode"));
+            if (!pVosContext) {
+                hddLog(VOS_TRACE_LEVEL_ERROR, FL("vos context is NULL"));
+                break;
+            }
+
+            hdd_init_tx_rx(pAdapter);
+            WLANTL_SetMonRxCbk( pVosContext, hdd_rx_packet_monitor_cbk);
             break;
+
          default:
             break;
       }
@@ -11597,6 +12021,8 @@ free_hdd_ctx:
        pHddCtx->cfg_ini= NULL;
    }
 
+   hdd_request_manager_deinit();
+
    /* FTM/MONITOR mode, WIPHY did not registered
       If un-register here, system crash will happen */
    if (!(VOS_FTM_MODE == hdd_get_conparam() ||
@@ -12604,6 +13030,8 @@ int hdd_wlan_startup(struct device *dev )
       goto err_free_hdd_context;
    }
 
+   hdd_request_manager_init();
+
    vos_mem_zero(pHddCtx->cfg_ini, sizeof( hdd_config_t ));
 
    // Read and parse the qcom_cfg.ini file
@@ -13407,6 +13835,7 @@ int hdd_wlan_startup(struct device *dev )
 
    hdd_assoc_registerFwdEapolCB(pVosContext);
 
+   mutex_init(&pHddCtx->cache_channel_lock);
    goto success;
 
 err_open_cesium_nl_sock:
@@ -13484,6 +13913,7 @@ err_wdclose:
       vos_watchdog_close(pVosContext);
 
 err_config:
+   hdd_request_manager_deinit();
    kfree(pHddCtx->cfg_ini);
    pHddCtx->cfg_ini= NULL;
 
@@ -14299,7 +14729,6 @@ void wlan_hdd_incr_active_session(hdd_context_t *pHddCtx, tVOS_CON_MODE mode)
    case VOS_P2P_CLIENT_MODE:
    case VOS_P2P_GO_MODE:
    case VOS_STA_SAP_MODE:
-   case VOS_MONITOR_MODE:
         pHddCtx->no_of_active_sessions[mode]++;
         break;
    default:
@@ -14334,7 +14763,6 @@ void wlan_hdd_decr_active_session(hdd_context_t *pHddCtx, tVOS_CON_MODE mode)
    case VOS_P2P_CLIENT_MODE:
    case VOS_P2P_GO_MODE:
    case VOS_STA_SAP_MODE:
-   case VOS_MONITOR_MODE:
         if (pHddCtx->no_of_active_sessions[mode] > 0)
             pHddCtx->no_of_active_sessions[mode]--;
         else

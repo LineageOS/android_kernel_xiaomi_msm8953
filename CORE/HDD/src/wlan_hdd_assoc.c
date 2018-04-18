@@ -162,6 +162,12 @@ v_U8_t ccpRSNOui08[ HDD_RSN_OUI_SIZE ] = { 0x00, 0x0F, 0xAC, 0x05 };
 
 /* The time after add bss, in which SAP should start ECSA to move to SCC */
 #define ECSA_SCC_CHAN_CHANGE_DEFER_INTERVAL 1500
+/*
+ * Time in ms after disconnect, in which the SAP should move to non DFS channel.
+ * This will avoid multiple SAP channel switch if disconnet is followed by
+ * connect.
+ */
+#define ECSA_DFS_CHAN_CHANGE_DEFER_TIME 200
 
 #ifdef WLAN_FEATURE_11W
 void hdd_indicateUnprotMgmtFrame(hdd_adapter_t *pAdapter,
@@ -1601,18 +1607,24 @@ static void hdd_check_and_move_if_sap_is_on_dfs_chan(hdd_context_t *hdd_ctx,
             return;
         }
 
+        if (sap_ctx->sapsMachine != eSAP_STARTED) {
+            hddLog(LOG1, FL("SAP is not in eSAP_STARTED state"));
+            return;
+        }
+
         chan_state = vos_nv_getChannelEnabledState(sap_ctx->channel);
 
         hddLog(LOG1, "SAP is operating on channel (%hu), chan_state %d",
                 sap_ctx->channel, chan_state);
-
         if (vos_nv_getChannelEnabledState(sap_ctx->channel) !=
                 NV_CHANNEL_DFS) {
             hddLog(LOG1, "SAP is on non DFS channel. nothing to do");
             return;
         }
+
         hddLog(LOG1, "Schedule workqueue to move the SAP to non DFS channel");
-        schedule_delayed_work(&hdd_ctx->ecsa_chan_change_work, 0);
+        schedule_delayed_work(&hdd_ctx->ecsa_chan_change_work,
+                            msecs_to_jiffies(ECSA_DFS_CHAN_CHANGE_DEFER_TIME));
     }
 }
 
@@ -2811,6 +2823,10 @@ static eHalStatus hdd_AssociationCompletionHandler( hdd_adapter_t *pAdapter, tCs
 
              }
         }
+    }
+    else if (roamStatus == eCSR_ROAM_ASSOCIATION_FAILURE)
+    {
+        hdd_check_and_move_if_sap_is_on_dfs_chan(pHddCtx, pAdapter);
     }
     return eHAL_STATUS_SUCCESS;
 }

@@ -573,7 +573,8 @@ typedef enum
 #endif
 
   WDI_SET_AP_FIND_IND = WDI_MAX_REQ + 25,
-  WDI_MAX_UMAC_IND = WDI_MAX_REQ + 26
+  WDI_SET_VOWIFI_IND = WDI_MAX_REQ + 26,
+  WDI_MAX_UMAC_IND = WDI_MAX_REQ + 27,
 
 }WDI_RequestEnumType;
 
@@ -891,8 +892,6 @@ typedef enum
   WDI_CAPTURE_GET_TSF_TSTAMP_RSP                 = 123,
   WDI_FW_ARP_STATS_RSP                           = 124,
   WDI_FW_GET_ARP_STATS_RSP                       = 125,
-
-
   /*-------------------------------------------------------------------------
     Indications
      !! Keep these last in the enum if possible
@@ -1893,6 +1892,21 @@ WDI_ProcessEndScanReq
   WDI_EventInfoType*     pEventData
 );
 
+
+/**
+ * WDI_process_vowifi_request - Sends the vowifi request data to
+ * the firmware when VOWIFI driver command is invoked
+ * @pWDICtx:      pointer to the WLAN DAL context
+ * @pEventData:   pointer to the event information structure
+ *
+ * Return value: status whether the sending is successful or not
+ */
+WDI_Status
+WDI_process_vowifi_request
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
 
 /**
  @brief Process Finish Scan Request function (called when Main 

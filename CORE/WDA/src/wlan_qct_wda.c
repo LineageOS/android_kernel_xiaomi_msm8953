@@ -8855,8 +8855,6 @@ void WDA_SetMaxTxPowerPerBandCallBack(WDI_SetMaxTxPowerPerBandRspMsg
                                       void* pUserData)
 {
    tWDA_ReqParams *pWdaParams = (tWDA_ReqParams *)pUserData;
-   tWDA_CbContext *pWDA = NULL;
-   tMaxTxPowerPerBandParams *pMxTxPwrPerBandParams = NULL;
 
    VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
              "<------ %s ", __func__);
@@ -8867,38 +8865,14 @@ void WDA_SetMaxTxPowerPerBandCallBack(WDI_SetMaxTxPowerPerBandRspMsg
       VOS_ASSERT(0);
       return ;
    }
-   pWDA = (tWDA_CbContext *) pWdaParams->pWdaContext;
-   if (NULL == pWDA)
-   {
-       VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-               "%s:pWDA is NULL", __func__);
-       vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
-       vos_mem_free(pWdaParams->wdaMsgParam);
-       vos_mem_free(pWdaParams);
-       VOS_ASSERT(0);
-       return ;
-   }
 
-   pMxTxPwrPerBandParams = (tMaxTxPowerPerBandParams*)pWdaParams->wdaMsgParam;
-   if ( NULL == pMxTxPwrPerBandParams )
-   {
-      VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
-                "%s: pMxTxPwrPerBandParams received NULL ", __func__);
-      VOS_ASSERT(0);
-      vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
-      vos_mem_free(pWdaParams);
-      return;
-   }
-
-  /*need to free memory for the pointers used in the
-    WDA Process.Set Max Tx Power Req function*/
+  /*
+   * Need to free memory for the pointers used in the WDA Process.Set Max Tx
+   * Power Req function
+   */
    vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
+   vos_mem_free(pWdaParams->wdaMsgParam);
    vos_mem_free(pWdaParams);
-   pMxTxPwrPerBandParams->power = pwdiSetMaxTxPowerPerBandRsp->ucPower;
-
-  /* send response to UMAC*/
-   WDA_SendMsg(pWDA, WDA_SET_MAX_TX_POWER_PER_BAND_RSP,
-               pMxTxPwrPerBandParams, 0);
 
    return;
 }
@@ -8956,12 +8930,10 @@ void WDA_SetMaxTxPowerPerBandCallBack(WDI_SetMaxTxPowerPerBandRspMsg
                 "Failure in SET MAX TX Power REQ Params WDI API,"
                 " free all the memory");
       vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
+      vos_mem_free(pWdaParams->wdaMsgParam);
       vos_mem_free(pWdaParams);
-      /* send response to UMAC*/
-      WDA_SendMsg(pWDA,
-                  WDA_SET_MAX_TX_POWER_PER_BAND_RSP,
-                  MaxTxPowerPerBandParams, 0);
    }
+
    return CONVERT_WDI2VOS_STATUS(status);
 }
 
@@ -12028,6 +12000,28 @@ VOS_STATUS WDA_RemBeaconFilterReq(tWDA_CbContext *pWDA,
    }
    return status;
 }
+
+VOS_STATUS WDA_set_vowifi_ind(tWDA_CbContext *pWDA,
+                 tANI_BOOLEAN enable)
+{
+    WDI_Status status;
+
+    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                   FL("---> %s"), __func__);
+    status = WDI_set_vowifi_mode_ind(enable);
+    if (status == WDI_STATUS_PENDING)
+    {
+       VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+                 FL("pending status received "));
+    }
+    else if (status != WDI_STATUS_SUCCESS)
+    {
+       VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+               FL("Failure status %d"), status);
+    }
+    return CONVERT_WDI2VOS_STATUS(status);
+}
+
 /*
  * FUNCTION: WDA_SetRSSIThresholdsRespCallback
  * 
@@ -17058,6 +17052,16 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
          WDA_SetBeaconFilterReq(pWDA, (tBeaconFilterMsg *)pMsg->bodyptr);
          break;
       }
+
+      case WDA_VOWIFI_MODE :
+      {
+         VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO_HIGH,
+                           "Handling msg type WDA_VOWIFI_MODE");
+
+         WDA_set_vowifi_ind(pWDA, pMsg->bodyval);
+         break;
+      }
+
       case WDA_BTC_SET_CFG:
       {
          /*TODO: handle this while dealing with BTC */

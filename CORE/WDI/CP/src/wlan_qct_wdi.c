@@ -613,7 +613,11 @@ WDI_ReqProcFuncType  pfnReqProcTbl[WDI_MAX_UMAC_IND] =
 #endif
 #ifdef WLAN_FEATURE_APFIND
   WDI_ProcessApFindInd,                 /* WDI_SET_AP_FIND_IND */
+#else
+  NULL,
 #endif
+  WDI_process_vowifi_request,         /* WDI_SET_VOWIFI_IND */
+
 };
 
 
@@ -8988,6 +8992,65 @@ WDI_ProcessStartScanReq
 }/*WDI_ProcessStartScanReq*/
 
 
+WDI_Status
+WDI_process_vowifi_request(WDI_ControlBlockType* pWDICtx,
+                                                WDI_EventInfoType* pEventData)
+{
+  wpt_uint8* pSendBuffer = NULL;
+  wpt_uint16 usDataOffset = 0;
+  wpt_uint16 usSendSize = 0;
+  wpt_boolean *enable;
+  tHalVoWiFiInd hal_vowifi_msg;
+  WDI_Status wdiStatus;
+
+  /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+  WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
+               "%s", __func__);
+
+  /*-------------------------------------------------------------------------
+    Sanity check
+  -------------------------------------------------------------------------*/
+  if (( NULL == pEventData ) || ( NULL == pEventData->pEventData ) ) {
+      WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_FATAL,
+             "%s: Invalid parameters", __func__);
+      WDI_ASSERT(0);
+      return WDI_STATUS_E_FAILURE;
+  }
+  enable = (wpt_boolean*)pEventData->pEventData;
+
+  /*-----------------------------------------------------------------------
+    Get message buffer
+  -----------------------------------------------------------------------*/
+  if (( WDI_STATUS_SUCCESS != WDI_GetMessageBuffer( pWDICtx,
+                                     WDI_SET_VOWIFI_IND,
+                                      sizeof(tHalVoWiFiIndParams),
+                          &pSendBuffer, &usDataOffset, &usSendSize))||
+       ( usSendSize < (usDataOffset + sizeof(tHalVoWiFiIndParams) )))
+  {
+      WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_FATAL,
+              "Unable to get send buffer VOWIFI ind %pK ",
+               pEventData);
+      WDI_ASSERT(0);
+      return WDI_STATUS_E_FAILURE;
+  }
+
+  hal_vowifi_msg.voWiFiIndParams.enable = *enable;
+
+  wpalMemoryCopy( pSendBuffer+usDataOffset,
+                  &hal_vowifi_msg.voWiFiIndParams,
+                  sizeof(hal_vowifi_msg.voWiFiIndParams));
+
+  pWDICtx->pReqStatusUserData = NULL;
+  pWDICtx->pfncRspCB = NULL;
+
+  /*-------------------------------------------------------------------------
+    Send VOWIFI mode Request to HAL
+  -------------------------------------------------------------------------*/
+  wdiStatus =  WDI_SendIndication(pWDICtx, pSendBuffer, usSendSize);
+  return (wdiStatus != WDI_STATUS_SUCCESS) ? wdiStatus:WDI_STATUS_SUCCESS_SYNC;
+}
+
 /**
  @brief Process End Scan Request function (called when Main FSM
         allows it)
@@ -11476,6 +11539,33 @@ WDI_ProcessUpdateEDCAParamsReq
                        wdiUpdateEDCARspCb, pEventData->pUserData,
                        WDI_UPD_EDCA_PRMS_RESP);
 }/*WDI_ProcessUpdateEDCAParamsReq*/
+
+/**
+ * WDI_set_vowifi_mode_ind() - Set VOWIFI mode request
+ *
+ * @enable - boolean value that determins the state
+ *
+ * Return value: status whether the post is successful or not
+ */
+WDI_Status WDI_set_vowifi_mode_ind(wpt_boolean enable)
+{
+    WDI_EventInfoType wdiEventData;
+
+    if (eWLAN_PAL_FALSE == gWDIInitialized )
+    {
+        WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                 "WDI API call before module is initialized - Fail request");
+        return WDI_STATUS_E_NOT_ALLOWED;
+    }
+
+    wdiEventData.wdiRequest      = WDI_SET_VOWIFI_IND;
+    wdiEventData.pEventData      = (void *) &enable;
+    wdiEventData.uEventDataSize  = sizeof(wpt_boolean);
+    wdiEventData.pCBfnc          = NULL;
+    wdiEventData.pUserData       = NULL;
+
+    return WDI_PostMainEvent(&gWDICb, WDI_REQUEST_EVENT, &wdiEventData);
+}
 
 /**
  @brief Process Add BA Request function (called when Main FSM
@@ -25145,6 +25235,8 @@ WDI_2_HAL_REQ_TYPE
        return WLAN_HAL_NAN_REQ;
   case WDI_SET_RTS_CTS_HTVHT_IND:
        return WLAN_HAL_SET_RTS_CTS_HTVHT_IND;
+  case WDI_SET_VOWIFI_IND:
+       return WLAN_HAL_VOWIFI_IND;
   case WDI_MON_START_REQ:
        return WLAN_HAL_ENABLE_MONITOR_MODE_REQ;
   case WDI_MON_STOP_REQ:

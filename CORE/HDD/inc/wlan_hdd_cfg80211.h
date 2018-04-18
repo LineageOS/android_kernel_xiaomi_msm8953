@@ -1656,6 +1656,15 @@ void* wlan_hdd_change_country_code_cb(void *pAdapter);
 void hdd_select_cbmode( hdd_adapter_t *pAdapter,v_U8_t operationChannel);
 
 /*
+ * wlan_hdd_restore_channels() Restore the channels which were cached
+ * and disabled in __wlan_hdd_disable_channels api.
+ * @hdd_ctx: Pointer to the HDD context
+ *
+ * @Return: 0 on success, Error code on failure
+ */
+int wlan_hdd_restore_channels(hdd_context_t *pHddCtx);
+
+/*
  * hdd_update_indoor_channel() - enable/disable indoor channel
  * @hdd_ctx: hdd context
  * @disable: whether to enable / disable indoor channel

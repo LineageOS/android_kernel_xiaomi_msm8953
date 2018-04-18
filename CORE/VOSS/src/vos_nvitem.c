@@ -2634,6 +2634,39 @@ VOS_STATUS vos_nv_setNVEncodedBuffer(v_U8_t *pNvBuffer, v_SIZE_t size)
     return VOS_STATUS_SUCCESS;
 }
 
+/*
+ *vos_nv_set_Channel_state - API to set the channel state in NV table
+ *@rfChannel  - input channel enum
+ *@channel_state - state of the channel to be set
+ *  enabled
+ *  disabled
+ *  DFS
+ * Return - Void
+ */
+void vos_nv_set_channel_state(v_U32_t rfChannel, int channel_state)
+{
+	v_U32_t	channelLoop;
+	eRfChannels channelEnum = INVALID_RF_CHANNEL;
+
+	for (channelLoop = 0; channelLoop <= RF_CHAN_165; channelLoop++) {
+		if (rfChannels[channelLoop].channelNum == rfChannel) {
+			channelEnum = (eRfChannels)channelLoop;
+			break;
+		}
+	}
+
+	if (INVALID_RF_CHANNEL == channelEnum) {
+		VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+			  "vos_nv_set_channel_state, invalid channel %d",
+			  rfChannel);
+		return;
+	}
+
+	pnvEFSTable->
+	halnv.tables.regDomains[temp_reg_domain].channels[channelEnum].enabled =
+		channel_state;
+}
+
 /**------------------------------------------------------------------------
   \brief vos_nv_getChannelEnabledState -
   \param rfChannel  - input channel enum to know evabled state
@@ -4812,15 +4845,15 @@ int __wlan_hdd_crda_reg_notifier(struct wiphy *wiphy,
                  k = wiphy->bands[HDD_NL80211_BAND_2GHZ]->n_channels + j;
 
                  if ((wiphy->bands[HDD_NL80211_BAND_5GHZ]->channels[j].center_freq == 5260 ||
-                      wiphy->bands[IEEE80211_BAND_5GHZ]->channels[j].center_freq == 5280 ||
-                      wiphy->bands[IEEE80211_BAND_5GHZ]->channels[j].center_freq == 5300 ||
-                      wiphy->bands[IEEE80211_BAND_5GHZ]->channels[j].center_freq == 5320 ||
-                      wiphy->bands[IEEE80211_BAND_5GHZ]->channels[j].center_freq == 5500 ||
-                      wiphy->bands[IEEE80211_BAND_5GHZ]->channels[j].center_freq == 5520) &&
+                      wiphy->bands[HDD_NL80211_BAND_5GHZ]->channels[j].center_freq == 5280 ||
+                      wiphy->bands[HDD_NL80211_BAND_5GHZ]->channels[j].center_freq == 5300 ||
+                      wiphy->bands[HDD_NL80211_BAND_5GHZ]->channels[j].center_freq == 5320 ||
+                      wiphy->bands[HDD_NL80211_BAND_5GHZ]->channels[j].center_freq == 5500 ||
+                      wiphy->bands[HDD_NL80211_BAND_5GHZ]->channels[j].center_freq == 5520) &&
                      ((regChannels[k].enabled == NV_CHANNEL_ENABLE) ||
                       (regChannels[k].enabled == NV_CHANNEL_DFS)))
                  {
-                     wiphy->bands[IEEE80211_BAND_5GHZ]->channels[j].flags |= IEEE80211_CHAN_RADAR;
+                     wiphy->bands[HDD_NL80211_BAND_5GHZ]->channels[j].flags |= IEEE80211_CHAN_RADAR;
                  }
              }
          }
