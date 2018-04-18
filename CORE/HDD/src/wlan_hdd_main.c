@@ -866,12 +866,16 @@ static int hdd_parse_setrmcactionperiod_command(tANI_U8 *pValue,
 
     return 0;
 }
-/*
- * hdd_set_vowifi_mode() - Process the VOWIFI command and invoke the SME api
- *
- * @hHal: context handler
+
+/**
+ * hdd_set_vowifi_mode() - Process VOWIFI command.
+ * @hdd_ctx: context handler
  * @enable: Value to be sent as a part of the VOWIFI command
  *
+ * Invoke the SME api if station is connected in 2.4 GHz band.
+ * Also start split scan if VOWIFIMODE and dynamic split scan
+ * both are enabled.
+
  * Return: void
  */
 void hdd_set_vowifi_mode(hdd_context_t *hdd_ctx, bool enable)
@@ -885,20 +889,20 @@ void hdd_set_vowifi_mode(hdd_context_t *hdd_ctx, bool enable)
 
     sta_chan = hdd_get_operating_channel(hdd_ctx, WLAN_HDD_INFRA_STATION);
 
-    if (CSR_IS_CHANNEL_24GHZ(sta_chan)) {
+    if (CSR_IS_CHANNEL_24GHZ(sta_chan))
         sme_set_vowifi_mode(hdd_ctx->hHal, enable);
-        if (enable && hdd_ctx->cfg_ini->dynSplitscan) {
-            hdd_ctx->is_vowifi_enabled = true;
-            hdd_ctx->issplitscan_enabled = TRUE;
-            sme_enable_disable_split_scan(hdd_ctx->hHal,
-                        hdd_ctx->cfg_ini->nNumStaChanCombinedConc,
-                        hdd_ctx->cfg_ini->nNumP2PChanCombinedConc);
-        } else {
-            hdd_ctx->is_vowifi_enabled = false;
-        }
-    } else {
+    else
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                "VoWiFi command rejected as not connected in 2.4GHz");
+
+    if (enable && hdd_ctx->cfg_ini->dynSplitscan) {
+        hdd_ctx->is_vowifi_enabled = true;
+        hdd_ctx->issplitscan_enabled = TRUE;
+        sme_enable_disable_split_scan(hdd_ctx->hHal,
+                    hdd_ctx->cfg_ini->nNumStaChanCombinedConc,
+                    hdd_ctx->cfg_ini->nNumP2PChanCombinedConc);
+    } else {
+        hdd_ctx->is_vowifi_enabled = false;
     }
 }
 
