@@ -300,6 +300,8 @@ static unsigned int wsa881x_i2c_read(struct snd_soc_codec *codec,
 		return -EINVAL;
 	}
 	wsa881x = snd_soc_codec_get_drvdata(codec);
+	if (!wsa881x->wsa_active)
+		return 0;
 
 	wsa881x_index = get_i2c_wsa881x_device_index(reg);
 	if (wsa881x_index < 0) {
@@ -320,6 +322,9 @@ static int wsa881x_i2c_write(struct snd_soc_codec *codec, unsigned int reg,
 		return -EINVAL;
 	}
 	wsa881x = snd_soc_codec_get_drvdata(codec);
+	if (!wsa881x->wsa_active)
+		return 0;
+
 	wsa881x_index = get_i2c_wsa881x_device_index(reg);
 	if (wsa881x_index < 0) {
 		pr_err_ratelimited("%s:invalid register to read\n", __func__);
