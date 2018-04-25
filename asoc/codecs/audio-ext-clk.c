@@ -102,8 +102,10 @@ static void audio_ext_pmi_clk_unprepare(struct clk *clk)
 	struct pinctrl_info *pnctrl_info = &audio_pmi_clk->pnctrl_info;
 	int ret;
 
-	if (!pnctrl_info->pinctrl || !pnctrl_info->active)
+	if (!pnctrl_info->pinctrl || !pnctrl_info->active) {
 		pr_err("%s: pinctrl state not defined\n", __func__);
+		return;
+	}
 
 	ret = pinctrl_select_state(pnctrl_info->pinctrl,
 					pnctrl_info->sleep);
