@@ -83,6 +83,8 @@ static int msm_digcdc_clock_control(bool flag)
 	if (flag) {
 		mutex_lock(&pdata->cdc_int_mclk0_mutex);
 		if (atomic_read(&pdata->int_mclk0_enabled) == false) {
+			if (msm_dig_cdc->regmap->cache_only == true)
+				return ret;
 			pdata->digital_cdc_core_clk.clk_freq_in_hz =
 							DEFAULT_MCLK_RATE;
 			pdata->digital_cdc_core_clk.enable = 1;
@@ -96,8 +98,7 @@ static int msm_digcdc_clock_control(bool flag)
 				 * Avoid access to lpass register
 				 * as clock enable failed during SSR.
 				 */
-				if (ret == -ENODEV)
-					msm_dig_cdc->regmap->cache_only = true;
+				msm_dig_cdc->regmap->cache_only = true;
 				return ret;
 			}
 			pr_debug("enabled digital codec core clk\n");
