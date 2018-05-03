@@ -327,6 +327,6 @@ config SUSPEND_TIME
 	  /sys/kernel/debug/suspend_time
 
 config	BOEFFLA_WL_BLOCKER
-		bool "Boeffla generic wakelock blocker driver"
-		depends on PM
-		default N
+	bool "Boeffla generic wakelock blocker driver"
+	depends on PM
+	default N
