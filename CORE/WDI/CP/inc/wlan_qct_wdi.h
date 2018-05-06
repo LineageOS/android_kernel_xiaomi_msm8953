@@ -12301,6 +12301,16 @@ WDI_SetRtsCtsHTVhtInd
  */
 WDI_Status WDI_set_vowifi_mode_ind(wpt_boolean enable);
 
+/**
+ * WDI_set_qpower() - Set qpower mode request
+ *
+ * @enable - uint8_t value that needs to be send
+ *
+ * Return: success if the value is sent
+ */
+WDI_Status WDI_set_qpower(uint8_t enable);
+
+
 WDI_Status
 WDI_FWLoggingDXEdoneInd
 (

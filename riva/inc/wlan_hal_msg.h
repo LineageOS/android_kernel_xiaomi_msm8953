@@ -629,6 +629,7 @@ typedef enum
    WLAN_HAL_FW_GET_ARP_STATS_RSP             = 357,
 
    WLAN_HAL_VOWIFI_IND                       = 360,
+   WLAN_HAL_QPOWER_ENABLE_BY_HOST_IND        = 361,
 
    WLAN_HAL_MSG_MAX = WLAN_HAL_MSG_TYPE_MAX_ENUM_SIZE
 }tHalHostMsgType;
@@ -8203,6 +8204,20 @@ typedef PACKED_PRE struct PACKED_POST
      tHalMsgHeader header;
      tHalVoWiFiIndParams voWiFiIndParams;
 } tHalVoWiFiInd, * tpHalVoWiFiInd;
+
+/*----------------------------------------------------------------
+       WLAN_HAL_QPOWER
+-----------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+     tANI_U8 enable;
+} tHalQpowerParams, *tpHalQpowerParams;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+     tHalMsgHeader header;
+     tHalQpowerParams qpowerParams;
+} tHalQpower, * tpHalQpower;
 
 /*--------------------------------------------------------------------------
 * WLAN_HAL_LL_SET_STATS_REQ

@@ -810,6 +810,8 @@ typedef struct sSirMbMsgP2p
 #define SIR_HAL_SET_ARP_STATS_REQ          (SIR_HAL_ITC_MSG_TYPES_BEGIN + 303)
 #define SIR_HAL_GET_ARP_STATS_REQ          (SIR_HAL_ITC_MSG_TYPES_BEGIN + 304)
 #define SIR_HAL_VOWIFI_MODE                (SIR_HAL_ITC_MSG_TYPES_BEGIN + 306)
+#define SIR_HAL_QPOWER                     (SIR_HAL_ITC_MSG_TYPES_BEGIN + 307)
+
 
 #define SIR_HAL_MSG_TYPES_END              (SIR_HAL_MSG_TYPES_BEGIN + 0x1FF)
 
