@@ -748,6 +748,12 @@ endif
 # Fix build for GCC 4.7
 EXTRA_CFLAGS += $(call cc-disable-warning,maybe-uninitialized,) -Wno-unused-function -Wno-unused-variable
 
+# Not gonna fix these warnings, clang!
+ifeq ($(cc-name),clang)
+EXTRA_CFLAGS += $(call cc-disable-warning,enum-conversion,)
+EXTRA_CFLAGS += $(call cc-disable-warning,typedef-redefinition,)
+endif
+
 ifeq ($(CONFIG_WLAN_OFFLOAD_PACKETS),y)
 CDEFINES += -DWLAN_FEATURE_OFFLOAD_PACKETS
 endif
