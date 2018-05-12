@@ -106,6 +106,8 @@ enum {
 #define SLIMBUS_5_TX_TEXT "SLIMBUS_5_TX"
 #define TERT_MI2S_TX_TEXT "TERT_MI2S_TX"
 #define QUAT_MI2S_TX_TEXT "QUAT_MI2S_TX"
+#define PRI_TDM_TX_3_TEXT "PRI_TDM_TX_3"
+#define PRI_TDM_TX_2_TEXT "PRI_TDM_TX_2"
 #define ADM_LSM_TX_TEXT "ADM_LSM_TX"
 #define INT3_MI2S_TX_TEXT "INT3_MI2S_TX"
 
@@ -115,7 +117,7 @@ static const char * const lsm_port_text[] = {
 	SLIMBUS_0_TX_TEXT, SLIMBUS_1_TX_TEXT, SLIMBUS_2_TX_TEXT,
 	SLIMBUS_3_TX_TEXT, SLIMBUS_4_TX_TEXT, SLIMBUS_5_TX_TEXT,
 	TERT_MI2S_TX_TEXT, QUAT_MI2S_TX_TEXT, ADM_LSM_TX_TEXT,
-	INT3_MI2S_TX_TEXT
+	INT3_MI2S_TX_TEXT, PRI_TDM_TX_2_TEXT, PRI_TDM_TX_3_TEXT,
 };
 
 struct msm_pcm_route_bdai_pp_params {
@@ -2452,6 +2454,12 @@ static int msm_routing_lsm_port_put(struct snd_kcontrol *kcontrol,
 		lsm_port = ADM_LSM_PORT_ID;
 		break;
 	case 10:
+		lsm_port = AFE_PORT_ID_PRIMARY_TDM_TX_2;
+		break;
+	case 11:
+		lsm_port = AFE_PORT_ID_PRIMARY_TDM_TX_3;
+		break;
+	case 12:
 		lsm_port = AFE_PORT_ID_INT3_MI2S_TX;
 		break;
 	default:
@@ -11269,6 +11277,12 @@ static const struct snd_kcontrol_new lsm1_mixer_controls[] = {
 	SOC_SINGLE_EXT("INT3_MI2S_TX", MSM_BACKEND_DAI_INT3_MI2S_TX,
 		MSM_FRONTEND_DAI_LSM1, 1, 0, msm_routing_get_listen_mixer,
 		msm_routing_put_listen_mixer),
+	SOC_SINGLE_EXT("PRI_TDM_TX_2", MSM_BACKEND_DAI_PRI_TDM_TX_2,
+		MSM_FRONTEND_DAI_LSM1, 1, 0, msm_routing_get_listen_mixer,
+		msm_routing_put_listen_mixer),
+	SOC_SINGLE_EXT("PRI_TDM_TX_3", MSM_BACKEND_DAI_PRI_TDM_TX_3,
+		MSM_FRONTEND_DAI_LSM1, 1, 0, msm_routing_get_listen_mixer,
+		msm_routing_put_listen_mixer),
 };
 
 static const struct snd_kcontrol_new lsm2_mixer_controls[] = {
@@ -11294,6 +11308,12 @@ static const struct snd_kcontrol_new lsm2_mixer_controls[] = {
 		MSM_FRONTEND_DAI_LSM2, 1, 0, msm_routing_get_listen_mixer,
 		msm_routing_put_listen_mixer),
 	SOC_SINGLE_EXT("INT3_MI2S_TX", MSM_BACKEND_DAI_INT3_MI2S_TX,
+		MSM_FRONTEND_DAI_LSM2, 1, 0, msm_routing_get_listen_mixer,
+		msm_routing_put_listen_mixer),
+	SOC_SINGLE_EXT("PRI_TDM_TX_2", MSM_BACKEND_DAI_PRI_TDM_TX_2,
+		MSM_FRONTEND_DAI_LSM2, 1, 0, msm_routing_get_listen_mixer,
+		msm_routing_put_listen_mixer),
+	SOC_SINGLE_EXT("PRI_TDM_TX_3", MSM_BACKEND_DAI_PRI_TDM_TX_3,
 		MSM_FRONTEND_DAI_LSM2, 1, 0, msm_routing_get_listen_mixer,
 		msm_routing_put_listen_mixer),
 };
@@ -11323,6 +11343,12 @@ static const struct snd_kcontrol_new lsm3_mixer_controls[] = {
 	SOC_SINGLE_EXT("INT3_MI2S_TX", MSM_BACKEND_DAI_INT3_MI2S_TX,
 		MSM_FRONTEND_DAI_LSM3, 1, 0, msm_routing_get_listen_mixer,
 		msm_routing_put_listen_mixer),
+	SOC_SINGLE_EXT("PRI_TDM_TX_2", MSM_BACKEND_DAI_PRI_TDM_TX_2,
+		MSM_FRONTEND_DAI_LSM3, 1, 0, msm_routing_get_listen_mixer,
+		msm_routing_put_listen_mixer),
+	SOC_SINGLE_EXT("PRI_TDM_TX_3", MSM_BACKEND_DAI_PRI_TDM_TX_3,
+		MSM_FRONTEND_DAI_LSM3, 1, 0, msm_routing_get_listen_mixer,
+		msm_routing_put_listen_mixer),
 };
 
 static const struct snd_kcontrol_new lsm4_mixer_controls[] = {
@@ -11348,6 +11374,12 @@ static const struct snd_kcontrol_new lsm4_mixer_controls[] = {
 		MSM_FRONTEND_DAI_LSM4, 1, 0, msm_routing_get_listen_mixer,
 		msm_routing_put_listen_mixer),
 	SOC_SINGLE_EXT("INT3_MI2S_TX", MSM_BACKEND_DAI_INT3_MI2S_TX,
+		MSM_FRONTEND_DAI_LSM4, 1, 0, msm_routing_get_listen_mixer,
+		msm_routing_put_listen_mixer),
+	SOC_SINGLE_EXT("PRI_TDM_TX_2", MSM_BACKEND_DAI_PRI_TDM_TX_2,
+		MSM_FRONTEND_DAI_LSM4, 1, 0, msm_routing_get_listen_mixer,
+		msm_routing_put_listen_mixer),
+	SOC_SINGLE_EXT("PRI_TDM_TX_3", MSM_BACKEND_DAI_PRI_TDM_TX_3,
 		MSM_FRONTEND_DAI_LSM4, 1, 0, msm_routing_get_listen_mixer,
 		msm_routing_put_listen_mixer),
 };
@@ -11377,6 +11409,12 @@ static const struct snd_kcontrol_new lsm5_mixer_controls[] = {
 	SOC_SINGLE_EXT("INT3_MI2S_TX", MSM_BACKEND_DAI_INT3_MI2S_TX,
 		MSM_FRONTEND_DAI_LSM5, 1, 0, msm_routing_get_listen_mixer,
 		msm_routing_put_listen_mixer),
+	SOC_SINGLE_EXT("PRI_TDM_TX_2", MSM_BACKEND_DAI_PRI_TDM_TX_2,
+		MSM_FRONTEND_DAI_LSM5, 1, 0, msm_routing_get_listen_mixer,
+		msm_routing_put_listen_mixer),
+	SOC_SINGLE_EXT("PRI_TDM_TX_3", MSM_BACKEND_DAI_PRI_TDM_TX_3,
+		MSM_FRONTEND_DAI_LSM5, 1, 0, msm_routing_get_listen_mixer,
+		msm_routing_put_listen_mixer),
 };
 
 static const struct snd_kcontrol_new lsm6_mixer_controls[] = {
@@ -11402,6 +11440,12 @@ static const struct snd_kcontrol_new lsm6_mixer_controls[] = {
 		MSM_FRONTEND_DAI_LSM6, 1, 0, msm_routing_get_listen_mixer,
 		msm_routing_put_listen_mixer),
 	SOC_SINGLE_EXT("INT3_MI2S_TX", MSM_BACKEND_DAI_INT3_MI2S_TX,
+		MSM_FRONTEND_DAI_LSM6, 1, 0, msm_routing_get_listen_mixer,
+		msm_routing_put_listen_mixer),
+	SOC_SINGLE_EXT("PRI_TDM_TX_2", MSM_BACKEND_DAI_PRI_TDM_TX_2,
+		MSM_FRONTEND_DAI_LSM6, 1, 0, msm_routing_get_listen_mixer,
+		msm_routing_put_listen_mixer),
+	SOC_SINGLE_EXT("PRI_TDM_TX_3", MSM_BACKEND_DAI_PRI_TDM_TX_3,
 		MSM_FRONTEND_DAI_LSM6, 1, 0, msm_routing_get_listen_mixer,
 		msm_routing_put_listen_mixer),
 };
@@ -11431,6 +11475,12 @@ static const struct snd_kcontrol_new lsm7_mixer_controls[] = {
 	SOC_SINGLE_EXT("INT3_MI2S_TX", MSM_BACKEND_DAI_INT3_MI2S_TX,
 		MSM_FRONTEND_DAI_LSM7, 1, 0, msm_routing_get_listen_mixer,
 		msm_routing_put_listen_mixer),
+	SOC_SINGLE_EXT("PRI_TDM_TX_2", MSM_BACKEND_DAI_PRI_TDM_TX_2,
+		MSM_FRONTEND_DAI_LSM7, 1, 0, msm_routing_get_listen_mixer,
+		msm_routing_put_listen_mixer),
+	SOC_SINGLE_EXT("PRI_TDM_TX_3", MSM_BACKEND_DAI_PRI_TDM_TX_3,
+		MSM_FRONTEND_DAI_LSM7, 1, 0, msm_routing_get_listen_mixer,
+		msm_routing_put_listen_mixer),
 };
 
 static const struct snd_kcontrol_new lsm8_mixer_controls[] = {
@@ -11456,6 +11506,12 @@ static const struct snd_kcontrol_new lsm8_mixer_controls[] = {
 		MSM_FRONTEND_DAI_LSM8, 1, 0, msm_routing_get_listen_mixer,
 		msm_routing_put_listen_mixer),
 	SOC_SINGLE_EXT("INT3_MI2S_TX", MSM_BACKEND_DAI_INT3_MI2S_TX,
+		MSM_FRONTEND_DAI_LSM8, 1, 0, msm_routing_get_listen_mixer,
+		msm_routing_put_listen_mixer),
+	SOC_SINGLE_EXT("PRI_TDM_TX_2", MSM_BACKEND_DAI_PRI_TDM_TX_2,
+		MSM_FRONTEND_DAI_LSM8, 1, 0, msm_routing_get_listen_mixer,
+		msm_routing_put_listen_mixer),
+	SOC_SINGLE_EXT("PRI_TDM_TX_3", MSM_BACKEND_DAI_PRI_TDM_TX_3,
 		MSM_FRONTEND_DAI_LSM8, 1, 0, msm_routing_get_listen_mixer,
 		msm_routing_put_listen_mixer),
 };
@@ -11579,6 +11635,10 @@ static const struct snd_kcontrol_new lsm_controls[] = {
 		    msm_routing_lsm_func_get, msm_routing_lsm_func_put),
 	SOC_ENUM_EXT(INT3_MI2S_TX_TEXT" "LSM_FUNCTION_TEXT, lsm_func_enum,
 		    msm_routing_lsm_func_get, msm_routing_lsm_func_put),
+	SOC_ENUM_EXT(PRI_TDM_TX_2_TEXT" "LSM_FUNCTION_TEXT, lsm_func_enum,
+		    msm_routing_lsm_func_get, msm_routing_lsm_func_put),
+	SOC_ENUM_EXT(PRI_TDM_TX_3_TEXT" "LSM_FUNCTION_TEXT, lsm_func_enum,
+		   msm_routing_lsm_func_get, msm_routing_lsm_func_put),
 	/* kcontrol of lsm_port */
 	SOC_ENUM_EXT("LSM1 Port", lsm_port_enum,
 			  msm_routing_lsm_port_get,
@@ -15724,6 +15784,8 @@ static const struct snd_soc_dapm_route intercon[] = {
 	{"LSM1 Mixer", "TERT_MI2S_TX", "TERT_MI2S_TX"},
 	{"LSM1 Mixer", "QUAT_MI2S_TX", "QUAT_MI2S_TX"},
 	{"LSM1 Mixer", "INT3_MI2S_TX", "INT3_MI2S_TX"},
+	{"LSM1 Mixer", "PRI_TDM_TX_2", "PRI_TDM_TX_2"},
+	{"LSM1 Mixer", "PRI_TDM_TX_3", "PRI_TDM_TX_3"},
 	{"LSM1_UL_HL", NULL, "LSM1 Mixer"},
 
 	{"LSM2 Mixer", "SLIMBUS_0_TX", "SLIMBUS_0_TX"},
@@ -15734,6 +15796,8 @@ static const struct snd_soc_dapm_route intercon[] = {
 	{"LSM2 Mixer", "TERT_MI2S_TX", "TERT_MI2S_TX"},
 	{"LSM2 Mixer", "QUAT_MI2S_TX", "QUAT_MI2S_TX"},
 	{"LSM2 Mixer", "INT3_MI2S_TX", "INT3_MI2S_TX"},
+	{"LSM2 Mixer", "PRI_TDM_TX_2", "PRI_TDM_TX_2"},
+	{"LSM2 Mixer", "PRI_TDM_TX_3", "PRI_TDM_TX_3"},
 	{"LSM2_UL_HL", NULL, "LSM2 Mixer"},
 
 
@@ -15745,6 +15809,8 @@ static const struct snd_soc_dapm_route intercon[] = {
 	{"LSM3 Mixer", "TERT_MI2S_TX", "TERT_MI2S_TX"},
 	{"LSM3 Mixer", "QUAT_MI2S_TX", "QUAT_MI2S_TX"},
 	{"LSM3 Mixer", "INT3_MI2S_TX", "INT3_MI2S_TX"},
+	{"LSM3 Mixer", "PRI_TDM_TX_2", "PRI_TDM_TX_2"},
+	{"LSM3 Mixer", "PRI_TDM_TX_3", "PRI_TDM_TX_3"},
 	{"LSM3_UL_HL", NULL, "LSM3 Mixer"},
 
 
@@ -15756,6 +15822,8 @@ static const struct snd_soc_dapm_route intercon[] = {
 	{"LSM4 Mixer", "TERT_MI2S_TX", "TERT_MI2S_TX"},
 	{"LSM4 Mixer", "QUAT_MI2S_TX", "QUAT_MI2S_TX"},
 	{"LSM4 Mixer", "INT3_MI2S_TX", "INT3_MI2S_TX"},
+	{"LSM4 Mixer", "PRI_TDM_TX_2", "PRI_TDM_TX_2"},
+	{"LSM4 Mixer", "PRI_TDM_TX_3", "PRI_TDM_TX_3"},
 	{"LSM4_UL_HL", NULL, "LSM4 Mixer"},
 
 	{"LSM5 Mixer", "SLIMBUS_0_TX", "SLIMBUS_0_TX"},
@@ -15766,6 +15834,8 @@ static const struct snd_soc_dapm_route intercon[] = {
 	{"LSM5 Mixer", "TERT_MI2S_TX", "TERT_MI2S_TX"},
 	{"LSM5 Mixer", "QUAT_MI2S_TX", "QUAT_MI2S_TX"},
 	{"LSM5 Mixer", "INT3_MI2S_TX", "INT3_MI2S_TX"},
+	{"LSM5 Mixer", "PRI_TDM_TX_2", "PRI_TDM_TX_2"},
+	{"LSM5 Mixer", "PRI_TDM_TX_3", "PRI_TDM_TX_3"},
 	{"LSM5_UL_HL", NULL, "LSM5 Mixer"},
 
 	{"LSM6 Mixer", "SLIMBUS_0_TX", "SLIMBUS_0_TX"},
@@ -15774,6 +15844,8 @@ static const struct snd_soc_dapm_route intercon[] = {
 	{"LSM6 Mixer", "SLIMBUS_4_TX", "SLIMBUS_4_TX"},
 	{"LSM6 Mixer", "SLIMBUS_5_TX", "SLIMBUS_5_TX"},
 	{"LSM6 Mixer", "QUAT_MI2S_TX", "QUAT_MI2S_TX"},
+	{"LSM6 Mixer", "PRI_TDM_TX_2", "PRI_TDM_TX_2"},
+	{"LSM6 Mixer", "PRI_TDM_TX_3", "PRI_TDM_TX_3"},
 	{"LSM6_UL_HL", NULL, "LSM6 Mixer"},
 
 	{"LSM7 Mixer", "SLIMBUS_0_TX", "SLIMBUS_0_TX"},
@@ -15782,6 +15854,8 @@ static const struct snd_soc_dapm_route intercon[] = {
 	{"LSM7 Mixer", "SLIMBUS_4_TX", "SLIMBUS_4_TX"},
 	{"LSM7 Mixer", "SLIMBUS_5_TX", "SLIMBUS_5_TX"},
 	{"LSM7 Mixer", "QUAT_MI2S_TX", "QUAT_MI2S_TX"},
+	{"LSM7 Mixer", "PRI_TDM_TX_2", "PRI_TDM_TX_2"},
+	{"LSM7 Mixer", "PRI_TDM_TX_3", "PRI_TDM_TX_3"},
 	{"LSM7_UL_HL", NULL, "LSM7 Mixer"},
 
 	{"LSM8 Mixer", "SLIMBUS_0_TX", "SLIMBUS_0_TX"},
@@ -15790,6 +15864,8 @@ static const struct snd_soc_dapm_route intercon[] = {
 	{"LSM8 Mixer", "SLIMBUS_4_TX", "SLIMBUS_4_TX"},
 	{"LSM8 Mixer", "SLIMBUS_5_TX", "SLIMBUS_5_TX"},
 	{"LSM8 Mixer", "QUAT_MI2S_TX", "QUAT_MI2S_TX"},
+	{"LSM8 Mixer", "PRI_TDM_TX_2", "PRI_TDM_TX_2"},
+	{"LSM8 Mixer", "PRI_TDM_TX_3", "PRI_TDM_TX_3"},
 	{"LSM8_UL_HL", NULL, "LSM8 Mixer"},
 
 
