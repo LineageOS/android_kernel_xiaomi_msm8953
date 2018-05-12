@@ -10,6 +10,9 @@ obj-$(CONFIG_OF_IOMMU)	+= of_iommu.o
 obj-$(CONFIG_IOMMU_DEBUG) += iommu-debug.o
 obj-$(CONFIG_MSM_IOMMU) += msm_iommu.o msm_iommu_domains.o msm_iommu_mapping.o
 obj-$(CONFIG_MSM_IOMMU_V1) += msm_iommu-v1.o msm_iommu_dev-v1.o msm_iommu_sec.o
+ifeq ($(cc-name),clang)
+CFLAGS_msm_iommu-v1.o	+= $(call cc-disable-warning,shift-overflow,)
+endif
 obj-$(CONFIG_MSM_IOMMU_PMON) += msm_iommu_perfmon.o msm_iommu_perfmon-v1.o
 ifdef CONFIG_IOMMU_LPAE
 obj-$(CONFIG_MSM_IOMMU_V1) += msm_iommu_pagetable_lpae.o
