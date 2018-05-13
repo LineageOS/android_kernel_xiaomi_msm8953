@@ -498,7 +498,7 @@ limProcessProbeReqFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,tpPESession 
                         return;
                     }
                 }
-                if ((psessionEntry->limSystemRole == eLIM_AP_ROLE))
+                if (psessionEntry->limSystemRole == eLIM_AP_ROLE)
                 {
                   
                     if ( (psessionEntry->APWPSIEs.SirWPSProbeRspIE.FieldPresent &
