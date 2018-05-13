@@ -1924,8 +1924,8 @@ void hdd_check_for_unsafe_ch(hdd_adapter_t *phostapd_adapter,
                                 &unsafeChannelCount);
     for (channelLoop = 0; channelLoop < unsafeChannelCount; channelLoop++)
     {
-        if ((unsafeChannelList[channelLoop] ==
-             phostapd_adapter->sessionCtx.ap.operatingChannel)) {
+        if (unsafeChannelList[channelLoop] ==
+             phostapd_adapter->sessionCtx.ap.operatingChannel) {
             if ((AUTO_CHANNEL_SELECT ==
                 phostapd_adapter->sessionCtx.ap.sapConfig.channel)
                 && (WLAN_HDD_SOFTAP == phostapd_adapter->device_mode)) {
@@ -2156,7 +2156,7 @@ void hdd_hostapd_ch_avoid_cb
 
            for (i = 0; i < unsafeChannelCount; i++)
            {
-               if ((pSapCtx->sap_sec_chan == unsafeChannelList[i]))
+               if (pSapCtx->sap_sec_chan == unsafeChannelList[i])
                {
                    /* Current SAP Secondary channel is un-safe channel */
                    VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
