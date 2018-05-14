@@ -30,6 +30,7 @@
 #include <dsp/q6core.h>
 #include <soc/qcom/socinfo.h>
 #include "msm-pcm-routing-v2.h"
+#include "codecs/msm-cdc-pinctrl.h"
 
 #define DRV_NAME "msm-bg-asoc-wcd"
 
@@ -107,6 +108,8 @@ static char const *tdm_bit_format_text[] = {"S16_LE", "S24_LE", "S24_3LE",
 	"S32_LE"};
 static char const *tdm_sample_rate_text[] = {"KHZ_16", "KHZ_48"};
 
+static const char *const pin_states[] = {"sleep", "i2s-active",
+					 "tdm-active"};
 /* TDM default offset for individual MIC */
 static unsigned int tdm_slot_offset[TDM_MAX][TDM_SLOT_OFFSET_MAX] = {
 	/* PRI_TDM_RX */
@@ -716,7 +719,6 @@ static const struct snd_kcontrol_new msm_snd_controls[] = {
 			msm_sec_tdm_tx_0_sample_rate_put),
 };
 
-
 static int msm_tdm_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 		struct snd_pcm_hw_params *params)
 {
@@ -1019,6 +1021,13 @@ static int msm_tdm_startup(struct snd_pcm_substream *substream)
 			} else {
 				goto err;
 			}
+			if (pdata->pri_mi2s_gpio_p) {
+				ret =  msm_cdc_pinctrl_select_active_state(
+						pdata->pri_mi2s_gpio_p);
+				if (ret < 0)
+					pr_err("%s: failed to activate sec TDM gpio\n",
+						 __func__);
+			}
 		}
 		break;
 	default:
@@ -1036,7 +1045,7 @@ static void msm_tdm_shutdown(struct snd_pcm_substream *substream)
 	struct snd_soc_card *card = rtd->card;
 	struct msm8916_asoc_mach_data *pdata =
 		snd_soc_card_get_drvdata(card);
-	int val = 0;
+	int ret = 0, val = 0;
 
 	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
 
@@ -1080,6 +1089,16 @@ static void msm_tdm_shutdown(struct snd_pcm_substream *substream)
 			} else {
 				goto err;
 			}
+			if (pdata->pri_mi2s_gpio_p) {
+				ret =  msm_cdc_pinctrl_select_sleep_state(
+						pdata->pri_mi2s_gpio_p);
+				if (ret < 0) {
+					pr_err("%s: gpio cannot be de-activated %s\n",
+						__func__, "pri_tdm");
+					return;
+				}
+			}
+		break;
 		}
 		break;
 	default:
@@ -1986,6 +2005,11 @@ static struct snd_soc_card bear_card = {
 	.num_links	= ARRAY_SIZE(msm_bg_dai),
 };
 
+static const struct of_device_id msm_bg_asoc_machine_of_match[]  = {
+	{ .compatible = "qcom,msm-bg-audio-codec", },
+	{},
+};
+
 static int msm_bg_populate_dai_link_component_of_node(
 		struct snd_soc_card *card)
 {
@@ -2110,6 +2134,7 @@ static int msm_bg_asoc_machine_probe(struct platform_device *pdev)
 	struct snd_soc_card *card;
 	struct msm8916_asoc_mach_data *pdata = NULL;
 	const char *ext_pa = "qcom,msm-ext-pa";
+	const struct of_device_id *match;
 	int num_strings;
 	int ret, /*id,*/ val;
 	struct resource *muxsel;
@@ -2118,6 +2143,35 @@ static int msm_bg_asoc_machine_probe(struct platform_device *pdev)
 			sizeof(struct msm8916_asoc_mach_data), GFP_KERNEL);
 	if (!pdata)
 		return -ENOMEM;
+
+	card = msm_bg_populate_sndcard_dailinks(&pdev->dev);
+	if (!card) {
+		dev_err(&pdev->dev, "%s: Card uninitialized\n", __func__);
+		ret = -EINVAL;
+		goto err;
+	}
+
+	card->dev = &pdev->dev;
+	platform_set_drvdata(pdev, card);
+	snd_soc_card_set_drvdata(card, pdata);
+
+	ret = snd_soc_of_parse_card_name(card, "qcom,model");
+	if (ret)
+		goto err;
+
+	ret = snd_soc_of_parse_audio_routing(card, "qcom,audio-routing");
+	if (ret) {
+		dev_err(&pdev->dev, "parse audio routing failed, err:%d\n",
+			ret);
+		goto err;
+	}
+	match = of_match_node(msm_bg_asoc_machine_of_match,
+			pdev->dev.of_node);
+	if (!match) {
+		dev_err(&pdev->dev, "%s: no matched codec is found.\n",
+			__func__);
+		goto err;
+	}
 
 	muxsel = platform_get_resource_byname(pdev, IORESOURCE_MEM,
 			"csr_gp_io_mux_mic_ctl");
@@ -2141,6 +2195,16 @@ static int msm_bg_asoc_machine_probe(struct platform_device *pdev)
 		ret = -ENODEV;
 		goto err;
 	}
+
+	pdata->vaddr_gpio_mux_quin_ctl =
+		ioremap(muxsel->start, resource_size(muxsel));
+	if (pdata->vaddr_gpio_mux_quin_ctl == NULL) {
+		pr_err("%s ioremap failure for muxsel virt addr\n",
+				__func__);
+		ret = -ENOMEM;
+		goto err;
+	}
+
 	pdata->vaddr_gpio_mux_spkr_ctl =
 		ioremap(muxsel->start, resource_size(muxsel));
 	if (pdata->vaddr_gpio_mux_spkr_ctl == NULL) {
@@ -2184,8 +2248,6 @@ static int msm_bg_asoc_machine_probe(struct platform_device *pdev)
 	if (!pdata->pri_mi2s_gpio_p)
 		dev_err(&pdev->dev, " invalid phandle pri-mi2s-gpios\n");
 
-	card = msm_bg_populate_sndcard_dailinks(&pdev->dev);
-	dev_err(&pdev->dev, "default codec configured\n");
 	num_strings = of_property_count_strings(pdev->dev.of_node,
 			ext_pa);
 	if (num_strings < 0) {
@@ -2202,13 +2264,6 @@ static int msm_bg_asoc_machine_probe(struct platform_device *pdev)
 		pdata->afe_clk_ver = AFE_CLK_VERSION_V2;
 	else
 		pdata->afe_clk_ver = val;
-
-	card->dev = &pdev->dev;
-	platform_set_drvdata(pdev, card);
-	snd_soc_card_set_drvdata(card, pdata);
-	ret = snd_soc_of_parse_card_name(card, "qcom,model");
-	if (ret)
-		goto err;
 
 	ret = msm_bg_populate_dai_link_component_of_node(card);
 	if (ret) {
@@ -2254,11 +2309,6 @@ static int msm_bg_asoc_machine_remove(struct platform_device *pdev)
 	snd_soc_unregister_card(card);
 	return 0;
 }
-
-static const struct of_device_id msm_bg_asoc_machine_of_match[]  = {
-	{ .compatible = "qcom,msm-bg-audio-codec", },
-	{},
-};
 
 static struct platform_driver msm_bg_asoc_machine_driver = {
 	.driver = {
