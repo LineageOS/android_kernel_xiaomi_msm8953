@@ -8,9 +8,12 @@ enum wcd_cal_type {
 	WCD9XXX_MAD_CAL,
 	WCD9XXX_MBHC_CAL,
 	WCD9XXX_VBAT_CAL,
+	BG_CODEC_MIC_CAL,
+	BG_CODEC_SPEAKER_CAL,
 	WCD9XXX_MAX_CAL,
 };
 
+#define BG_CAL_SUPPORT BG_CODEC_SPEAKER_CAL
 struct wcdcal_ioctl_buffer {
 	__u32 size;
 	__u8 __user *buffer;
