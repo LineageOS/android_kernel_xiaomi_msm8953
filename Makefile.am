@@ -12,6 +12,9 @@ endif
 ifeq ($(TARGET_SUPPORT),apq8053)
 KBUILD_OPTIONS += CONFIG_ARCH_SDM450=y
 endif
+ifeq ($(TARGET_SUPPORT),apq8009)
+KBUILD_OPTIONS += CONFIG_ARCH_MSM8909=y
+endif
 
 obj-m := ipc/
 obj-m += dsp/
