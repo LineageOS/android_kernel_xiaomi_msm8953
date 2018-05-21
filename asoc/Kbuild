@@ -40,6 +40,11 @@ ifeq ($(KERNEL_BUILD), 0)
 		export
 		INCS    +=  -include $(AUDIO_ROOT)/config/sdxpoorwillsautoconf.h
 	endif
+	ifeq ($(CONFIG_ARCH_MSM8909), y)
+		include $(AUDIO_ROOT)/config/msm8909auto.conf
+		export
+		INCS    +=  -include $(AUDIO_ROOT)/config/msm8909autoconf.h
+	endif
 endif
 
 # As per target team, build is done as follows:
@@ -104,6 +109,11 @@ endif
 ifdef CONFIG_SND_SOC_EXT_CODEC_SDM450
 	MACHINE_EXT_OBJS += msm8952-slimbus.o
 	MACHINE_EXT_OBJS += msm8952-dai-links.o
+endif
+
+# for MSM8909 sound card driver
+ifdef CONFIG_SND_SOC_BG_8909
+	MACHINE_OBJS += msm_bg.o
 endif
 
 ifdef CONFIG_SND_SOC_CPE
@@ -196,6 +206,9 @@ machine_dlkm-y := $(MACHINE_OBJS)
 
 obj-$(CONFIG_SND_SOC_EXT_CODEC_SDM450) += machine_ext_dlkm.o
 machine_ext_dlkm-y := $(MACHINE_EXT_OBJS)
+
+obj-$(CONFIG_SND_SOC_BG_8909) += machine_dlkm.o
+machine_dlkm-y := $(MACHINE_OBJS)
 
 obj-$(CONFIG_SND_SOC_MACHINE_SDM845) += machine_dlkm.o
 machine_dlkm-y := $(MACHINE_OBJS)
