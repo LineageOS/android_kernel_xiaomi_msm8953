@@ -100,6 +100,11 @@ ifdef CONFIG_SND_SOC_MACHINE_SDXPOORWILLS
 	MACHINE_OBJS += sdxpoorwills.o
 endif
 
+# for APQ8009 external codec sound card driver
+ifdef CONFIG_SND_SOC_EXT_CODEC_8909
+	MACHINE_EXT_OBJS += apq8009-i2s-ext-codec.o
+endif
+
 # for SDM450 internal codec sound card driver
 ifdef CONFIG_SND_SOC_SDM450
 	MACHINE_OBJS += msm8952.o
@@ -203,6 +208,9 @@ platform_dlkm-y := $(PLATFORM_OBJS)
 
 obj-$(CONFIG_SND_SOC_SDM450) += machine_dlkm.o
 machine_dlkm-y := $(MACHINE_OBJS)
+
+obj-$(CONFIG_SND_SOC_EXT_CODEC_8909) += machine_ext_dlkm.o
+machine_ext_dlkm-y := $(MACHINE_EXT_OBJS)
 
 obj-$(CONFIG_SND_SOC_EXT_CODEC_SDM450) += machine_ext_dlkm.o
 machine_ext_dlkm-y := $(MACHINE_EXT_OBJS)
