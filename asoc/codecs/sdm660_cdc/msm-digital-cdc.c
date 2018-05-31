@@ -41,6 +41,7 @@
 #define CF_MIN_3DB_75HZ			0x1
 #define CF_MIN_3DB_150HZ		0x2
 
+#define DEC_SVA 5
 #define MSM_DIG_CDC_VERSION_ENTRY_SIZE 32
 #define MAX_ON_DEMAND_DIG_SUPPLY_NAME_LENGTH 64
 #define CODEC_DT_MAX_PROP_SIZE 40
@@ -246,6 +247,9 @@ static int msm_dig_cdc_put_dec_enum(struct snd_kcontrol *kcontrol,
 
 	tx_mux_ctl_reg =
 		MSM89XX_CDC_CORE_TX1_MUX_CTL + 32 * (decimator - 1);
+
+	if (decimator == DEC_SVA)
+		tx_mux_ctl_reg = MSM89XX_CDC_CORE_TX5_MUX_CTL;
 
 	snd_soc_update_bits(codec, tx_mux_ctl_reg, 0x1, adc_dmic_sel);
 
@@ -645,6 +649,9 @@ static void tx_hpf_corner_freq_callback(struct work_struct *work)
 	tx_mux_ctl_reg = MSM89XX_CDC_CORE_TX1_MUX_CTL +
 			(hpf_work->decimator - 1) * 32;
 
+	if (hpf_work->decimator == DEC_SVA)
+		tx_mux_ctl_reg = MSM89XX_CDC_CORE_TX5_MUX_CTL;
+
 	dev_dbg(codec->dev, "%s(): decimator %u hpf_cut_of_freq 0x%x\n",
 		 __func__, hpf_work->decimator, (unsigned int)hpf_cut_of_freq);
 	if (msm_dig_cdc->update_clkdiv)
@@ -976,7 +983,7 @@ static int msm_dig_cdc_codec_enable_dec(struct snd_soc_dapm_widget *w,
 			 32 * (decimator - 1);
 	tx_mux_ctl_reg = MSM89XX_CDC_CORE_TX1_MUX_CTL +
 			  32 * (decimator - 1);
-	if (decimator == 5) {
+	if (decimator == DEC_SVA) {
 		tx_vol_ctl_reg = MSM89XX_CDC_CORE_TX5_VOL_CTL_CFG;
 		tx_mux_ctl_reg = MSM89XX_CDC_CORE_TX5_MUX_CTL;
 	}
@@ -1320,15 +1327,19 @@ static void sdm660_tx_mute_update_callback(struct work_struct *work)
 	dig_cdc = tx_mute_dwork->dig_cdc;
 	codec = dig_cdc->codec;
 
-	for (i = 0; i < (NUM_DECIMATORS - 1); i++) {
+	for (i = 0; i < NUM_DECIMATORS; i++) {
 		if (dig_cdc->dec_active[i])
 			decimator = i + 1;
-		if (decimator && decimator < NUM_DECIMATORS) {
+		if (decimator && decimator <= NUM_DECIMATORS) {
 			/* unmute decimators corresponding to Tx DAI's*/
 			tx_vol_ctl_reg =
 				MSM89XX_CDC_CORE_TX1_VOL_CTL_CFG +
 					32 * (decimator - 1);
-				snd_soc_update_bits(codec, tx_vol_ctl_reg,
+			if (decimator == DEC_SVA)
+				tx_vol_ctl_reg =
+					MSM89XX_CDC_CORE_TX5_VOL_CTL_CFG;
+
+			snd_soc_update_bits(codec, tx_vol_ctl_reg,
 					0x01, 0x00);
 		}
 		decimator = 0;
