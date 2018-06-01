@@ -9418,6 +9418,7 @@ struct asm_aptx_dec_fmt_blk_v2 {
 #define AVCS_CMDRSP_GET_FWK_VERSION (0x0001292D)
 
 #define AVCS_SERVICE_ID_ALL (0xFFFFFFFF)
+#define AVCS_SERVICE_ID_AFE (0x4)
 #define APRV2_IDS_SERVICE_ID_ADSP_CVP_V	(0xB)
 
 struct avcs_get_fwk_version {
