@@ -3450,6 +3450,7 @@ void ipa_inc_acquire_wakelock(enum ipa_wakelock_ref_client ref_client)
 	if (ref_client >= IPA_WAKELOCK_REF_CLIENT_MAX)
 		return;
 	spin_lock_irqsave(&ipa_ctx->wakelock_ref_cnt.spinlock, flags);
+#if 0
 	if (ipa_ctx->wakelock_ref_cnt.cnt & (1 << ref_client))
 		IPADBG("client enum %d mask already set. ref cnt = %d\n",
 		ref_client, ipa_ctx->wakelock_ref_cnt.cnt);
@@ -3459,6 +3460,7 @@ void ipa_inc_acquire_wakelock(enum ipa_wakelock_ref_client ref_client)
 		__pm_stay_awake(&ipa_ctx->w_lock);
 		ipa_ctx->wakelock_ref_cnt.wakelock_acquired = true;
 	}
+#endif
 	IPADBG_LOW("active wakelock ref cnt = %d client enum %d\n",
 		ipa_ctx->wakelock_ref_cnt.cnt, ref_client);
 	spin_unlock_irqrestore(&ipa_ctx->wakelock_ref_cnt.spinlock, flags);
@@ -3479,14 +3481,16 @@ void ipa_dec_release_wakelock(enum ipa_wakelock_ref_client ref_client)
 	if (ref_client >= IPA_WAKELOCK_REF_CLIENT_MAX)
 		return;
 	spin_lock_irqsave(&ipa_ctx->wakelock_ref_cnt.spinlock, flags);
-	ipa_ctx->wakelock_ref_cnt.cnt &= ~(1 << ref_client);
 	IPADBG_LOW("active wakelock ref cnt = %d client enum %d\n",
 		ipa_ctx->wakelock_ref_cnt.cnt, ref_client);
+#if 0
+	ipa_ctx->wakelock_ref_cnt.cnt &= ~(1 << ref_client);
 	if (ipa_ctx->wakelock_ref_cnt.cnt == 0 &&
 		ipa_ctx->wakelock_ref_cnt.wakelock_acquired) {
 		__pm_relax(&ipa_ctx->w_lock);
 		ipa_ctx->wakelock_ref_cnt.wakelock_acquired = false;
 	}
+#endif
 	spin_unlock_irqrestore(&ipa_ctx->wakelock_ref_cnt.spinlock, flags);
 }
 
@@ -4292,9 +4296,10 @@ static int ipa_init(const struct ipa_plat_drv_res *resource_p,
 	}
 
 
-
+#if 0
 	/* Create a wakeup source. */
 	wakeup_source_init(&ipa_ctx->w_lock, "IPA_WS");
+#endif
 	spin_lock_init(&ipa_ctx->wakelock_ref_cnt.spinlock);
 
 	/* Initialize the SPS PM lock. */
