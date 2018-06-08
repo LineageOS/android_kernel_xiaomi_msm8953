@@ -10817,7 +10817,7 @@ int wlan_hdd_restore_channels(hdd_context_t *hdd_ctx)
 
 	mutex_lock(&hdd_ctx->cache_channel_lock);
 
-	cache_chann = hdd_ctx->orginal_channels;
+	cache_chann = hdd_ctx->original_channels;
 
 	if (!cache_chann || !cache_chann->num_channels) {
 		hddLog(VOS_TRACE_LEVEL_INFO,
@@ -10896,7 +10896,7 @@ static int wlan_hdd_disable_channels(hdd_context_t *hdd_ctx)
 	wiphy = hdd_ctx->wiphy;
 
 	mutex_lock(&hdd_ctx->cache_channel_lock);
-	cache_chann = hdd_ctx->orginal_channels;
+	cache_chann = hdd_ctx->original_channels;
 
 	if (!cache_chann || !cache_chann->num_channels) {
 		hddLog(VOS_TRACE_LEVEL_INFO,
@@ -14257,7 +14257,8 @@ wlan_hdd_cfg80211_inform_bss_frame( hdd_adapter_t *pAdapter,
     struct ieee80211_channel *chan;
     struct ieee80211_mgmt *mgmt = NULL;
     struct cfg80211_bss *bss_status = NULL;
-    size_t frame_len = sizeof (struct ieee80211_mgmt) + ie_length;
+    size_t frame_len = ie_length + offsetof(struct ieee80211_mgmt,
+                                            u.probe_resp.variable);
     int rssi = 0;
     hdd_context_t *pHddCtx;
     int status;
@@ -14273,7 +14274,7 @@ wlan_hdd_cfg80211_inform_bss_frame( hdd_adapter_t *pAdapter,
         return NULL;
     }
 
-    mgmt = kzalloc((sizeof (struct ieee80211_mgmt) + ie_length), GFP_KERNEL);
+    mgmt = kzalloc(frame_len, GFP_KERNEL);
     if (!mgmt)
     {
         VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -18192,6 +18193,11 @@ static int __wlan_hdd_cfg80211_get_station(struct wiphy *wiphy, struct net_devic
             (int) rate_flags,
             (int) pAdapter->hdd_stats.ClassA_stat.mcs_index);
 #endif //LINKSPEED_DEBUG_ENABLED
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0)) || defined(WITH_BACKPORTS)
+    /* assume basic BW. anything else will override this later */
+    sinfo->txrate.bw = RATE_INFO_BW_20;
+#endif
 
     if (eHDD_LINK_SPEED_REPORT_ACTUAL != pCfg->reportMaxLinkSpeed)
     {
