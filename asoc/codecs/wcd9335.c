@@ -2371,9 +2371,9 @@ static int slim_tx_mixer_put(struct snd_kcontrol *kcontrol,
 
 	mutex_lock(&tasha_p->codec_mutex);
 
-	if (tasha_p->intf_type != WCD9XXX_INTERFACE_TYPE_SLIMBUS) {
+	if (tasha_p->intf_type == WCD9XXX_INTERFACE_TYPE_SLIMBUS) {
 		if (dai_id != AIF1_CAP) {
-			dev_err(codec->dev, "%s: invalid AIF for I2C mode\n",
+			dev_err(codec->dev, "%s: invalid AIF for Slimbus mode\n",
 				__func__);
 			mutex_unlock(&tasha_p->codec_mutex);
 			return -EINVAL;
