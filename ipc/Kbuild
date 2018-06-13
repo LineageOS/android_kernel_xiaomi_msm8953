@@ -113,8 +113,10 @@ APRV_GLINK += apr_tal_glink.o
 APRV_GLINK += apr_dummy.o
 endif
 
-ifdef CONFIG_MSM_BG_GLINK
-BG_GLINK += bg_glink.o
+ifeq ($(CONFIG_ARCH_MSM8909), $(CONFIG_MSM_BGCOM))
+	ifdef CONFIG_MSM_BG_GLINK
+	BG_GLINK += bg_glink.o
+	endif
 endif
 
 ifdef CONFIG_WCD_DSP_GLINK
@@ -206,8 +208,10 @@ obj-$(CONFIG_MSM_QDSP6_APRV2_GLINK) += apr_dlkm.o
 obj-$(CONFIG_MSM_QDSP6_APRV3_GLINK) += apr_dlkm.o
 apr_dlkm-y := $(APRV_GLINK)
 
-obj-$(CONFIG_MSM_BG_GLINK) += bg_glink_dlkm.o
-bg_glink_dlkm-y := $(BG_GLINK)
+ifeq ($(CONFIG_ARCH_MSM8909), $(CONFIG_MSM_BGCOM))
+	obj-$(CONFIG_MSM_BG_GLINK) += bg_glink_dlkm.o
+	bg_glink_dlkm-y := $(BG_GLINK)
+endif
 
 obj-$(CONFIG_WCD_DSP_GLINK) += wglink_dlkm.o
 wglink_dlkm-y := $(WDSP_GLINK)
