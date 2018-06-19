@@ -35,6 +35,11 @@ ifeq ($(KERNEL_BUILD), 0)
 		export
 		INCS    +=  -include $(AUDIO_ROOT)/config/sdm450autoconf.h
 	endif
+	ifeq ($(CONFIG_ARCH_MSM8917), y)
+		include $(AUDIO_ROOT)/config/sdm450auto.conf
+		export
+		INCS    +=  -include $(AUDIO_ROOT)/config/sdm450autoconf.h
+	endif
 endif
 
 # As per target team, build is done as follows:
