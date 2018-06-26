@@ -1,4 +1,4 @@
-/* Copyright (c) 2011-2017, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2011-2018, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -1068,6 +1068,9 @@ static int wcd9xxx_i2c_probe(struct i2c_client *client,
 		wcd9xxx->dev_up = true;
 		if (client->dev.of_node)
 			wcd9xxx->mclk_rate = pdata->mclk_rate;
+
+		if (pdata->has_buck_vsel_gpio)
+			msm_cdc_pinctrl_select_active_state(pdata->buck_vsel_ctl_np);
 
 		wcd9xxx->num_of_supplies = pdata->num_supplies;
 		ret = msm_cdc_init_supplies(wcd9xxx->dev, &wcd9xxx->supplies,
