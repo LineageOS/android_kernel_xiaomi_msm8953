@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2017, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -325,9 +325,8 @@ struct wcd9xxx_pdata *wcd9xxx_populate_dt_data(struct device *dev)
 	msm_cdc_get_power_supplies(dev, &pdata->regulator,
 				   &pdata->num_supplies);
 	if (!pdata->regulator || (pdata->num_supplies <= 0)) {
-		dev_err(dev, "%s: no power supplies defined for codec\n",
+		dev_info(dev, "%s: no power supplies defined for codec\n",
 			__func__);
-		goto err_power_sup;
 	}
 
 	/* Parse micbias info */
@@ -415,7 +414,6 @@ err_parse_dt_prop:
 	devm_kfree(dev, pdata->regulator);
 	pdata->regulator = NULL;
 	pdata->num_supplies = 0;
-err_power_sup:
 	devm_kfree(dev, pdata);
 	return NULL;
 }

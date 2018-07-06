@@ -1073,31 +1073,35 @@ static int wcd9xxx_i2c_probe(struct i2c_client *client,
 			msm_cdc_pinctrl_select_active_state(pdata->buck_vsel_ctl_np);
 
 		wcd9xxx->num_of_supplies = pdata->num_supplies;
-		ret = msm_cdc_init_supplies(wcd9xxx->dev, &wcd9xxx->supplies,
-					    pdata->regulator,
-					    pdata->num_supplies);
-		if (!wcd9xxx->supplies) {
-			dev_err(wcd9xxx->dev, "%s: Cannot init wcd supplies\n",
-				__func__);
-			goto err_codec;
+		if (pdata->regulator && pdata->num_supplies > 0) {
+			ret = msm_cdc_init_supplies(wcd9xxx->dev,
+						    &wcd9xxx->supplies,
+						    pdata->regulator,
+						    pdata->num_supplies);
+			if (!wcd9xxx->supplies) {
+				dev_err(wcd9xxx->dev, "%s: Cannot init wcd supplies\n",
+					__func__);
+				goto err_codec;
+			}
+			ret = msm_cdc_enable_static_supplies(
+						wcd9xxx->dev,
+						wcd9xxx->supplies,
+						pdata->regulator,
+						pdata->num_supplies);
+			if (ret) {
+				dev_err(wcd9xxx->dev, "%s: wcd static supply enable failed!\n",
+					__func__);
+				goto err_codec;
+			}
+			/* For WCD9335, it takes about 600us for the Vout_A and
+			 * Vout_D to be ready after BUCK_SIDO is powered up\
+			 * SYS_RST_N shouldn't be pulled high during this time
+			 */
+			if (wcd9xxx->type == WCD9335)
+				usleep_range(600, 650);
+			else
+				usleep_range(5, 10);
 		}
-		ret = msm_cdc_enable_static_supplies(wcd9xxx->dev,
-						     wcd9xxx->supplies,
-						     pdata->regulator,
-						     pdata->num_supplies);
-		if (ret) {
-			dev_err(wcd9xxx->dev, "%s: wcd static supply enable failed!\n",
-				__func__);
-			goto err_codec;
-		}
-		/* For WCD9335, it takes about 600us for the Vout_A and
-		 * Vout_D to be ready after BUCK_SIDO is powered up\
-		 * SYS_RST_N shouldn't be pulled high during this time
-		 */
-		if (wcd9xxx->type == WCD9335)
-			usleep_range(600, 650);
-		else
-			usleep_range(5, 10);
 
 		ret = wcd9xxx_reset(wcd9xxx->dev);
 		if (ret) {
@@ -1144,11 +1148,13 @@ static int wcd9xxx_i2c_probe(struct i2c_client *client,
 err_device_init:
 	wcd9xxx_reset_low(wcd9xxx->dev);
 err_supplies:
-	msm_cdc_release_supplies(wcd9xxx->dev, wcd9xxx->supplies,
-				 pdata->regulator,
-				 pdata->num_supplies);
-	pdata->regulator = NULL;
-	pdata->num_supplies = 0;
+	if (pdata->regulator && pdata->num_supplies > 0) {
+		msm_cdc_release_supplies(wcd9xxx->dev, wcd9xxx->supplies,
+					 pdata->regulator,
+					 pdata->num_supplies);
+		pdata->regulator = NULL;
+		pdata->num_supplies = 0;
+	}
 err_codec:
 	devm_kfree(&client->dev, wcd9xxx);
 	dev_set_drvdata(&client->dev, NULL);
@@ -1328,33 +1334,35 @@ static int wcd9xxx_slim_probe(struct slim_device *slim)
 	}
 
 	wcd9xxx->num_of_supplies = pdata->num_supplies;
-	ret = msm_cdc_init_supplies(&slim->dev, &wcd9xxx->supplies,
-				    pdata->regulator,
-				    pdata->num_supplies);
-	if (!wcd9xxx->supplies) {
-		dev_err(wcd9xxx->dev, "%s: Cannot init wcd supplies\n",
-			__func__);
-		goto err_codec;
-	}
-	ret = msm_cdc_enable_static_supplies(wcd9xxx->dev,
-					     wcd9xxx->supplies,
-					     pdata->regulator,
-					     pdata->num_supplies);
-	if (ret) {
-		dev_err(wcd9xxx->dev, "%s: wcd static supply enable failed!\n",
-			__func__);
-		goto err_codec;
-	}
+	if (pdata->regulator && pdata->num_supplies > 0) {
+		ret = msm_cdc_init_supplies(&slim->dev, &wcd9xxx->supplies,
+					    pdata->regulator,
+					    pdata->num_supplies);
+		if (!wcd9xxx->supplies) {
+			dev_err(wcd9xxx->dev, "%s: Cannot init wcd supplies\n",
+				__func__);
+			goto err_codec;
+		}
+		ret = msm_cdc_enable_static_supplies(wcd9xxx->dev,
+						     wcd9xxx->supplies,
+						     pdata->regulator,
+						     pdata->num_supplies);
+		if (ret) {
+			dev_err(wcd9xxx->dev, "%s: wcd static supply enable failed!\n",
+				__func__);
+			goto err_codec;
+		}
 
-	/*
-	 * For WCD9335, it takes about 600us for the Vout_A and
-	 * Vout_D to be ready after BUCK_SIDO is powered up.
-	 * SYS_RST_N shouldn't be pulled high during this time
-	 */
-	if (wcd9xxx->type == WCD9335 || wcd9xxx->type == WCD934X)
-		usleep_range(600, 650);
-	else
-		usleep_range(5, 10);
+		/*
+		 * For WCD9335, it takes about 600us for the Vout_A and
+		 * Vout_D to be ready after BUCK_SIDO is powered up.
+		 * SYS_RST_N shouldn't be pulled high during this time
+		 */
+		if (wcd9xxx->type == WCD9335 || wcd9xxx->type == WCD934X)
+			usleep_range(600, 650);
+		else
+			usleep_range(5, 10);
+	}
 
 	ret = wcd9xxx_reset(&slim->dev);
 	if (ret) {
@@ -1434,9 +1442,10 @@ err_slim_add:
 err_reset:
 	wcd9xxx_reset_low(wcd9xxx->dev);
 err_supplies:
-	msm_cdc_release_supplies(wcd9xxx->dev, wcd9xxx->supplies,
-				 pdata->regulator,
-				 pdata->num_supplies);
+	if (pdata->regulator && pdata->num_supplies > 0)
+		msm_cdc_release_supplies(wcd9xxx->dev, wcd9xxx->supplies,
+					 pdata->regulator,
+					 pdata->num_supplies);
 err_codec:
 	slim_set_clientdata(slim, NULL);
 err:
