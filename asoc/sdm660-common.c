@@ -3364,6 +3364,8 @@ static const struct of_device_id sdm660_asoc_machine_of_match[]  = {
 	  .data = "tavil_codec"},
 	{ .compatible = "qcom,qcs605-dig-asoc-snd",
 	  .data = "digital_codec"},
+	{ .compatible = "qcom,qcs605-asoc-snd-tavil",
+	  .data = "tavil_codec"},
 	{},
 };
 
