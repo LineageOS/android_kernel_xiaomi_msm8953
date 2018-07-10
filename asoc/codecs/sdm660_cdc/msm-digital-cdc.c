@@ -1391,7 +1391,21 @@ static int msm_dig_cdc_soc_probe(struct snd_soc_codec *codec)
 	atomic_set(&msm_dig_cdc->on_demand_list[ON_DEMAND_DIGITAL].ref, 0);
 
 	registered_digcodec = codec;
+	if (msm_dig_cdc->no_analog_codec) {
+		msm_dig_cdc->fw_data = devm_kzalloc(codec->dev,
+					    sizeof(*(msm_dig_cdc->fw_data)),
+					    GFP_KERNEL);
+		if (!msm_dig_cdc->fw_data)
+			return -ENOMEM;
 
+		ret = wcd_cal_create_hwdep(msm_dig_cdc->fw_data,
+			WCD9XXX_CODEC_HWDEP_NODE, codec);
+		if (ret < 0) {
+			dev_err(codec->dev, "%s hwdep failed %d\n", __func__,
+				ret);
+			return ret;
+		}
+	}
 	snd_soc_dapm_ignore_suspend(dapm, "AIF1 Playback");
 	snd_soc_dapm_ignore_suspend(dapm, "AIF1 Capture");
 	snd_soc_dapm_ignore_suspend(dapm, "ADC1_IN");
@@ -2469,7 +2483,6 @@ static int msm_dig_cdc_probe(struct platform_device *pdev)
 	u32 dig_cdc_addr;
 	struct msm_dig_priv *msm_dig_cdc;
 	struct dig_ctrl_platform_data *pdata = NULL;
-	bool no_analog_codec = false;
 	int adsp_state;
 
 	adsp_state = apr_get_subsys_state();
@@ -2491,10 +2504,11 @@ static int msm_dig_cdc_probe(struct platform_device *pdev)
 		return -EINVAL;
 
 	if (pdev->dev.of_node)
-		no_analog_codec = of_property_read_bool(pdev->dev.of_node,
+		msm_dig_cdc->no_analog_codec = of_property_read_bool(
+					pdev->dev.of_node,
 					"qcom,no-analog-codec");
 
-	if (no_analog_codec) {
+	if (msm_dig_cdc->no_analog_codec) {
 		dev_dbg(&pdev->dev, "%s:Platform data from device tree\n",
 				__func__);
 		if (msm_digital_cdc_populate_dt_pdata(&pdev->dev,
@@ -2549,7 +2563,7 @@ static int msm_dig_cdc_probe(struct platform_device *pdev)
 			__func__, dig_cdc_addr);
 	return ret;
 err_supplies:
-	if (no_analog_codec)
+	if (msm_dig_cdc->no_analog_codec)
 		msm_digital_cdc_disable_supplies(msm_dig_cdc);
 rtn:
 	return ret;

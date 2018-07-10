@@ -73,6 +73,9 @@ struct msm_dig_priv {
 	s32 dmic_3_4_clk_cnt;
 	bool dec_active[NUM_DECIMATORS];
 	int version;
+	/* cal info for codec */
+	struct fw_info *fw_data;
+	bool no_analog_codec;
 	/* Entry for version info */
 	struct snd_info_entry *entry;
 	struct snd_info_entry *version_entry;
