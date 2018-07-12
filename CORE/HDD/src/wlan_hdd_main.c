@@ -10346,45 +10346,41 @@ VOS_STATUS hdd_stop_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter,
          wlan_hdd_tdls_exit(pAdapter, TRUE);
          mutex_unlock(&pHddCtx->tdls_lock);
 #endif
-         if( hdd_connIsConnected(pstation) ||
-             (pstation->conn_info.connState == eConnectionState_Connecting) )
+         if(hdd_connIsConnected(pstation) ||
+            (pstation->conn_info.connState == eConnectionState_Connecting))
          {
-            /*
-             * Indicate sme of disconnect so that in progress connection
-             * or preauth can be aborted.
-             */
-            sme_abortConnection(WLAN_HDD_GET_HAL_CTX(pAdapter),
-                            pAdapter->sessionId);
-            INIT_COMPLETION(pAdapter->disconnect_comp_var);
             if (pWextState->roamProfile.BSSType == eCSR_BSS_TYPE_START_IBSS)
+            {
+                INIT_COMPLETION(pAdapter->disconnect_comp_var);
                 halStatus = sme_RoamDisconnect(pHddCtx->hHal,
                                              pAdapter->sessionId,
                                              eCSR_DISCONNECT_REASON_IBSS_LEAVE);
-            else
-                halStatus = sme_RoamDisconnect(pHddCtx->hHal,
-                                            pAdapter->sessionId, 
-                                            eCSR_DISCONNECT_REASON_UNSPECIFIED);
-            /* Success implies disconnect command got queued up successfully
-             * Or cmd not queued as scan for SSID is in progress
-             */
-            if((eHAL_STATUS_SUCCESS == halStatus) ||
-               (eHAL_STATUS_CMD_NOT_QUEUED == halStatus))
-            {
-               ret = wait_for_completion_interruptible_timeout(
-                          &pAdapter->disconnect_comp_var,
+                /* Success implies disconnect command got queued up successfully
+                 * Or cmd not queued as scan for SSID is in progress
+                 */
+                if((eHAL_STATUS_SUCCESS == halStatus) ||
+                   (eHAL_STATUS_CMD_NOT_QUEUED == halStatus))
+                {
+                   ret = wait_for_completion_timeout(
+                           &pAdapter->disconnect_comp_var,
                            msecs_to_jiffies(WLAN_WAIT_TIME_DISCONNECT));
-               if (ret <= 0 &&
-                   (eHAL_STATUS_CMD_NOT_QUEUED != halStatus))
-               {
-                   hddLog(VOS_TRACE_LEVEL_ERROR,
+                   if (ret <= 0 &&
+                       (eHAL_STATUS_CMD_NOT_QUEUED != halStatus))
+                   {
+                       hddLog(VOS_TRACE_LEVEL_ERROR,
                           "%s: wait on disconnect_comp_var failed %ld",
                            __func__, ret);
-               }
+                   }
+                }
+                else
+                {
+                   hddLog(LOGE, "%s: failed to post disconnect event to SME",
+                         __func__);
+                }
             }
             else
             {
-                hddLog(LOGE, "%s: failed to post disconnect event to SME",
-                         __func__);
+                wlan_hdd_disconnect(pAdapter, eCSR_DISCONNECT_REASON_DEAUTH);
             }
             memset(&wrqu, '\0', sizeof(wrqu));
             wrqu.ap_addr.sa_family = ARPHRD_ETHER;

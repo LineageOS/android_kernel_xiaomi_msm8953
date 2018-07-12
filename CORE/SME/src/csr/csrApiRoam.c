@@ -7880,8 +7880,14 @@ static void csrRoamJoinRspProcessor( tpAniSirGlobal pMac, tSirSmeJoinRsp *pSmeJo
         }
         if (pSession->abortConnection)
         {
-            smsLog(pMac, LOG1, FL("Disconnection in progess"
-                                  "abort Join request"));
+            smsLog(pMac, LOG1, FL("Disconnection in progess abort Join request"));
+
+            if (pSession->bRefAssocStartCnt)
+                pSession->bRefAssocStartCnt--;
+            csrRoamCallCallback(pMac, pSession->sessionId,
+                                NULL, roamId,
+                                eCSR_ROAM_ASSOCIATION_COMPLETION,
+                                eCSR_ROAM_RESULT_NOT_ASSOCIATED);
             csrRoamComplete( pMac, eCsrNothingToJoin, NULL );
             pSession->abortConnection = FALSE;
             return;
