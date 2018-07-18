@@ -483,7 +483,7 @@ tSmeCmd *smeGetCommandBuffer( tpAniSirGlobal pMac )
         else
         {
            /* Trigger SSR */
-           vos_wlanRestart();
+           vos_wlanRestart(VOS_GET_MSG_BUFF_FAILURE);
         }
     }
 
@@ -898,6 +898,68 @@ static void smeProcessNanReq(tpAniSirGlobal pMac, tSmeCmd *pCommand )
     else
     {
         smsLog(pMac, LOG1, FL("posted WDA_NAN_REQUEST command"));
+    }
+}
+
+/**
+ * sme_set_qpower() - Set Qpower
+ * @pMac - context handler
+ * @enable - uint8 value that needs to be sent to FW
+ *
+ * The function sends the qpower to firmware received
+ * via driver command
+ */
+void sme_set_qpower(tpAniSirGlobal pMac, uint8_t enable)
+{
+    tSirMsgQ msgQ;
+    tSirRetStatus retCode = eSIR_SUCCESS;
+
+    vos_mem_zero(&msgQ, sizeof(tSirMsgQ));
+    msgQ.type = WDA_QPOWER;
+    msgQ.reserved = 0;
+    msgQ.bodyval = enable;
+
+    retCode = wdaPostCtrlMsg(pMac, &msgQ);
+    if(eSIR_SUCCESS != retCode)
+    {
+        smsLog(pMac, LOGE,
+           FL("Posting WDA_QPOWER to WDA failed, reason=%X"),
+           retCode);
+    }
+    else
+    {
+        smsLog(pMac, LOG1, FL("posted WDA_QPOWER command"));
+    }
+}
+
+/**
+ * sme_set_vowifi_mode() - Set VOWIFI mode
+ * @pMac - context handler
+ * @enable - boolean value that determines the state
+ *
+ * The function sends the VOWIFI to firmware received
+ * via driver command
+ */
+void sme_set_vowifi_mode(tpAniSirGlobal pMac, bool enable)
+{
+    tSirMsgQ msgQ;
+    tSirRetStatus retCode = eSIR_SUCCESS;
+
+    vos_mem_zero(&msgQ, sizeof(tSirMsgQ));
+    msgQ.type = WDA_VOWIFI_MODE;
+    msgQ.reserved = 0;
+    msgQ.bodyval = enable;
+
+    retCode = wdaPostCtrlMsg(pMac, &msgQ);
+    if(eSIR_SUCCESS != retCode)
+    {
+        smsLog(pMac, LOGE,
+           FL("Posting WDA_VOWIFI_MODE to WDA failed, reason=%X"),
+           retCode);
+    }
+    else
+    {
+        smsLog(pMac, LOG1, FL("posted WDA_VOWIFI_MODE command"));
     }
 }
 
@@ -2478,6 +2540,30 @@ static VOS_STATUS sme_ecsa_msg_processor(tpAniSirGlobal mac_ctx,
    return VOS_STATUS_SUCCESS;
 }
 
+static bool sme_get_sessionid_from_scan_cmd(tpAniSirGlobal mac,
+    tANI_U32  *session_id)
+{
+    tListElem *entry = NULL;
+    tSmeCmd *command = NULL;
+    bool active_scan = false;
+
+    if (!mac->fScanOffload) {
+        entry = csrLLPeekHead(&mac->sme.smeCmdActiveList, LL_ACCESS_LOCK);
+    } else {
+        entry = csrLLPeekHead(&mac->sme.smeScanCmdActiveList, LL_ACCESS_LOCK);
+    }
+
+    if (entry) {
+        command = GET_BASE_ADDR(entry, tSmeCmd, Link);
+        if (command->command == eSmeCommandScan) {
+            *session_id = command->sessionId;
+            active_scan = true;
+        }
+    }
+
+    return active_scan;
+}
+
 /*--------------------------------------------------------------------------
 
   \brief sme_ProcessMsg() - The main message processor for SME.
@@ -2674,10 +2760,18 @@ eHalStatus sme_ProcessMsg(tHalHandle hHal, vos_msg_t* pMsg)
                 {
                    tSirSmeCoexInd *pSmeCoexInd = (tSirSmeCoexInd *)pMsg->bodyptr;
                    vos_msg_t vosMessage = {0};
+                   tANI_U32 session_id = 0;
+                   bool active_scan;
 
                    if (pSmeCoexInd->coexIndType == SIR_COEX_IND_TYPE_DISABLE_AGGREGATION_IN_2p4)
                    {
+                       pMac->btc.agg_disabled = true;
                        smsLog( pMac, LOG1, FL("SIR_COEX_IND_TYPE_DISABLE_AGGREGATION_IN_2p4"));
+                       active_scan = sme_get_sessionid_from_scan_cmd(pMac,
+                                                                   &session_id);
+                       if (active_scan)
+                           sme_AbortMacScan(hHal, session_id,
+                                            eCSR_SCAN_ABORT_DEFAULT);
                        sme_RequestFullPower(hHal, NULL, NULL, eSME_REASON_OTHER);
                        pMac->isCoexScoIndSet = 1;
                        pMac->scan.fRestartIdleScan = eANI_BOOLEAN_FALSE;
@@ -2688,6 +2782,7 @@ eHalStatus sme_ProcessMsg(tHalHandle hHal, vos_msg_t* pMsg)
                    }
                    else if (pSmeCoexInd->coexIndType == SIR_COEX_IND_TYPE_ENABLE_AGGREGATION_IN_2p4)
                    {
+                       pMac->btc.agg_disabled = false;
                        smsLog( pMac, LOG1, FL("SIR_COEX_IND_TYPE_ENABLE_AGGREGATION_IN_2p4"));
                        pMac->isCoexScoIndSet = 0;
                        sme_RequestBmps(hHal, NULL, NULL);
@@ -12803,7 +12898,7 @@ void activeListCmdTimeoutHandle(void *userData)
        if (!(vos_isLoadUnloadInProgress() ||
            vos_is_logp_in_progress(VOS_MODULE_ID_SME, NULL)))
        {
-          vos_wlanRestart();
+          vos_wlanRestart(VOS_ACTIVE_LIST_TIMEOUT);
        }
     }
 }
@@ -14230,7 +14325,7 @@ tANI_BOOLEAN sme_handleSetFccChannel(tHalHandle hHal, tANI_U8 fcc_constraint,
             pMac->scan.defer_update_channel_list = true;
         } else {
             /* update the channel list to the firmware */
-            csrUpdateChannelList(pMac);
+            csrUpdateFCCChannelList(pMac);
         }
     }
 
@@ -15243,4 +15338,11 @@ sme_get_connect_strt_time(tHalHandle hal, uint8_t session_id)
    }
    session = CSR_GET_SESSION(mac_ctx, session_id);
    return session->connect_req_start_time;
+}
+
+void sme_request_imps(tHalHandle hal)
+{
+   tpAniSirGlobal mac_ctx = PMAC_STRUCT(hal);
+
+   csrScanStartIdleScan(mac_ctx);
 }

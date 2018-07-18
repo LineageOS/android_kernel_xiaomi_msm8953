@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -63,6 +63,10 @@ void lim_post_pre_auth_reassoc_rsp(tpAniSirGlobal mac,
     tANI_U16 rsp_len = sizeof(tSirFTPreAuthRsp);
     tpPESession session_entry_con_ap;
     tpDphHashNode sta_ds = NULL;
+    if (session_entry == NULL) {
+        limLog(mac, LOGE, FL("Invalid Session Entry"));
+        return;
+    }
 
     pre_auth_rsp = (tpSirFTPreAuthRsp)vos_mem_malloc(rsp_len);
     if (NULL == pre_auth_rsp) {
@@ -77,9 +81,7 @@ void lim_post_pre_auth_reassoc_rsp(tpAniSirGlobal mac,
     pre_auth_rsp->length = (tANI_U16)rsp_len;
     pre_auth_rsp->status = status;
     pre_auth_rsp->reason = reason;
-
-    if (session_entry)
-        pre_auth_rsp->smeSessionId = session_entry->smeSessionId;
+    pre_auth_rsp->smeSessionId = session_entry->smeSessionId;
 
     /* The bssid of the AP we are sending Auth1 to. */
     if (mac->ft.ftPEContext.pFTPreAuthReq)
@@ -668,7 +670,7 @@ void lim_handle_reassoc_mbb_success(tpAniSirGlobal mac,
         limLog(mac, LOGE,
                FL("session does not exist for given BSSID" MAC_ADDRESS_STR),
                MAC_ADDR_ARRAY(mac->ft.ftPEContext.pFTPreAuthReq->currbssId));
-        goto end;
+        goto cleanup;
     }
 
     session_entry->smeSessionId = session_entry_con_ap->smeSessionId;
@@ -681,7 +683,7 @@ void lim_handle_reassoc_mbb_success(tpAniSirGlobal mac,
         limLog(mac, LOGE,
                FL("sta_ds NULL for given BSSID" MAC_ADDRESS_STR),
                MAC_ADDR_ARRAY(mac->ft.ftPEContext.pFTPreAuthReq->currbssId));
-        goto end;
+        goto cleanup;
     }
 
     /*
@@ -698,9 +700,9 @@ void lim_handle_reassoc_mbb_success(tpAniSirGlobal mac,
     if (ret_code == eSIR_SUCCESS)
         return;
 
-end:
     /* Connected AP lim cleanup.*/
     lim_cleanup_connected_ap(mac, sta_ds_connected_ap, session_entry_con_ap);
+cleanup:
     /*
      * eHAL_STATUS_INVALID_PARAMETER is used
      * so that full cleanup is triggered.
@@ -721,7 +723,7 @@ end:
 static inline void lim_process_preauth_mbb_result(tpAniSirGlobal mac,
      eHalStatus status, tANI_U32 *data)
 {
-    tpPESession session_entry, ft_session_entry;
+    tpPESession session_entry, ft_session_entry = NULL;
     tpDphHashNode sta_ds;
     tAddBssParams *add_bss_params;
     tSirSmeJoinReq *reassoc_req;
@@ -763,6 +765,7 @@ static inline void lim_process_preauth_mbb_result(tpAniSirGlobal mac,
     {
         limLog(mac, LOGE,
                FL("call to AllocateMemory failed for pReassocReq"));
+        vos_mem_free(reassoc_req);
         goto end;
     }
     vos_mem_set((void *) pReassocReq, nSize, 0);
@@ -773,13 +776,13 @@ static inline void lim_process_preauth_mbb_result(tpAniSirGlobal mac,
     {
         limLog(mac, LOGE,
                FL("received SME_REASSOC_REQ with invalid data"));
+        vos_mem_free(reassoc_req);
         goto end;
     }
 
     ft_session_entry = mac->ft.ftPEContext.pftSessionEntry;
 
     ft_session_entry->pLimReAssocReq = pReassocReq;
-    vos_mem_free(reassoc_req);
 
     add_bss_params = mac->ft.ftPEContext.pAddBssReq;
 
@@ -787,6 +790,7 @@ static inline void lim_process_preauth_mbb_result(tpAniSirGlobal mac,
     if (NULL == mlm_reassoc_req) {
         limLog(mac, LOGE,
                FL("call to AllocateMemory failed for mlmReassocReq"));
+        vos_mem_free(reassoc_req);
         goto end;
     }
 
@@ -798,11 +802,13 @@ static inline void lim_process_preauth_mbb_result(tpAniSirGlobal mac,
     if (cfgGetCapabilityInfo(mac, &caps, ft_session_entry) != eSIR_SUCCESS) {
         limLog(mac, LOGE, FL("could not retrieve Capabilities value"));
         vos_mem_free(mlm_reassoc_req);
+        vos_mem_free(reassoc_req);
         goto end;
     }
 
     lim_update_caps_info_for_bss(mac, &caps,
                         reassoc_req->bssDescription.capabilityInfo);
+    vos_mem_free(reassoc_req);
 
     limLog(mac, LOG1, FL("Capabilities info Reassoc: 0x%X"), caps);
 
@@ -853,7 +859,8 @@ static inline void lim_process_preauth_mbb_result(tpAniSirGlobal mac,
     return;
 
 end:
-    lim_handle_reassoc_mbb_fail(mac, ft_session_entry);
+    if (ft_session_entry)
+        lim_handle_reassoc_mbb_fail(mac, ft_session_entry);
 }
 
 /*
@@ -1272,7 +1279,6 @@ end:
         vos_mem_free(del_sta_params);
         lim_msg->bodyptr = NULL;
     }
-
     /* Connected AP lim cleanup.*/
     lim_cleanup_connected_ap(mac, sta_ds, session_entry);
 
@@ -1331,6 +1337,8 @@ void lim_cleanup_rx_path_mbb(tpAniSirGlobal mac,
 void lim_cleanup_connected_ap(tpAniSirGlobal mac, tpDphHashNode sta_ds,
      tpPESession session_entry)
 {
+    if (!sta_ds || !session_entry)
+        return;
     lim_cleanup_rx_path_mbb(mac, sta_ds, session_entry);
     limDeleteDphHashEntry(mac, sta_ds->staAddr,
                           sta_ds->assocId, session_entry);
@@ -1434,7 +1442,6 @@ end:
        vos_mem_free(delbss_params);
        lim_msg->bodyptr = NULL;
     }
-
     lim_cleanup_connected_ap(mac, sta_ds, session_entry);
 
     ft_session_entry = peFindSessionByBssid(mac,
@@ -1561,6 +1568,10 @@ void lim_process_sta_mlm_add_bss_rsp_mbb(tpAniSirGlobal mac,
 
     if(add_bss_params == 0)
         goto end;
+    if (!sta_ds) {
+        limLog(mac, LOGE, FL("DPH Entry for STA missing"));
+        goto end;
+     }
 
     limLog(mac, LOG1, FL("Add BSS RSP received. Status:%d"),
                          add_bss_params->status);

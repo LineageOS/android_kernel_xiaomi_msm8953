@@ -772,7 +772,11 @@ sapSignalHDDevent
         case eSAP_STA_ASSOC_IND:
             //  TODO - Indicate the assoc request indication to OS
             sapApAppEvent.sapHddEventCode = eSAP_STA_ASSOC_IND;
-
+            if (!pCsrRoamInfo) {
+                 VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
+                      FL("Got NULL Roam Info in event %d"), eSAP_STA_ASSOC_IND);
+                 return VOS_STATUS_E_INVAL;
+             }
             vos_mem_copy( &sapApAppEvent.sapevt.sapAssocIndication.staMac, pCsrRoamInfo->peerMac,sizeof(tSirMacAddr));
             sapApAppEvent.sapevt.sapAssocIndication.staId = pCsrRoamInfo->staId;
             sapApAppEvent.sapevt.sapAssocIndication.status = 0;
@@ -820,6 +824,12 @@ sapSignalHDDevent
                        FL("SAP event callback event = %s"),
                           "eSAP_STA_ASSOC_EVENT");
             vos_mem_zero(event, sizeof(event));
+            if (!pCsrRoamInfo) {
+                 VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
+                      FL("Got NULL Roam Info in event %d"),
+                                           eSAP_STA_ASSOC_EVENT);
+                 return VOS_STATUS_E_INVAL;
+             }
             if (pCsrRoamInfo->fReassocReq)
                 sapApAppEvent.sapHddEventCode = eSAP_STA_REASSOC_EVENT;
             else
@@ -861,7 +871,12 @@ sapSignalHDDevent
                        FL("SAP event callback event = %s"),
                           "eSAP_STA_DISASSOC_EVENT");
             sapApAppEvent.sapHddEventCode = eSAP_STA_DISASSOC_EVENT;
-
+            if (!pCsrRoamInfo) {
+                 VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
+                      FL("Got NULL Roam Info in event %d"),
+                                           eSAP_STA_DISASSOC_EVENT);
+                 return VOS_STATUS_E_INVAL;
+             }
             vos_mem_copy( &sapApAppEvent.sapevt.sapStationDisassocCompleteEvent.staMac,
                           pCsrRoamInfo->peerMac, sizeof(tSirMacAddr));
             sapApAppEvent.sapevt.sapStationDisassocCompleteEvent.staId = pCsrRoamInfo->staId;
@@ -879,6 +894,12 @@ sapSignalHDDevent
                        FL("SAP event callback event = %s"),
                           "eSAP_STA_SET_KEY_EVENT");
             sapApAppEvent.sapHddEventCode = eSAP_STA_SET_KEY_EVENT;
+            if (!pCsrRoamInfo) {
+                 VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
+                      FL("Got NULL Roam Info in event %d"),
+                                         eSAP_STA_SET_KEY_EVENT);
+                 return VOS_STATUS_E_INVAL;
+             }
             sapApAppEvent.sapevt.sapStationSetKeyCompleteEvent.status = (eSapStatus )context;
             vos_mem_copy(&sapApAppEvent.sapevt.sapStationSetKeyCompleteEvent.peerMacAddr,
                          pCsrRoamInfo->peerMac,sizeof(tSirMacAddr));
@@ -899,6 +920,12 @@ sapSignalHDDevent
                        FL("SAP event callback event = %s"),
                           "eSAP_STA_MIC_FAILURE_EVENT");
             sapApAppEvent.sapHddEventCode = eSAP_STA_MIC_FAILURE_EVENT;
+            if (!pCsrRoamInfo) {
+                 VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
+                      FL("Got NULL Roam Info in event %d"),
+                                        eSAP_STA_MIC_FAILURE_EVENT);
+                 return VOS_STATUS_E_INVAL;
+             }
             vos_mem_copy( &sapApAppEvent.sapevt.sapStationMICFailureEvent.srcMacAddr,
                           pCsrRoamInfo->u.pMICFailureInfo->srcMacAddr,
                           sizeof(tSirMacAddr));
@@ -927,7 +954,12 @@ sapSignalHDDevent
                        FL("SAP event callback event = %s"),
                           "eSAP_WPS_PBC_PROBE_REQ_EVENT");
             sapApAppEvent.sapHddEventCode = eSAP_WPS_PBC_PROBE_REQ_EVENT;
-
+            if (!pCsrRoamInfo) {
+                 VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
+                      FL("Got NULL Roam Info in event %d"),
+                                        eSAP_WPS_PBC_PROBE_REQ_EVENT);
+                 return VOS_STATUS_E_INVAL;
+             }
             vos_mem_copy( &sapApAppEvent.sapevt.sapPBCProbeReqEvent.WPSPBCProbeReq,
                           pCsrRoamInfo->u.pWPSPBCProbeReq,
                           sizeof(tSirWPSPBCProbeReq));
@@ -977,6 +1009,12 @@ sapSignalHDDevent
                        FL("SAP event callback event = %s"),
                           "eSAP_MAX_ASSOC_EXCEEDED");
             sapApAppEvent.sapHddEventCode = eSAP_MAX_ASSOC_EXCEEDED;
+            if (!pCsrRoamInfo) {
+                 VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
+                      FL("Got NULL Roam Info in event %d"),
+                                        eSAP_MAX_ASSOC_EXCEEDED);
+                 return VOS_STATUS_E_INVAL;
+             }
             vos_mem_copy((v_PVOID_t)sapApAppEvent.sapevt.sapMaxAssocExceeded.macaddr.bytes,
                     (v_PVOID_t)pCsrRoamInfo->peerMac, sizeof(v_MACADDR_t));
             break;
@@ -997,6 +1035,12 @@ sapSignalHDDevent
                     __func__, "eSAP_STA_LOSTLINK_DETECTED");
 
             sapApAppEvent.sapHddEventCode = eSAP_STA_LOSTLINK_DETECTED;
+            if (!pCsrRoamInfo) {
+                 VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
+                      FL("Got NULL Roam Info in event %d"),
+                                       eSAP_STA_LOSTLINK_DETECTED);
+                 return VOS_STATUS_E_INVAL;
+             }
             disassoc_comp =
                 &sapApAppEvent.sapevt.sapStationDisassocCompleteEvent;
             disassoc_comp->reason = pCsrRoamInfo->reasonCode;
@@ -1261,6 +1305,7 @@ sapFsm
                      VOS_TRACE(VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
                                  "In %s, NULL hHal in state %s, msg %d",
                                   __func__, "eSAP_STARTING", msg);
+                    return eHAL_STATUS_INVALID_PARAMETER;
                 }
                 vosStatus = sme_roam_csa_ie_request(hHal, sapContext->bssid,
                                         sapContext->ecsa_info.new_channel,

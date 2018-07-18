@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -712,6 +712,16 @@ limInitAssocRspCompletiontionList(tpAniSirGlobal pMac)
 static void
 limDestroyAssocRspCompletiontionList(tpAniSirGlobal pMac)
 {
+    assoc_rsp_tx_context *pAssocRspCtx;
+
+    while(vos_list_remove_front(&pMac->assoc_rsp_completion_list,
+           (vos_list_node_t**)&pAssocRspCtx) == VOS_STATUS_SUCCESS)
+    {
+        VOS_TRACE(VOS_MODULE_ID_PE, VOS_TRACE_LEVEL_INFO,
+                  FL("Fixing leak! Deallocating pAssocRspCtx node %lu"),
+                      (unsigned long)pAssocRspCtx);
+        vos_mem_free(pAssocRspCtx);
+    }
     vos_list_destroy(&pMac->assoc_rsp_completion_list);
 }
 

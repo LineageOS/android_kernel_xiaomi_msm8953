@@ -54,7 +54,7 @@
 #endif /* DHCP_SERVER_OFFLOAD */
 
 //Number of items that can be configured
-#define MAX_CFG_INI_ITEMS   512
+#define MAX_CFG_INI_ITEMS   1024
 
 #ifdef SAP_AUTH_OFFLOAD
 /* 802.11 pre-share key length */
@@ -1190,6 +1190,11 @@ typedef enum
 #define CFG_REORDER_TIME_VO_MAX                            1000
 #define CFG_REORDER_TIME_VO_DEFAULT                        40
 
+#define CFG_ENABLE_PN_REPLAY_NAME                          "PNreplayCheck"
+#define CFG_ENABLE_PN_REPLAY_MIN                           0
+#define CFG_ENABLE_PN_REPLAY_MAX                           1
+#define CFG_ENABLE_PN_REPLAY_DEFAULT                       0
+
 #if defined WLAN_FEATURE_VOWIFI
 #define CFG_RRM_ENABLE_NAME                              "gRrmEnable"
 #define CFG_RRM_ENABLE_MIN                               (0)
@@ -1742,6 +1747,26 @@ typedef enum
 #define CFG_ENABLE_TCP_DELACK_MIN            (0)
 #define CFG_ENABLE_TCP_DELACK_MAX            (1)
 #define CFG_ENABLE_TCP_DELACK_DEFAULT        (1)
+
+#define CFG_BTC_2M_DYN_LONG_WLAN_LEN_NAME      "gBTC2MDynLongWLAN"
+#define CFG_BTC_2M_DYN_LONG_WLAN_LEN_MIN       (15000)
+#define CFG_BTC_2M_DYN_LONG_WLAN_LEN_MAX       (55000)
+#define CFG_BTC_2M_DYN_LONG_WLAN_LEN_DEFAULT   (35000)
+
+#define CFG_BTC_2M_DYN_LONG_BT_LEN_NAME        "gBTC2MDynLongBT"
+#define CFG_BTC_2M_DYN_LONG_BT_LEN_MIN         (15000)
+#define CFG_BTC_2M_DYN_LONG_BT_LEN_MAX         (25000)
+#define CFG_BTC_2M_DYN_LONG_BT_LEN_DEFAULT     (25000)
+
+#define CFG_BTC_2M_DYN_LONG_BT_EXT_LEN_NAME        "gBTC2MDynLongBTExt"
+#define CFG_BTC_2M_DYN_LONG_BT_EXT_LEN_MIN         (5000)
+#define CFG_BTC_2M_DYN_LONG_BT_EXT_LEN_MAX         (15000)
+#define CFG_BTC_2M_DYN_LONG_BT_EXT_LEN_DEFAULT     (15000)
+
+#define CFG_BTC_2M_DYN_LONG_NUM_BT_EXT_NAME        "gBTC2MDynLongNumBTExt"
+#define CFG_BTC_2M_DYN_LONG_NUM_BT_EXT_MIN          (5)
+#define CFG_BTC_2M_DYN_LONG_NUM_BT_EXT_MAX          (15)
+#define CFG_BTC_2M_DYN_LONG_NUM_BT_EXT_DEFAULT      (15)
 
 #ifdef SAP_AUTH_OFFLOAD
 /* Enable/Disable SAP Authentication offload
@@ -3178,6 +3203,8 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_ENABLE_POWERSAVE_OFFLOAD_MAX        (2)
 #define CFG_ENABLE_POWERSAVE_OFFLOAD_DEFAULT    (1)
 
+
+
 /*--------------------------------------------------------------------------- 
   Type declarations
   -------------------------------------------------------------------------*/ 
@@ -3456,6 +3483,7 @@ typedef struct
    v_U16_t                      BeReorderAgingTime;
    v_U16_t                      ViReorderAgingTime;
    v_U16_t                      VoReorderAgingTime;
+   v_BOOL_t                     enablePNReplay;
 
    /* Wowl pattern */
    char                        wowlPattern[1024];         
@@ -3787,6 +3815,10 @@ typedef struct
    /* control marking indoor channel passive to disable */
    bool                        disable_indoor_channel;
    uint32_t                    enable_power_save_offload;
+   uint32_t                    btc_dyn_wlan_len;
+   uint32_t                    btc_dyn_bt_len;
+   uint32_t                    btc_dyn_bt_ext_len;
+   uint32_t                    btc_dyn_num_bt_ext;
 
 } hdd_config_t;
 

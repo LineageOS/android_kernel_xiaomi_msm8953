@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -5607,6 +5607,12 @@ sap_auth_offload_update_rsn_ie( tpAniSirGlobal pmac,
 {
     tDot11fIERSN *pdot11f_rsn;
     pdot11f_rsn = vos_mem_malloc(sizeof(tDot11fIERSN));
+    if (!pdot11f_rsn) {
+           dot11fLog(pmac, LOGE,
+           FL("Memory allocation failes for RSN IE"));
+           return;
+    }
+
     vos_mem_set(pdot11f_rsn, sizeof(tDot11fIERSN), 0);
     /* Assign RSN IE for Software AP Authentication offload security */
     if (pmac->sap_auth_offload && pmac->sap_auth_offload_sec_type)
