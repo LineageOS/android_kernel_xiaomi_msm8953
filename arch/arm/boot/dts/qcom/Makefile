@@ -1,10 +1,6 @@
-dtb-$(CONFIG_ARCH_MSM8996) += msm8996-v2-pmi8994-cdp.dtb \
-	msm8996-v2-pmi8994-mtp.dtb \
-	msm8996-v2-pmi8994-pmk8001-cdp.dtb \
+dtb-$(CONFIG_ARCH_MSM8996) += msm8996-v2-pmi8994-mtp.dtb \
 	msm8996-v2-pmi8994-pmk8001-mtp.dtb \
-	msm8996-v2-pmi8994-pm8004-cdp.dtb \
 	msm8996-v2-pmi8994-pm8004-mtp.dtb \
-	msm8996-v2-pmi8994-pm8004-pmk8001-cdp.dtb \
 	msm8996-v2-pmi8994-pm8004-pmk8001-mtp.dtb \
 	msm8996-v2-fluid.dtb \
 	msm8996-v2-liquid.dtb \
@@ -85,11 +81,7 @@ dtb-$(CONFIG_ARCH_MSM8996) += msm8996-v2-pmi8994-cdp.dtb \
 	msm8996-v3.0-fluid.dtb \
 	msm8996-v3.0-liquid.dtb \
 	msm8996-v3.0-dtp.dtb \
-	apq8096-v2-pmi8994-cdp.dtb \
 	apq8096-v2-pmi8994-mtp.dtb \
-	apq8096-v2-pmi8994-pmk8001-cdp.dtb \
-	apq8096-v2-pmi8994-pm8004-cdp.dtb \
-	apq8096-v2-pmi8994-pm8004-pmk8001-cdp.dtb \
 	apq8096-v2-liquid.dtb \
 	apq8096-v2-dragonboard.dtb \
 	apq8096-v2-auto-dragonboard.dtb \
@@ -157,6 +149,7 @@ dtb-$(CONFIG_ARCH_MDM9650) += mdm9650-sim.dtb \
 	mdm9650-emmc-mtp.dtb \
 	mdm9650-nand-mtp.dtb \
 	mdm9650-ttp.dtb \
+	mdm9650-pcie-ep-ttp.dtb \
 	mdm9650-nand-dualwifi-mtp.dtb \
 	mdm9650-v1.1-emmc-cdp.dtb \
 	mdm9650-v1.1-nand-cdp.dtb \
@@ -272,6 +265,9 @@ dtb-$(CONFIG_ARCH_MSM8953) += msm8953-sim.dtb \
 	apq8053-mtp.dtb \
 	apq8053-ext-audio-mtp.dtb \
 	apq8053-ext-codec-rcm.dtb \
+	apq8053-lite-dragon-v1.0.dtb \
+	apq8053-lite-dragon-v2.0.dtb \
+	apq8053-lite-ext-codec-dragon-v2.0.dtb \
 	msm8953-cdp-1200p.dtb \
 	msm8953-iot-mtp.dtb \
 	apq8053-iot-mtp.dtb \
@@ -360,7 +356,9 @@ dtb-$(CONFIG_ARCH_MSM8909) += msm8909-pm8916-mtp.dtb \
 	msm8909-1gb-mtp.dtb \
 	msm8909-1gb-rcm.dtb \
 	msm8909-pm8916-1gb-rcm.dtb \
-        msm8909-1gb-cdp.dtb
+	msm8909-1gb-cdp.dtb \
+	apq8009-ext-codec-dragon.dtb \
+	apq8009-dragon.dtb
 
 ifeq ($(CONFIG_ARM64),y)
 always          := $(dtb-y)
