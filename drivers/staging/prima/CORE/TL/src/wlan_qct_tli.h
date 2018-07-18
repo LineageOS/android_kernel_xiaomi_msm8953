@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -702,6 +702,9 @@ typedef struct
 
  /* It contains 48-bit replay counter per TID*/
   v_U64_t       ullReplayCounter[WLANTL_MAX_TID];
+
+  /* Last seq number received on Tid */
+  v_U16_t      last_seq_no[WLANTL_MAX_TID];
 
  /* It contains no of replay packets found per STA.
     It is for debugging purpose only.*/

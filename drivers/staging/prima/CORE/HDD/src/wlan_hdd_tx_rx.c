@@ -3007,7 +3007,7 @@ void hdd_tx_rx_pkt_cnt_stat_timer_handler( void *phddctx)
                                        cfg_param->txRxThresholdForSplitScan) ||
                     (pAdapter->hdd_stats.hddTxRxStats.pkt_rx_count >
                                        cfg_param->txRxThresholdForSplitScan) ||
-                    pHddCtx->drvr_miracast ||
+                        pHddCtx->drvr_miracast || pHddCtx->is_vowifi_enabled ||
                     (WLAN_HDD_P2P_GO == pAdapter->device_mode))
                 {
                     pAdapter->hdd_stats.hddTxRxStats.pkt_tx_count = 0;
@@ -3064,7 +3064,7 @@ void hdd_tx_rx_pkt_cnt_stat_timer_handler( void *phddctx)
 void hdd_rx_fwd_eapol(v_VOID_t *vosContext, vos_pkt_t *pVosPacket)
 {
    hdd_context_t *pHddCtx = NULL;
-   hdd_adapter_t * pAdapter;
+   hdd_adapter_t * pAdapter = NULL;
    hdd_adapter_list_node_t *pAdapterNode = NULL, *pNext = NULL;
    struct sk_buff *skb = NULL;
    uint8_t proto_type;

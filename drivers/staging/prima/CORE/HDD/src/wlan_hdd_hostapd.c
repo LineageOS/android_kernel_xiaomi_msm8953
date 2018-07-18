@@ -81,6 +81,7 @@
 #include "wniCfg.h"
 #include <wlan_hdd_wowl.h>
 #include "wlan_hdd_hostapd.h"
+#include "wlan_hdd_request_manager.h"
 
 #ifdef FEATURE_WLAN_CH_AVOID
 #include "wcnss_wlan.h"
@@ -461,6 +462,58 @@ static int hdd_hostapd_driver_command(hdd_adapter_t *pAdapter,
 
        ret = hdd_enable_disable_ca_event(pHddCtx, command, 16);
    }
+
+   /*
+    * command should be a string having format
+    * SET_DISABLE_CHANNEL_LIST <num of channels>
+    * <channels separated by spaces>
+    */
+   else if (strncmp(command, "SET_DISABLE_CHANNEL_LIST", 24) == 0) {
+        tANI_U8 *ptr = command;
+
+        ret = hdd_drv_cmd_validate(command, 24);
+        if (ret)
+            goto exit;
+
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                  " Received Command to disable Channels for in %s",
+                  __func__);
+       ret = hdd_parse_disable_chan_cmd(pAdapter, ptr);
+    }
+    else if (strncmp(command, "GET_DISABLE_CHANNEL_LIST", 24) == 0) {
+         char extra[128] = {0};
+         int len;
+
+         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+             " Received Command to get disable Channels list %s",
+             __func__);
+
+         len = hdd_get_disable_ch_list(pHddCtx, extra, sizeof(extra));
+         if (len == 0) {
+             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                       FL("disable channel list are not yet programed"));
+             ret = -EINVAL;
+             goto exit;
+         }
+
+         len = VOS_MIN(priv_data->total_len, len + 1);
+         if (copy_to_user(priv_data->buf, &extra, len)) {
+            VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+               "%s: failed to copy data to user buffer", __func__);
+            ret = -EFAULT;
+            goto exit;
+         }
+
+         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                   FL("data:%s"), extra);
+    }
+    else {
+        MTRACE(vos_trace(VOS_MODULE_ID_HDD,
+                         TRACE_CODE_HDD_UNSUPPORTED_IOCTL,
+                         pAdapter->sessionId, 0));
+        hddLog(VOS_TRACE_LEVEL_WARN, FL("Unsupported GUI command %s"),
+                command);
+    }
 
 exit:
    if (command)
@@ -1675,6 +1728,11 @@ stopbss :
         if (eSAP_STOP_BSS_EVENT == sapEvent)
             vos_event_set(&pHostapdState->vosEvent);
 
+        if (hdd_is_any_session_connected(pHddCtx) == VOS_STATUS_E_FAILURE) {
+            hdd_enable_bmps_imps(pHddCtx);
+            sme_request_imps(pHddCtx->hHal);
+        }
+
         /* notify userspace that the BSS has stopped */
         memset(&we_custom_event, '\0', sizeof(we_custom_event));
         memcpy(&we_custom_event, stopBssEvent, event_len);
@@ -1703,6 +1761,7 @@ int hdd_softap_unpackIE(
  
     tANI_U8 *pRsnIe; 
     tANI_U16 RSNIeLen;
+    tANI_U32 status;
     
     if (NULL == halHandle)
     {
@@ -1728,10 +1787,18 @@ int hdd_softap_unpackIE(
         RSNIeLen = gen_ie_len - 2; 
         // Unpack the RSN IE
         memset(&dot11RSNIE, 0, sizeof(tDot11fIERSN));
-        dot11fUnpackIeRSN((tpAniSirGlobal) halHandle, 
-                            pRsnIe, 
-                            RSNIeLen, 
+        status = dot11fUnpackIeRSN((tpAniSirGlobal) halHandle,
+                            pRsnIe,
+                            RSNIeLen,
                             &dot11RSNIE);
+        if (DOT11F_FAILED(status))
+        {
+             hddLog(LOGE,
+                        FL("unpack failed for RSN IE status:(0x%08x)"),
+                        status);
+             return -EINVAL;
+        }
+
         // Copy out the encryption and authentication types 
         hddLog(LOG1, FL("%s: pairwise cipher suite count: %d"),
                 __func__, dot11RSNIE.pwise_cipher_suite_count );
@@ -1765,10 +1832,18 @@ int hdd_softap_unpackIE(
         RSNIeLen = gen_ie_len - (2 + 4); 
         // Unpack the WPA IE
         memset(&dot11WPAIE, 0, sizeof(tDot11fIEWPA));
-        dot11fUnpackIeWPA((tpAniSirGlobal) halHandle, 
-                            pRsnIe, 
-                            RSNIeLen, 
+        status = dot11fUnpackIeWPA((tpAniSirGlobal) halHandle,
+                            pRsnIe,
+                            RSNIeLen,
                             &dot11WPAIE);
+        if (DOT11F_FAILED(status))
+        {
+             hddLog(LOGE,
+                        FL("unpack failed for WPA IE status:(0x%08x)"),
+                        status);
+             return -EINVAL;
+        }
+
         // Copy out the encryption and authentication types 
         hddLog(LOG1, FL("%s: WPA unicast cipher suite count: %d"),
                 __func__, dot11WPAIE.unicast_cipher_count );
@@ -2445,11 +2520,25 @@ static __iw_softap_setparam(struct net_device *dev,
                 break;
             }
         case QCSAP_PARAM_SET_CHANNEL_CHANGE:
-            if ((WLAN_HDD_SOFTAP == pHostapdAdapter->device_mode) ||
-                (WLAN_HDD_P2P_GO == pHostapdAdapter->device_mode)) {
+            if (WLAN_HDD_SOFTAP == pHostapdAdapter->device_mode) {
+                ptSapContext sap_ctx;
+
+                sap_ctx = VOS_GET_SAP_CB(pVosContext);
+                if (!sap_ctx) {
+                    hddLog(LOGE, FL("sap_ctx is NULL"));
+                    return -EINVAL;
+                }
+                ret = wlansap_chk_n_set_chan_change_in_progress(sap_ctx);
+                if (ret)
+                    return ret;
+                INIT_COMPLETION(sap_ctx->ecsa_info.chan_switch_comp);
                 hddLog(LOG1, FL("ET Channel Change to new channel= %d"),
                        set_value);
                 ret = wlansap_set_channel_change(pVosContext, set_value, false);
+                if (ret) {
+                       wlansap_reset_chan_change_in_progress(sap_ctx);
+                       complete(&sap_ctx->ecsa_info.chan_switch_comp);
+                }
             } else {
                 hddLog(LOGE, FL("Channel %d Change Failed, Device in not in SAP/GO mode"),
                        set_value);
@@ -4435,7 +4524,7 @@ static int __iw_get_ap_freq(struct net_device *dev,
        else
        {
           status = hdd_wlan_get_freq(channel, &freq);
-          if( TRUE == status)
+          if( 0 == status)
           {
               /* Set Exponent parameter as 6 (MHZ) in struct iw_freq
                * iwlist & iwconfig command shows frequency into proper
@@ -4449,7 +4538,7 @@ static int __iw_get_ap_freq(struct net_device *dev,
     {
        channel = pHddApCtx->operatingChannel;
        status = hdd_wlan_get_freq(channel, &freq);
-       if( TRUE == status)
+       if( 0 == status)
        {
           /* Set Exponent parameter as 6 (MHZ) in struct iw_freq
            * iwlist & iwconfig command shows frequency into proper
@@ -4475,50 +4564,6 @@ static int iw_get_ap_freq(struct net_device *dev,
 
    return ret;
 }
-
-static int __iw_get_mode(struct net_device *dev,
-                         struct iw_request_info *info,
-                         union iwreq_data *wrqu, char *extra)
-{
-    int status = 0;
-    hdd_adapter_t *pAdapter;
-    hdd_context_t *pHddCtx;
-
-    ENTER();
-
-    pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
-    if (NULL == pAdapter)
-    {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                  "%s: Adapter is NULL",__func__);
-        return -EINVAL;
-    }
-    pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
-    status = wlan_hdd_validate_context(pHddCtx);
-    if (0 != status)
-    {
-        return status;
-    }
-
-    wrqu->mode = IW_MODE_MASTER;
-
-    EXIT();
-    return status;
-}
-
-static int iw_get_mode(struct net_device *dev,
-                       struct iw_request_info *info,
-                       union iwreq_data *wrqu, char *extra)
-{
-    int ret;
-
-    vos_ssr_protect(__func__);
-    ret = __iw_get_mode(dev, info, wrqu, extra);
-    vos_ssr_unprotect(__func__);
-
-    return ret;
-}
-
 
 static int __iw_softap_stopbss(struct net_device *dev,
                              struct iw_request_info *info,
@@ -4811,8 +4856,15 @@ static int iw_set_ap_genie(struct net_device *dev,
 static VOS_STATUS  wlan_hdd_get_classAstats_for_station(hdd_adapter_t *pAdapter, u8 staid)
 {
    eHalStatus hstatus;
-   long lrc;
-   struct statsContext context;
+   int ret;
+   void *cookie;
+   struct hdd_request *request;
+   struct stats_class_a_ctx *priv;
+   static const struct hdd_request_params params = {
+        .priv_size = sizeof(*priv),
+        .timeout_ms = WLAN_WAIT_TIME_STATS,
+   };
+
 
    if (NULL == pAdapter)
    {
@@ -4820,17 +4872,21 @@ static VOS_STATUS  wlan_hdd_get_classAstats_for_station(hdd_adapter_t *pAdapter,
       return VOS_STATUS_E_FAULT;
    }
 
-   init_completion(&context.completion);
-   context.pAdapter = pAdapter;
-   context.magic = STATS_CONTEXT_MAGIC;
+   request = hdd_request_alloc(&params);
+   if (!request) {
+       hddLog(VOS_TRACE_LEVEL_ERROR, FL("Request allocation failure"));
+       return VOS_STATUS_E_NOMEM;
+   }
+   cookie = hdd_request_cookie(request);
+
    hstatus = sme_GetStatistics( WLAN_HDD_GET_HAL_CTX(pAdapter),
                                   eCSR_HDD,
                                   SME_GLOBAL_CLASSA_STATS,
-                                  hdd_GetClassA_statisticsCB,
+                                  hdd_get_class_a_statistics_cb,
                                   0, // not periodic
                                   FALSE, //non-cached results
                                   staid,
-                                  &context);
+                                  cookie);
    if (eHAL_STATUS_SUCCESS != hstatus)
    {
       hddLog(VOS_TRACE_LEVEL_ERROR,
@@ -4839,30 +4895,25 @@ static VOS_STATUS  wlan_hdd_get_classAstats_for_station(hdd_adapter_t *pAdapter,
    }
    else
    {
-      lrc = wait_for_completion_interruptible_timeout(&context.completion,
-            msecs_to_jiffies(WLAN_WAIT_TIME_STATS));
-      if (lrc <= 0)
+      ret = hdd_request_wait_for_response(request);
+      if (ret)
       {
          hddLog(VOS_TRACE_LEVEL_ERROR,
-               "%s: SME %s while retrieving link speed",
-              __func__, (0 == lrc) ? "timeout" : "interrupt");
+               FL("SME timeout while retrieving link speed"));
+      }
+      else
+      {
+           priv = hdd_request_priv(request);
+           pAdapter->hdd_stats.ClassA_stat = priv->class_a_stats;
       }
    }
 
-   /* either we never sent a request, we sent a request and received a
-      response or we sent a request and timed out.  if we never sent a
-      request or if we sent a request and got a response, we want to
-      clear the magic out of paranoia.  if we timed out there is a
-      race condition such that the callback function could be
-      executing at the same time we are. of primary concern is if the
-      callback function had already verified the "magic" but had not
-      yet set the completion variable when a timeout occurred. we
-      serialize these activities by invalidating the magic while
-      holding a shared spinlock which will cause us to block if the
-      callback is currently executing */
-   spin_lock(&hdd_context_lock);
-   context.magic = 0;
-   spin_unlock(&hdd_context_lock);
+  /*
+   * either we never sent a request, we sent a request and received a
+   * response or we sent a request and timed out. Regardless we are
+   * done with the request.
+   */
+   hdd_request_put(request);
 
    return VOS_STATUS_SUCCESS;
 }
@@ -5008,7 +5059,7 @@ static const iw_handler      hostapd_handler[] =
    (iw_handler) NULL,           /* SIOCSIWFREQ */
    (iw_handler) iw_get_ap_freq,    /* SIOCGIWFREQ */
    (iw_handler) NULL,           /* SIOCSIWMODE */
-   (iw_handler) iw_get_mode,    /* SIOCGIWMODE */
+   (iw_handler) NULL,           /* SIOCGIWMODE */
    (iw_handler) NULL,           /* SIOCSIWSENS */
    (iw_handler) NULL,           /* SIOCGIWSENS */
    (iw_handler) NULL,           /* SIOCSIWRANGE */

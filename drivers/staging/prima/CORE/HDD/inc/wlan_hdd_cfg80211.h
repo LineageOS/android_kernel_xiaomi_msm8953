@@ -100,6 +100,13 @@
 #endif
 #endif
 
+/*
+ * Max number of supported csa_counters in beacons
+ * and probe responses. Set to the same value as
+ * IEEE80211_MAX_CSA_COUNTERS_NUM
+ */
+#define WLAN_HDD_MAX_NUM_CSA_COUNTERS 2
+
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 12, 0)) \
 	|| defined(BACKPORTED_CHANNEL_SWITCH_PRESENT)
 #define CHANNEL_SWITCH_SUPPORTED
@@ -121,6 +128,9 @@
 #define NUM_RADIOS  0x1
 #endif /* WLAN_FEATURE_LINK_LAYER_STATS */
 
+#define WOWL_PTRN_MAX_SIZE          128
+#define WOWL_PTRN_MASK_MAX_SIZE      16
+#define WOWL_MAX_PTRNS_ALLOWED       16
 
 typedef struct {
    u8 element_id;
@@ -202,6 +212,9 @@ enum qca_nl80211_vendor_subcmds {
     /* Wi-Fi Configuration subcommands */
     QCA_NL80211_VENDOR_SUBCMD_SET_WIFI_CONFIGURATION = 74,
     QCA_NL80211_VENDOR_SUBCMD_GET_WIFI_CONFIGURATION = 75,
+
+    QCA_NL80211_VENDOR_SUBCMD_GET_LOGGER_FEATURE_SET = 76,
+
     QCA_NL80211_VENDOR_SUBCMD_GET_RING_DATA = 77,
 
     QCA_NL80211_VENDOR_SUBCMD_MONITOR_RSSI = 80,
@@ -220,6 +233,62 @@ enum qca_nl80211_vendor_subcmds {
     QCA_NL80211_VENDOR_SUBCMD_NUD_STATS_SET = 149,
     /* Get the NUD stats, represented by the enum qca_attr_nud_stats_get */
     QCA_NL80211_VENDOR_SUBCMD_NUD_STATS_GET = 150,
+    /*
+     * Event indicating to the user space that the driver has detected an
+     * internal failure. This event carries the information indicating the
+     * reason that triggered this detection. The attributes for this
+     * command are defined in enum qca_wlan_vendor_attr_hang.
+     */
+    QCA_NL80211_VENDOR_SUBCMD_HANG = 157,
+};
+
+enum qca_wlan_vendor_hang_reason {
+	/* Unspecified reason */
+	QCA_WLAN_HANG_REASON_UNSPECIFIED = 0,
+	/* No Map for the MAC entry for the received frame */
+	QCA_WLAN_HANG_RX_HASH_NO_ENTRY_FOUND = 1,
+	/* peer deletion timeout happened */
+	QCA_WLAN_HANG_PEER_DELETION_TIMEDOUT = 2,
+	/* peer unmap timeout */
+	QCA_WLAN_HANG_PEER_UNMAP_TIMEDOUT = 3,
+	/* Scan request timed out */
+	QCA_WLAN_HANG_SCAN_REQ_EXPIRED = 4,
+	/* Consecutive Scan attempt failures */
+	QCA_WLAN_HANG_SCAN_ATTEMPT_FAILURES = 5,
+	/* Unable to get the message buffer */
+	QCA_WLAN_HANG_GET_MSG_BUFF_FAILURE = 6,
+	/* Current command processing is timedout */
+	QCA_WLAN_HANG_ACTIVE_LIST_TIMEOUT = 7,
+	/* Timeout for an ACK from FW for suspend request */
+	QCA_WLAN_HANG_SUSPEND_TIMEOUT = 8,
+	/* Timeout for an ACK from FW for resume request */
+	QCA_WLAN_HANG_RESUME_TIMEOUT = 9,
+	/* Transmission timeout for consecutive data frames */
+	QCA_WLAN_HANG_TRANSMISSIONS_TIMEOUT = 10,
+	/* Timeout for the TX completion status of data frame */
+	QCA_WLAN_HANG_TX_COMPLETE_TIMEOUT = 11,
+	/* DXE failure for tx/Rx, DXE resource unavailability */
+	QCA_WLAN_HANG_DXE_FAILURE = 12,
+	/* WMI pending commands exceed the maximum count */
+	QCA_WLAN_HANG_WMI_EXCEED_MAX_PENDING_CMDS = 13,
+	/* WDI failure for commands, WDI resource unavailability */
+	QCA_WLAN_HANG_WDI_FAILURE = 14,
+};
+
+/**
+ * enum qca_wlan_vendor_attr_hang - Used by the vendor command
+ * QCA_NL80211_VENDOR_SUBCMD_HANG.
+ */
+enum qca_wlan_vendor_attr_hang {
+	QCA_WLAN_VENDOR_ATTR_HANG_INVALID = 0,
+	/*
+	 * Reason for the Hang - Represented by enum
+	 * qca_wlan_vendor_hang_reason.
+	 */
+	 QCA_WLAN_VENDOR_ATTR_HANG_REASON = 1,
+	 QCA_WLAN_VENDOR_ATTR_HANG_AFTER_LAST,
+	 QCA_WLAN_VENDOR_ATTR_HANG_MAX =
+		QCA_WLAN_VENDOR_ATTR_HANG_AFTER_LAST - 1,
 };
 
 /**
@@ -418,6 +487,8 @@ enum qca_nl80211_vendor_subcmds_index {
     QCA_NL80211_VENDOR_SUBCMD_MONITOR_RSSI_INDEX,
     QCA_NL80211_VENDOR_SUBCMD_EXTSCAN_HOTLIST_AP_LOST_INDEX,
     QCA_NL80211_VENDOR_SUBCMD_NUD_STATS_GET_INDEX,
+    QCA_NL80211_VENDOR_SUBCMD_HANG_REASON_INDEX,
+    QCA_NL80211_VENDOR_SUBCMD_LINK_PROPERTIES_INDEX,
 };
 
 /**
@@ -1320,6 +1391,10 @@ enum qca_wlan_vendor_attr_link_properties {
     QCA_WLAN_VENDOR_ATTR_LINK_PROPERTIES_RATE_FLAGS = 2,
     /* Unsigned 32bit value for operating frequency */
     QCA_WLAN_VENDOR_ATTR_LINK_PROPERTIES_FREQ       = 3,
+    /* Unsigned 32bit value for STA flags*/
+    QCA_WLAN_VENDOR_ATTR_LINK_PROPERTIES_STA_FLAGS  = 4,
+    /*  An array of 6 Unsigned 8bit values for the STA MAC address*/
+    QCA_WLAN_VENDOR_ATTR_LINK_PROPERTIES_STA_MAC  = 5,
 
     /* KEEP LAST */
     QCA_WLAN_VENDOR_ATTR_LINK_PROPERTIES_AFTER_LAST,
@@ -1345,6 +1420,9 @@ enum qca_wlan_vendor_config {
     QCA_WLAN_VENDOR_ATTR_CONFIG_FINE_TIME_MEASUREMENT,
     QCA_WLAN_VENDOR_ATTR_CONFIG_TX_RATE,
     QCA_WLAN_VENDOR_ATTR_CONFIG_PENALIZE_AFTER_NCONS_BEACON_MISS,
+
+    /* 8-bit unsigned value to trigger QPower: 1-Enable, 0-Disable */
+    QCA_WLAN_VENDOR_ATTR_CONFIG_QPOWER = 25,
     /* 8-bit unsigned value to set the beacon miss threshold in 2.4 GHz */
     QCA_WLAN_VENDOR_ATTR_CONFIG_BEACON_MISS_THRESHOLD_24 = 37,
     /* 8-bit unsigned value to set the beacon miss threshold in 5 GHz */
@@ -1353,6 +1431,27 @@ enum qca_wlan_vendor_config {
     QCA_WLAN_VENDOR_ATTR_CONFIG_LAST,
     QCA_WLAN_VENDOR_ATTR_CONFIG_MAX =
     QCA_WLAN_VENDOR_ATTR_CONFIG_LAST - 1
+};
+
+/**
+ * enum qca_wlan_vendor_attr_get_logger_features - value for logger
+ *						   supported features
+ * @QCA_WLAN_VENDOR_ATTR_LOGGER_INVALID - Invalid
+ * @QCA_WLAN_VENDOR_ATTR_LOGGER_SUPPORTED - Indicate the supported features
+ * @QCA_WLAN_VENDOR_ATTR_LOGGER_AFTER_LAST - To keep track of the last enum
+ * @QCA_WLAN_VENDOR_ATTR_LOGGER_MAX - max value possible for this type
+ *
+ * enum values are used for NL attributes for data used by
+ * QCA_NL80211_VENDOR_SUBCMD_GET_LOGGER_FEATURE_SET sub command.
+ */
+enum qca_wlan_vendor_attr_get_logger_features {
+	QCA_WLAN_VENDOR_ATTR_LOGGER_INVALID = 0,
+	QCA_WLAN_VENDOR_ATTR_LOGGER_SUPPORTED = 1,
+
+	/* keep last */
+	QCA_WLAN_VENDOR_ATTR_LOGGER_AFTER_LAST,
+	QCA_WLAN_VENDOR_ATTR_LOGGER_MAX =
+		QCA_WLAN_VENDOR_ATTR_LOGGER_AFTER_LAST - 1,
 };
 
 /* Feature defines */
@@ -1521,6 +1620,24 @@ enum qca_wlan_vendor_attr_offloaded_packets
 };
 #endif
 
+/**
+ * enum wifi_logger_supported_features - values for supported logger features
+ * @WIFI_LOGGER_PER_PACKET_TX_RX_STATUS_SUPPORTED - Per packet statistics
+ * @WIFI_LOGGER_CONNECT_EVENT_SUPPORTED - Logging of Connectivity events
+ * @WIFI_LOGGER_POWER_EVENT_SUPPORTED - Power of driver
+ * @WIFI_LOGGER_WAKE_LOCK_SUPPORTED - Wakelock of driver
+ * @WIFI_LOGGER_WATCHDOG_TIMER_SUPPORTED - monitor FW health
+ */
+enum wifi_logger_supported_features {
+    WIFI_LOGGER_MEMORY_DUMP_SUPPORTED = (1 << (0)),
+    WIFI_LOGGER_PER_PACKET_TX_RX_STATUS_SUPPORTED = (1 << (1)),
+    WIFI_LOGGER_CONNECT_EVENT_SUPPORTED = (1 << (2)),
+    WIFI_LOGGER_POWER_EVENT_SUPPORTED = (1 << (3)),
+    WIFI_LOGGER_WAKE_LOCK_SUPPORTED = (1 << (4)),
+    WIFI_LOGGER_VERBOSE_SUPPORTED = (1 << (5)),
+    WIFI_LOGGER_WATCHDOG_TIMER_SUPPORTED = (1 << (6)),
+};
+
 struct cfg80211_bss* wlan_hdd_cfg80211_update_bss_db( hdd_adapter_t *pAdapter,
                                       tCsrRoamInfo *pRoamInfo
                                       );
@@ -1592,6 +1709,15 @@ extern void wlan_hdd_cfg80211_update_replayCounterCallback(void *callbackContext
 #endif
 void* wlan_hdd_change_country_code_cb(void *pAdapter);
 void hdd_select_cbmode( hdd_adapter_t *pAdapter,v_U8_t operationChannel);
+
+/*
+ * wlan_hdd_restore_channels() Restore the channels which were cached
+ * and disabled in __wlan_hdd_disable_channels api.
+ * @hdd_ctx: Pointer to the HDD context
+ *
+ * @Return: 0 on success, Error code on failure
+ */
+int wlan_hdd_restore_channels(hdd_context_t *pHddCtx);
 
 /*
  * hdd_update_indoor_channel() - enable/disable indoor channel
@@ -1666,6 +1792,16 @@ backported_cfg80211_vendor_event_alloc(struct wiphy *wiphy,
 #endif
 
 /**
+ * wlan_hdd_send_hang_reason_event() - Send hang reason to the userspace
+ * @hdd_ctx: Pointer to hdd context
+ * @reason: cds recovery reason
+ *
+ * Return: 0 on success or failure reason
+ */
+int wlan_hdd_send_hang_reason_event(hdd_context_t *hdd_ctx,
+				    unsigned int reason);
+
+/**
  * enum qca_wlan_vendor_attr_memory_dump - values for memory dump attributes
  * @QCA_WLAN_VENDOR_ATTR_MEMORY_DUMP_INVALID - Invalid
  * @QCA_WLAN_VENDOR_ATTR_REQUEST_ID - Indicate request ID
@@ -1727,4 +1863,18 @@ int wlan_hdd_cfg80211_del_station(struct wiphy *wiphy,
 int wlan_hdd_cfg80211_update_apies(hdd_adapter_t *pHostapdAdapter);
 int wlan_hdd_try_disconnect(hdd_adapter_t *pAdapter);
 void wlan_hdd_sap_get_sta_rssi(hdd_adapter_t *adapter, uint8_t staid, s8 *rssi);
+
+/*
+ *wlan_hdd_send_sta_authorized_event: Function to send station authorized
+ *event to user space in case of SAP
+ *@pAdapter: Pointer to the adapter
+ *@pHddCtx:  HDD Context
+ *@mac_addr: MAC address of the STA for whic the Authorized event needs to
+ *           be sent
+ *This api is used to send station authorized event to user space
+ */
+VOS_STATUS wlan_hdd_send_sta_authorized_event(hdd_adapter_t *adapter,
+                                              hdd_context_t *hdd_ctx,
+                                              const v_MACADDR_t *mac_addr);
+
 #endif

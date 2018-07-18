@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2013, 2016-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2013, 2016-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -425,8 +425,13 @@ typedef struct sDphHashNode
 
     tANI_U32    curTxMpduCnt;
 
+   /// Previous Sequence number of auth packet
 
+    tANI_U16    PrevAuthSeqno;
 
+    /// Previous Sequence number of assoc packet
+
+    tANI_U16    PrevAssocSeqno;
 
     /// number of consecutive TIMs sent without response
 

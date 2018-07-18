@@ -112,8 +112,6 @@
 static tANI_BOOLEAN bRoamScanOffloadStarted = VOS_FALSE;
 #endif
 
-#define MAX_PWR_FCC_CHAN_12 8
-#define MAX_PWR_FCC_CHAN_13 2
 
 /*-------------------------------------------------------------------------- 
   Static Type declarations
@@ -606,21 +604,6 @@ eHalStatus csrUpdateChannelList(tpAniSirGlobal pMac)
         pChanList->chanParam[num_channel].pwr =
           cfgGetRegulatoryMaxTransmitPower(pMac,
                                            pScan->defaultPowerTable[i].chanId);
-        if (pMac->scan.fcc_constraint)
-        {
-            if (pChanList->chanParam[num_channel].chanId == 12)
-            {
-                pChanList->chanParam[num_channel].pwr = MAX_PWR_FCC_CHAN_12;
-                smsLog(pMac, LOG1,
-                      "fcc_constraint is set, txpower for channel 12 is 8db ");
-            }
-            if (pChanList->chanParam[num_channel].chanId == 13)
-            {
-                pChanList->chanParam[num_channel].pwr = MAX_PWR_FCC_CHAN_13;
-                smsLog(pMac, LOG1,
-                      "fcc_constraint is set, txpower for channel 13 is 2db ");
-            }
-        }
 
         if (!pChanList->chanParam[num_channel].pwr)
         {
@@ -2748,12 +2731,11 @@ void csr_roam_remove_duplicate_cmd_from_list(tpAniSirGlobal pMac,
         pNextEntry = csrLLNext(pList, pEntry, LL_ACCESS_NOLOCK);
         pDupCommand = GET_BASE_ADDR(pEntry, tSmeCmd, Link);
         /*
-         * Remove the previous command if..
-         * - the new roam command is for the same RoamReason...
-         * - the new roam command is a NewProfileList.
-         * - the new roam command is a Forced Dissoc
-         * - the new roam command is from an 802.11 OID
-         *   (OID_SSID or OID_BSSID).
+         * If pCommand is not NULL remove the similar duplicate cmd for same
+         * reason as pCommand. If pCommand is NULL then check if eRoamReason is
+         * eCsrForcedDisassoc (disconnect) and remove all roam command for the
+         * sessionId, else if eRoamReason is eCsrHddIssued (connect) remove all
+         * connect (non disconenct) commands.
          */
         if ((pCommand && (pCommand->sessionId == pDupCommand->sessionId) &&
               ((pCommand->command == pDupCommand->command) &&
@@ -2772,7 +2754,8 @@ void csr_roam_remove_duplicate_cmd_from_list(tpAniSirGlobal pMac,
             ((sessionId == pDupCommand->sessionId) &&
              (eSmeCommandRoam == pDupCommand->command) &&
              ((eCsrForcedDisassoc == eRoamReason) ||
-              (eCsrHddIssued == eRoamReason))))
+              (eCsrHddIssued == eRoamReason &&
+               !CSR_IS_DISCONNECT_COMMAND(pDupCommand)))))
         {
             smsLog(pMac, LOGW, FL("RoamReason = %d"),
                            pDupCommand->u.roamCmd.roamReason);

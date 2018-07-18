@@ -1375,6 +1375,13 @@ REG_TABLE_ENTRY g_registry_table[] =
                  CFG_REORDER_TIME_VO_MIN,
                  CFG_REORDER_TIME_VO_MAX ),
 
+   REG_VARIABLE( CFG_ENABLE_PN_REPLAY_NAME , WLAN_PARAM_Integer,
+                 hdd_config_t, enablePNReplay,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_ENABLE_PN_REPLAY_DEFAULT,
+                 CFG_ENABLE_PN_REPLAY_MIN,
+                 CFG_ENABLE_PN_REPLAY_MAX ),
+
    REG_VARIABLE_STRING( CFG_WOWL_PATTERN_NAME, WLAN_PARAM_String,
                         hdd_config_t, wowlPattern,
                         VAR_FLAGS_OPTIONAL,
@@ -3984,6 +3991,35 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                 CFG_ENABLE_POWERSAVE_OFFLOAD_DEFAULT,
                 CFG_ENABLE_POWERSAVE_OFFLOAD_MIN,
                 CFG_ENABLE_POWERSAVE_OFFLOAD_MAX),
+
+  REG_VARIABLE(CFG_BTC_2M_DYN_LONG_WLAN_LEN_NAME, WLAN_PARAM_Integer,
+                hdd_config_t, btc_dyn_wlan_len,
+                VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                CFG_BTC_2M_DYN_LONG_WLAN_LEN_DEFAULT,
+                CFG_BTC_2M_DYN_LONG_WLAN_LEN_MIN,
+                CFG_BTC_2M_DYN_LONG_WLAN_LEN_MAX),
+
+  REG_VARIABLE(CFG_BTC_2M_DYN_LONG_BT_LEN_NAME, WLAN_PARAM_Integer,
+                hdd_config_t, btc_dyn_bt_len,
+                VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                CFG_BTC_2M_DYN_LONG_BT_LEN_DEFAULT,
+                CFG_BTC_2M_DYN_LONG_BT_LEN_MIN,
+                CFG_BTC_2M_DYN_LONG_BT_LEN_MAX),
+
+  REG_VARIABLE(CFG_BTC_2M_DYN_LONG_BT_EXT_LEN_NAME, WLAN_PARAM_Integer,
+                hdd_config_t, btc_dyn_bt_ext_len,
+                VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                CFG_BTC_2M_DYN_LONG_BT_EXT_LEN_DEFAULT,
+                CFG_BTC_2M_DYN_LONG_BT_EXT_LEN_MIN,
+                CFG_BTC_2M_DYN_LONG_BT_EXT_LEN_MAX),
+
+  REG_VARIABLE(CFG_BTC_2M_DYN_LONG_NUM_BT_EXT_NAME, WLAN_PARAM_Integer,
+                hdd_config_t, btc_dyn_num_bt_ext,
+                VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                CFG_BTC_2M_DYN_LONG_NUM_BT_EXT_DEFAULT,
+                CFG_BTC_2M_DYN_LONG_NUM_BT_EXT_MIN,
+                CFG_BTC_2M_DYN_LONG_NUM_BT_EXT_MAX),
+
 };
 
 /*
@@ -4938,6 +4974,7 @@ static VOS_STATUS hdd_apply_cfg_ini( hdd_context_t *pHddCtx, tCfgIniEntry* iniTa
    {
       hddLog(LOGE, "%s: MAX_CFG_INI_ITEMS too small, must be at least %ld",
              __func__, cRegTableEntries);
+      VOS_ASSERT(1);
    }
 
    for ( idx = 0; idx < cRegTableEntries; idx++, pRegEntry++ )
@@ -6476,6 +6513,43 @@ v_BOOL_t hdd_update_config_dat( hdd_context_t *pHddCtx )
       fStatus = FALSE;
       hddLog(LOGE, "Couldn't pass WNI_CFG_ENABLE_POWERSAVE_OFFLOAD to CCM");
    }
+
+   if(ccmCfgSetInt(pHddCtx->hHal, WNI_CFG_BTC_2M_DYN_LONG_WLAN_LEN,
+                   pConfig->btc_dyn_wlan_len, NULL,
+                   eANI_BOOLEAN_FALSE)
+       ==eHAL_STATUS_FAILURE)
+   {
+      fStatus = FALSE;
+      hddLog(LOGE, "Couldn't pass WNI_CFG_BTC_2M_DYN_LONG_WLAN_LEN to CCM");
+   }
+
+   if(ccmCfgSetInt(pHddCtx->hHal, WNI_CFG_BTC_2M_DYN_LONG_BT_LEN,
+                   pConfig->btc_dyn_bt_len, NULL,
+                   eANI_BOOLEAN_FALSE)
+       ==eHAL_STATUS_FAILURE)
+   {
+      fStatus = FALSE;
+      hddLog(LOGE, "Couldn't pass WNI_CFG_BTC_2M_DYN_LONG_BT_LEN to CCM");
+   }
+   if(ccmCfgSetInt(pHddCtx->hHal, WNI_CFG_BTC_2M_DYN_LONG_BT_EXT_LEN,
+                   pConfig->btc_dyn_bt_ext_len, NULL,
+                   eANI_BOOLEAN_FALSE)
+       ==eHAL_STATUS_FAILURE)
+   {
+      fStatus = FALSE;
+      hddLog(LOGE, "Couldn't pass WNI_CFG_BTC_2M_DYN_LONG_BT_EXT_LEN to CCM");
+   }
+   if(ccmCfgSetInt(pHddCtx->hHal, WNI_CFG_BTC_2M_DYN_LONG_NUM_BT_EXT,
+                   pConfig->btc_dyn_num_bt_ext, NULL,
+                   eANI_BOOLEAN_FALSE)
+       ==eHAL_STATUS_FAILURE)
+   {
+      fStatus = FALSE;
+      hddLog(LOGE, "Couldn't pass WNI_CFG_BTC_2M_DYN_LONG_NUM_BT_EXT to CCM");
+   }
+
+
+
    return fStatus;
 }
 
