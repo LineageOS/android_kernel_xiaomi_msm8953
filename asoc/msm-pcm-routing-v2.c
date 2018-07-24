@@ -2469,13 +2469,13 @@ static int msm_routing_lsm_port_put(struct snd_kcontrol *kcontrol,
 		lsm_port = ADM_LSM_PORT_ID;
 		break;
 	case 10:
-		lsm_port = AFE_PORT_ID_PRIMARY_TDM_TX_2;
+		lsm_port = AFE_PORT_ID_INT3_MI2S_TX;
 		break;
 	case 11:
-		lsm_port = AFE_PORT_ID_PRIMARY_TDM_TX_3;
+		lsm_port = AFE_PORT_ID_PRIMARY_TDM_TX_2;
 		break;
 	case 12:
-		lsm_port = AFE_PORT_ID_INT3_MI2S_TX;
+		lsm_port = AFE_PORT_ID_PRIMARY_TDM_TX_3;
 		break;
 	default:
 		pr_err("Default lsm port");
