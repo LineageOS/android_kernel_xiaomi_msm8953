@@ -10663,7 +10663,8 @@ void hdd_update_indoor_channel(hdd_context_t *hdd_ctx, bool disable)
 
 int wlan_hdd_disconnect( hdd_adapter_t *pAdapter, u16 reason )
 {
-    int status, result = 0;
+    eHalStatus status;
+    int result = 0;
     hdd_station_ctx_t *pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
     long ret;
@@ -10672,11 +10673,6 @@ int wlan_hdd_disconnect( hdd_adapter_t *pAdapter, u16 reason )
 
     ENTER();
 
-    status = wlan_hdd_validate_context(pHddCtx);
-    if (0 != status)
-    {
-        return status;
-    }
     /* Indicate sme of disconnect so that in progress connection or preauth
      * can be aborted
      */
