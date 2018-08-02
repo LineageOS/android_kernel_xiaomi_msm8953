@@ -84,16 +84,14 @@ struct hdd_request *hdd_request_alloc(const struct hdd_request_params *params)
 
 	if (!is_initialized) {
 		hddLog(VOS_TRACE_LEVEL_ERROR,
-		       FL("invoked when not initialized from %pS"),
-		       (void *)_RET_IP_);
+		       FL("invoked when not initialized"));
 		return NULL;
 	}
 
 	length = sizeof(*request) + params->priv_size;
 	request = vos_mem_malloc(length);
 	if (!request) {
-		hddLog(VOS_TRACE_LEVEL_ERROR, FL("allocation failed for %pS"),
-		       (void *)_RET_IP_);
+		hddLog(VOS_TRACE_LEVEL_ERROR, FL("allocation failed"));
 		return NULL;
 	}
 	request->reference_count = 1;
@@ -103,8 +101,8 @@ struct hdd_request *hdd_request_alloc(const struct hdd_request_params *params)
 	request->cookie = cookie++;
 	hdd_list_insert_back(&requests, &request->node);
 	spin_unlock_bh(&spinlock);
-	hddLog(VOS_TRACE_LEVEL_INFO, FL("request %pK, cookie %pK, caller %pS"),
-	       request, request->cookie, (void *)_RET_IP_);
+	hddLog(VOS_TRACE_LEVEL_INFO, FL("request %pK, cookie %pK"),
+	       request, request->cookie);
 
 	return request;
 }
@@ -126,8 +124,7 @@ struct hdd_request *hdd_request_get(void *cookie)
 
 	if (!is_initialized) {
 		hddLog(VOS_TRACE_LEVEL_ERROR,
-		       FL("invoked when not initialized from %pS"),
-		       (void *)_RET_IP_);
+		       FL("invoked when not initialized"));
 		return NULL;
 	}
 	spin_lock_bh(&spinlock);
@@ -135,8 +132,8 @@ struct hdd_request *hdd_request_get(void *cookie)
 	if (request)
 		request->reference_count++;
 	spin_unlock_bh(&spinlock);
-	hddLog(VOS_TRACE_LEVEL_INFO, FL("cookie %pK, request %pK, caller %pS"),
-	       cookie, request, (void *)_RET_IP_);
+	hddLog(VOS_TRACE_LEVEL_INFO, FL("cookie %pK, request %pK"),
+	       cookie, request);
 
 	return request;
 }
@@ -145,8 +142,8 @@ void hdd_request_put(struct hdd_request *request)
 {
 	bool unlinked = false;
 
-	hddLog(VOS_TRACE_LEVEL_INFO, FL("request %pK, cookie %pK, caller %pS"),
-	       request, request->cookie, (void *)_RET_IP_);
+	hddLog(VOS_TRACE_LEVEL_INFO, FL("request %pK, cookie %pK"),
+	       request, request->cookie);
 	spin_lock_bh(&spinlock);
 	request->reference_count--;
 	if (0 == request->reference_count) {
@@ -171,7 +168,6 @@ void hdd_request_complete(struct hdd_request *request)
 
 void hdd_request_manager_init(void)
 {
-	hddLog(VOS_TRACE_LEVEL_INFO, FL("%pS"), (void *)_RET_IP_);
 	if (is_initialized)
 		return;
 
@@ -189,6 +185,5 @@ void hdd_request_manager_init(void)
  */
 void hdd_request_manager_deinit(void)
 {
-	hddLog(VOS_TRACE_LEVEL_INFO, FL("%pS"), (void *)_RET_IP_);
 	is_initialized = false;
 }
