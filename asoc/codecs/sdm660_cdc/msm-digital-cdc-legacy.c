@@ -1977,6 +1977,14 @@ static int msm_dig_cdc_probe(struct platform_device *pdev)
 	u32 dig_cdc_addr;
 	struct msm_dig_priv *msm_dig_cdc;
 	struct dig_ctrl_platform_data *pdata;
+	int adsp_state = 0;
+
+	adsp_state = apr_get_subsys_state();
+	if (adsp_state == APR_SUBSYS_DOWN) {
+		dev_err(&pdev->dev, "Adsp is not loaded yet %d\n",
+			adsp_state);
+		return -EPROBE_DEFER;
+	}
 
 	msm_dig_cdc = devm_kzalloc(&pdev->dev, sizeof(struct msm_dig_priv),
 			      GFP_KERNEL);
