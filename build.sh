@@ -21,7 +21,7 @@ export KBUILD_BUILD_HOST=reactor
 export ARCH=arm64
 export SUBARCH=arm64
 IMAGE="${ROOT_PATH}/out/arch/${ARCH}/boot/Image.gz-dtb"
-ZIPDIR="/home/adesikha15/zip"
+ZIPDIR="/home/adesh15/zip"
 
 clean()
 {
@@ -32,12 +32,12 @@ rm -rf $ZIPDIR/Image*
 
 defconfig()
 {
-export CLANG_PATH=/home/adesikha15/clang/clang-7.0.2/bin
+export CLANG_PATH=/home/adesh15/clang/clang-7.0.2/bin
 export PATH=${CLANG_PATH}:${PATH}
 export CLANG_TRIPLE=aarch64-linux-gnu-
-export TCHAIN_PATH="/home/adesikha15/gcc-4.9/bin/aarch64-linux-android-"
+export TCHAIN_PATH="/home/adesh15/gcc-4.9/bin/aarch64-linux-android-"
 export CROSS_COMPILE="${CCACHE} ${TCHAIN_PATH}"
-export CLANG_TCHAIN="/home/adesikha15/clang/clang-7.0.2/bin/clang"
+export CLANG_TCHAIN="/home/adesh15/clang/clang-7.0.2/bin/clang"
 export KBUILD_COMPILER_STRING="$(${CLANG_TCHAIN} --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g')"
 FINAL_VER="${KERNEL_NAME}-${DEVICE}-clang"
 FINAL_ZIP="${FINAL_VER}-$(date +"%Y%m%d").zip"
