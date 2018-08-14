@@ -45,7 +45,8 @@ enum {
 };
 
 enum {
-	BT_SLIM7,
+	BT_SLIM7_RX,
+	BT_SLIM7_TX,
 	FM_SLIM8,
 	SLIM_MAX,
 };
@@ -139,7 +140,8 @@ static struct dev_config int_mi2s_cfg[] = {
 };
 
 static struct dev_config bt_fm_cfg[] = {
-	[BT_SLIM7] = {SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
+	[BT_SLIM7_RX] = {SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
+	[BT_SLIM7_TX] = {SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
 	[FM_SLIM8] = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2},
 };
 
@@ -152,6 +154,12 @@ static const char *const int_mi2s_tx_ch_text[] = {"One", "Two",
 static char const *bit_format_text[] = {"S16_LE", "S24_LE", "S24_3LE"};
 static const char *const loopback_mclk_text[] = {"DISABLE", "ENABLE"};
 static char const *bt_sample_rate_text[] = {"KHZ_8", "KHZ_16",
+					"KHZ_44P1", "KHZ_48",
+					"KHZ_88P2", "KHZ_96"};
+static char const *bt_sample_rate_rx_text[] = {"KHZ_8", "KHZ_16",
+					"KHZ_44P1", "KHZ_48",
+					"KHZ_88P2", "KHZ_96"};
+static char const *bt_sample_rate_tx_text[] = {"KHZ_8", "KHZ_16",
 					"KHZ_44P1", "KHZ_48",
 					"KHZ_88P2", "KHZ_96"};
 
@@ -170,6 +178,8 @@ static SOC_ENUM_SINGLE_EXT_DECL(int4_mi2s_rx_format, bit_format_text);
 static SOC_ENUM_SINGLE_EXT_DECL(int5_mi2s_tx_chs, int_mi2s_ch_text);
 static SOC_ENUM_SINGLE_EXT_DECL(loopback_mclk_en, loopback_mclk_text);
 static SOC_ENUM_SINGLE_EXT_DECL(bt_sample_rate, bt_sample_rate_text);
+static SOC_ENUM_SINGLE_EXT_DECL(bt_sample_rate_rx, bt_sample_rate_rx_text);
+static SOC_ENUM_SINGLE_EXT_DECL(bt_sample_rate_tx, bt_sample_rate_tx_text);
 
 static int msm_dmic_event(struct snd_soc_dapm_widget *w,
 			  struct snd_kcontrol *kcontrol, int event);
@@ -639,12 +649,18 @@ static int msm_btfm_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 
 	switch (dai_link->id) {
 	case MSM_BACKEND_DAI_SLIMBUS_7_RX:
+		param_set_mask(params, SNDRV_PCM_HW_PARAM_FORMAT,
+				bt_fm_cfg[BT_SLIM7_RX].bit_format);
+		rate->min = rate->max = bt_fm_cfg[BT_SLIM7_RX].sample_rate;
+		channels->min = channels->max =
+			bt_fm_cfg[BT_SLIM7_RX].channels;
+		break;
 	case MSM_BACKEND_DAI_SLIMBUS_7_TX:
 		param_set_mask(params, SNDRV_PCM_HW_PARAM_FORMAT,
-				bt_fm_cfg[BT_SLIM7].bit_format);
-		rate->min = rate->max = bt_fm_cfg[BT_SLIM7].sample_rate;
+				bt_fm_cfg[BT_SLIM7_TX].bit_format);
+		rate->min = rate->max = bt_fm_cfg[BT_SLIM7_TX].sample_rate;
 		channels->min = channels->max =
-			bt_fm_cfg[BT_SLIM7].channels;
+			bt_fm_cfg[BT_SLIM7_TX].channels;
 		break;
 
 	case MSM_BACKEND_DAI_SLIMBUS_8_TX:
@@ -849,7 +865,7 @@ static int msm_bt_sample_rate_get(struct snd_kcontrol *kcontrol,
 	 * when used for BT_SCO use case. Return either Rx or Tx sample rate
 	 * value.
 	 */
-	switch (bt_fm_cfg[BT_SLIM7].sample_rate) {
+	switch (bt_fm_cfg[BT_SLIM7_RX].sample_rate) {
 	case SAMPLING_RATE_96KHZ:
 		ucontrol->value.integer.value[0] = 5;
 		break;
@@ -871,7 +887,7 @@ static int msm_bt_sample_rate_get(struct snd_kcontrol *kcontrol,
 		break;
 	}
 	pr_debug("%s: sample rate = %d", __func__,
-		 bt_fm_cfg[BT_SLIM7].sample_rate);
+		 bt_fm_cfg[BT_SLIM7_RX].sample_rate);
 
 	return 0;
 }
@@ -881,29 +897,159 @@ static int msm_bt_sample_rate_put(struct snd_kcontrol *kcontrol,
 {
 	switch (ucontrol->value.integer.value[0]) {
 	case 1:
-		bt_fm_cfg[BT_SLIM7].sample_rate = SAMPLING_RATE_16KHZ;
+		bt_fm_cfg[BT_SLIM7_RX].sample_rate = SAMPLING_RATE_16KHZ;
+		bt_fm_cfg[BT_SLIM7_TX].sample_rate = SAMPLING_RATE_16KHZ;
 		break;
 	case 2:
-		bt_fm_cfg[BT_SLIM7].sample_rate = SAMPLING_RATE_44P1KHZ;
+		bt_fm_cfg[BT_SLIM7_RX].sample_rate = SAMPLING_RATE_44P1KHZ;
+		bt_fm_cfg[BT_SLIM7_TX].sample_rate = SAMPLING_RATE_44P1KHZ;
 		break;
 	case 3:
-		bt_fm_cfg[BT_SLIM7].sample_rate = SAMPLING_RATE_48KHZ;
+		bt_fm_cfg[BT_SLIM7_RX].sample_rate = SAMPLING_RATE_48KHZ;
+		bt_fm_cfg[BT_SLIM7_TX].sample_rate = SAMPLING_RATE_48KHZ;
 		break;
 	case 4:
-		bt_fm_cfg[BT_SLIM7].sample_rate = SAMPLING_RATE_88P2KHZ;
+		bt_fm_cfg[BT_SLIM7_RX].sample_rate = SAMPLING_RATE_88P2KHZ;
+		bt_fm_cfg[BT_SLIM7_TX].sample_rate = SAMPLING_RATE_88P2KHZ;
 		break;
 	case 5:
-		bt_fm_cfg[BT_SLIM7].sample_rate = SAMPLING_RATE_96KHZ;
+		bt_fm_cfg[BT_SLIM7_RX].sample_rate = SAMPLING_RATE_96KHZ;
+		bt_fm_cfg[BT_SLIM7_TX].sample_rate = SAMPLING_RATE_96KHZ;
 		break;
 	case 0:
 	default:
-		bt_fm_cfg[BT_SLIM7].sample_rate = SAMPLING_RATE_8KHZ;
+		bt_fm_cfg[BT_SLIM7_RX].sample_rate = SAMPLING_RATE_8KHZ;
+		bt_fm_cfg[BT_SLIM7_TX].sample_rate = SAMPLING_RATE_8KHZ;
 		break;
 	}
 	pr_debug("%s: sample rates: slim7_rx = %d, value = %d\n",
 		 __func__,
-		 bt_fm_cfg[BT_SLIM7].sample_rate,
+		 bt_fm_cfg[BT_SLIM7_RX].sample_rate,
 		 ucontrol->value.enumerated.item[0]);
+
+	return 0;
+}
+
+static int msm_bt_sample_rate_rx_get(struct snd_kcontrol *kcontrol,
+					struct snd_ctl_elem_value *ucontrol)
+{
+	switch (bt_fm_cfg[BT_SLIM7_RX].sample_rate) {
+	case SAMPLING_RATE_96KHZ:
+		ucontrol->value.integer.value[0] = 5;
+		break;
+	case SAMPLING_RATE_88P2KHZ:
+		ucontrol->value.integer.value[0] = 4;
+		break;
+	case SAMPLING_RATE_48KHZ:
+		ucontrol->value.integer.value[0] = 3;
+		break;
+	case SAMPLING_RATE_44P1KHZ:
+		ucontrol->value.integer.value[0] = 2;
+		break;
+	case SAMPLING_RATE_16KHZ:
+		ucontrol->value.integer.value[0] = 1;
+		break;
+	case SAMPLING_RATE_8KHZ:
+	default:
+		ucontrol->value.integer.value[0] = 0;
+		break;
+	}
+	pr_debug("%s: sample rate = %d", __func__,
+		bt_fm_cfg[BT_SLIM7_RX].sample_rate);
+
+	return 0;
+}
+
+static int msm_bt_sample_rate_rx_put(struct snd_kcontrol *kcontrol,
+					struct snd_ctl_elem_value *ucontrol)
+{
+	switch (ucontrol->value.integer.value[0]) {
+	case 1:
+		bt_fm_cfg[BT_SLIM7_RX].sample_rate = SAMPLING_RATE_16KHZ;
+		break;
+	case 2:
+		bt_fm_cfg[BT_SLIM7_RX].sample_rate = SAMPLING_RATE_44P1KHZ;
+		break;
+	case 3:
+		bt_fm_cfg[BT_SLIM7_RX].sample_rate = SAMPLING_RATE_48KHZ;
+		break;
+	case 4:
+		bt_fm_cfg[BT_SLIM7_RX].sample_rate = SAMPLING_RATE_88P2KHZ;
+		break;
+	case 5:
+		bt_fm_cfg[BT_SLIM7_RX].sample_rate = SAMPLING_RATE_96KHZ;
+		break;
+	case 0:
+	default:
+		bt_fm_cfg[BT_SLIM7_RX].sample_rate = SAMPLING_RATE_8KHZ;
+		break;
+	}
+	pr_debug("%s: sample rates: slim7_rx = %d, value = %d\n",
+		__func__,
+		bt_fm_cfg[BT_SLIM7_RX].sample_rate,
+		ucontrol->value.enumerated.item[0]);
+
+	return 0;
+}
+
+static int msm_bt_sample_rate_tx_get(struct snd_kcontrol *kcontrol,
+					struct snd_ctl_elem_value *ucontrol)
+{
+	switch (bt_fm_cfg[BT_SLIM7_TX].sample_rate) {
+	case SAMPLING_RATE_96KHZ:
+		ucontrol->value.integer.value[0] = 5;
+		break;
+	case SAMPLING_RATE_88P2KHZ:
+		ucontrol->value.integer.value[0] = 4;
+		break;
+	case SAMPLING_RATE_48KHZ:
+		ucontrol->value.integer.value[0] = 3;
+		break;
+	case SAMPLING_RATE_44P1KHZ:
+		ucontrol->value.integer.value[0] = 2;
+		break;
+	case SAMPLING_RATE_16KHZ:
+		ucontrol->value.integer.value[0] = 1;
+		break;
+	case SAMPLING_RATE_8KHZ:
+	default:
+		ucontrol->value.integer.value[0] = 0;
+		break;
+	}
+	pr_debug("%s: sample rate = %d", __func__,
+		bt_fm_cfg[BT_SLIM7_TX].sample_rate);
+
+	return 0;
+}
+
+static int msm_bt_sample_rate_tx_put(struct snd_kcontrol *kcontrol,
+					struct snd_ctl_elem_value *ucontrol)
+{
+	switch (ucontrol->value.integer.value[0]) {
+	case 1:
+		bt_fm_cfg[BT_SLIM7_TX].sample_rate = SAMPLING_RATE_16KHZ;
+		break;
+	case 2:
+		bt_fm_cfg[BT_SLIM7_TX].sample_rate = SAMPLING_RATE_44P1KHZ;
+		break;
+	case 3:
+		bt_fm_cfg[BT_SLIM7_TX].sample_rate = SAMPLING_RATE_48KHZ;
+		break;
+	case 4:
+		bt_fm_cfg[BT_SLIM7_TX].sample_rate = SAMPLING_RATE_88P2KHZ;
+		break;
+	case 5:
+		bt_fm_cfg[BT_SLIM7_TX].sample_rate = SAMPLING_RATE_96KHZ;
+		break;
+	case 0:
+	default:
+		bt_fm_cfg[BT_SLIM7_TX].sample_rate = SAMPLING_RATE_8KHZ;
+		break;
+	}
+	pr_debug("%s: sample rates: slim7_tx = %d, value = %d\n",
+		__func__,
+		bt_fm_cfg[BT_SLIM7_TX].sample_rate,
+		ucontrol->value.enumerated.item[0]);
 
 	return 0;
 }
@@ -933,6 +1079,12 @@ static const struct snd_kcontrol_new msm_snd_controls[] = {
 	SOC_ENUM_EXT("BT SampleRate", bt_sample_rate,
 			msm_bt_sample_rate_get,
 			msm_bt_sample_rate_put),
+	SOC_ENUM_EXT("BT SampleRate RX", bt_sample_rate_rx,
+			msm_bt_sample_rate_rx_get,
+			msm_bt_sample_rate_rx_put),
+	SOC_ENUM_EXT("BT SampleRate TX", bt_sample_rate_tx,
+			msm_bt_sample_rate_tx_get,
+			msm_bt_sample_rate_tx_put),
 };
 
 static const struct snd_kcontrol_new msm_loopback_snd_controls[] = {
