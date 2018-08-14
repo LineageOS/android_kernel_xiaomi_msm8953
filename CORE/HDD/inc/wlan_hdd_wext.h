@@ -176,7 +176,7 @@ typedef enum
 #define IE_VENDOR_OUI_SIZE   4
 
 /** Maximum Length of WPA/RSN IE */
-#define MAX_WPA_RSN_IE_LEN 40
+#define MAX_WPA_RSN_IE_LEN 255
 
 /** Maximum Number of WEP KEYS */
 #define MAX_WEP_KEYS 4
