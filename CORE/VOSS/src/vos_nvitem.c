@@ -3726,7 +3726,8 @@ int vos_update_nv_table_from_wiphy_band(void *hdd_ctx,
                     (IEEE80211_CHAN_RADAR | IEEE80211_CHAN_PASSIVE_SCAN |
                     IEEE80211_CHAN_INDOOR_ONLY )))
             {
-                if (pHddCtx->cfg_ini->indoor_channel_support == false &&
+                if (pHddCtx && pHddCtx->cfg_ini &&
+                    pHddCtx->cfg_ini->indoor_channel_support == false &&
                     wiphy->bands[i]->channels[j].flags &
                     IEEE80211_CHAN_INDOOR_ONLY)
                     wiphy->bands[i]->channels[j].flags |=
@@ -3740,9 +3741,10 @@ int vos_update_nv_table_from_wiphy_band(void *hdd_ctx,
                 else
 #endif
                 {
-                    if ((pHddCtx->cfg_ini->indoor_channel_support == true &&
-                          wiphy->bands[i]->channels[j].flags &
-                          IEEE80211_CHAN_INDOOR_ONLY)) {
+                    if ((pHddCtx && pHddCtx->cfg_ini &&
+                         pHddCtx->cfg_ini->indoor_channel_support == true &&
+                         wiphy->bands[i]->channels[j].flags &
+                         IEEE80211_CHAN_INDOOR_ONLY)) {
                         pnvEFSTable->halnv.tables.regDomains[temp_reg_domain].\
                             channels[k].enabled = NV_CHANNEL_ENABLE;
                     } else {
