@@ -15410,12 +15410,13 @@ eHalStatus csrSendMBSetContextReqMsg( tpAniSirGlobal pMac, tANI_U32 sessionId,
 {
     tSirSmeSetContextReq *pMsg;
     tANI_U16 msgLen;
-    eHalStatus status = eHAL_STATUS_FAILURE;
+    VOS_STATUS status;
     tAniEdType tmpEdType;
     tAniKeyDirection tmpDirection;
     tANI_U8 *pBuf = NULL;
     tANI_U8 *p = NULL;
     tCsrRoamSession *pSession = CSR_GET_SESSION( pMac, sessionId );
+    vos_msg_t msg;
     smsLog( pMac, LOG1, FL("keylength is %d, Encry type is : %d"),
                             keyLength, edType);
     do {
@@ -15485,9 +15486,19 @@ eHalStatus csrSendMBSetContextReqMsg( tpAniSirGlobal pMac, tANI_U32 sessionId,
                 p = pal_set_U16( p, pal_cpu_to_be16(keyLength) );
         if ( keyLength && pKey ) 
             vos_mem_copy(p, pKey, keyLength);
-        status = palSendMBMessage(pMac->hHdd, pMsg);
+        msg.type = pMsg->messageType;
+        msg.bodyptr = pMsg;
+        msg.bodyval = 0;
+        if (fUnicast)
+            status = vos_mq_post_message_high_pri(VOS_MQ_ID_PE, &msg);
+        else
+            status = vos_mq_post_message(VOS_MQ_ID_PE, &msg);
+        if (!VOS_IS_STATUS_SUCCESS(status)) {
+            vos_mem_free(pMsg);
+            return eHAL_STATUS_FAILURE;
+        }
     } while( 0 );
-    return( status );
+    return eHAL_STATUS_SUCCESS;
 }
 
 eHalStatus csrSendMBStartBssReqMsg( tpAniSirGlobal pMac, tANI_U32 sessionId, eCsrRoamBssType bssType, 
