@@ -8737,6 +8737,10 @@ VOS_STATUS WDA_ProcessUpdateProbeRspTemplate(tWDA_CbContext *pWDA,
    WDI_Status status = WDI_STATUS_SUCCESS;
    WDI_UpdateProbeRspTemplateParamsType *wdiSendProbeRspParam =
          vos_mem_malloc(sizeof(WDI_UpdateProbeRspTemplateParamsType));
+
+   if(pSendProbeRspParams->probeRespTemplateLen > SCH_MAX_PROBE_RESP_SIZE)
+      pSendProbeRspParams->probeRespTemplateLen = SCH_MAX_PROBE_RESP_SIZE;
+
    VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
                 "------> %s probeRespTemplateLen %d" ,__func__,
                 pSendProbeRspParams->probeRespTemplateLen);
