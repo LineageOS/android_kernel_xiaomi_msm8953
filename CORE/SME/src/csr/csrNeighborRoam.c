@@ -5399,6 +5399,13 @@ eHalStatus csrNeighborRoamCandidateFoundIndHdlr(tpAniSirGlobal pMac, void* pMsg)
     tCsrRoamSession *pSession = CSR_GET_SESSION(pMac,
                                                pNeighborRoamInfo->csrSessionId);
 
+    if(!pSession)
+    {
+        smsLog(pMac, LOGE, FL("session %d not found "),
+               pNeighborRoamInfo->csrSessionId);
+        return eHAL_STATUS_FAILURE;
+    }
+
     if (vos_check_monitor_state())
     {
         smsLog(pMac, LOGW, FL("Ignore raom candidate when roam started"));
