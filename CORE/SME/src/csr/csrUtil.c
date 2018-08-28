@@ -4025,7 +4025,7 @@ tANI_U8 csrConstructRSNIe( tHalHandle hHal, tANI_U32 sessionId, tCsrRoamProfile 
 #endif
     tDot11fBeaconIEs *pIesLocal = pIes;
     eCsrAuthType negAuthType = eCSR_AUTH_TYPE_UNKNOWN;
-    tDot11fIERSN rsn_ie;
+    tDot11fIERSN rsn_ie = {0};
 
     smsLog(pMac, LOGW, "%s called...", __func__);
 
