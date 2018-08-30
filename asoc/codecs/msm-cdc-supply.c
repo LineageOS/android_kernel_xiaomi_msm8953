@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -387,7 +387,7 @@ int msm_cdc_get_power_supplies(struct device *dev,
 	static_sup_cnt = of_property_count_strings(dev->of_node,
 						   static_prop_name);
 	if (static_sup_cnt < 0) {
-		dev_err(dev, "%s: Failed to get static supplies(%d)\n",
+		dev_info(dev, "%s: Failed to get static supplies(%d)\n",
 			__func__, static_sup_cnt);
 		rc = static_sup_cnt;
 		goto err_supply_cnt;
