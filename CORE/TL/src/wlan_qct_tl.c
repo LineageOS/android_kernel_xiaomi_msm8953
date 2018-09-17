@@ -6639,7 +6639,7 @@ WLANTL_RxFrames
               }
               else
               {
-                  VOS_TRACE(VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
+                  VOS_TRACE(VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_DEBUG,
                             "staId %d doesn't exist"
                             " but mapped to AP staId %d PN:[0x%llX]",
                             ucSTAId, ucAddr3STAId, pn_num);
