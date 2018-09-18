@@ -16941,7 +16941,7 @@ static int msm_pcm_routing_close(struct snd_pcm_substream *substream)
 				if (test_bit(idx, &copp))
 					break;
 			fdai->be_srate = bedai->sample_rate;
-			port_id = get_port_id(msm_bedais[i].port_id);
+			port_id = get_port_id(bedai->port_id);
 			topology = adm_get_topology_for_port_copp_idx(port_id,
 								     idx);
 			adm_close(port_id, fdai->perf_mode, idx);
