@@ -10857,6 +10857,8 @@ int wlan_hdd_restore_channels(hdd_context_t *hdd_ctx)
 
 		for (band_num = 0; band_num < HDD_NUM_NL80211_BANDS;
 		     band_num++) {
+			if (!wiphy->bands[band_num])
+				continue;
 			for (channel_num = 0; channel_num <
 				wiphy->bands[band_num]->n_channels;
 				channel_num++) {
@@ -10936,6 +10938,8 @@ static int wlan_hdd_disable_channels(hdd_context_t *hdd_ctx)
 
 		for (band_num = 0; band_num < HDD_NUM_NL80211_BANDS;
 							band_num++) {
+			if (!wiphy->bands[band_num])
+				continue;
 			for (band_ch_num = 0; band_ch_num <
 					wiphy->bands[band_num]->n_channels;
 					band_ch_num++) {
