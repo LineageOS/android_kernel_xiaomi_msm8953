@@ -332,6 +332,8 @@ static int idletimer_tg_create(struct idletimer_tg_info *info)
 
 	INIT_WORK(&info->timer->work, idletimer_tg_work);
 
+	INIT_WORK(&info->timer->work, idletimer_tg_work);
+
 	mod_timer(&info->timer->timer,
 		  msecs_to_jiffies(info->timeout * 1000) + jiffies);
 
