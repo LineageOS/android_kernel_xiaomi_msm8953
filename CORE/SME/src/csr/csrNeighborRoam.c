@@ -5670,13 +5670,18 @@ eHalStatus csrNeighborRoamHandoffReqHdlr(tpAniSirGlobal pMac, void* pMsg)
                              pHandoffReqInfo->bssid,
                              6);
                 pNeighborRoamInfo->uOsRequestedHandoff = 1;
-                status = csrRoamOffloadScan(pMac, ROAM_SCAN_OFFLOAD_STOP,
-                                            REASON_OS_REQUESTED_ROAMING_NOW);
-                if (eHAL_STATUS_SUCCESS != status)
-                {
-                    smsLog(pMac, LOGE, FL("csrRoamOffloadScan failed"));
-                    pNeighborRoamInfo->uOsRequestedHandoff = 0;
-                }
+               if (pNeighborRoamInfo->lastSentCmd != ROAM_SCAN_OFFLOAD_STOP)
+               {
+                   status = csrRoamOffloadScan(pMac, ROAM_SCAN_OFFLOAD_STOP,
+                                               REASON_OS_REQUESTED_ROAMING_NOW);
+                   if (eHAL_STATUS_SUCCESS != status)
+                   {
+                       smsLog(pMac, LOGE, FL("csrRoamOffloadScan failed"));
+                       pNeighborRoamInfo->uOsRequestedHandoff = 0;
+                   }
+               }
+               else
+                 csrNeighborRoamProceedWithHandoffReq(pMac);
             }
             else
             {
