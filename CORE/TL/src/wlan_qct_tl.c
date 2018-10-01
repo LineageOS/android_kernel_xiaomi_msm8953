@@ -4900,7 +4900,7 @@ WLANTL_GetFrames
         {
            if ( ! WLANTL_STA_ID_INVALID( ucSTAId ) ) 
            {
-                TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_ERROR,
+                TLLOGE(VOS_TRACE( VOS_MODULE_ID_TL, VOS_TRACE_LEVEL_DEBUG,
                   "WLAN TL:Not fetching frame because suspended for sta ID %d", 
                    ucSTAId));
            }
