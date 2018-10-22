@@ -268,11 +268,6 @@ static long gf_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	gf_nav_event_t nav_event = GF_NAV_NONE;
 #endif
 
-	pr_info("gf_ioctl cmd:0x%x \n", cmd);
-
-
-
-
 	if (_IOC_TYPE(cmd) != GF_IOC_MAGIC)
 		return -ENODEV;
 
@@ -663,16 +658,12 @@ static int goodix_fb_state_chg_callback(struct notifier_block *nb,
 	unsigned int blank;
 	char temp = 0;
 
-	printk("SXF Enter %s val = %d \n ", __func__, (int)val);
 	if (val != FB_EVENT_BLANK)
 		return 0;
-
-	dump_stack();
 
 	gf_dev = container_of(nb, struct gf_dev, notifier);
 	if (evdata && evdata->data && val == FB_EVENT_BLANK && gf_dev) {
 		blank = *(int *) (evdata->data);
-		printk("SXF_blank = %d\n", blank);
 		switch (blank) {
 		case FB_BLANK_POWERDOWN:
 			if (gf_dev->device_available == 1) {
@@ -692,7 +683,6 @@ static int goodix_fb_state_chg_callback(struct notifier_block *nb,
 			}
 			break;
 		case FB_BLANK_UNBLANK:
-			printk("SXF-FB_BLANK_UNBLANK \n");
 			if (gf_dev->device_available == 1) {
 				gf_dev->fb_black = 0;
 #if defined(GF_NETLINK_ENABLE)
@@ -713,7 +703,6 @@ static int goodix_fb_state_chg_callback(struct notifier_block *nb,
 			break;
 		}
 	}
-	printk("SXF Exit %s\n ", __func__);
 	return NOTIFY_OK;
 }
 
