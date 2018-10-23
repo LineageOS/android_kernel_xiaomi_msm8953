@@ -17,7 +17,7 @@
 	rpm-regulator-smpa1 {
 		status = "okay";
 		pm8953_s1: regulator-s1 {
-			regulator-min-microvolt = <723500>; // UV by -73mV
+			regulator-min-microvolt = <523500>; // UV by -53mV
 			regulator-max-microvolt = <1156000>;
 			qcom,init-voltage = <1000000>;
 			status = "okay";
