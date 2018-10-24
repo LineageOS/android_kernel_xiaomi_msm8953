@@ -574,6 +574,11 @@ CONFIG_CPU_FREQ_GOV_BLU_ACTIVE=y
 # CONFIG_CPU_BOOST is not set
 
 #
+# Fp Boost
+#
+CONFIG_FINGERPRINT_BOOST=y
+
+#
 # ARM CPU frequency scaling drivers
 #
 # CONFIG_ARM_KIRKWOOD_CPUFREQ is not set
