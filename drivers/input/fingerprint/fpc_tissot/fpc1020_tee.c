@@ -35,7 +35,6 @@
 #include <linux/of_gpio.h>
 #include <linux/platform_device.h>
 #include <linux/regulator/consumer.h>
-#include <linux/wakelock.h>
 #include <linux/notifier.h>
 #include <linux/fb.h>
 #include <linux/mdss_io_util.h>
@@ -80,7 +79,7 @@ struct fpc1020_data {
 	struct pinctrl_state *pinctrl_state[ARRAY_SIZE(pctl_names)];
 	struct regulator *vreg[ARRAY_SIZE(vreg_conf)];
 
-	struct wake_lock ttw_wl;
+	struct wakeup_source ttw_wl;
 	int irq_gpio;
 	int rst_gpio;
 	struct mutex lock; /* To set/get exported values in sysfs */
@@ -585,7 +584,7 @@ static irqreturn_t fpc1020_irq_handler(int irq, void *handle)
 	dev_err(fpc1020->dev, "%s\n", __func__);
 
 	if (atomic_read(&fpc1020->wakeup_enabled)) {
-		wake_lock_timeout(&fpc1020->ttw_wl,
+		__pm_wakeup_event(&fpc1020->ttw_wl,
 					msecs_to_jiffies(FPC_TTW_HOLD_TIME));
 	}
 
@@ -685,7 +684,7 @@ static int fpc1020_probe(struct platform_device *pdev)
 	}
 
 	mutex_init(&fpc1020->lock);
-	wake_lock_init(&fpc1020->ttw_wl, WAKE_LOCK_SUSPEND, "fpc_ttw_wl");
+	wakeup_source_init(&fpc1020->ttw_wl, "fpc_ttw_wl");
 
 	rc = sysfs_create_group(&dev->kobj, &attribute_group);
 	if (rc) {
@@ -715,7 +714,7 @@ static int fpc1020_remove(struct platform_device *pdev)
 	fb_unregister_client(&fpc1020->fb_notifier);
 	sysfs_remove_group(&pdev->dev.kobj, &attribute_group);
 	mutex_destroy(&fpc1020->lock);
-	wake_lock_destroy(&fpc1020->ttw_wl);
+	wakeup_source_trash(&fpc1020->ttw_wl);
 	(void)vreg_setup(fpc1020, "vdd_ana", false);
 	(void)vreg_setup(fpc1020, "vdd_io", false);
 	(void)vreg_setup(fpc1020, "vcc_spi", false);
