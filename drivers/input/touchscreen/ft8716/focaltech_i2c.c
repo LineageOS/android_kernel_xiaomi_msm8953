@@ -71,7 +71,7 @@ static DEFINE_MUTEX(i2c_rw_access);
 ***********************************************************************/
 int fts_i2c_read(struct i2c_client *client, char *writebuf, int writelen, char *readbuf, int readlen)
 {
-	int ret;
+	int ret = 0;
 
 	mutex_lock(&i2c_rw_access);
 
