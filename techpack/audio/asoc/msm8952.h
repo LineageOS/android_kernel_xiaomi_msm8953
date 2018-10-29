@@ -42,6 +42,10 @@
 #define MAX_WSA_CODEC_NAME_LENGTH 80
 #define MSM_DT_MAX_PROP_SIZE 80
 
+#ifdef CONFIG_MACH_XIAOMI_MIDO
+#define EXT_PA_MODE  5
+#endif
+
 enum {
 	DIG_CDC,
 	ANA_CDC,
