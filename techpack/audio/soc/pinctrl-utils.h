@@ -1,1 +1,1 @@
-../../../../../kernel/msm-4.9/drivers/pinctrl/pinctrl-utils.h
+../../../drivers/pinctrl/pinctrl-utils.h
