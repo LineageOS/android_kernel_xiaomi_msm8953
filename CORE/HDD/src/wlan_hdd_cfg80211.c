@@ -5546,6 +5546,7 @@ static int __wlan_hdd_cfg80211_set_spoofed_mac_oui(struct wiphy *wiphy,
 {
 
     hdd_context_t *pHddCtx      = wiphy_priv(wiphy);
+    hdd_adapter_t *adapter = WLAN_HDD_GET_PRIV_PTR(wdev->netdev);
     struct nlattr *tb[QCA_WLAN_VENDOR_ATTR_SET_SCANNING_MAC_OUI_MAX + 1];
 
     ENTER();
@@ -5553,6 +5554,17 @@ static int __wlan_hdd_cfg80211_set_spoofed_mac_oui(struct wiphy *wiphy,
     if (0 != wlan_hdd_validate_context(pHddCtx)){
         return -EINVAL;
     }
+
+    if (!adapter) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("HDD adpater is NULL"));
+        return -EINVAL;
+    }
+
+    if (adapter->device_mode != WLAN_HDD_INFRA_STATION) {
+        hddLog(VOS_TRACE_LEVEL_INFO, FL("MAC_SPOOFED_SCAN allowed only in STA"));
+        return -ENOTSUPP;
+    }
+
     if (0 == pHddCtx->cfg_ini->enableMacSpoofing) {
         hddLog(VOS_TRACE_LEVEL_INFO, FL("MAC_SPOOFED_SCAN disabled in ini"));
         return -ENOTSUPP;
