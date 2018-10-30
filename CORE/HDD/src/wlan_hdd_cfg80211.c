@@ -19349,7 +19349,7 @@ static int __wlan_hdd_cfg80211_update_ft_ies(struct wiphy *wiphy,
     }
 
 #ifdef WLAN_FEATURE_VOWIFI_11R_DEBUG
-    hddLog(LOGE, FL("%s called with Ie of length = %zu"), __func__,
+    hddLog(LOG1, FL("%s called with Ie of length = %zu"), __func__,
            ftie->ie_len);
 #endif
 
