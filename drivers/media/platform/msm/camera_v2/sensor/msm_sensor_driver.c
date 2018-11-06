@@ -757,8 +757,6 @@ int32_t msm_sensor_driver_probe(void *setting,
 
 	unsigned long                        mount_pos = 0;
 	uint32_t                             is_yuv;
-	struct msm_camera_i2c_reg_array     *reg_setting = NULL;
-	struct msm_sensor_id_info_t         *id_info = NULL;
 
 	/* Validate input parameters */
 	if (!setting) {
@@ -814,48 +812,6 @@ int32_t msm_sensor_driver_probe(void *setting,
 		slave_info->sensor_id_info.sensor_id =
 			slave_info32->sensor_id_info.sensor_id;
 
-		slave_info->sensor_id_info.setting.addr_type =
-			slave_info32->sensor_id_info.setting.addr_type;
-		slave_info->sensor_id_info.setting.data_type =
-			slave_info32->sensor_id_info.setting.data_type;
-		slave_info->sensor_id_info.setting.delay =
-			slave_info32->sensor_id_info.setting.delay;
-		slave_info->sensor_id_info.setting.size =
-			slave_info32->sensor_id_info.setting.size;
-
-		if (!slave_info->sensor_id_info.setting.size ||
-			(slave_info->sensor_id_info.setting.size >
-				I2C_REG_DATA_MAX)) {
-			CDBG("%s:No writes needed to probe\n", __func__);
-			slave_info->sensor_id_info.setting.reg_setting = NULL;
-		} else {
-			id_info = &(slave_info->sensor_id_info);
-			reg_setting =
-				kzalloc(id_info->setting.size *
-					(sizeof
-					(struct msm_camera_i2c_reg_array)),
-					GFP_KERNEL);
-			if (!reg_setting) {
-				rc = -ENOMEM;
-				goto free_slave_info;
-			}
-			if (copy_from_user(reg_setting,
-				(void __user *)
-				compat_ptr(slave_info32->sensor_id_info.
-				setting.reg_setting),
-				slave_info->sensor_id_info.setting.size *
-				sizeof(struct msm_camera_i2c_reg_array))) {
-				pr_err("%s:%d: sensor id info copy failed\n",
-					__func__, __LINE__);
-				kfree(reg_setting);
-				rc = -EFAULT;
-				goto free_slave_info;
-			}
-
-			slave_info->sensor_id_info.setting.reg_setting =
-				reg_setting;
-		}
-
 		slave_info->slave_addr = slave_info32->slave_addr;
 		slave_info->power_setting_array.size =
 			slave_info32->power_setting_array.size;
@@ -889,37 +845,6 @@ int32_t msm_sensor_driver_probe(void *setting,
 			pr_err("failed: copy_from_user");
 			rc = -EFAULT;
 			goto free_slave_info;
-		}
-		if (!slave_info->sensor_id_info.setting.size ||
-			slave_info->sensor_id_info.setting.size >
-			I2C_REG_DATA_MAX) {
-			CDBG("%s:No writes needed to probe\n", __func__);
-			slave_info->sensor_id_info.setting.reg_setting = NULL;
-		} else {
-			id_info = &(slave_info->sensor_id_info);
-			reg_setting =
-				kzalloc(id_info->setting.size *
-					(sizeof
-					(struct msm_camera_i2c_reg_array)),
-					GFP_KERNEL);
-			if (!reg_setting) {
-				rc = -ENOMEM;
-				goto free_slave_info;
-			}
-			if (copy_from_user(reg_setting,
-				(void __user *)
-				slave_info->sensor_id_info.setting.reg_setting,
-				slave_info->sensor_id_info.setting.size *
-				sizeof(struct msm_camera_i2c_reg_array))) {
-				pr_err("%s:%d: sensor id info copy failed\n",
-					__func__, __LINE__);
-				kfree(reg_setting);
-				rc = -EFAULT;
-				goto free_slave_info;
-			}
-
-			slave_info->sensor_id_info.setting.reg_setting =
-				reg_setting;
 		}
 	}
 
