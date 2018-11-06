@@ -71,5 +71,11 @@
 			qcom,en-cabc;
 		};
 
+		pmi_haptic: qcom,haptic@c000 {
+			qcom,actuator-type = <1>;
+			qcom,use-play-irq;
+			qcom,use-sc-irq;
+		};
+
 	};
 };
