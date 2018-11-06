@@ -5378,6 +5378,50 @@ tANI_BOOLEAN csrNeighborMiddleOfRoaming (tHalHandle hHal)
 #endif
     return (val);
 }
+
+void csrRemoveNeighbourRoamPreauthCommand(tpAniSirGlobal pMac)
+{
+    tListElem *entry;
+    tSmeCmd *command;
+
+    entry = csrLLPeekHead(&pMac->sme.smeCmdPendingList, LL_ACCESS_LOCK);
+    while (entry)
+    {
+        command = GET_BASE_ADDR(entry, tSmeCmd, Link);
+        if ((eSmeCommandRoam == command->command) &&
+            (eCsrPerformPreauth == command->u.roamCmd.roamReason))
+        {
+            if (csrLLRemoveEntry(&pMac->sme.smeCmdPendingList, entry,
+                                 LL_ACCESS_LOCK)) {
+                csrReleaseCommandPreauth(pMac, command);
+                CSR_NEIGHBOR_ROAM_STATE_TRANSITION(
+                                            eCSR_NEIGHBOR_ROAM_STATE_CONNECTED);
+                break;
+            }
+        }
+        entry = csrLLNext(&pMac->sme.smeCmdPendingList, entry, LL_ACCESS_LOCK);
+    }
+
+    entry = csrLLPeekHead(&pMac->roam.roamCmdPendingList, LL_ACCESS_LOCK);
+    while (entry)
+    {
+        command = GET_BASE_ADDR(entry, tSmeCmd, Link);
+        if ((eSmeCommandRoam == command->command) &&
+            (eCsrPerformPreauth == command->u.roamCmd.roamReason))
+        {
+            if (csrLLRemoveEntry(&pMac->roam.roamCmdPendingList, entry,
+                                 LL_ACCESS_LOCK)) {
+                csrReleaseCommandPreauth(pMac, command);
+                CSR_NEIGHBOR_ROAM_STATE_TRANSITION(
+                                            eCSR_NEIGHBOR_ROAM_STATE_CONNECTED);
+                break;
+            }
+        }
+        entry = csrLLNext(&pMac->roam.roamCmdPendingList, entry,
+                          LL_ACCESS_LOCK);
+    }
+}
+
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
 /* ---------------------------------------------------------------------------
 
