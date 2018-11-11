@@ -34,6 +34,7 @@ enum {
 	Opt_reserved_mb,
 	Opt_gid_derivation,
 	Opt_default_normal,
+	Opt_nocache,
 	Opt_err,
 };
 
@@ -48,6 +49,7 @@ static const match_table_t sdcardfs_tokens = {
 	{Opt_gid_derivation, "derive_gid"},
 	{Opt_default_normal, "default_normal"},
 	{Opt_reserved_mb, "reserved_mb=%u"},
+	{Opt_nocache, "nocache"},
 	{Opt_err, NULL}
 };
 
@@ -71,6 +73,7 @@ static int parse_options(struct super_block *sb, char *options, int silent,
 	/* by default, gid derivation is off */
 	opts->gid_derivation = false;
 	opts->default_normal = false;
+	opts->nocache = false;
 
 	*debug = 0;
 
@@ -127,6 +130,9 @@ static int parse_options(struct super_block *sb, char *options, int silent,
 			break;
 		case Opt_default_normal:
 			opts->default_normal = true;
+			break;
+		case Opt_nocache:
+			opts->nocache = true;
 			break;
 		/* unknown option */
 		default:
@@ -294,6 +300,13 @@ static int sdcardfs_read_super(struct vfsmount *mnt, struct super_block *sb,
 	lower_sb = lower_path.dentry->d_sb;
 	atomic_inc(&lower_sb->s_active);
 	sdcardfs_set_lower_super(sb, lower_sb);
+
+	sb->s_stack_depth = lower_sb->s_stack_depth + 1;
+	if (sb->s_stack_depth > FILESYSTEM_MAX_STACK_DEPTH) {
+		pr_err("sdcardfs: maximum fs stacking depth exceeded\n");
+		err = -EINVAL;
+		goto out_sput;
+	}
 
 	/* inherit maxbytes from lower file system */
 	sb->s_maxbytes = lower_sb->s_maxbytes;

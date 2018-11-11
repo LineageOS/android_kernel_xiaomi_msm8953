@@ -2339,9 +2339,12 @@ int rtnl_configure_link(struct net_device *dev, const struct ifinfomsg *ifm)
 			return err;
 	}
 
-	dev->rtnl_link_state = RTNL_LINK_INITIALIZED;
-
-	__dev_notify_flags(dev, old_flags, ~0U);
+	if (dev->rtnl_link_state == RTNL_LINK_INITIALIZED) {
+		__dev_notify_flags(dev, old_flags, 0U);
+	} else {
+		dev->rtnl_link_state = RTNL_LINK_INITIALIZED;
+		__dev_notify_flags(dev, old_flags, ~0U);
+	}
 	return 0;
 }
 EXPORT_SYMBOL(rtnl_configure_link);
@@ -2364,6 +2367,12 @@ struct net_device *rtnl_create_link(struct net *net,
 		num_rx_queues = nla_get_u32(tb[IFLA_NUM_RX_QUEUES]);
 	else if (ops->get_num_rx_queues)
 		num_rx_queues = ops->get_num_rx_queues();
+
+	if (num_tx_queues < 1 || num_tx_queues > 4096)
+		return ERR_PTR(-EINVAL);
+
+	if (num_rx_queues < 1 || num_rx_queues > 4096)
+		return ERR_PTR(-EINVAL);
 
 	err = -ENOMEM;
 	dev = alloc_netdev_mqs(ops->priv_size, ifname, name_assign_type,
