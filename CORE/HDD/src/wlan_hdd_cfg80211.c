@@ -5081,6 +5081,11 @@ static int hdd_extscan_start_fill_bucket_channel_spec(
             j++;
        }
 
+       if (j != pReqMsg->buckets[bktIndex].numChannels) {
+            hddLog(LOG1, FL("Input parameters didn't match"));
+            return -EINVAL;
+       }
+
        bktIndex++;
     }
 
