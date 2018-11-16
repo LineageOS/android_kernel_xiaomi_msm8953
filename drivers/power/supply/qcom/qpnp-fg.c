@@ -4486,6 +4486,11 @@ static bool fg_validate_battery_info(struct fg_chip *chip)
 		batt_soc = DIV_ROUND_CLOSEST((batt_soc - 1) *
 				(FULL_CAPACITY - 2), FULL_SOC_RAW - 2) + 1;
 
+#ifdef CONFIG_MACH_XIAOMI_TISSOT
+	if (batt_soc == FULL_SOC_RAW)
+		chip->batt_info[BATT_INFO_SOC] = 100;
+#endif
+
 	if (*chip->batt_range_ocv && chip->batt_max_voltage_uv > 1000)
 		delta_pct =  DIV_ROUND_CLOSEST(abs(batt_volt_mv -
 				chip->batt_info[BATT_INFO_VOLTAGE]) * 100,
