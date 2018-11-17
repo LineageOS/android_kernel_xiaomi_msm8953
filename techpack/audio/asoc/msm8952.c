@@ -355,7 +355,7 @@ static int enable_spk_ext_pa(struct snd_soc_codec *codec, int enable)
 {
 	struct snd_soc_card *card = codec->component.card;
 	struct msm_asoc_mach_data *pdata = snd_soc_card_get_drvdata(card);
-#if !((defined CONFIG_MACH_XIAOMI_MIDO) || (defined CONFIG_MACH_XIAOMI_TISSOT))
+#ifndef CONFIG_MACH_XIAOMI_MIDO
 	int ret;
 #endif
 #ifdef CONFIG_MACH_XIAOMI_MIDO
@@ -385,7 +385,6 @@ static int enable_spk_ext_pa(struct snd_soc_codec *codec, int enable)
 			pa_mode--;
 		}
 #else
-#ifndef CONFIG_MACH_XIAOMI_TISSOT
 		ret =  msm_cdc_pinctrl_select_active_state(
 					pdata->spk_ext_pa_gpio_p);
 		if (ret) {
@@ -393,12 +392,11 @@ static int enable_spk_ext_pa(struct snd_soc_codec *codec, int enable)
 					__func__, "ext_spk_gpio");
 			return ret;
 		}
-#endif
 		gpio_set_value_cansleep(pdata->spk_ext_pa_gpio, enable);
 #endif
 	} else {
 		gpio_set_value_cansleep(pdata->spk_ext_pa_gpio, enable);
-#if !((defined CONFIG_MACH_XIAOMI_MIDO) || (defined CONFIG_MACH_XIAOMI_TISSOT))
+#ifndef CONFIG_MACH_XIAOMI_MIDO
 		ret = msm_cdc_pinctrl_select_sleep_state(
 				pdata->spk_ext_pa_gpio_p);
 		if (ret) {
