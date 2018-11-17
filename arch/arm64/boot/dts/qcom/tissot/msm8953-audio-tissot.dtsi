@@ -14,6 +14,7 @@
 
 &int_codec {
 	qcom,msm-spk-ext-pa = <&tlmm 141 0>;
+	qcom,cdc-ext-pa-gpios = <&cdc_ext_pa_gpios>;
 	qcom,msm-mbhc-hphl-swh = <1>;
 	qcom,msm-mbhc-gnd-swh = <1>;
 
