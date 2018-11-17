@@ -44,5 +44,13 @@
 			maxim,98927-reset-gpio = <&tlmm 86 0>;
 		};
 	};
+
+        cdc_ext_pa_gpios: cdc_ext_pa_pinctrl {
+                compatible = "qcom,msm-cdc-pinctrl";
+                pinctrl-names = "aud_active", "aud_sleep";
+                pinctrl-0 = <&ext_pa_power_on>;
+                pinctrl-1 = <&ext_pa_power_off>;
+        };
+
 };
 
