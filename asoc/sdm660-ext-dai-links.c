@@ -2000,6 +2000,23 @@ static struct snd_soc_dai_link msm_auxpcm_be_dai_links[] = {
 	},
 };
 
+static struct snd_soc_dai_link msm_afe_rxtx_lb_be_dai_link[] = {
+	{
+		.name = LPASS_BE_AFE_LOOPBACK_TX,
+		.stream_name = "AFE Loopback Capture",
+		.cpu_dai_name = "msm-dai-q6-dev.24577",
+		.platform_name = "msm-pcm-routing",
+		.codec_name = "msm-stub-codec.1",
+		.codec_dai_name = "msm-stub-tx",
+		.no_pcm = 1,
+		.dpcm_capture = 1,
+		.id = MSM_BACKEND_DAI_AFE_LOOPBACK_TX,
+		.ignore_pmdown_time = 1,
+		.ignore_suspend = 1,
+	},
+};
+
+
 static struct snd_soc_dai_link msm_wcn_be_dai_links[] = {
 	{
 		.name = LPASS_BE_SLIMBUS_7_RX,
@@ -2079,7 +2096,8 @@ ARRAY_SIZE(msm_ext_tasha_be_dai) +
 ARRAY_SIZE(msm_mi2s_be_dai_links) +
 ARRAY_SIZE(msm_auxpcm_be_dai_links) +
 ARRAY_SIZE(msm_wcn_be_dai_links) +
-ARRAY_SIZE(ext_disp_be_dai_link)];
+ARRAY_SIZE(ext_disp_be_dai_link) +
+ARRAY_SIZE(msm_afe_rxtx_lb_be_dai_link)];
 
 static struct snd_soc_dai_link msm_ext_tavil_dai_links[
 ARRAY_SIZE(msm_ext_common_fe_dai) +
@@ -2090,7 +2108,8 @@ ARRAY_SIZE(msm_ext_tavil_be_dai) +
 ARRAY_SIZE(msm_mi2s_be_dai_links) +
 ARRAY_SIZE(msm_auxpcm_be_dai_links) +
 ARRAY_SIZE(msm_wcn_be_dai_links) +
-ARRAY_SIZE(ext_disp_be_dai_link)];
+ARRAY_SIZE(ext_disp_be_dai_link) +
+ARRAY_SIZE(msm_afe_rxtx_lb_be_dai_link)];
 
 /**
  * populate_snd_card_dailinks - prepares dailink array and initializes card.
@@ -2182,6 +2201,14 @@ struct snd_soc_card *populate_snd_card_dailinks(struct device *dev,
 				sizeof(ext_disp_be_dai_link));
 			len5 += ARRAY_SIZE(ext_disp_be_dai_link);
 		}
+		if (of_property_read_bool(dev->of_node, "qcom,afe-rxtx-lb")) {
+			dev_dbg(dev, "%s(): AFE RX to TX loopback supported\n",
+					__func__);
+			memcpy(msm_ext_tasha_dai_links + len5,
+				msm_afe_rxtx_lb_be_dai_link,
+				sizeof(msm_afe_rxtx_lb_be_dai_link));
+			len5 += ARRAY_SIZE(msm_afe_rxtx_lb_be_dai_link);
+		}
 		msm_ext_dai_links = msm_ext_tasha_dai_links;
 	} else if (strnstr(card->name, "tavil", strlen(card->name))) {
 		len1 = ARRAY_SIZE(msm_ext_common_fe_dai);
@@ -2230,6 +2257,14 @@ struct snd_soc_card *populate_snd_card_dailinks(struct device *dev,
 				ext_disp_be_dai_link,
 				sizeof(ext_disp_be_dai_link));
 			len5 += ARRAY_SIZE(ext_disp_be_dai_link);
+		}
+		if (of_property_read_bool(dev->of_node, "qcom,afe-rxtx-lb")) {
+			dev_dbg(dev, "%s(): AFE RX to TX loopback supported\n",
+					__func__);
+			memcpy(msm_ext_tavil_dai_links + len5,
+				msm_afe_rxtx_lb_be_dai_link,
+				sizeof(msm_afe_rxtx_lb_be_dai_link));
+			len5 += ARRAY_SIZE(msm_afe_rxtx_lb_be_dai_link);
 		}
 		msm_ext_dai_links = msm_ext_tavil_dai_links;
 	} else {
