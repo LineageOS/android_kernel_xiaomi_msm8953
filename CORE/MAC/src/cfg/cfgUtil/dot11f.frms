@@ -2738,7 +2738,7 @@ IE WiderBWChanSwitchAnn (EID_WIDER_BW_CHANNEL_SWITCH_ANN)
 
 IE ExtCap (EID_EXT_CAP)
 {
-   bytes[1..9];
+   bytes[1..15];
 }
 
 IE HTCaps (EID_HT_CAPABILITIES)
