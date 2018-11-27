@@ -2260,10 +2260,6 @@ static int msm_anlg_cdc_codec_enable_spk_pa(struct snd_soc_dapm_widget *w,
 				snd_soc_update_bits(codec,
 					MSM89XX_PMIC_ANALOG_SPKR_DRV_CTL,
 					0xEF, 0xEF);
-			else
-				snd_soc_update_bits(codec,
-					MSM89XX_PMIC_ANALOG_SPKR_DAC_CTL,
-					0x10, 0x00);
 			break;
 		case BOOST_ALWAYS:
 		case BOOST_ON_FOREVER:
@@ -2272,8 +2268,6 @@ static int msm_anlg_cdc_codec_enable_spk_pa(struct snd_soc_dapm_widget *w,
 				0xEF, 0xEF);
 			break;
 		case BYPASS_ALWAYS:
-			snd_soc_update_bits(codec,
-				MSM89XX_PMIC_ANALOG_SPKR_DAC_CTL, 0x10, 0x00);
 			break;
 		default:
 			dev_err(codec->dev,
@@ -2281,6 +2275,8 @@ static int msm_anlg_cdc_codec_enable_spk_pa(struct snd_soc_dapm_widget *w,
 				sdm660_cdc->boost_option);
 			break;
 		}
+		snd_soc_update_bits(codec, MSM89XX_PMIC_ANALOG_SPKR_DAC_CTL,
+				    0x10, 0x00);
 		msm_anlg_cdc_dig_notifier_call(codec,
 					       DIG_CDC_EVENT_RX3_MUTE_OFF);
 		snd_soc_update_bits(codec, w->reg, 0x80, 0x80);
