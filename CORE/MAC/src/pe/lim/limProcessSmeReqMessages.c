@@ -5664,7 +5664,7 @@ void lim_send_chan_switch_action_frame(tpAniSirGlobal mac_ctx,
    switch_count = session_entry->gLimChannelSwitch.switchCount;
    dph_node_array_ptr = session_entry->dph.dphHashTable.pDphNodeArray;
 
-   for (i = 0; i < (mac_ctx->lim.maxStation + 1); i++) {
+   for (i = 0; i < session_entry->dph.dphHashTable.size; i++) {
         psta = dph_node_array_ptr + i;
         if (!(psta && psta->added))
             continue;
