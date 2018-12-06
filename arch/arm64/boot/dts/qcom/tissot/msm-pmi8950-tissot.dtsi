@@ -54,7 +54,7 @@
 		pmi8950_fg: qcom,fg {
 			/delete-property/ qcom,resume-soc;
 			qcom,resume-soc-raw = <254>;
-			qcom,fg-iterm-ma = <3000>;
+			qcom,fg-iterm-ma = <300>;
 			qcom,fg-chg-iterm-ma = <200>;
 			qcom,fg-cutoff-voltage-mv = <3400>;
 			qcom,irq-volt-empty-mv = <3100>;
