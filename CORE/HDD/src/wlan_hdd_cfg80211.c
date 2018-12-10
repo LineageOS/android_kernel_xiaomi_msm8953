@@ -12417,6 +12417,8 @@ int __wlan_hdd_cfg80211_change_iface( struct wiphy *wiphy,
                                                   WLAN_HDD_P2P_DEVICE);
                      if (pP2pAdapter)
                      {
+                         wlan_hdd_release_intf_addr(pHddCtx,
+                                          pP2pAdapter->macAddressCurrent.bytes);
                          hdd_stop_adapter(pHddCtx, pP2pAdapter, VOS_TRUE);
                          hdd_deinit_adapter(pHddCtx, pP2pAdapter, TRUE);
                          hdd_close_adapter(pHddCtx, pP2pAdapter, VOS_TRUE);
