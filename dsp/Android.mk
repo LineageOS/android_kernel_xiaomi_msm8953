@@ -17,6 +17,7 @@ endif
 
 ifeq ($(call is-board-platform-in-list,msm8909),true)
 AUDIO_SELECT  := CONFIG_SND_SOC_BG_8909=m
+AUDIO_SELECT  += CONFIG_SND_SOC_8909_DIG_CDC=m
 endif
 
 AUDIO_CHIPSET := audio

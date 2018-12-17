@@ -130,6 +130,10 @@ ifdef CONFIG_SND_SOC_BG_8909
 	MACHINE_OBJS += msm_bg.o
 endif
 
+ifdef CONFIG_SND_SOC_8909_DIG_CDC
+	MACHINE_DIGCDC_OBJS += msm8909.o
+endif
+
 ifdef CONFIG_SND_SOC_CPE
 	CPE_LSM_OBJS += msm-cpe-lsm.o
 endif
@@ -229,6 +233,9 @@ machine_ext_dlkm-y := $(MACHINE_EXT_OBJS)
 
 obj-$(CONFIG_SND_SOC_BG_8909) += machine_dlkm.o
 machine_dlkm-y := $(MACHINE_OBJS)
+
+obj-$(CONFIG_SND_SOC_8909_DIG_CDC) += machine_digcdc_dlkm.o
+machine_digcdc_dlkm-y := $(MACHINE_DIGCDC_OBJS)
 
 obj-$(CONFIG_SND_SOC_MACHINE_SDM845) += machine_dlkm.o
 machine_dlkm-y := $(MACHINE_OBJS)
