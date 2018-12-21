@@ -1917,6 +1917,7 @@ static v_BOOL_t put_wifi_peer_info( tpSirWifiPeerInfo stats,
                                             stats->rateStats +
                                        (i * sizeof(tSirWifiRateStat)));
         rates = nla_nest_start(vendor_event, i);
+
         if(!rates)
             return FALSE;
 
@@ -2402,10 +2403,10 @@ static v_VOID_t hdd_link_layer_process_peer_stats(hdd_adapter_t *pAdapter,
             return;
         }
 
-        pWifiPeerInfo = (tpSirWifiPeerInfo)  ((uint8 *)
-                pWifiPeerStat->peerInfo +
-                (i * sizeof(tSirWifiPeerInfo)) +
-                (numRate * sizeof (tSirWifiRateStat)));
+        pWifiPeerInfo = (tpSirWifiPeerInfo)((uint8 *)pWifiPeerInfo +
+                (sizeof(tSirWifiPeerInfo) - sizeof(tSirWifiRateStat)) +
+                (numRate * sizeof(tSirWifiRateStat)));
+
         nla_nest_end(vendor_event, peers);
     }
     nla_nest_end(vendor_event, peerInfo);
