@@ -13864,6 +13864,8 @@ int hdd_wlan_startup(struct device *dev )
       goto err_vosstop;
    }
 
+   wlan_hdd_cfg80211_scan_randomization_init(wiphy);
+
 #ifndef CONFIG_ENABLE_LINUX_REG
    wlan_hdd_cfg80211_update_reg_info( wiphy );
 

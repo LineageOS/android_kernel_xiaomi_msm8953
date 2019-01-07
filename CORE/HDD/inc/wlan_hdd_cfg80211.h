@@ -1900,4 +1900,24 @@ VOS_STATUS wlan_hdd_send_sta_authorized_event(hdd_adapter_t *adapter,
  */
 int wlan_hdd_disconnect(hdd_adapter_t *pAdapter, u16 reason);
 
+#if defined(CFG80211_SCAN_RANDOM_MAC_ADDR) || \
+	(LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0))
+/**
+ * wlan_hdd_cfg80211_scan_randomization_init() - Enable NL80211 scan randomize
+ * @wiphy: Pointer to wiphy structure
+ *
+ * This function is used to enable NL80211 scan randomization feature when
+ * ini: gEnableMacAddrSpoof is set to MAC_ADDR_SPOOFING_FW_HOST_ENABLE and
+ * cfg80211 supports scan randomization.
+ *
+ * Return: None
+ */
+void wlan_hdd_cfg80211_scan_randomization_init(struct wiphy *wiphy);
+#else
+static inline
+void wlan_hdd_cfg80211_scan_randomization_init(struct wiphy *wiphy)
+{
+}
+#endif
+
 #endif

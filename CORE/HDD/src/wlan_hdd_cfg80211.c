@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2019 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -9107,6 +9107,20 @@ void hdd_add_channel_switch_support(struct wiphy *wiphy)
 }
 #endif
 
+#if defined(CFG80211_SCAN_RANDOM_MAC_ADDR) || \
+	(LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0))
+void wlan_hdd_cfg80211_scan_randomization_init(struct wiphy *wiphy)
+{
+	hdd_context_t *hdd_ctx = wiphy_priv(wiphy);
+	hdd_config_t *config = hdd_ctx->cfg_ini;
+
+	if (config->enableMacSpoofing != MAC_ADDR_SPOOFING_FW_HOST_ENABLE)
+		return;
+
+	wiphy->features |= NL80211_FEATURE_SCAN_RANDOM_MAC_ADDR;
+}
+#endif
+
 /*
  * FUNCTION: wlan_hdd_cfg80211_init
  * This function is called by hdd_wlan_startup()
@@ -15206,6 +15220,207 @@ static inline void csr_scan_request_assign_bssid(tCsrScanRequest *scanRequest,
 }
 #endif
 
+#if defined(CFG80211_SCAN_RANDOM_MAC_ADDR) || \
+	(LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0))
+/**
+ * hdd_is_wiphy_scan_random_support() - Check NL80211 scan randomization support
+ * @wiphy: Pointer to wiphy structure
+ *
+ * This function is used to check whether @wiphy supports
+ * NL80211 scan randomization feature.
+ *
+ * Return: If randomization is supported then return true else false.
+ */
+static bool
+hdd_is_wiphy_scan_random_support(struct wiphy *wiphy)
+{
+	if (wiphy->features & NL80211_FEATURE_SCAN_RANDOM_MAC_ADDR)
+		return true;
+
+	return false;
+}
+
+/**
+ * hdd_is_nl_scan_random() - Check for randomization flag in cfg80211 scan
+ * @nl_scan: cfg80211 scan request
+ *
+ * This function is used to check whether scan randomization flag is set for
+ * current cfg80211 scan request identified by @nl_scan.
+ *
+ * Return: If randomization flag is set then return true else false.
+ */
+static bool
+hdd_is_nl_scan_random(struct cfg80211_scan_request *nl_scan)
+{
+	if (nl_scan->flags & NL80211_SCAN_FLAG_RANDOM_ADDR)
+		return true;
+
+	return false;
+}
+#else
+static bool
+hdd_is_wiphy_scan_random_support(struct wiphy *wiphy)
+{
+	return false;
+}
+
+static bool
+hdd_is_nl_scan_random(struct cfg80211_scan_request *nl_scan)
+{
+	return false;
+}
+#endif
+
+/**
+ * hdd_generate_scan_random_mac() - Generate Random mac addr for cfg80211 scan
+ * @mac_addr: Input mac-addr from which random-mac address is to be generated
+ * @mac_mask: Bits of mac_addr which should not be randomized
+ * @random_mac: Output pointer to hold generated random mac address
+ *
+ * This function is used generate random mac address using @mac_addr and
+ * @mac_mask with following logic:
+ *	Bit value 0 in the mask means that we should randomize that bit.
+ *	Bit value 1 in the mask means that we should take specific bit value
+ *	from mac address provided.
+ *
+ * Return: None
+ */
+static void
+hdd_generate_scan_random_mac(uint8_t *mac_addr, uint8_t *mac_mask,
+			     uint8_t *random_mac)
+{
+	uint32_t i;
+	uint8_t random_byte;
+
+	for (i = 0; i < VOS_MAC_ADDRESS_LEN; i++) {
+		random_byte = 0;
+		get_random_bytes(&random_byte, 1);
+		random_mac[i] = (mac_addr[i] & mac_mask[i]) |
+				(random_byte & (~(mac_mask[i])));
+	}
+
+	/*
+	 * Make sure locally administered bit is set if that
+	 * particular bit in the mask is 0
+	 */
+	if (!(mac_mask[0] & 0x2))
+		random_mac[0] |= 0x2;
+
+	/*
+	 * Make sure multicast/group address bit is NOT set if that
+	 * particular bit in the mask is 0
+	 */
+	if (!(mac_mask[0] & 0x1))
+		random_mac[0] &= ~0x1;
+}
+
+/**
+ * hdd_spoof_scan() - Spoof cfg80211 scan
+ * @wiphy: Pointer to wiphy
+ * @adapter: Pointer to adapter for which scan is requested
+ * @nl_scan: Cfg80211 scan request
+ * @is_p2p_scan: Check for p2p scan
+ * @csr_scan: Pointer to internal (csr) scan request
+ *
+ * This function is used for following purposes:
+ * (a) If cfg80211 supports scan randomization then this function invokes helper
+ *     functions to generate random-mac address.
+ * (b) If the cfg80211 doesn't support scan randomization then randomize scans
+ *     using spoof mac received with VENDOR_SUBCMD_MAC_OUI.
+ * (c) Configure the random-mac in transport layer.
+ *
+ * Return: For success return 0 else return negative value.
+ */
+static int
+hdd_spoof_scan(struct wiphy *wiphy, hdd_adapter_t *adapter,
+	       struct cfg80211_scan_request *nl_scan,
+	       bool is_p2p_scan, tCsrScanRequest *csr_scan)
+{
+	hdd_context_t *hdd_ctx = wiphy_priv(wiphy);
+	hdd_config_t *config = hdd_ctx->cfg_ini;
+	uint8_t random_mac[VOS_MAC_ADDRESS_LEN];
+	VOS_STATUS vos_status;
+	eHalStatus hal_status;
+
+	csr_scan->nl_scan = true;
+	csr_scan->scan_randomize = false;
+
+	if (config->enableMacSpoofing != MAC_ADDR_SPOOFING_FW_HOST_ENABLE ||
+	    !sme_IsFeatureSupportedByFW(MAC_SPOOFED_SCAN))
+		return 0;
+
+	vos_flush_delayed_work(&hdd_ctx->spoof_mac_addr_work);
+
+	if (hdd_is_wiphy_scan_random_support(wiphy)) {
+		if (!hdd_is_nl_scan_random(nl_scan) || is_p2p_scan)
+			return 0;
+
+		hdd_generate_scan_random_mac(nl_scan->mac_addr,
+					     nl_scan->mac_addr_mask,
+					     random_mac);
+
+		hddLog(VOS_TRACE_LEVEL_INFO,
+		       FL("cfg80211 scan random attributes:"));
+		hddLog(VOS_TRACE_LEVEL_INFO, "mac-addr: "MAC_ADDRESS_STR
+		       " mac-mask: "MAC_ADDRESS_STR
+		       " random-mac: "MAC_ADDRESS_STR,
+		       MAC_ADDR_ARRAY(nl_scan->mac_addr),
+		       MAC_ADDR_ARRAY(nl_scan->mac_addr_mask),
+		       MAC_ADDR_ARRAY(random_mac));
+
+		hal_status = sme_SpoofMacAddrReq(hdd_ctx->hHal,
+						 (v_MACADDR_t *)random_mac,
+						 false);
+		if (hal_status != eHAL_STATUS_SUCCESS) {
+			hddLog(LOGE,
+			       FL("Send of Spoof request failed"));
+			hddLog(LOGE,
+			       FL("Disable spoofing and use self-mac"));
+			return 0;
+		}
+
+		vos_status = WLANTL_updateSpoofMacAddr(hdd_ctx->pvosContext,
+						(v_MACADDR_t*)random_mac,
+						&adapter->macAddressCurrent);
+		if(vos_status != VOS_STATUS_SUCCESS) {
+			hddLog(VOS_TRACE_LEVEL_ERROR,
+			       FL("Failed to update spoof mac in TL"));
+			return -EINVAL;
+		}
+
+		csr_scan->scan_randomize = true;
+
+		return 0;
+	}
+
+	/*
+	 * If wiphy does not support cfg80211 scan randomization then scan
+	 * will be randomized using the vendor MAC OUI.
+	 */
+	if (!hdd_ctx->spoofMacAddr.isEnabled)
+		return 0;
+
+	hddLog(VOS_TRACE_LEVEL_INFO,
+	       FL("MAC Spoofing enabled for current scan and spoof addr is:"
+		  MAC_ADDRESS_STR),
+		  MAC_ADDR_ARRAY(hdd_ctx->spoofMacAddr.randomMacAddr.bytes));
+
+	/* Updating SelfSta Mac Addr in TL which will be used to get staidx
+	 * to fill TxBds for probe request during current scan
+	 */
+	vos_status = WLANTL_updateSpoofMacAddr(hdd_ctx->pvosContext,
+            &hdd_ctx->spoofMacAddr.randomMacAddr, &adapter->macAddressCurrent);
+	if(vos_status != VOS_STATUS_SUCCESS) {
+		hddLog(VOS_TRACE_LEVEL_ERROR,
+		       FL("Failed to update spoof mac in TL"));
+		return -EINVAL;
+	}
+
+	csr_scan->scan_randomize = true;
+
+	return 0;
+}
+
 /*
  * FUNCTION: __wlan_hdd_cfg80211_scan
  * this scan respond to scan trigger and update cfg80211 scan database
@@ -15696,27 +15911,16 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
            scanRequest.minChnTime, scanRequest.maxChnTime,
            scanRequest.p2pSearch, scanRequest.skipDfsChnlInP2pSearch);
 
-    if (pHddCtx->spoofMacAddr.isEnabled &&
-        pHddCtx->cfg_ini->enableMacSpoofing == 1)
-    {
-        hddLog(VOS_TRACE_LEVEL_INFO,
-                        "%s: MAC Spoofing enabled for current scan", __func__);
-        /* Updating SelfSta Mac Addr in TL which will be used to get staidx
-         * to fill TxBds for probe request during current scan
-         */
-        status = WLANTL_updateSpoofMacAddr(pHddCtx->pvosContext,
-            &pHddCtx->spoofMacAddr.randomMacAddr, &pAdapter->macAddressCurrent);
-
-        if(status != VOS_STATUS_SUCCESS)
-        {
-            hdd_allow_suspend(WIFI_POWER_EVENT_WAKELOCK_SCAN);
-            status = -EFAULT;
+    ret = hdd_spoof_scan(wiphy, pAdapter, request, is_p2p_scan, &scanRequest);
+    if(ret) {
+        hdd_allow_suspend(WIFI_POWER_EVENT_WAKELOCK_SCAN);
+        status = -EFAULT;
 #ifdef FEATURE_WLAN_TDLS
         wlan_hdd_tdls_scan_done_callback(pAdapter);
 #endif
-            goto free_mem;
-        }
+        goto free_mem;
     }
+
     wlan_hdd_get_frame_logs(pAdapter, WLAN_HDD_GET_FRAME_LOG_CMD_CLEAR);
     status = sme_ScanRequest( WLAN_HDD_GET_HAL_CTX(pAdapter),
                               pAdapter->sessionId, &scanRequest, &scanId,

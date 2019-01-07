@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2017, 2019 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -294,6 +294,8 @@ typedef struct sLimMlmScanReq
     /* Number of SSIDs to scan(send Probe request) */
     tANI_U8            numSsid;
 
+    bool           scan_randomize;
+    bool           nl_scan;
     tANI_BOOLEAN   p2pSearch;
     tANI_U16           uIEFieldLen;
     tANI_U16           uIEFieldOffset;
