@@ -1095,6 +1095,11 @@ limRejectAssociation(tpAniSirGlobal pMac, tSirMacAddr peerAddr, tANI_U8 subType,
             vos_mem_free(psessionEntry->parsedAssocReq[pStaDs->assocId]);
             psessionEntry->parsedAssocReq[pStaDs->assocId] = NULL;
         }
+
+        /* Delete hash entry on add sta failure */
+        limReleasePeerIdx(pMac, pStaDs->assocId, psessionEntry);
+        limDeleteDphHashEntry(pMac, pStaDs->staAddr,
+                              pStaDs->assocId,psessionEntry);
     }
     else
     {
