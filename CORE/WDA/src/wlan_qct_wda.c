@@ -20389,6 +20389,8 @@ void WDA_PERRoamTriggerScanReqCallback(WDI_Status status, void* pUserData)
    }
    if ( pWdaParams->wdaMsgParam != NULL)
       vos_mem_free(pWdaParams->wdaMsgParam);
+   if (pWdaParams->wdaWdiApiMsgParam != NULL)
+       vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
 
    vos_mem_free(pWdaParams) ;
    vosMsg.type = eWNI_SME_ROAM_SCAN_TRIGGER_RSP;
@@ -20424,6 +20426,8 @@ void WDA_PERRoamOffloadScanReqCallback(WDI_Status status, void* pUserData)
    }
    if ( pWdaParams->wdaMsgParam != NULL)
       vos_mem_free(pWdaParams->wdaMsgParam);
+   if (pWdaParams->wdaWdiApiMsgParam != NULL)
+       vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
 
    vos_mem_free(pWdaParams) ;
    vosMsg.type = eWNI_SME_ROAM_SCAN_OFFLOAD_RSP;
