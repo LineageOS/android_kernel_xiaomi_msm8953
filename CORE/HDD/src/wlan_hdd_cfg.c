@@ -4038,7 +4038,7 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
   REG_VARIABLE_STRING(CFG_ENABLE_DEFAULT_SAP, WLAN_PARAM_String,
                       hdd_config_t, enabledefaultSAP,
                       VAR_FLAGS_NONE,
-                      (void *)CFG_ENABLE_DEFAULT_SAP),
+                      (void *)CFG_ENABLE_DEFAULT_SAP_DEFAULT),
 
 };
 

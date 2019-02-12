@@ -13954,7 +13954,8 @@ int hdd_wlan_startup(struct device *dev )
       goto err_close_adapter;
    }
 
-   if (strlen(pHddCtx->cfg_ini->enabledefaultSAP) != 0) {
+   if ((strlen(pHddCtx->cfg_ini->enabledefaultSAP) != 0) &&
+       (strcmp(pHddCtx->cfg_ini->enabledefaultSAP, "") != 0)) {
        softapAdapter = hdd_open_adapter( pHddCtx, WLAN_HDD_SOFTAP,
                                        pHddCtx->cfg_ini->enabledefaultSAP,
                                        wlan_hdd_get_intf_addr(pHddCtx), FALSE);
