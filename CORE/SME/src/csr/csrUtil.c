@@ -1585,6 +1585,31 @@ tANI_BOOLEAN csrIsStaSessionConnected( tpAniSirGlobal pMac )
     return( fRc );
 }
 
+tANI_BOOLEAN csrIsP2pGoSessionConnected( tpAniSirGlobal pMac )
+{
+    tANI_U32 i;
+    tCsrRoamSession *pSession = NULL;
+
+    for( i = 0; i < CSR_ROAM_SESSION_MAX; i++ )
+    {
+        if(CSR_IS_SESSION_VALID( pMac, i) &&
+           !csrIsConnStateDisconnected(pMac, i))
+        {
+            pSession = CSR_GET_SESSION(pMac, i);
+
+            if (NULL != pSession->pCurRoamProfile)
+            {
+                if (pSession->pCurRoamProfile->csrPersona == VOS_P2P_GO_MODE) {
+                    return eANI_BOOLEAN_TRUE;
+                }
+            }
+        }
+    }
+
+    return eANI_BOOLEAN_FALSE;
+}
+
+
 tANI_BOOLEAN csrIsP2pSessionConnected( tpAniSirGlobal pMac )
 {
     tANI_U32 i;

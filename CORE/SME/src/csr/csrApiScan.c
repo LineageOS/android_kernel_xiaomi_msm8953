@@ -392,7 +392,7 @@ eHalStatus csrQueueScanRequest( tpAniSirGlobal pMac, tSmeCmd *pScanCmd )
      * candidates and resulting in disconnects.
      */
 
-    if (csrIsInfraApStarted(pMac))
+    if (csrIsInfraApStarted(pMac) && !csrIsP2pGoSessionConnected(pMac))
     {
       nNumChanCombinedConc = 1;
     }
@@ -7310,7 +7310,7 @@ static void csrStaApConcTimerHandler(void *pv)
          * candidates and resulting in disconnects.
          */
 
-        if (csrIsInfraApStarted(pMac))
+        if (csrIsInfraApStarted(pMac) && !csrIsP2pGoSessionConnected(pMac))
         {
             nNumChanCombinedConc = 1;
         }
