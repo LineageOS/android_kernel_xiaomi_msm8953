@@ -2808,17 +2808,17 @@ eHalStatus sme_HideSSID(tHalHandle hHal, v_U8_t sessionId, v_U8_t ssidHidden);
   ---------------------------------------------------------------------------*/
 eHalStatus sme_SetTmLevel(tHalHandle hHal, v_U16_t newTMLevel, v_U16_t tmMode);
 
-/*---------------------------------------------------------------------------
-
-  \brief sme_featureCapsExchange() - SME interface to exchange capabilities between
-  Host and FW.
-
-  \param  hHal - HAL handle for device
-
-  \return NONE
-
----------------------------------------------------------------------------*/
-void sme_featureCapsExchange(tHalHandle hHal);
+/**
+ * sme_featureCapsExchange() - SME API to get firmware feature caps
+ * @params: Pointer to hold HDD callback to be invoked for response
+ * and associated user data.
+ *
+ * This function is used to exchange capabilities between Host and FW.
+ *
+ * Return: VOS_STATUS
+ */
+VOS_STATUS
+sme_featureCapsExchange(struct sir_feature_caps_params *params);
 
 /*---------------------------------------------------------------------------
 
