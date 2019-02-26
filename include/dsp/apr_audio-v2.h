@@ -2587,6 +2587,8 @@ struct afe_param_id_internal_bt_fm_cfg {
 
 #define AFE_PORT_MAX_AUDIO_CHAN_CNT	0x8
 
+#define AFE_PORT_MAX_AUDIO_CHAN_CNT_V2	0x20
+
 /* Payload of the #AFE_PORT_CMD_SLIMBUS_CONFIG command's SLIMbus
  * port configuration parameter.
  */
@@ -3059,6 +3061,10 @@ struct afe_param_id_tdm_cfg {
  */
 #define AFE_API_VERSION_SLOT_MAPPING_CONFIG	0x1
 
+/** Version information used to handle future additions to slot mapping
+*	configuration support 32 channels.
+*/
+#define AFE_API_VERSION_SLOT_MAPPING_CONFIG_V2	0x2
 /* Data align type  */
 #define AFE_SLOT_MAPPING_DATA_ALIGN_MSB		0
 #define AFE_SLOT_MAPPING_DATA_ALIGN_LSB		1
@@ -3108,9 +3114,52 @@ struct afe_param_id_slot_mapping_cfg {
 	 */
 } __packed;
 
-/* ID of the parameter used by #AFE_MODULE_TDM to configure
- * the customer TDM header. #AFE_PORT_CMD_SET_PARAM can use this parameter ID.
- */
+/* Payload of the AFE_PARAM_ID_PORT_SLOT_MAPPING_CONFIG_V2
+*  command's TDM configuration parameter.
+*/
+struct afe_param_id_slot_mapping_cfg_v2 {
+	u32	minor_version;
+	/**< Minor version used for tracking TDM slot configuration.
+	 * @values #AFE_API_VERSION_TDM_SLOT_CONFIG
+	 */
+
+	u16	num_channel;
+	/**< number of channel of the audio sample.
+	* @values 1, 2, 4, 6, 8, 16, 32 @tablebulletend
+	*/
+
+	u16	bitwidth;
+	/**< Slot bit width for each channel
+	* @values 16, 24, 32
+	*/
+
+	u32	data_align_type;
+	/**< indicate how data packed from slot_offset for 32 slot bit width
+	* in case of sample bit width is 24.
+	* @values
+	* #AFE_SLOT_MAPPING_DATA_ALIGN_MSB
+	* #AFE_SLOT_MAPPING_DATA_ALIGN_LSB
+	*/
+
+	u16	offset[AFE_PORT_MAX_AUDIO_CHAN_CNT_V2];
+	/**< Array of the slot mapping start offset in bytes for this frame.
+	* The bytes is counted from 0. The 0 is mapped to the 1st byte
+	* in or out of the digital serial data line this sub-frame belong to.
+	* slot_offset[] setting is per-channel based.
+	* The max num of channel supported is 8.
+	* The valid offset value must always be continuly placed in
+	* from index 0.
+	* Set offset as AFE_SLOT_MAPPING_OFFSET_INVALID for not used arrays.
+	* If "slot_bitwidth_per_channel" is 32 and "sample_bitwidth" is 24,
+	* "data_align_type" is used to indicate how 24 bit sample data in
+	* aligning with 32 bit slot width per-channel.
+	* @values, in byte
+	*/
+} __packed;
+
+/** ID of the parameter used by #AFE_MODULE_TDM to configure
+    the customer TDM header. #AFE_PORT_CMD_SET_PARAM can use this parameter ID.
+*/
 #define AFE_PARAM_ID_CUSTOM_TDM_HEADER_CONFIG		0x00010298
 
 /* Version information used to handle future additions to custom TDM header
@@ -3182,6 +3231,13 @@ struct afe_slot_mapping_config_command {
 	struct afe_param_id_slot_mapping_cfg	slot_mapping;
 } __packed;
 
+struct afe_slot_mapping_config_command_v2 {
+	struct apr_hdr	hdr;
+	struct afe_port_cmd_set_param_v2	param;
+	struct afe_port_param_data_v2	pdata;
+	struct afe_param_id_slot_mapping_cfg_v2	slot_mapping;
+} __packed;
+
 struct afe_custom_tdm_header_config_command {
 	struct apr_hdr	hdr;
 	struct afe_port_cmd_set_param_v2	param;
@@ -3192,6 +3248,7 @@ struct afe_custom_tdm_header_config_command {
 struct afe_tdm_port_config {
 	struct afe_param_id_tdm_cfg				tdm;
 	struct afe_param_id_slot_mapping_cfg		slot_mapping;
+	struct afe_param_id_slot_mapping_cfg_v2		slot_mapping_v2;
 	struct afe_param_id_custom_tdm_header_cfg	custom_tdm_header;
 } __packed;
 
@@ -9904,6 +9961,7 @@ struct asm_aptx_dec_fmt_blk_v2 {
 #define AVCS_SERVICE_ID_ALL (0xFFFFFFFF)
 #define AVCS_SERVICE_ID_AFE (0x4)
 #define APRV2_IDS_SERVICE_ID_ADSP_CVP_V	(0xB)
+#define APRV2_IDS_SERVICE_ID_ADSP_AFE_V (0x4)
 
 struct avcs_get_fwk_version {
 	/*

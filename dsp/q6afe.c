@@ -2788,6 +2788,85 @@ fail_cmd:
 	return ret;
 }
 
+int afe_send_slot_mapping_cfg_v2(
+	struct afe_param_id_slot_mapping_cfg_v2 *slot_mapping_cfg,
+	u16 port_id)
+{
+	struct afe_slot_mapping_config_command_v2 config;
+	int ret = 0;
+	int index = 0;
+
+	if (!slot_mapping_cfg) {
+		pr_err("%s: Error, no configuration data\n", __func__);
+		return -EINVAL;
+	}
+
+	pr_debug("%s: port id: 0x%x\n", __func__, port_id);
+
+	index = q6audio_get_port_index(port_id);
+	if (index < 0 || index >= AFE_MAX_PORTS) {
+		pr_err("%s: AFE port index[%d] invalid!\n",
+				__func__, index);
+		return -EINVAL;
+	}
+	ret = q6audio_validate_port(port_id);
+	if (ret < 0) {
+		pr_err("%s: port id: 0x%x ret %d\n", __func__, port_id, ret);
+		return -EINVAL;
+	}
+
+	memset(&config, 0, sizeof(config));
+	config.hdr.hdr_field = APR_HDR_FIELD(APR_MSG_TYPE_SEQ_CMD,
+			APR_HDR_LEN(APR_HDR_SIZE), APR_PKT_VER);
+	config.hdr.pkt_size = sizeof(config);
+	config.hdr.src_port = 0;
+	config.hdr.dest_port = 0;
+	config.hdr.token = index;
+
+	config.hdr.opcode = AFE_PORT_CMD_SET_PARAM_V2;
+	config.param.port_id = q6audio_get_port_id(port_id);
+	config.param.payload_size = sizeof(config)
+		- sizeof(struct apr_hdr) - sizeof(config.param);
+	config.param.payload_address_lsw = 0x00;
+	config.param.payload_address_msw = 0x00;
+	config.param.mem_map_handle = 0x00;
+	config.pdata.module_id = AFE_MODULE_TDM;
+	config.pdata.param_id = AFE_PARAM_ID_PORT_SLOT_MAPPING_CONFIG;
+	config.pdata.param_size =  sizeof(config.slot_mapping);
+	config.slot_mapping = *slot_mapping_cfg;
+
+	atomic_set(&this_afe.state, 1);
+	atomic_set(&this_afe.status, 0);
+	ret = apr_send_pkt(this_afe.apr, (uint32_t *) &config);
+	if (ret < 0) {
+		pr_err("%s: AFE send slot mapping for port 0x%x failed ret = %d\n",
+				__func__, port_id, ret);
+		ret = -EINVAL;
+		goto fail_cmd;
+	}
+
+	ret = wait_event_timeout(this_afe.wait[index],
+			(atomic_read(&this_afe.state) == 0),
+			msecs_to_jiffies(TIMEOUT_MS));
+	if (!ret) {
+		pr_err("%s: wait_event timeout\n",
+				__func__);
+		ret = -EINVAL;
+		goto fail_cmd;
+	}
+	if (atomic_read(&this_afe.status) > 0) {
+		pr_err("%s: config cmd failed [%s]\n",
+			__func__, adsp_err_get_err_str(
+			atomic_read(&this_afe.status)));
+		ret = adsp_err_get_lnx_err_code(
+				atomic_read(&this_afe.status));
+		goto fail_cmd;
+	}
+
+fail_cmd:
+	return ret;
+}
+
 /**
  * afe_tdm_port_start - to configure AFE session with
  * specified port configuration
@@ -2905,8 +2984,15 @@ int afe_tdm_port_start(u16 port_id, struct afe_tdm_port_config *tdm_port,
 		goto fail_cmd;
 	}
 
-	ret = afe_send_slot_mapping_cfg(&tdm_port->slot_mapping,
-					port_id);
+	if (q6core_get_avcs_api_version_per_service(
+		APRV2_IDS_SERVICE_ID_ADSP_AFE_V) >= AFE_API_VERSION_V3)
+		ret = afe_send_slot_mapping_cfg_v2(
+				&tdm_port->slot_mapping_v2, port_id);
+	else
+		ret = afe_send_slot_mapping_cfg(
+				&tdm_port->slot_mapping,
+				port_id);
+
 	if (ret < 0) {
 		pr_err("%s: afe send failed %d\n", __func__, ret);
 		goto fail_cmd;

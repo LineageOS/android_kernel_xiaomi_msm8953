@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -42,6 +42,7 @@
 #define AFE_CLK_VERSION_V1    1
 #define AFE_CLK_VERSION_V2    2
 #define AFE_API_VERSION_SUPPORT_SPV3	2
+#define AFE_API_VERSION_V3		3
 typedef int (*routing_cb)(int port);
 
 enum {
