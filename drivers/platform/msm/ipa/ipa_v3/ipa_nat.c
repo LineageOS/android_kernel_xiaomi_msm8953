@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -266,14 +266,21 @@ static void ipa3_nat_ipv6ct_destroy_device(
 
 	mutex_lock(&dev->lock);
 
-	dma_free_coherent(ipa3_ctx->pdev, IPA_NAT_IPV6CT_TEMP_MEM_SIZE,
-		dev->tmp_mem->vaddr, dev->tmp_mem->dma_handle);
-	kfree(dev->tmp_mem);
+	if (dev->tmp_mem != NULL &&
+		ipa3_ctx->nat_mem.is_tmp_mem_allocated == false) {
+		dev->tmp_mem = NULL;
+	} else if (dev->tmp_mem != NULL &&
+		ipa3_ctx->nat_mem.is_tmp_mem_allocated) {
+		dma_free_coherent(ipa3_ctx->pdev, IPA_NAT_IPV6CT_TEMP_MEM_SIZE,
+			dev->tmp_mem->vaddr, dev->tmp_mem->dma_handle);
+		kfree(dev->tmp_mem);
+		dev->tmp_mem = NULL;
+		ipa3_ctx->nat_mem.is_tmp_mem_allocated = false;
+	}
 	device_destroy(dev->class, dev->dev_num);
 	unregister_chrdev_region(dev->dev_num, 1);
 	class_destroy(dev->class);
 	dev->is_dev_init = false;
-
 	mutex_unlock(&dev->lock);
 
 	IPADBG("return\n");
@@ -296,9 +303,14 @@ int ipa3_nat_ipv6ct_init_devices(void)
 	/*
 	 * Allocate NAT/IPv6CT temporary memory. The memory is never deleted,
 	 * because provided to HW once NAT or IPv6CT table is deleted.
-	 * NULL is a legal value
 	 */
 	tmp_mem = ipa3_nat_ipv6ct_allocate_tmp_memory();
+
+	if (tmp_mem == NULL) {
+		IPAERR("unable to allocate tmp_mem\n");
+		return -ENOMEM;
+	}
+	ipa3_ctx->nat_mem.is_tmp_mem_allocated = true;
 
 	if (ipa3_nat_ipv6ct_init_device(
 		&ipa3_ctx->nat_mem.dev,
@@ -328,10 +340,11 @@ int ipa3_nat_ipv6ct_init_devices(void)
 fail_init_ipv6ct_dev:
 	ipa3_nat_ipv6ct_destroy_device(&ipa3_ctx->nat_mem.dev);
 fail_init_nat_dev:
-	if (tmp_mem != NULL) {
+	if (tmp_mem != NULL && ipa3_ctx->nat_mem.is_tmp_mem_allocated) {
 		dma_free_coherent(ipa3_ctx->pdev, IPA_NAT_IPV6CT_TEMP_MEM_SIZE,
 			tmp_mem->vaddr, tmp_mem->dma_handle);
 		kfree(tmp_mem);
+		ipa3_ctx->nat_mem.is_tmp_mem_allocated = false;
 	}
 	return result;
 }
@@ -842,19 +855,24 @@ int ipa3_nat_init_cmd(struct ipa_ioc_v4_nat_init *init)
 
 	IPADBG("\n");
 
+	mutex_lock(&ipa3_ctx->nat_mem.dev.lock);
+
 	if (!ipa3_ctx->nat_mem.dev.is_mapped) {
 		IPAERR_RL("attempt to init %s before mmap\n",
 			ipa3_ctx->nat_mem.dev.name);
+		mutex_unlock(&ipa3_ctx->nat_mem.dev.lock);
 		return -EPERM;
 	}
 
 	if (init->tbl_index >= 1) {
 		IPAERR_RL("Unsupported table index %d\n", init->tbl_index);
+		mutex_unlock(&ipa3_ctx->nat_mem.dev.lock);
 		return -EPERM;
 	}
 
 	if (init->table_entries == 0) {
 		IPAERR_RL("Table entries is zero\n");
+		mutex_unlock(&ipa3_ctx->nat_mem.dev.lock);
 		return -EPERM;
 	}
 
@@ -865,6 +883,7 @@ int ipa3_nat_init_cmd(struct ipa_ioc_v4_nat_init *init)
 		IPAHAL_NAT_IPV4);
 	if (result) {
 		IPAERR_RL("Bad params for NAT base table\n");
+		mutex_unlock(&ipa3_ctx->nat_mem.dev.lock);
 		return result;
 	}
 
@@ -875,6 +894,7 @@ int ipa3_nat_init_cmd(struct ipa_ioc_v4_nat_init *init)
 		IPAHAL_NAT_IPV4);
 	if (result) {
 		IPAERR_RL("Bad params for NAT expansion table\n");
+		mutex_unlock(&ipa3_ctx->nat_mem.dev.lock);
 		return result;
 	}
 
@@ -885,6 +905,7 @@ int ipa3_nat_init_cmd(struct ipa_ioc_v4_nat_init *init)
 		IPAHAL_NAT_IPV4_INDEX);
 	if (result) {
 		IPAERR_RL("Bad params for index table\n");
+		mutex_unlock(&ipa3_ctx->nat_mem.dev.lock);
 		return result;
 	}
 
@@ -895,6 +916,7 @@ int ipa3_nat_init_cmd(struct ipa_ioc_v4_nat_init *init)
 		IPAHAL_NAT_IPV4_INDEX);
 	if (result) {
 		IPAERR_RL("Bad params for index expansion table\n");
+		mutex_unlock(&ipa3_ctx->nat_mem.dev.lock);
 		return result;
 	}
 
@@ -928,6 +950,7 @@ int ipa3_nat_init_cmd(struct ipa_ioc_v4_nat_init *init)
 	result = ipa3_nat_send_init_cmd(&cmd, false);
 	if (result) {
 		IPAERR("Fail to send NAT init immediate command\n");
+		mutex_unlock(&ipa3_ctx->nat_mem.dev.lock);
 		return result;
 	}
 
@@ -953,6 +976,8 @@ int ipa3_nat_init_cmd(struct ipa_ioc_v4_nat_init *init)
 				 ipa3_ctx->nat_mem.index_table_expansion_addr);
 
 	ipa3_ctx->nat_mem.dev.is_hw_init = true;
+	mutex_unlock(&ipa3_ctx->nat_mem.dev.lock);
+
 	IPADBG("return\n");
 	return 0;
 }

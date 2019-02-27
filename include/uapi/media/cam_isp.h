@@ -418,10 +418,6 @@ struct cam_isp_acquire_hw_info {
 
 #define CAM_ISP_ACQUIRE_INPUT_VER0          0x2000
 
-#define CAM_ISP_ACQUIRE_INPUT_SIZE_VER0     sizeof(struct cam_isp_in_port_info)
-
 #define CAM_ISP_ACQUIRE_OUT_VER0            0x3000
-
-#define CAM_ISP_ACQUIRE_OUT_SIZE_VER0       sizeof(struct cam_isp_out_port_info)
 
 #endif /* __UAPI_CAM_ISP_H__ */
