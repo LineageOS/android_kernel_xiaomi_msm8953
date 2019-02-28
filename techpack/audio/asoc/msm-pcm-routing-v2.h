@@ -525,4 +525,8 @@ int msm_pcm_routing_reg_stream_app_type_cfg(
 int msm_pcm_routing_get_stream_app_type_cfg(
 	int fedai_id, int session_type, int *be_id,
 	struct msm_pcm_stream_app_type_cfg *cfg_data);
+int msm_pcm_routing_send_chmix_cfg(int fe_id, int ip_channel_cnt,
+				int op_channel_cnt, int *ch_wght_coeff,
+				int session_type, bool use_default_chmap,
+				char *channel_map);
 #endif /*_MSM_PCM_H*/
