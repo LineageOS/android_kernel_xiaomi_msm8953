@@ -1110,6 +1110,8 @@ PopulateDot11fExtCap(tpAniSirGlobal      pMac,
        }
     }
 
+    p_ext_cap->fils_capability = 0;
+
     if (pDot11f->present)
     {
         /* Need to compute the num_bytes based on bits set */

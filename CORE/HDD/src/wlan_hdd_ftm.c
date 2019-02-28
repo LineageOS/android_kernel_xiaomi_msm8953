@@ -1628,6 +1628,7 @@ int wlan_hdd_ftm_close(hdd_context_t *pHddCtx)
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_FATAL,
                   "%s: Ftm has been started. stopping ftm", __func__);
         wlan_ftm_stop(pHddCtx);
+        pHddCtx->ftm.ftm_state = WLAN_FTM_STOPPED;
     }
 #ifdef WLAN_KD_READY_NOTIFIER
     nl_srv_exit(pHddCtx->ptt_pid);
