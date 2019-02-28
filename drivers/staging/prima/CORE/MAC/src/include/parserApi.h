@@ -376,6 +376,7 @@ struct s_ext_cap {
     uint8_t   ChanAvailQuery: 1;
     uint8_t   fineTimingMeas: 1;
     uint8_t        reserved7: 1;
+    uint8_t  fils_capability: 1;
 };
 
 tANI_U8

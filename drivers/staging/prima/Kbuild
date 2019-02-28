@@ -88,6 +88,31 @@ HAVE_CFG80211 := 0
 endif
 endif
 
+ifeq ($(KERNEL_BUILD), 0)
+ifeq ($(WLAN_PROPRIETARY),1)
+    WLAN_BLD_DIR := vendor/qcom/proprietary/wlan
+else
+ifneq ($(TARGET_SUPPORTS_WEARABLES),true)
+ifneq ($(ANDROID_BUILD_TOP),)
+    WLAN_BLD_DIR := $(ANDROID_BUILD_TOP)/vendor/qcom/opensource/wlan
+else
+    WLAN_BLD_DIR := vendor/qcom/opensource/wlan
+endif # ANDROID_BUILD_TOP
+else
+ifneq ($(ANDROID_BUILD_TOP),)
+    WLAN_BLD_DIR := $(ANDROID_BUILD_TOP)/device/qcom/msm8909w/opensource/wlan
+else
+    WLAN_BLD_DIR := device/qcom/msm8909w/opensource/wlan
+endif # ANDROID_BUILD_TOP
+endif # TARGET_SUPPORTS_WEARABLES
+endif # WLAN_PROPRIETARY
+
+ifneq ($(ANDROID_BUILD_TOP),)
+WLAN_ROOT=$(WLAN_BLD_DIR)/prima
+else
+WLAN_ROOT=$(KERNEL_TO_BUILD_ROOT_OFFSET)$(WLAN_BLD_DIR)/prima
+endif # ANDROID_BUILD_TOP
+endif # KERNEL_BUILD
 
 ifeq ($(CONFIG_PRIMA_WLAN_BTAMP),y)
 ############ BAP ############

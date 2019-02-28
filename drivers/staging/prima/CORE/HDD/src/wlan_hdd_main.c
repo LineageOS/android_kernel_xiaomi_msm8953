@@ -62,6 +62,7 @@
 //#include <wlan_qct_driver.h>
 #include <wlan_hdd_includes.h>
 #include <vos_api.h>
+#include <vos_nvitem.h>
 #include <vos_sched.h>
 #include <linux/etherdevice.h>
 #include <linux/firmware.h>
@@ -15672,6 +15673,13 @@ static VOS_STATUS wlan_hdd_init_channels(hdd_context_t *pHddCtx)
 VOS_STATUS wlan_hdd_init_channels_for_cc(hdd_context_t *pHddCtx, driver_load_type init )
 {
    eHalStatus status;
+
+   if (init == INIT && init_by_reg_core_user) {
+      init_by_reg_core_user = false;
+      pr_info("driver regulatory hint is not required");
+
+      return VOS_STATUS_SUCCESS;
+   }
 
    status = sme_InitChannelsForCC(pHddCtx->hHal, init);
    if (HAL_STATUS_SUCCESS(status))
