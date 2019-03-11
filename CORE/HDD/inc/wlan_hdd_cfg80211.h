@@ -1733,6 +1733,29 @@ void hdd_select_cbmode( hdd_adapter_t *pAdapter,v_U8_t operationChannel);
 int wlan_hdd_restore_channels(hdd_context_t *pHddCtx);
 
 /*
+ * wlan_hdd_disable_channels() - Cache the the channels
+ * and current state of the channels from the channel list
+ * received in the command and disable the channels on the
+ * wiphy and NV table.
+ * @hdd_ctx: Pointer to hdd context
+ *
+ * @return: 0 on success, Error code on failure
+ */
+int wlan_hdd_disable_channels(hdd_context_t *hdd_ctx);
+
+/*
+ * hdd_check_and_disconnect_sta_on_invalid_channel() - Disconnect STA if it is
+ * on indoor channel
+ * @hdd_ctx: pointer to hdd context
+ *
+ * STA should be disconnected before starting the SAP if it is on indoor
+ * channel.
+ *
+ * Return: void
+ */
+void hdd_check_and_disconnect_sta_on_invalid_channel(hdd_context_t *hdd_ctx);
+
+/*
  * hdd_update_indoor_channel() - enable/disable indoor channel
  * @hdd_ctx: hdd context
  * @disable: whether to enable / disable indoor channel
