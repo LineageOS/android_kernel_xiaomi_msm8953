@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -134,6 +134,8 @@ int msm_aux_pcm_snd_startup(struct snd_pcm_substream *substream);
 void msm_aux_pcm_snd_shutdown(struct snd_pcm_substream *substream);
 int msm_mi2s_snd_startup(struct snd_pcm_substream *substream);
 void msm_mi2s_snd_shutdown(struct snd_pcm_substream *substream);
+int msm_tdm_snd_startup(struct snd_pcm_substream *substream);
+void msm_tdm_snd_shutdown(struct snd_pcm_substream *substream);
 int msm_common_snd_controls_size(void);
 void msm_set_codec_reg_done(bool done);
 #endif

@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -278,7 +278,9 @@ end:
 }
 
 static struct snd_soc_ops msm_tdm_be_ops = {
-	.hw_params = msm_tdm_snd_hw_params
+	.startup = msm_tdm_snd_startup,
+	.shutdown = msm_tdm_snd_shutdown,
+	.hw_params = msm_tdm_snd_hw_params,
 };
 
 static int msm_fe_qos_prepare(struct snd_pcm_substream *substream)

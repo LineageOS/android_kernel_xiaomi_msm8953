@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -50,6 +50,18 @@ enum {
 };
 
 bool codec_reg_done;
+
+struct tdm_dai_data {
+	DECLARE_BITMAP(status_mask, 3);
+	u32 rate;
+	u32 channels;
+	u32 bitwidth;
+	u32 num_group_ports;
+	struct afe_clk_set clk_set; /* hold LPASS clock config. */
+	union afe_port_group_config group_cfg; /* hold tdm group config */
+	struct afe_tdm_port_config port_cfg; /* hold tdm config */
+};
+
 
 /* TDM default config */
 static struct dev_config tdm_rx_cfg[TDM_INTERFACE_MAX][TDM_PORT_MAX] = {
@@ -2802,6 +2814,91 @@ void msm_mi2s_snd_shutdown(struct snd_pcm_substream *substream)
 	mutex_unlock(&mi2s_intf_conf[index].lock);
 }
 EXPORT_SYMBOL(msm_mi2s_snd_shutdown);
+
+static int msm_get_tdm_mode(u32 port_id)
+{
+	int tdm_mode;
+
+	switch (port_id) {
+	case AFE_PORT_ID_PRIMARY_TDM_RX:
+	case AFE_PORT_ID_PRIMARY_TDM_TX:
+		tdm_mode = TDM_PRI;
+	break;
+	case AFE_PORT_ID_SECONDARY_TDM_RX:
+	case AFE_PORT_ID_SECONDARY_TDM_TX:
+		tdm_mode = TDM_SEC;
+	break;
+	case AFE_PORT_ID_TERTIARY_TDM_RX:
+	case AFE_PORT_ID_TERTIARY_TDM_TX:
+		tdm_mode = TDM_TERT;
+	break;
+	case AFE_PORT_ID_QUATERNARY_TDM_RX:
+	case AFE_PORT_ID_QUATERNARY_TDM_TX:
+		tdm_mode = TDM_QUAT;
+	break;
+	case AFE_PORT_ID_QUINARY_TDM_RX:
+	case AFE_PORT_ID_QUINARY_TDM_TX:
+		tdm_mode = TDM_QUIN;
+	break;
+	default:
+		pr_err("%s: Invalid port id: %d\n", __func__, port_id);
+		tdm_mode = -EINVAL;
+	}
+	return tdm_mode;
+}
+
+int msm_tdm_snd_startup(struct snd_pcm_substream *substream)
+{
+	int ret = 0;
+	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
+	struct snd_soc_card *card = rtd->card;
+	struct msm_asoc_mach_data *pdata = snd_soc_card_get_drvdata(card);
+	struct tdm_dai_data *dai_data = dev_get_drvdata(cpu_dai->dev);
+	int tdm_mode = msm_get_tdm_mode(cpu_dai->id);
+
+	if (tdm_mode < 0) {
+		dev_err(rtd->card->dev, "%s: Invalid tdm_mode\n", __func__);
+		return tdm_mode;
+	}
+	dai_data->clk_set.enable = true;
+	ret = afe_set_lpass_clock_v2(cpu_dai->id, &dai_data->clk_set);
+	if (ret < 0)
+		pr_err("%s: afe lpass clock failed, err:%d\n",
+			__func__, ret);
+	/* currently only supporting TDM_RX_0 and TDM_TX_0 */
+	if (pdata->mi2s_gpio_p[tdm_mode])
+		ret = msm_cdc_pinctrl_select_active_state(
+			pdata->mi2s_gpio_p[tdm_mode]);
+	return ret;
+}
+EXPORT_SYMBOL(msm_tdm_snd_startup);
+
+void msm_tdm_snd_shutdown(struct snd_pcm_substream *substream)
+{
+	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
+	struct snd_soc_card *card = rtd->card;
+	struct msm_asoc_mach_data *pdata = snd_soc_card_get_drvdata(card);
+	struct tdm_dai_data *dai_data = dev_get_drvdata(cpu_dai->dev);
+	int tdm_mode = msm_get_tdm_mode(cpu_dai->id);
+	int ret;
+
+	if (tdm_mode < 0) {
+		dev_err(rtd->card->dev, "%s: Invalid tdm_mode\n", __func__);
+		return;
+	}
+	dai_data->clk_set.enable = false;
+	ret = afe_set_lpass_clock_v2(cpu_dai->id, &dai_data->clk_set);
+	if (ret < 0)
+		pr_err("%s: afe lpass clock failed, err:%d\n", __func__, ret);
+
+	/* currently only supporting TDM_RX_0 and TDM_TX_0 */
+	if (pdata->mi2s_gpio_p[tdm_mode])
+		msm_cdc_pinctrl_select_sleep_state(
+			pdata->mi2s_gpio_p[tdm_mode]);
+}
+EXPORT_SYMBOL(msm_tdm_snd_shutdown);
 
 /* Validate whether US EU switch is present or not */
 static int msm_prepare_us_euro(struct snd_soc_card *card)
