@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2019 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -6452,6 +6452,8 @@ eHalStatus csrSendMBScanReq( tpAniSirGlobal pMac, tANI_U16 sessionId,
                               pScanReq->uIEFieldLen);
             }
             pMsg->p2pSearch = pScanReq->p2pSearch;
+            pMsg->scan_randomize= pScanReq->scan_randomize;
+            pMsg->nl_scan = pScanReq->nl_scan;
 
             if (pScanReq->requestType == eCSR_SCAN_HO_BG_SCAN) 
             {
@@ -6666,6 +6668,9 @@ eHalStatus csrProcessMacAddrSpoofCommand( tpAniSirGlobal pMac, tSmeCmd *pCommand
       // spoof mac address
       vos_mem_copy((tANI_U8 *)pMsg->macAddr,
            (tANI_U8 *)pCommand->u.macAddrSpoofCmd.macAddr, sizeof(tSirMacAddr));
+      pMsg->spoof_mac_oui =
+       pal_cpu_to_be16(pCommand->u.macAddrSpoofCmd.spoof_mac_oui);
+
       status = palSendMBMessage(pMac->hHdd, pMsg);
    } while( 0 );
    return( status );
@@ -7145,6 +7150,8 @@ eHalStatus csrScanCopyRequest(tpAniSirGlobal pMac, tCsrScanRequest *pDstReq, tCs
                     break;
                 }
             }//Allocate memory for SSID List
+            pDstReq->scan_randomize = pSrcReq->scan_randomize;
+            pDstReq->nl_scan = pSrcReq->nl_scan;
             pDstReq->p2pSearch = pSrcReq->p2pSearch;
             pDstReq->skipDfsChnlInP2pSearch = pSrcReq->skipDfsChnlInP2pSearch;
 

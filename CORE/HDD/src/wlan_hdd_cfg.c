@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2019 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -4035,6 +4035,11 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                 CFG_FORCE_RSNE_OVERRIDE_MIN,
                 CFG_FORCE_RSNE_OVERRIDE_MAX),
 
+  REG_VARIABLE_STRING(CFG_ENABLE_DEFAULT_SAP, WLAN_PARAM_String,
+                      hdd_config_t, enabledefaultSAP,
+                      VAR_FLAGS_NONE,
+                      (void *)CFG_ENABLE_DEFAULT_SAP_DEFAULT),
+
 };
 
 /*
@@ -4708,6 +4713,10 @@ static void print_hdd_cfg(hdd_context_t *pHddCtx)
             "Name = [%s] Value = [%u] ",
             CFG_FORCE_RSNE_OVERRIDE_NAME,
             pHddCtx->cfg_ini->force_rsne_override);
+    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+            "Name = [%s] Value = [%s] ",
+            CFG_ENABLE_DEFAULT_SAP,
+            pHddCtx->cfg_ini->enabledefaultSAP);
 }
 
 
