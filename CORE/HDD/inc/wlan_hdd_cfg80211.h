@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2019 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1876,8 +1876,15 @@ static inline void wlan_hdd_cfg80211_indicate_disconnect(struct net_device *dev,
 }
 #endif
 
-struct cfg80211_bss* wlan_hdd_cfg80211_update_bss_list(
-   hdd_adapter_t *pAdapter, tSirMacAddr bssid);
+/*
+ * wlan_hdd_cfg80211_unlink_bss :to inform nl80211
+ * interface that BSS might have been lost.
+ * @pAdapter: adapter
+ * @bssid: bssid which might have been lost
+ *
+ * Return: void
+ */
+void wlan_hdd_cfg80211_unlink_bss(hdd_adapter_t *pAdapter, tSirMacAddr bssid);
 
 struct cfg80211_bss *wlan_hdd_cfg80211_inform_bss_frame(hdd_adapter_t *pAdapter,
 		tSirBssDescription *bss_desc);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2019 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1872,7 +1872,7 @@ static eHalStatus hdd_DisConnectHandler( hdd_adapter_t *pAdapter, tCsrRoamInfo *
        /* clear scan cache for Link Lost */
        if (pRoamInfo && !pRoamInfo->reasonCode &&
            (eCSR_ROAM_LOSTLINK == roamStatus)) {
-           wlan_hdd_cfg80211_update_bss_list(pAdapter,
+           wlan_hdd_cfg80211_unlink_bss(pAdapter,
                                pHddStaCtx->conn_info.bssId);
            sme_remove_bssid_from_scan_list(pHddCtx->hHal,
                                pHddStaCtx->conn_info.bssId);
@@ -2668,7 +2668,7 @@ static eHalStatus hdd_AssociationCompletionHandler( hdd_adapter_t *pAdapter, tCs
            ((eSIR_SME_JOIN_TIMEOUT_RESULT_CODE == pRoamInfo->statusCode) ||
            (eSIR_SME_AUTH_TIMEOUT_RESULT_CODE == pRoamInfo->statusCode) ||
            (eSIR_SME_ASSOC_TIMEOUT_RESULT_CODE == pRoamInfo->statusCode)))) {
-             wlan_hdd_cfg80211_update_bss_list(pAdapter,
+             wlan_hdd_cfg80211_unlink_bss(pAdapter,
                     pRoamInfo ? pRoamInfo->bssid : pWextState->req_bssId);
              sme_remove_bssid_from_scan_list(pHddCtx->hHal,
                     pRoamInfo ? pRoamInfo->bssid : pWextState->req_bssId);
