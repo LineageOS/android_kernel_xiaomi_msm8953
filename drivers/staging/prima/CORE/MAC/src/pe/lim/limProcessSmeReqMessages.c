@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2019 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1541,6 +1541,8 @@ __limProcessSmeScanReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
                    pScanReq->max_chntime_btc_esco;
           pMlmScanReq->dot11mode = pScanReq->dot11mode;
           pMlmScanReq->p2pSearch = pScanReq->p2pSearch;
+          pMlmScanReq->scan_randomize = pScanReq->scan_randomize;
+          pMlmScanReq->nl_scan = pScanReq->nl_scan;
 
           //Store the smeSessionID and transaction ID for later use.
           pMac->lim.gSmeSessionId = pScanReq->sessionId;
@@ -5601,6 +5603,8 @@ __limProcessSmeSpoofMacAddrRequest(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
    vos_mem_copy( pSpoofMacAddrParams->macAddr, pSmeReq->macAddr, sizeof(tSirMacAddr) );
 
    vos_mem_copy(pMac->lim.spoofMacAddr, pSmeReq->macAddr, VOS_MAC_ADDRESS_LEN);
+
+   pMac->lim.spoof_mac_oui = pSmeReq->spoof_mac_oui;
 
    limLog( pMac, LOG1, FL("Recieved Spoofed Mac Addr request with Addr:"
                 MAC_ADDRESS_STR), MAC_ADDR_ARRAY(pMac->lim.spoofMacAddr) );

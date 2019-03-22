@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017, 2019 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -913,6 +913,15 @@ typedef struct sSirSmeScanReq
 
     /* Number of SSIDs to scan */
     tANI_U8             numSsid;
+
+    /*
+     * @nl_scan is set to true if scan request is from cfg80211 sub-system and
+     * known as NL scan.
+     *
+     * @scan_randomize is set to true if NL scan requires randomization.
+     */
+    bool                 nl_scan;
+    bool                 scan_randomize;
     
     //channelList has to be the last member of this structure. Check tSirChannelList for the reason.
     /* This MUST be the last field of the structure */
@@ -5926,6 +5935,7 @@ typedef struct
     tANI_U16       messageType;
     tANI_U16       length;
     tSirMacAddr    macAddr;
+    bool           spoof_mac_oui;
 } tSirSpoofMacAddrReq, *tpSirSpoofMacAddrReq;
 
 typedef struct

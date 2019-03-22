@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2019 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -324,13 +324,16 @@ eHalStatus sme_OemDataRegisterCallback (tHalHandle hHal,
                void *callbackContext);
 #endif
 
-/* ---------------------------------------------------------------------------
-    \fn sme_SpoofMacAddrReq
-    \brief  SME API to send Spoof Mac Addr req to HAL
-    \param  macaddr: mac address to be sent
-    \- return eHalStatus
-    -------------------------------------------------------------------------*/
-eHalStatus  sme_SpoofMacAddrReq(tHalHandle hHal, v_MACADDR_t *macaddr);
+/**
+ * sme_SpoofMacAddrReq() - SME API to send Spoof Mac Addr req to HAL
+ * @hHal: Hal handle
+ * @macaddr: Spoof mac address to be sent
+ * @spoof_mac_oui: If spoof request is from VENDOR_SUBCMD_MAC_OUI
+ *
+ * Return: eHalStatus
+ */
+eHalStatus
+sme_SpoofMacAddrReq(tHalHandle hHal, v_MACADDR_t *macaddr, bool spoof_mac_oui);
 
 typedef enum
 {
