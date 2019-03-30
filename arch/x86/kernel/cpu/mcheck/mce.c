@@ -751,6 +751,7 @@ static int mce_no_way_out(struct mce *m, char **msg, unsigned long *validp,
 			quirk_no_way_out(i, m, regs);
 
 		if (mce_severity(m, mca_cfg.tolerant, &tmp, true) >= MCE_PANIC_SEVERITY) {
+			m->bank = i;
 			mce_read_aux(m, i);
 			*msg = tmp;
 			return 1;
@@ -2396,9 +2397,6 @@ static ssize_t store_int_with_restart(struct device *s,
 
 	if (check_interval == old_check_interval)
 		return ret;
-
-	if (check_interval < 1)
-		check_interval = 1;
 
 	mutex_lock(&mce_sysfs_mutex);
 	mce_restart();

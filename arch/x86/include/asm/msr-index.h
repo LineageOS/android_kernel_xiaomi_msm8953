@@ -63,10 +63,17 @@
 #define MSR_IA32_ARCH_CAPABILITIES	0x0000010a
 #define ARCH_CAP_RDCL_NO		(1 << 0)   /* Not susceptible to Meltdown */
 #define ARCH_CAP_IBRS_ALL		(1 << 1)   /* Enhanced IBRS support */
+#define ARCH_CAP_SKIP_VMENTRY_L1DFLUSH	(1 << 3)   /* Skip L1D flush on vmentry */
 #define ARCH_CAP_SSB_NO			(1 << 4)   /*
 						    * Not susceptible to Speculative Store Bypass
 						    * attack, so no Speculative Store Bypass
 						    * control required.
+						    */
+
+#define MSR_IA32_FLUSH_CMD		0x0000010b
+#define L1D_FLUSH			(1 << 0)   /*
+						    * Writeback and invalidate the
+						    * L1 data cache.
 						    */
 
 #define MSR_IA32_BBL_CR_CTL		0x00000119
@@ -567,6 +574,12 @@
 #define MSR_IA32_MISC_ENABLE_IP_PREF_DISABLE		(1ULL << MSR_IA32_MISC_ENABLE_IP_PREF_DISABLE_BIT)
 
 #define MSR_IA32_TSC_DEADLINE		0x000006E0
+
+
+#define MSR_TSX_FORCE_ABORT		0x0000010F
+
+#define MSR_TFA_RTM_FORCE_ABORT_BIT	0
+#define MSR_TFA_RTM_FORCE_ABORT		BIT_ULL(MSR_TFA_RTM_FORCE_ABORT_BIT)
 
 /* P4/Xeon+ specific */
 #define MSR_IA32_MCG_EAX		0x00000180
