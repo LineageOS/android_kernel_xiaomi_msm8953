@@ -13006,8 +13006,8 @@ VOS_STATUS wlan_hdd_send_sta_authorized_event(
 					const v_MACADDR_t *mac_addr)
 {
 	struct sk_buff *vendor_event;
-	uint32_t sta_flags = 0;
 	VOS_STATUS status;
+	struct  nl80211_sta_flag_update sta_flags;
 
 	ENTER();
 
@@ -13032,18 +13032,22 @@ VOS_STATUS wlan_hdd_send_sta_authorized_event(
 		return -EINVAL;
 	}
 
-	sta_flags |= BIT(NL80211_STA_FLAG_AUTHORIZED);
+	sta_flags.mask |= BIT(NL80211_STA_FLAG_AUTHORIZED);
+	sta_flags.set = true;
 
-	status = nla_put_u32(vendor_event,
-			     QCA_WLAN_VENDOR_ATTR_LINK_PROPERTIES_STA_FLAGS,
-			     sta_flags);
+	status = nla_put(vendor_event,
+			 QCA_WLAN_VENDOR_ATTR_LINK_PROPERTIES_STA_FLAGS,
+			 sizeof(struct  nl80211_sta_flag_update),
+			 &sta_flags);
+
 	if (status) {
 		hddLog(VOS_TRACE_LEVEL_ERROR, FL("STA flag put fails"));
 		kfree_skb(vendor_event);
 		return VOS_STATUS_E_FAILURE;
 	}
+
 	status = nla_put(vendor_event,
-			 QCA_WLAN_VENDOR_ATTR_LINK_PROPERTIES_STA_MAC,
+			 QCA_WLAN_VENDOR_ATTR_LINK_PROPERTIES_MAC_ADDR,
 			 VOS_MAC_ADDR_SIZE, mac_addr->bytes);
 	if (status) {
 		hddLog(VOS_TRACE_LEVEL_ERROR, FL("STA MAC put fails"));
