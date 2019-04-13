@@ -783,7 +783,7 @@ limProcessAssocReqFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,
                 {
                     if (dot11fUnpackIeWPA(pMac,
                                         &pAssocReq->wpa.info[4], //OUI is not taken care
-                                        pAssocReq->wpa.length, 
+                                        (pAssocReq->wpa.length - 4),
                                         &Dot11fIEWPA) != DOT11F_PARSE_SUCCESS)
                     {
                         limLog(pMac, LOGE, FL("Invalid WPA IE"));
