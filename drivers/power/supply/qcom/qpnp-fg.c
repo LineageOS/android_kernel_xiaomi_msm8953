@@ -2035,10 +2035,9 @@ static void fg_handle_battery_insertion(struct fg_chip *chip)
 	schedule_delayed_work(&chip->update_sram_data, msecs_to_jiffies(0));
 }
 
-
-static int soc_to_setpoint(int soc)
+static int __maybe_unused soc_to_setpoint(int soc)
 {
-	return DIV_ROUND_CLOSEST(soc * 255, 100);
+       return DIV_ROUND_CLOSEST(soc * 255, 100);
 }
 
 static void batt_to_setpoint_adc(int vbatt_mv, u8 *data)
