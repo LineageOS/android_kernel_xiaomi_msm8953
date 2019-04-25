@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017, 2019 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -71,7 +71,7 @@
 #ifdef WLAN_FEATURE_LFR_MBB
 #include "lim_mbb.h"
 #endif
-
+#include "dot11f.h"
 
 #define BA_DEFAULT_TX_BUFFER_SIZE 64
 
@@ -2185,6 +2185,7 @@ static void __limProcessSAQueryRequestActionFrame(tpAniSirGlobal pMac, tANI_U8 *
     tpSirMacMgmtHdr     pHdr;
     tANI_U8             *pBody;
     tANI_U8             transId[2];
+    uint32_t            frame_len;
 
     /* Prima  --- Below Macro not available in prima 
        pHdr = SIR_MAC_BD_TO_MPDUHEADER(pBd);
@@ -2192,7 +2193,13 @@ static void __limProcessSAQueryRequestActionFrame(tpAniSirGlobal pMac, tANI_U8 *
 
     pHdr = WDA_GET_RX_MAC_HEADER(pRxPacketInfo);
     pBody = WDA_GET_RX_MPDU_DATA(pRxPacketInfo);
+    frame_len = WDA_GET_RX_PAYLOAD_LEN(pRxPacketInfo);
 
+    if (frame_len < sizeof(struct sDot11fSaQueryReq)) {
+         VOS_TRACE(VOS_MODULE_ID_PE, VOS_TRACE_LEVEL_ERROR,
+                   ("Invalid frame length"));
+         return;
+    }
     /* If this is an unprotected SA Query Request, then ignore it. */
     if (pHdr->fc.wep == 0)
         return;
@@ -2241,12 +2248,19 @@ static void __limProcessSAQueryResponseActionFrame(tpAniSirGlobal pMac, tANI_U8 
     tANI_U16            aid;
     tANI_U16            transId;
     tANI_U8             retryNum;
+    uint32_t            frame_len;
 
     pHdr = WDA_GET_RX_MAC_HEADER(pRxPacketInfo);
     pBody = WDA_GET_RX_MPDU_DATA(pRxPacketInfo);
+    frame_len = WDA_GET_RX_PAYLOAD_LEN(pRxPacketInfo);
     VOS_TRACE(VOS_MODULE_ID_PE, VOS_TRACE_LEVEL_INFO,
                          ("SA Query Response received...")) ;
 
+    if (frame_len < sizeof(struct sDot11fSaQueryRsp)) {
+        VOS_TRACE(VOS_MODULE_ID_PE, VOS_TRACE_LEVEL_ERROR,
+                  ("Invalid frame length"));
+        return;
+    }
     /* When a station, supplicant handles SA Query Response.
        Forward to SME to HDD to wpa_supplicant. */
     if (eLIM_STA_ROLE == psessionEntry->limSystemRole)

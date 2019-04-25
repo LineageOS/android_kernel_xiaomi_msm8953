@@ -311,6 +311,9 @@ static struct ieee80211_supported_band wlan_hdd_band_2_4_GHZ =
     .ht_cap.mcs.rx_mask    = { 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, },
     .ht_cap.mcs.rx_highest = cpu_to_le16( 72 ),
     .ht_cap.mcs.tx_params  = IEEE80211_HT_MCS_TX_DEFINED,
+    .vht_cap.vht_supported   = 1,
+    .vht_cap.cap = IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_11454
+                            | IEEE80211_VHT_CAP_SHORT_GI_80,
 };
 
 static struct ieee80211_supported_band wlan_hdd_band_5_GHZ =
@@ -332,6 +335,9 @@ static struct ieee80211_supported_band wlan_hdd_band_5_GHZ =
     .ht_cap.mcs.rx_mask    = { 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, },
     .ht_cap.mcs.rx_highest = cpu_to_le16( 72 ),
     .ht_cap.mcs.tx_params  = IEEE80211_HT_MCS_TX_DEFINED,
+    .vht_cap.vht_supported   = 1,
+    .vht_cap.cap = IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_11454
+                            | IEEE80211_VHT_CAP_SHORT_GI_80,
 };
 
 /* This structure contain information what kind of frame are expected in
@@ -5540,6 +5546,7 @@ static int __wlan_hdd_cfg80211_set_spoofed_mac_oui(struct wiphy *wiphy,
 {
 
     hdd_context_t *pHddCtx      = wiphy_priv(wiphy);
+    hdd_adapter_t *adapter = WLAN_HDD_GET_PRIV_PTR(wdev->netdev);
     struct nlattr *tb[QCA_WLAN_VENDOR_ATTR_SET_SCANNING_MAC_OUI_MAX + 1];
 
     ENTER();
@@ -5547,6 +5554,17 @@ static int __wlan_hdd_cfg80211_set_spoofed_mac_oui(struct wiphy *wiphy,
     if (0 != wlan_hdd_validate_context(pHddCtx)){
         return -EINVAL;
     }
+
+    if (!adapter) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("HDD adpater is NULL"));
+        return -EINVAL;
+    }
+
+    if (adapter->device_mode != WLAN_HDD_INFRA_STATION) {
+        hddLog(VOS_TRACE_LEVEL_INFO, FL("MAC_SPOOFED_SCAN allowed only in STA"));
+        return -ENOTSUPP;
+    }
+
     if (0 == pHddCtx->cfg_ini->enableMacSpoofing) {
         hddLog(VOS_TRACE_LEVEL_INFO, FL("MAC_SPOOFED_SCAN disabled in ini"));
         return -ENOTSUPP;
