@@ -6437,4 +6437,16 @@ struct ecsa_frame_params {
     uint8_t  switch_count;
 };
 
+typedef void (*sir_feature_caps_cb)(void *user_data);
+
+/**
+ * struct sir_feature_caps_params - Feature capability request
+ * @feature_caps_cb: HDD callback to be invoked from WDA
+ * @user_data: associated user-data with feature_caps_cb callback
+ */
+struct sir_feature_caps_params {
+	sir_feature_caps_cb feature_caps_cb;
+	void *user_data;
+};
+
 #endif /* __SIR_API_H */

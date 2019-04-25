@@ -10167,22 +10167,19 @@ eHalStatus sme_SetTmLevel(tHalHandle hHal, v_U16_t newTMLevel, v_U16_t tmMode)
     return(status);
 }
 
-/*---------------------------------------------------------------------------
-
-  \brief sme_featureCapsExchange() - SME interface to exchange capabilities between
-  Host and FW.
-
-  \param  hHal - HAL handle for device
-
-  \return NONE
-
----------------------------------------------------------------------------*/
-void sme_featureCapsExchange( tHalHandle hHal)
+VOS_STATUS
+sme_featureCapsExchange(struct sir_feature_caps_params *params)
 {
-    v_CONTEXT_t vosContext = vos_get_global_context(VOS_MODULE_ID_SME, NULL);
-    MTRACE(vos_trace(VOS_MODULE_ID_SME,
-                     TRACE_CODE_SME_RX_HDD_CAPS_EXCH, NO_SESSION, 0));
-    WDA_featureCapsExchange(vosContext);
+	VOS_STATUS status;
+	v_CONTEXT_t vosContext = vos_get_global_context(VOS_MODULE_ID_SME,
+							NULL);
+
+	MTRACE(vos_trace(VOS_MODULE_ID_SME,
+	       TRACE_CODE_SME_RX_HDD_CAPS_EXCH, NO_SESSION, 0));
+
+	status = WDA_featureCapsExchange(vosContext, params);
+
+	return status;
 }
 
 /*---------------------------------------------------------------------------

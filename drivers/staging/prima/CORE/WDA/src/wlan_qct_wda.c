@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2019 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -20389,6 +20389,8 @@ void WDA_PERRoamTriggerScanReqCallback(WDI_Status status, void* pUserData)
    }
    if ( pWdaParams->wdaMsgParam != NULL)
       vos_mem_free(pWdaParams->wdaMsgParam);
+   if (pWdaParams->wdaWdiApiMsgParam != NULL)
+       vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
 
    vos_mem_free(pWdaParams) ;
    vosMsg.type = eWNI_SME_ROAM_SCAN_TRIGGER_RSP;
@@ -20424,6 +20426,8 @@ void WDA_PERRoamOffloadScanReqCallback(WDI_Status status, void* pUserData)
    }
    if ( pWdaParams->wdaMsgParam != NULL)
       vos_mem_free(pWdaParams->wdaMsgParam);
+   if (pWdaParams->wdaWdiApiMsgParam != NULL)
+       vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
 
    vos_mem_free(pWdaParams) ;
    vosMsg.type = eWNI_SME_ROAM_SCAN_OFFLOAD_RSP;
@@ -21291,14 +21295,95 @@ void WDA_FWLoggingDXEdoneInd(v_U32_t logType)
    }
 }
 
- /*  FUNCTION    WDA_featureCapsExchange
-  *  WDA API to invoke capability exchange between host and FW.
-  */
-void WDA_featureCapsExchange(v_PVOID_t pVosContext)
+/**
+ * wda_feature_caps_cb() - Callback to be invoked for feature
+ * capability response received from firmware.
+ * @feat_caps_rsp: feature capability response
+ * @user_data: user input holding HDD callbacks
+ *
+ * Return: None
+ */
+void wda_feature_caps_cb(void *feat_caps_rsp, void *user_data)
 {
-   VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
-      "%s:enter", __func__ );
-   WDI_featureCapsExchangeReq( NULL, pVosContext);
+	tWDA_ReqParams *wda_params = user_data;
+	tWDA_CbContext *wda;
+	struct sir_feature_caps_params *params;
+
+	VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+		  "<------ %s " ,__func__);
+	if(!wda_params) {
+		VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+			  "%s: wda params received NULL", __func__);
+		return;
+	}
+
+	wda = wda_params->pWdaContext;
+	params = wda_params->wdaMsgParam;
+	if(!params) {
+		VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+			  "%s: params received NULL", __func__);
+		goto free_memory;
+	}
+
+	(params->feature_caps_cb)(params->user_data);
+	vos_mem_free(params);
+
+free_memory:
+	vos_mem_free(wda_params->wdaWdiApiMsgParam);
+	vos_mem_free(wda_params);
+}
+
+VOS_STATUS WDA_featureCapsExchange(v_PVOID_t pVosContext,
+				   struct sir_feature_caps_params *request)
+{
+	WDI_Status status;
+	tWDA_CbContext *wda = NULL;
+	tWDA_ReqParams *wda_params = NULL;
+	struct sir_feature_caps_params *params = NULL;
+
+	VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+		  "%s:enter", __func__ );
+
+	wda = (tWDA_CbContext *)vos_get_context(VOS_MODULE_ID_WDA, pVosContext);
+	if(!wda) {
+		VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+			  "%s:pWDA is NULL", __func__);
+		return VOS_STATUS_E_FAILURE;
+	}
+
+	wda_params = vos_mem_malloc(sizeof(*wda_params));
+	if(!wda_params) {
+		VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+			  "%s: VOS MEM Alloc Failure", __func__);
+		return VOS_STATUS_E_NOMEM;
+	}
+	vos_mem_zero(wda_params, sizeof(*wda_params));
+
+	if (request) {
+		params = vos_mem_malloc(sizeof(*params));
+		if (!params) {
+			VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+				  "%s: VOS MEM Alloc Failure", __func__);
+			vos_mem_free(wda_params);
+			return VOS_STATUS_E_NOMEM;
+		}
+		vos_mem_zero(params, sizeof(*params));
+		*params = *request;
+	}
+
+	wda_params->pWdaContext = wda;
+	wda_params->wdaMsgParam = params;
+	wda_params->wdaWdiApiMsgParam = NULL;
+
+	status = WDI_featureCapsExchangeReq(wda_feature_caps_cb, wda_params);
+	if (status != WDI_STATUS_SUCCESS) {
+		if (params)
+			vos_mem_free(params);
+		vos_mem_free(wda_params);
+		return VOS_STATUS_E_FAILURE;
+	}
+
+	return VOS_STATUS_SUCCESS;
 }
 
 /*  FUNCTION    WDA_disableCapablityFeature

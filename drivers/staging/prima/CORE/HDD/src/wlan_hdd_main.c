@@ -12649,6 +12649,80 @@ void hdd_prevent_suspend_timeout(v_U32_t timeout, uint32_t reason)
 
 }
 
+/**
+ * hdd_get_feature_caps_cb() - Callback invoked from WDA
+ * @cookie: to identify HDD request to firmware
+ *
+ * This function is invoked from WDA when feature capabilities response
+ * is received from firmware.
+ *
+ * Return: None
+ */
+static void hdd_get_feature_caps_cb(void *cookie)
+{
+	struct hdd_request *request;
+
+	request = hdd_request_get(cookie);
+	if (!request) {
+		hddLog(VOS_TRACE_LEVEL_ERROR, FL("Obsolete request"));
+		return;
+	}
+
+	pr_info("%s: Firmware feature capabilities received\n", __func__);
+
+	hdd_request_complete(request);
+	hdd_request_put(request);
+}
+
+/**
+ * hdd_get_feature_caps() - Get features supported by firmware
+ * @hdd_ctx: Pointer to HDD context
+ *
+ * This function uses request manager framework to get the feature
+ * capabilities from firmware.
+ *
+ * Return: None
+ */
+static void hdd_get_feature_caps(hdd_context_t *hdd_ctx)
+{
+	VOS_STATUS status;
+	void *cookie;
+	int ret;
+	struct hdd_request *request;
+	static const struct hdd_request_params params = {
+		.priv_size = 0,
+		.timeout_ms = WLAN_WAIT_TIME_FEATURE_CAPS,
+	};
+	struct sir_feature_caps_params caps_params = {0};
+
+	request = hdd_request_alloc(&params);
+	if (!request) {
+		pr_err("%s: Request allocation failure\n", __func__);
+		return;
+	}
+
+	cookie = hdd_request_cookie(request);
+	caps_params.user_data = cookie;
+	caps_params.feature_caps_cb = hdd_get_feature_caps_cb;
+
+	status = sme_featureCapsExchange(&caps_params);
+	if (status != VOS_STATUS_SUCCESS) {
+		pr_err("%s: Unable to get feature caps\n", __func__);
+		goto end;
+	}
+
+	/* request was sent -- wait for the response */
+	ret = hdd_request_wait_for_response(request);
+	if (ret) {
+		pr_err("%s: SME timeout while retrieving feature caps\n",
+			__func__);
+		goto end;
+	}
+
+end:
+	hdd_request_put(request);
+}
+
 /**---------------------------------------------------------------------------
 
   \brief hdd_exchange_version_and_caps() - HDD function to exchange version and capability
@@ -12783,12 +12857,13 @@ void hdd_exchange_version_and_caps(hdd_context_t *pHddCtx)
             sme_disableFeatureCapablity(IBSS_HEARTBEAT_OFFLOAD);
          }
 
-         sme_featureCapsExchange(pHddCtx->hHal);
+         hdd_get_feature_caps(pHddCtx);
       }
 
    } while (0);
 
 }
+
 void wlan_hdd_send_svc_nlink_msg(int type, void *data, int len)
 {
        struct sk_buff *skb;
@@ -13055,7 +13130,7 @@ int wlan_hdd_mon_open(hdd_context_t *pHddCtx)
    }
 
    WLANTL_SetMonRxCbk( pVosContext, hdd_rx_packet_monitor_cbk );
-   WDA_featureCapsExchange(pVosContext);
+   sme_featureCapsExchange(NULL);
    wcnss_wlan_set_drvdata(pHddCtx->parent_dev, pHddCtx);
 
    pAdapter = hdd_open_adapter( pHddCtx, WLAN_HDD_MONITOR, "wlan%d",
@@ -13913,6 +13988,14 @@ int hdd_wlan_startup(struct device *dev )
 
    wcnss_wlan_set_drvdata(pHddCtx->parent_dev, pHddCtx);
 
+#ifdef SAP_AUTH_OFFLOAD
+   if (!sme_IsFeatureSupportedByFW(SAP_OFFLOADS))
+   {
+       hddLog(VOS_TRACE_LEVEL_INFO, FL(" SAP AUTH OFFLOAD not supp by FW"));
+       pHddCtx->cfg_ini->enable_sap_auth_offload = 0;
+   }
+#endif
+
    if (VOS_STA_SAP_MODE == hdd_get_conparam())
    {
      pAdapter = hdd_open_adapter( pHddCtx, WLAN_HDD_SOFTAP, "softap.%d", 
@@ -14195,25 +14278,15 @@ int hdd_wlan_startup(struct device *dev )
 
 #endif
 
-#ifdef SAP_AUTH_OFFLOAD
-   if (!sme_IsFeatureSupportedByFW(SAP_OFFLOADS))
-   {
-       hddLog(VOS_TRACE_LEVEL_INFO, FL(" SAP AUTH OFFLOAD not supp by FW"));
-       pHddCtx->cfg_ini->enable_sap_auth_offload = 0;
-   }
-#endif
-
    if (vos_is_multicast_logging())
        wlan_logging_set_log_level();
 
    hdd_register_mcast_bcast_filter(pHddCtx);
-   if (VOS_STA_SAP_MODE != hdd_get_conparam())
-   {
-      /* Action frame registered in one adapter which will
-       * applicable to all interfaces 
-       */
-      wlan_hdd_cfg80211_register_frames(pAdapter);
-   }
+
+   /* Action frame registered in one adapter which will
+    * applicable to all interfaces
+    */
+   wlan_hdd_cfg80211_register_frames(pAdapter);
 
    mutex_init(&pHddCtx->sap_lock);
    mutex_init(&pHddCtx->roc_lock);
