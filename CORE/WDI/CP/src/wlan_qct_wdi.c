@@ -12805,6 +12805,8 @@ WDI_ProcessAddPeriodicTxPtrnInd
   WDI_Status                     wdiStatus;
   tHalAddPeriodicTxPtrn          *halAddPeriodicTxPtrn;
   wpt_uint8                      selfStaIdx          = 0;
+  wpt_uint8                    ucCurrentBSSSesIdx;
+  WDI_BSSSessionType*          pBSSSes             = NULL;
 
   /*-------------------------------------------------------------------------
      Sanity check
@@ -12846,6 +12848,22 @@ WDI_ProcessAddPeriodicTxPtrnInd
     wpalMemoryFree(pSendBuffer);
 
     return WDI_STATUS_E_FAILURE;
+  }
+
+  ucCurrentBSSSesIdx = WDI_FindAssocSession( pWDICtx,
+                                pAddPeriodicTxPtrnParams->
+                                       wdiAddPeriodicTxPtrnParams.macAddr,
+                                &pBSSSes);
+  if ( NULL == pBSSSes )
+  {
+    WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+              "%s: Association sequence for this BSS does not exist. macBSSID "
+              MAC_ADDRESS_STR,
+              __func__,
+             MAC_ADDR_ARRAY(pAddPeriodicTxPtrnParams->
+                            wdiAddPeriodicTxPtrnParams.macAddr));
+    wpalMemoryFree(pSendBuffer);
+    return WDI_STATUS_E_NOT_ALLOWED;
   }
 
   halAddPeriodicTxPtrn->selfStaIdx = selfStaIdx;
