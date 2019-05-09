@@ -106,6 +106,10 @@ static int camera_v4l2_querycap(struct file *filep, void *fh,
 
 	rc = camera_check_event_status(&event);
 
+	cap->device_caps = V4L2_CAP_STREAMING |
+			V4L2_CAP_VIDEO_OUTPUT | V4L2_CAP_VIDEO_CAPTURE;
+	cap->capabilities = cap->device_caps | V4L2_CAP_DEVICE_CAPS;
+
 	return rc;
 }
 
