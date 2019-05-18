@@ -1973,12 +1973,6 @@ got_it:
 	if (err)
 		goto out_writepage;
 
-	if (__is_valid_data_blkaddr(fio->old_blkaddr) &&
-		!f2fs_is_valid_blkaddr(fio->sbi, fio->old_blkaddr,
-							DATA_GENERIC)) {
-		err = -EFAULT;
-		goto out_writepage;
-	}
 	set_page_writeback(page);
 	ClearPageError(page);
 
