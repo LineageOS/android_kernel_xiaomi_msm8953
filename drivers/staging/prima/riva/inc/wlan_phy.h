@@ -296,7 +296,7 @@ typedef PACKED_PRE struct PACKED_POST
 }tRxGain;
 
 typedef PACKED_PRE struct PACKED_POST {
-    tANI_U8 rx[PHY_MAX_RX_CHAINS];
+    tANI_U8 rx[1];
 }sRxChainsData;
 
 typedef sRxChainsData sRxChainsRssi;
