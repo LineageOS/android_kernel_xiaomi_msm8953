@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2019 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1249,6 +1249,13 @@ static void hdd_SendAssociationEvent(struct net_device *dev,tCsrRoamInfo *pCsrRo
     {
         VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                  "wlan: disconnected");
+        if (pHddCtx->btCoexModeSet) {
+            VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                       FL("Wlan disconnected, sending DHCP stop indication"));
+            pHddCtx->btCoexModeSet = FALSE;
+            sme_DHCPStopInd(pHddCtx->hHal, pAdapter->device_mode,
+                            pAdapter->sessionId);
+        }
         type = WLAN_STA_DISASSOC_DONE_IND;
         memset(wrqu.ap_addr.sa_data,'\0',ETH_ALEN);
 
@@ -1872,7 +1879,7 @@ static eHalStatus hdd_DisConnectHandler( hdd_adapter_t *pAdapter, tCsrRoamInfo *
        /* clear scan cache for Link Lost */
        if (pRoamInfo && !pRoamInfo->reasonCode &&
            (eCSR_ROAM_LOSTLINK == roamStatus)) {
-           wlan_hdd_cfg80211_update_bss_list(pAdapter,
+           wlan_hdd_cfg80211_unlink_bss(pAdapter,
                                pHddStaCtx->conn_info.bssId);
            sme_remove_bssid_from_scan_list(pHddCtx->hHal,
                                pHddStaCtx->conn_info.bssId);
@@ -2668,7 +2675,7 @@ static eHalStatus hdd_AssociationCompletionHandler( hdd_adapter_t *pAdapter, tCs
            ((eSIR_SME_JOIN_TIMEOUT_RESULT_CODE == pRoamInfo->statusCode) ||
            (eSIR_SME_AUTH_TIMEOUT_RESULT_CODE == pRoamInfo->statusCode) ||
            (eSIR_SME_ASSOC_TIMEOUT_RESULT_CODE == pRoamInfo->statusCode)))) {
-             wlan_hdd_cfg80211_update_bss_list(pAdapter,
+             wlan_hdd_cfg80211_unlink_bss(pAdapter,
                     pRoamInfo ? pRoamInfo->bssid : pWextState->req_bssId);
              sme_remove_bssid_from_scan_list(pHddCtx->hHal,
                     pRoamInfo ? pRoamInfo->bssid : pWextState->req_bssId);

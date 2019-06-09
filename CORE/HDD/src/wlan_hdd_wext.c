@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2019 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -10369,7 +10369,7 @@ int hdd_setBand(struct net_device *dev, u8 ui_band)
              if(curr_country[0] == '0' && curr_country[1] == '0')
                      regulatory_hint_user("IN", NL80211_USER_REG_HINT_USER);
              else
-                     regulatory_hint_user("OO", NL80211_USER_REG_HINT_USER);
+                     regulatory_hint_user("00", NL80211_USER_REG_HINT_USER);
 #else
              if(curr_country[0] == '0' && curr_country[1] == '0')
                      regulatory_hint_user("IN");
