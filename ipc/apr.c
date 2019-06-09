@@ -28,6 +28,7 @@
 #include <linux/of.h>
 #include <linux/slab.h>
 #include <linux/ipc_logging.h>
+#include <linux/of_device.h>
 #include <soc/qcom/subsystem_restart.h>
 #include <soc/qcom/scm.h>
 #include <dsp/apr_audio-v2.h>
@@ -56,6 +57,7 @@ struct apr_reset_work {
 };
 
 static bool apr_cf_debug;
+static struct delayed_work add_chld_dev_work;
 
 #ifdef CONFIG_DEBUG_FS
 static struct dentry *debugfs_apr_debug;
@@ -282,6 +284,17 @@ static void apr_adsp_down(unsigned long opcode)
 	dispatch_event(opcode, APR_DEST_QDSP6);
 }
 
+static void apr_add_child_devices(struct work_struct *work)
+{
+	int ret;
+
+	ret = of_platform_populate(apr_dev_ptr->of_node,
+			NULL, NULL, apr_dev_ptr);
+	if (ret)
+		dev_err(apr_dev_ptr, "%s: failed to add child nodes, ret=%d\n",
+			__func__, ret);
+}
+
 static void apr_adsp_up(void)
 {
 	if (apr_cmpxchg_q6_state(APR_SUBSYS_DOWN, APR_SUBSYS_LOADED) ==
@@ -289,29 +302,8 @@ static void apr_adsp_up(void)
 		wake_up(&dsp_wait);
 
 	if (!is_child_devices_loaded) {
-		struct platform_device *pdev;
-		struct device_node *node;
-		int ret;
-
-		for_each_child_of_node(apr_dev_ptr->of_node, node) {
-			pdev = platform_device_alloc(node->name, -1);
-			if (!pdev) {
-				dev_err(apr_dev_ptr, "%s: pdev memory alloc failed\n",
-					__func__);
-				return;
-			}
-			pdev->dev.parent = apr_dev_ptr;
-			pdev->dev.of_node = node;
-
-			ret = platform_device_add(pdev);
-			if (ret) {
-				dev_err(apr_dev_ptr,
-					"%s: Cannot add platform device\n",
-					__func__);
-				platform_device_put(pdev);
-				return;
-			}
-		}
+		schedule_delayed_work(&add_chld_dev_work,
+				msecs_to_jiffies(100));
 		is_child_devices_loaded = true;
 	}
 }
@@ -1180,6 +1172,7 @@ static int apr_probe(struct platform_device *pdev)
 
 	apr_tal_init();
 	apr_dev_ptr = &pdev->dev;
+	INIT_DELAYED_WORK(&add_chld_dev_work, apr_add_child_devices);
 	return apr_debug_init();
 }
 

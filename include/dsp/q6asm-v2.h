@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2017, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2017, 2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -244,6 +244,11 @@ struct audio_client {
 	/* shared io */
 	struct audio_buffer shared_pos_buf;
 	struct shared_io_config config;
+};
+
+struct q6asm_cal_info {
+	int topology_id;
+	int app_type;
 };
 
 void q6asm_audio_client_free(struct audio_client *ac);
