@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -4306,8 +4306,13 @@ struct asm_softvolume_params {
 /* Rear left of center. */
 #define PCM_CHANNEL_RLC  15
 
-/* Rear right of center. */
+/* Rear right of center. Update PCM_MAX_CHMAP_ID when
+ * this list is extended.
+ */
 #define PCM_CHANNEL_RRC  16
+
+/* Max valid channel map index */
+#define PCM_MAX_CHMAP_ID PCM_CHANNEL_RRC
 
 #define PCM_FORMAT_MAX_NUM_CHANNEL  8
 

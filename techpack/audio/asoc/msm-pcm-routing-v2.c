@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -985,6 +985,9 @@ static struct cal_block_data *msm_routing_find_topology_by_path(int path,
 		cal_block = list_entry(ptr,
 			struct cal_block_data, list);
 
+		if (cal_utils_is_cal_stale(cal_block))
+			continue;
+
 		if (((struct audio_cal_info_adm_top *)cal_block
 			->cal_info)->path == path) {
 			return cal_block;
@@ -1011,6 +1014,9 @@ static struct cal_block_data *msm_routing_find_topology(int path,
 
 		cal_block = list_entry(ptr,
 			struct cal_block_data, list);
+
+		if (cal_utils_is_cal_stale(cal_block))
+			continue;
 
 		cal_info = (struct audio_cal_info_adm_top *)
 			cal_block->cal_info;
@@ -1045,6 +1051,11 @@ static int msm_routing_find_topology_on_index(int session_type, int app_type,
 	return topology;
 }
 
+/*
+ * Retrieving cal_block will mark cal_block as stale.
+ * Hence it cannot be reused or resent unless the flag
+ * is reset.
+ */
 static int msm_routing_get_adm_topology(int fedai_id, int session_type,
 					int be_id)
 {
@@ -1534,7 +1545,7 @@ int msm_pcm_routing_reg_phy_stream(int fedai_id, int perf_mode,
 			if ((copp_idx < 0) ||
 				(copp_idx >= MAX_COPPS_PER_PORT)) {
 				pr_err("%s: adm open failed copp_idx:%d\n",
-					__func__, copp_idx);
+				       __func__, copp_idx);
 				mutex_unlock(&routing_lock);
 				return -EINVAL;
 			}
@@ -17452,6 +17463,33 @@ static const struct snd_kcontrol_new aptx_dec_license_controls[] = {
 	msm_aptx_dec_license_control_put),
 };
 
+static int msm_routing_put_port_chmap_mixer(struct snd_kcontrol *kcontrol,
+					    struct snd_ctl_elem_value *ucontrol)
+{
+	uint8_t channel_map[PCM_FORMAT_MAX_NUM_CHANNEL];
+	uint32_t be_idx = ucontrol->value.integer.value[0];
+	int i;
+
+	for (i = 0; i < PCM_FORMAT_MAX_NUM_CHANNEL; i++) {
+		channel_map[i] = (char)(ucontrol->value.integer.value[i + 1]);
+		if (channel_map[i] > PCM_MAX_CHMAP_ID) {
+			pr_err("%s: Invalid channel map %d\n",
+				__func__, channel_map[i]);
+			return -EINVAL;
+		}
+	}
+	adm_set_port_multi_ch_map(channel_map, msm_bedais[be_idx].port_id);
+
+	return 0;
+}
+
+static const struct snd_kcontrol_new port_multi_channel_map_mixer_controls[] = {
+	SOC_SINGLE_MULTI_EXT("Backend Device Channel Map", SND_SOC_NOPM, 0,
+			MSM_BACKEND_DAI_MAX, 0,
+			PCM_FORMAT_MAX_NUM_CHANNEL + 1, NULL,
+			msm_routing_put_port_chmap_mixer),
+};
+
 static int msm_routing_be_dai_name_table_info(struct snd_kcontrol *kcontrol,
 					      struct snd_ctl_elem_info *uinfo)
 {
@@ -17643,6 +17681,10 @@ static int msm_routing_probe(struct snd_soc_platform *platform)
 					ARRAY_SIZE(aptx_dec_license_controls));
 	snd_soc_add_platform_controls(platform, stereo_channel_reverse_control,
 				ARRAY_SIZE(stereo_channel_reverse_control));
+	snd_soc_add_platform_controls(platform,
+			port_multi_channel_map_mixer_controls,
+			ARRAY_SIZE(port_multi_channel_map_mixer_controls));
+
 	return 0;
 }
 
