@@ -1096,10 +1096,12 @@ limRejectAssociation(tpAniSirGlobal pMac, tSirMacAddr peerAddr, tANI_U8 subType,
             psessionEntry->parsedAssocReq[pStaDs->assocId] = NULL;
         }
 
-        /* Delete hash entry on add sta failure */
-        limReleasePeerIdx(pMac, pStaDs->assocId, psessionEntry);
-        limDeleteDphHashEntry(pMac, pStaDs->staAddr,
-                              pStaDs->assocId,psessionEntry);
+        if (pStaDs->mlmStaContext.mlmState == eLIM_MLM_WT_ADD_STA_RSP_STATE) {
+            /* Delete hash entry on add sta failure */
+            limReleasePeerIdx(pMac, pStaDs->assocId, psessionEntry);
+            limDeleteDphHashEntry(pMac, pStaDs->staAddr,
+                                  pStaDs->assocId,psessionEntry);
+        }
     }
     else
     {
