@@ -17743,6 +17743,14 @@ eHalStatus csrRoamOffloadScan(tpAniSirGlobal pMac, tANI_U8 command, tANI_U8 reas
      return eHAL_STATUS_SUCCESS;
    }
 
+   /* Roaming is not supported currently for OWE akm */
+   if (pSession->pCurRoamProfile &&
+       (pSession->pCurRoamProfile->AuthType.authType[0] == eCSR_AUTH_TYPE_OWE))
+   {
+        smsLog(pMac, LOGE, "Roaming not suppprted for OWE connection");
+        return eHAL_STATUS_SUCCESS;
+   }
+
    /*The Dynamic Config Items Update may happen even if the state is in INIT.
     * It is important to ensure that the command is passed down to the FW only
     * if the Infra Station is in a connected state.A connected station could also be
