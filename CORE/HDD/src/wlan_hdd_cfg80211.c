@@ -16405,8 +16405,13 @@ static int wlan_hdd_set_akm_suite( hdd_adapter_t *pAdapter,
              pWextState->authKeyMgmt |= IW_AUTH_KEY_MGMT_802_1X;
              break;
 
+        case WLAN_AKM_SUITE_OWE_1:
+             hddLog(LOG1, "setting key mgmt type to OWE");
+             pWextState->authKeyMgmt |= IW_AUTH_KEY_MGMT_802_1X;
+             break;
+
         default:
-            hddLog(VOS_TRACE_LEVEL_ERROR, "%s: Unsupported key mgmt type %d",
+            hddLog(VOS_TRACE_LEVEL_ERROR, "%s: Unsupported key mgmt type %x",
                     __func__, key_mgmt);
             return -EINVAL;
 
@@ -16880,6 +16885,32 @@ int wlan_hdd_cfg80211_set_ie( hdd_adapter_t *pAdapter,
                 }
                 break;
 #endif
+            case SIR_MAC_REQUEST_EID_MAX:
+                 if (genie[0] == SIR_DH_PARAMETER_ELEMENT_EXT_EID)
+                 {
+                    v_U16_t curAddIELen = pWextState->assocAddIE.length;
+                    if (SIR_MAC_MAX_ADD_IE_LENGTH <
+                        (pWextState->assocAddIE.length + eLen))
+                    {
+                       hddLog(VOS_TRACE_LEVEL_FATAL, "Cannot accommodate assocAddIE "
+                              "Need bigger buffer space");
+                       VOS_ASSERT(0);
+                       return -ENOMEM;
+                    }
+                 hddLog(VOS_TRACE_LEVEL_INFO, "Set DH EXT IE(len %d)",
+                        eLen + 2);
+                 memcpy( pWextState->assocAddIE.addIEdata + curAddIELen,
+                         genie - 2, eLen + 2);
+                 pWextState->assocAddIE.length += eLen + 2;
+                 pWextState->roamProfile.pAddIEAssoc =
+                                            pWextState->assocAddIE.addIEdata;
+                 pWextState->roamProfile.nAddIEAssocLength =
+                                            pWextState->assocAddIE.length;
+                }else {
+                hddLog(VOS_TRACE_LEVEL_FATAL, "UNKNOWN EID: %X", genie[0]);
+                }
+                break;
+
             default:
                 hddLog (VOS_TRACE_LEVEL_ERROR,
                         "%s Set UNKNOWN IE %X", __func__, elementId);

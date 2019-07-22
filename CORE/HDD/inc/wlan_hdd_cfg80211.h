@@ -147,6 +147,11 @@ typedef struct {
 #define WLAN_AKM_SUITE_SAE 0x000FAC08
 #endif
 
+#ifndef WLAN_AKM_SUITE_OWE_1
+#define WLAN_AKM_SUITE_OWE_1 0x000FAC12
+#endif
+
+
 enum qca_nl80211_vendor_subcmds {
     QCA_NL80211_VENDOR_SUBCMD_UNSPEC = 0,
     QCA_NL80211_VENDOR_SUBCMD_TEST = 1,

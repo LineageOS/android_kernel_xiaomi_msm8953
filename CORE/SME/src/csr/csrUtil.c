@@ -83,6 +83,9 @@ tANI_U8 csrRSNOui[][ CSR_RSN_OUI_SIZE ] = {
     {0x00, 0x00, 0x00, 0x00},
  #endif
     /* define new oui here */
+#define ENUM_OWE 11
+    /* OWE https://tools.ietf.org/html/rfc8110 */
+    {0x00, 0x0F, 0xAC, 0x12},
 };
 
 #ifdef FEATURE_WLAN_WAPI
@@ -2858,9 +2861,13 @@ tANI_BOOLEAN csrIsProfileRSN( tCsrRoamProfile *pProfile )
         case eCSR_AUTH_TYPE_RSN_PSK_SHA256:
         case eCSR_AUTH_TYPE_RSN_8021X_SHA256:
 #endif
-            fRSNProfile = TRUE;
+            fRSNProfile = true;
             break;
         case eCSR_AUTH_TYPE_SAE:
+            fRSNProfile = true;
+            break;
+
+        case eCSR_AUTH_TYPE_OWE:
             fRSNProfile = true;
             break;
 
@@ -3625,6 +3632,24 @@ static bool csr_is_auth_wpa_sae(tpAniSirGlobal mac,
                              oui);
 }
 #endif
+
+/**
+ * csr_is_auth_wpa_sae() - check whether oui is OWE
+ * @mac: Global MAC context
+ * @all_suites: pointer to all supported akm suites
+ * @suite_count: all supported akm suites count
+ * @oui: Oui needs to be matched
+ *
+ * Return: True if OUI is SAE, false otherwise
+ */
+static bool csr_is_auth_wpa_owe(tpAniSirGlobal mac,
+                                uint8_t all_suites[][CSR_RSN_OUI_SIZE],
+                                uint8_t suite_count, uint8_t oui[])
+{
+    return csrIsOuiMatch
+            (mac, all_suites, suite_count, csrRSNOui[ENUM_OWE], oui);
+}
+
 static tANI_BOOLEAN csrIsAuthWpa( tpAniSirGlobal pMac, tANI_U8 AllSuites[][CSR_WPA_OUI_SIZE],
                                 tANI_U8 cAllSuites,
                                 tANI_U8 Oui[] )
@@ -3894,6 +3919,12 @@ tANI_BOOLEAN csrGetRSNInformation( tHalHandle hHal, tCsrAuthList *pAuthType, eCs
                         negAuthType = eCSR_AUTH_TYPE_RSN_8021X_SHA256;
                 }
 #endif
+                if ((negAuthType == eCSR_AUTH_TYPE_UNKNOWN) &&
+                    csr_is_auth_wpa_owe(pMac, AuthSuites,
+                    cAuthSuites, Authentication)) {
+                         if (eCSR_AUTH_TYPE_OWE == pAuthType->authType[i])
+                              negAuthType = eCSR_AUTH_TYPE_OWE;
+                }
 
                 // The 1st auth type in the APs RSN IE, to match stations connecting
                 // profiles auth type will cause us to exit this loop

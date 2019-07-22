@@ -156,6 +156,8 @@ v_U8_t ccpRSNOui08[ HDD_RSN_OUI_SIZE ] = { 0x00, 0x0F, 0xAC, 0x05 };
 v_U8_t ccp_rsn_oui_80[HDD_RSN_OUI_SIZE] = {0x00, 0x0F, 0xAC, 0x08};
 v_U8_t ccp_rsn_oui_90[HDD_RSN_OUI_SIZE] = {0x00, 0x0F, 0xAC, 0x09};
 #endif
+/* OWE https://tools.ietf.org/html/rfc8110 */
+uint8_t ccp_rsn_oui_18[HDD_RSN_OUI_SIZE] = {0x00, 0x0F, 0xAC, 0x12};
 
 #if defined(WLAN_FEATURE_VOWIFI_11R)
 // Offset where the EID-Len-IE, start.
@@ -4499,12 +4501,19 @@ eCsrAuthType hdd_TranslateRSNToCsrAuthType( u_int8_t auth_suite[4])
         auth_type = eCSR_AUTH_TYPE_RSN_8021X_SHA256;
     } else
 #endif
+    if (!memcmp(auth_suite, ccp_rsn_oui_18, 4))
+    {
+       auth_type = eCSR_AUTH_TYPE_OWE;
+    } else
+
     {
     /* If auth suite is of SAE, auth_type will be
      * overwritten in hdd_translate_sae_rsn_to_csr_auth
      */
      hdd_translate_sae_rsn_to_csr_auth(auth_suite, &auth_type);
      }
+
+    hddLog(LOG1, FL("auth_type : %d"), auth_type);
 
     return auth_type;
 }
@@ -4909,7 +4918,10 @@ int hdd_set_csr_auth_type ( hdd_adapter_t  *pAdapter, eCsrAuthType RSNAuthType)
     ENTER();
 
     pRoamProfile->AuthType.numEntries = 1;
-    hddLog( LOG1, "%s: pHddStaCtx->conn_info.authType = %d", __func__, pHddStaCtx->conn_info.authType);
+    hddLog( LOG1,
+           "%s: authType = %d RSNAuthType %d wpa_versions %d",
+           __func__, pHddStaCtx->conn_info.authType, RSNAuthType,
+           pWextState->wpaVersion);
 
     switch( pHddStaCtx->conn_info.authType)
     {
@@ -4984,7 +4996,12 @@ int hdd_set_csr_auth_type ( hdd_adapter_t  *pAdapter, eCsrAuthType RSNAuthType)
                                             eCSR_AUTH_TYPE_RSN_8021X_SHA256;
             } else
 #endif
-
+            if ((RSNAuthType == eCSR_AUTH_TYPE_OWE) &&
+                ((pWextState->authKeyMgmt & IW_AUTH_KEY_MGMT_802_1X)
+                 == IW_AUTH_KEY_MGMT_802_1X)) {
+                /* OWE case */
+                pRoamProfile->AuthType.authType[0] = eCSR_AUTH_TYPE_OWE;
+            } else
             if( (pWextState->authKeyMgmt & IW_AUTH_KEY_MGMT_802_1X)
                     == IW_AUTH_KEY_MGMT_802_1X) {
                pRoamProfile->AuthType.authType[0] = eCSR_AUTH_TYPE_RSN;
@@ -4992,7 +5009,8 @@ int hdd_set_csr_auth_type ( hdd_adapter_t  *pAdapter, eCsrAuthType RSNAuthType)
             if ( (pWextState->authKeyMgmt & IW_AUTH_KEY_MGMT_PSK)
                     == IW_AUTH_KEY_MGMT_PSK) {
                pRoamProfile->AuthType.authType[0] = eCSR_AUTH_TYPE_RSN_PSK;
-            } else {
+            } else
+            {
                pRoamProfile->AuthType.authType[0] = eCSR_AUTH_TYPE_UNKNOWN;
             }
         }
