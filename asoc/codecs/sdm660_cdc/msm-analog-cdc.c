@@ -3985,6 +3985,12 @@ static ssize_t msm_anlg_codec_version_read(struct snd_info_entry *entry,
 
 	switch (get_codec_version(sdm660_cdc_priv)) {
 	case DRAX_CDC:
+	case DIANGU:
+	case CAJON_2_0:
+	case CAJON:
+	case CONGA:
+	case TOMBAK_2_0:
+	case TOMBAK_1_0:
 		len = snprintf(buffer, sizeof(buffer), "DRAX-CDC_1_0\n");
 		break;
 	default:
@@ -4022,8 +4028,8 @@ int msm_anlg_codec_info_create_codec_entry(struct snd_info_entry *codec_root,
 	sdm660_cdc_priv = snd_soc_codec_get_drvdata(codec);
 	card = codec->component.card;
 	sdm660_cdc_priv->entry = snd_info_create_subdir(codec_root->module,
-							     "spmi0-03",
-							     codec_root);
+							    sdm660_cdc_priv->pmic_analog,
+							    codec_root);
 	if (!sdm660_cdc_priv->entry) {
 		dev_dbg(codec->dev, "%s: failed to create pmic_analog entry\n",
 			__func__);
@@ -4571,7 +4577,7 @@ static int msm_anlg_cdc_probe(struct platform_device *pdev)
 	struct sdm660_cdc_priv *sdm660_cdc = NULL;
 	struct sdm660_cdc_pdata *pdata;
 	int adsp_state;
-
+	const char *parent_dev = NULL;
 	adsp_state = apr_get_subsys_state();
 	if (adsp_state == APR_SUBSYS_DOWN ||
 		!q6core_is_adsp_ready()) {
@@ -4653,7 +4659,12 @@ static int msm_anlg_cdc_probe(struct platform_device *pdev)
 	INIT_WORK(&sdm660_cdc->msm_anlg_add_child_devices_work,
 		  msm_anlg_add_child_devices);
 	schedule_work(&sdm660_cdc->msm_anlg_add_child_devices_work);
-
+	parent_dev = pdev->dev.parent->of_node->full_name;
+	if (parent_dev) {
+		snprintf(sdm660_cdc->pmic_analog, PMIC_ANOLOG_SIZE, "spmi0-0%s",
+			 parent_dev + strlen(parent_dev)-1);
+		parent_dev = NULL;
+	}
 	return ret;
 err_supplies:
 	msm_anlg_cdc_disable_supplies(sdm660_cdc, pdata);
