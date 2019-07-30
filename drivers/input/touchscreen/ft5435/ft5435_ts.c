@@ -50,13 +50,20 @@
 #if defined(FOCALTECH_AUTO_UPGRADE)
 #define FTS_VENDOR_1	0x3b
 #define FTS_VENDOR_2	0x51
+#define FTS_VENDOR_3	0xD0
+
 static unsigned char firmware_data_vendor1[] = {
-	#include "HQ_AL1512_C6_FT5435_Biel0x3b_Ver0a_20170119_app.i"
+	#include "HQ_D2_XiaoMi_FT5435_BIEL0X3b_Black_V0A_D01_20170712_app.i"
 };
 
 static unsigned char firmware_data_vendor2[] = {
 
-	#include "HQ_AL1512_C6_FT5435_Ofilm0x51_Ver0a_20170119_app.i"
+	#include "HQ_D2_XiaoMi_FT5435_ofiml0X51_Black_V06_D01_20170804_app.i"
+};
+
+static unsigned char firmware_data_vendor3[] = {
+	#include "HQ_D2_XiaoMi_FT5435_BIEL0X3b+CTC0Xd0_Black_V09_D01_20170811_app.i"
+
 };
 #endif
 #define TCT_KEY_BACK  158
@@ -2302,7 +2309,6 @@ static int ft5435_fw_upgrade(struct device *dev, bool force)
 				data->fw_ver[1], data->fw_ver[2]);
 	printk("[Fu]New firmware: %d.%d.%d", fw_file_maj,
 				fw_file_min, fw_file_sub_min);
-
 	if (force)
 		fw_upgrade = true;
 
@@ -4122,7 +4128,7 @@ INIT_WORK(&data->work_vr, ft5435_change_vr_switch);
 	fts_fw_vendor_id = data->fw_vendor_id;
 	printk("upgrade,fts_fw_vendor_id=0x%02x\n",  data->fw_vendor_id);
 #if defined(FOCALTECH_AUTO_UPGRADE)
-	if ((fts_fw_vendor_id != FTS_VENDOR_1) && (fts_fw_vendor_id != FTS_VENDOR_2)) {
+	if ((fts_fw_vendor_id != FTS_VENDOR_1) && (fts_fw_vendor_id != FTS_VENDOR_2) && (fts_fw_vendor_id != FTS_VENDOR_3)) {
 		fts_fw_vendor_id = ft5435_fw_Vid_get_from_boot(client);
 		printk("get_Vid_from_boot, fw_vendor_id=0x%02x\n",  fts_fw_vendor_id);
 	}
@@ -4134,6 +4140,8 @@ INIT_WORK(&data->work_vr, ft5435_change_vr_switch);
 			ft5435_fw_upgrade_by_array_data(&client->dev, firmware_data_vendor1, sizeof(firmware_data_vendor1), !data->pdata->no_force_update);
 		else if (fts_fw_vendor_id == FTS_VENDOR_2)
 			ft5435_fw_upgrade_by_array_data(&client->dev, firmware_data_vendor2, sizeof(firmware_data_vendor2), !data->pdata->no_force_update);
+                else if (fts_fw_vendor_id == FTS_VENDOR_3)
+                        ft5435_fw_upgrade_by_array_data(&client->dev, firmware_data_vendor3, sizeof(firmware_data_vendor3), !data->pdata->no_force_update);
 		else
 			printk("[FTS] FW unmatched,stop upgrade\n");
 		data->loading_fw = false;
