@@ -9140,6 +9140,31 @@ void wlan_hdd_cfg80211_scan_randomization_init(struct wiphy *wiphy)
 }
 #endif
 
+#ifdef WLAN_FEATURE_SAE
+/**
+ * wlan_hdd_cfg80211_set_wiphy_sae_feature() - Indicates support of SAE feature
+ * @wiphy: Pointer to wiphy
+ * @config: pointer to config
+ *
+ * This function is used to indicate the support of SAE
+ *
+ * Return: None
+ */
+static
+void wlan_hdd_cfg80211_set_wiphy_sae_feature(struct wiphy *wiphy,
+                                             hdd_config_t *config)
+{
+    if (config->is_sae_enabled)
+             wiphy->features |= NL80211_FEATURE_SAE;
+}
+#else
+static
+void wlan_hdd_cfg80211_set_wiphy_sae_feature(struct wiphy *wiphy,
+                                             hdd_config_t *config)
+{
+}
+#endif
+
 /*
  * FUNCTION: wlan_hdd_cfg80211_init
  * This function is called by hdd_wlan_startup()
@@ -9379,6 +9404,7 @@ int wlan_hdd_cfg80211_init(struct device *dev,
     wiphy->n_vendor_events = ARRAY_SIZE(wlan_hdd_cfg80211_vendor_events);
 
     hdd_config_sched_scan_plans_to_wiphy(wiphy, pCfg);
+    wlan_hdd_cfg80211_set_wiphy_sae_feature(wiphy, pCfg);
 
     EXIT();
     return 0;

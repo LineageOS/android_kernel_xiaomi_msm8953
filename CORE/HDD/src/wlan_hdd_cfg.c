@@ -4040,6 +4040,14 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                       VAR_FLAGS_NONE,
                       (void *)CFG_ENABLE_DEFAULT_SAP_DEFAULT),
 
+#ifdef WLAN_FEATURE_SAE
+  REG_VARIABLE(CFG_IS_SAE_ENABLED_NAME, WLAN_PARAM_Integer,
+               hdd_config_t, is_sae_enabled,
+               VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+               CFG_IS_SAE_ENABLED_DEFAULT,
+               CFG_IS_SAE_ENABLED_MIN,
+               CFG_IS_SAE_ENABLED_MAX),
+#endif
 };
 
 /*
@@ -4256,6 +4264,17 @@ config_exit:
    return vos_status;
 }
 
+#ifdef WLAN_FEATURE_SAE
+static void hdd_cfg_print_sae(hdd_context_t *hdd_ctx)
+{
+   hddLog(LOG2, "Name = [%s] value = [%u]", CFG_IS_SAE_ENABLED_NAME,
+          hdd_ctx->cfg_ini->is_sae_enabled);
+}
+#else
+static void hdd_cfg_print_sae(hdd_context_t *hdd_ctx)
+{
+}
+#endif
 
 static void print_hdd_cfg(hdd_context_t *pHddCtx)
 {
@@ -4717,6 +4736,7 @@ static void print_hdd_cfg(hdd_context_t *pHddCtx)
             "Name = [%s] Value = [%s] ",
             CFG_ENABLE_DEFAULT_SAP,
             pHddCtx->cfg_ini->enabledefaultSAP);
+    hdd_cfg_print_sae(pHddCtx);
 }
 
 
