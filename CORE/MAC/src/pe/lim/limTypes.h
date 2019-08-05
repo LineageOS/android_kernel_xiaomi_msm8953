@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017, 2019 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1142,6 +1142,14 @@ tSirRetStatus lim_process_sme_del_ba_ses_req(tpAniSirGlobal pMac,
 void lim_send_chan_switch_action_frame(tpAniSirGlobal mac_ctx,
      uint16_t new_channel, tpPESession session_entry);
 
+/**
+ * lim_send_mgmt_frame_tx() - Sends mgmt frame
+ * @mac_ctx Pointer to Global MAC structure
+ * @msg: Received message info
+ *
+ * Return: None
+ */
+void lim_send_mgmt_frame_tx(tpAniSirGlobal mac_ctx, tpSirMsgQ msg);
 
 #endif /* __LIM_TYPES_H */
 

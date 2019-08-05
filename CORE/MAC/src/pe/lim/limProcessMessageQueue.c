@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2017, 2019 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1765,6 +1765,12 @@ limProcessMessages(tpAniSirGlobal pMac, tpSirMsgQ  limMsg)
             break;
         case eWNI_SME_ABORT_REMAIN_ON_CHAN_IND:
             limAbortRemainOnChan(pMac);
+            vos_mem_free(limMsg->bodyptr);
+            limMsg->bodyptr = NULL;
+            break;
+
+        case eWNI_SME_SEND_MGMT_FRAME_TX:
+            lim_send_mgmt_frame_tx(pMac, limMsg);
             vos_mem_free(limMsg->bodyptr);
             limMsg->bodyptr = NULL;
             break;

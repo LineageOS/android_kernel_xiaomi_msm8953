@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017, 2019 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -480,9 +480,19 @@ tpPESession peFindSessionByPeerSta(tpAniSirGlobal pMac, tANI_U8*  sa, tANI_U8* s
 
 --------------------------------------------------------------------------*/
  tpPESession peFindSessionByStaId(tpAniSirGlobal pMac,  tANI_U8  staid,    tANI_U8* sessionId);
- 
 
-
+/**
+ * pe_find_session_by_sme_session_id() - looks up the PE session for given sme
+ * session id
+ * @mac_ctx: pointer to global adapter context
+ * @sme_session_id: sme session id
+ *
+ * Looks up the PE session for given sme session id
+ *
+ * Return: pe session entry for given sme session if found else NULL
+ */
+tpPESession pe_find_session_by_sme_session_id(tpAniSirGlobal mac_ctx,
+                                              uint8_t sme_session_id);
 
 
 /*--------------------------------------------------------------------------

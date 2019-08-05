@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2014, 2016-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2014, 2016-2017, 2019 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -274,6 +274,22 @@ tpPESession peFindSessionByBssIdx(tpAniSirGlobal pMac,  tANI_U8 bssIdx)
     }
     limLog(pMac, LOG4, FL("Session lookup fails for bssIdx: %d"), bssIdx);
     return NULL;
+}
+
+tpPESession pe_find_session_by_sme_session_id(tpAniSirGlobal mac_ctx,
+                                              tANI_U8 sme_session_id)
+{
+   uint8_t i;
+
+   for (i = 0; i < mac_ctx->lim.maxBssId; i++) {
+       if ((mac_ctx->lim.gpSession[i].valid) &&
+           (mac_ctx->lim.gpSession[i].smeSessionId == sme_session_id))
+           return &mac_ctx->lim.gpSession[i];
+   }
+   limLog(mac_ctx, LOG4, FL("Session lookup fails for smeSessionID: %d"),
+          sme_session_id);
+
+   return NULL;
 }
 
 /*--------------------------------------------------------------------------

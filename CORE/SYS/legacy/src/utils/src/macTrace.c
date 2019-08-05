@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017, 2019 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -587,6 +587,7 @@ tANI_U8* macTraceGetSmeMsgString( tANI_U16 smeMsg )
         CASE_RETURN_STRING(eWNI_SME_ECSA_CHAN_CHANGE_REQ);
         CASE_RETURN_STRING(eWNI_SME_ECSA_CHAN_CHANGE_RSP);
         CASE_RETURN_STRING(eWNI_SME_TRIGGER_SAE);
+        CASE_RETURN_STRING(eWNI_SME_SEND_MGMT_FRAME_TX);
         default:
             return( (tANI_U8*)"UNKNOWN" );
             break;
