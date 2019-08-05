@@ -1318,6 +1318,7 @@ get_eRoamCmdStatus_str(eRoamCmdStatus val)
         CASE_RETURN_STR(eCSR_ROAM_LOST_LINK_PARAMS_IND);
         CASE_RETURN_STR(eCSR_ROAM_ECSA_BCN_TX_IND);
         CASE_RETURN_STR(eCSR_ROAM_ECSA_CHAN_CHANGE_RSP);
+        CASE_RETURN_STR(eCSR_ROAM_SAE_COMPUTE);
     default:
         return "unknown";
     }

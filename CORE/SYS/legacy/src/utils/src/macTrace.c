@@ -586,6 +586,7 @@ tANI_U8* macTraceGetSmeMsgString( tANI_U16 smeMsg )
         CASE_RETURN_STRING(eWNI_SME_ECSA_IE_BEACON_COMP_IND);
         CASE_RETURN_STRING(eWNI_SME_ECSA_CHAN_CHANGE_REQ);
         CASE_RETURN_STRING(eWNI_SME_ECSA_CHAN_CHANGE_RSP);
+        CASE_RETURN_STRING(eWNI_SME_TRIGGER_SAE);
         default:
             return( (tANI_U8*)"UNKNOWN" );
             break;

@@ -527,6 +527,7 @@ typedef enum
     eCSR_ROAM_ECSA_BCN_TX_IND,
     eCSR_ROAM_ECSA_CHAN_CHANGE_RSP,
     eCSR_ROAM_STA_CHANNEL_SWITCH,
+    eCSR_ROAM_SAE_COMPUTE,
 }eRoamCmdStatus;
 
 
@@ -1358,6 +1359,9 @@ typedef struct tagCsrRoamInfo
     struct sir_channel_chanege_rsp *ap_chan_change_rsp;
     tSirSmeChanInfo chan_info;
     tSirMacHTChannelWidth ch_width;
+#ifdef WLAN_FEATURE_SAE
+    struct sir_sae_info *sae_info;
+#endif
 }tCsrRoamInfo;
 
 typedef struct tagCsrFreqScanInfo
