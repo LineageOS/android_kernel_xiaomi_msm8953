@@ -101,6 +101,41 @@ static inline unsigned int isAuthValid(tpAniSirGlobal pMac, tpSirMacAuthFrameBod
     return valid;
 }
 
+#ifdef WLAN_FEATURE_SAE
+/**
+ * lim_process_sae_auth_frame()-Process SAE authentication frame
+ * @mac_ctx: MAC context
+ * @rx_pkt_info: Rx packet
+ * @pe_session: PE session
+ *
+ * Return: None
+ */
+static void lim_process_sae_auth_frame(tpAniSirGlobal mac_ctx,
+                                       uint8_t *rx_pkt_info,
+                                       tpPESession pe_session)
+{
+    tpSirMacMgmtHdr mac_hdr;
+
+    mac_hdr = WDA_GET_RX_MAC_HEADER(rx_pkt_info);
+
+    limLog(mac_ctx, LOG1, FL("Received SAE Auth frame type %d subtype %d"),
+           mac_hdr->fc.type, mac_hdr->fc.subType);
+
+    if (pe_session->limMlmState != eLIM_MLM_WT_SAE_AUTH_STATE)
+        limLog(mac_ctx, LOGE,
+               FL("received SAE auth response in unexpected state %x"),
+               pe_session->limMlmState);
+
+    limSendSmeMgmtFrameInd(mac_ctx, pe_session->peSessionId,
+                           rx_pkt_info, pe_session,
+                           WDA_GET_RX_RSSI_DB(rx_pkt_info));
+}
+#else
+static void lim_process_sae_auth_frame(tpAniSirGlobal mac_ctx,
+                                       uint8_t *rx_pkt_info,
+                                       tpPESession pe_session)
+{}
+#endif
 
 /**
  * limProcessAuthFrame
@@ -162,6 +197,7 @@ limProcessAuthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession pse
     tpDphHashNode           pStaDs = NULL;
     tANI_U16                assocId = 0;
     tANI_U16                currSeqNo = 0;
+    tANI_U16                auth_alg = 0;
     /* Added For BT -AMP support */
     // Get pointer to Authentication frame header and body
  
@@ -198,6 +234,9 @@ limProcessAuthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession pse
                (uint)abs((tANI_S8)WDA_GET_RX_RSSI_DB(pRxPacketInfo)));
 
     pBody = WDA_GET_RX_MPDU_DATA(pRxPacketInfo);
+
+    auth_alg = *(uint16_t *)pBody;
+    limLog(pMac, LOG1, FL("auth_alg %d "), auth_alg);
 
     //PELOG3(sirDumpBuf(pMac, SIR_LIM_MODULE_ID, LOG3, (tANI_U8*)pBd, ((tpHalBufDesc) pBd)->mpduDataOffset + frameLen);)
 
@@ -588,6 +627,10 @@ limProcessAuthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession pse
 
             goto free;
         } // else if (wlan_cfgGetInt(CFG_PRIVACY_OPTION_IMPLEMENTED))
+    } else if ((auth_alg ==
+        eSIR_AUTH_TYPE_SAE) && (LIM_IS_STA_ROLE(psessionEntry))) {
+        lim_process_sae_auth_frame(pMac, pRxPacketInfo, psessionEntry);
+        goto free;
     } // if (fc.wep)
     else
     {
