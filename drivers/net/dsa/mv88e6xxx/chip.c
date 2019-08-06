@@ -1742,7 +1742,7 @@ static int _mv88e6xxx_vtu_get(struct mv88e6xxx_chip *chip, u16 vid,
 	int err;
 
 	if (!vid)
-		return -EINVAL;
+		return -EOPNOTSUPP;
 
 	err = _mv88e6xxx_vtu_vid_write(chip, vid - 1);
 	if (err)
@@ -3846,6 +3846,8 @@ static int mv88e6xxx_probe(struct mdio_device *mdiodev)
 		mv88e6xxx_mdio_unregister(chip);
 		return err;
 	}
+	if (chip->reset)
+		usleep_range(1000, 2000);
 
 	return 0;
 }
