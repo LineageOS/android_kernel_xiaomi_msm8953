@@ -12874,6 +12874,48 @@ tANI_U32 csrRoamGetNumBKIDCache(tpAniSirGlobal pMac, tANI_U32 sessionId)
    return (pMac->roam.roamSession[sessionId].NumBkidCache);
 }
 #endif /* FEATURE_WLAN_WAPI */
+
+static void csr_update_pmk_cache(tCsrRoamSession *pSession,
+        tPmkidCacheInfo *pmksa)
+{
+    uint16_t cache_idx = pSession->CurCacheIndex;
+
+    /* Add entry to the cache */
+    if (!pmksa->ssid_len) {
+        vos_copy_macaddr(
+                (v_MACADDR_t *)pSession->PmkidCacheInfo[cache_idx].BSSID,
+                (v_MACADDR_t *)pmksa->BSSID);
+        pSession->PmkidCacheInfo[cache_idx].ssid_len = 0;
+    } else {
+        vos_mem_copy(pSession->PmkidCacheInfo[cache_idx].ssid,
+                pmksa->ssid, pmksa->ssid_len);
+        pSession->PmkidCacheInfo[cache_idx].ssid_len =
+            pmksa->ssid_len;
+        vos_mem_copy(pSession->PmkidCacheInfo[cache_idx].cache_id,
+                pmksa->cache_id, CACHE_ID_LEN);
+
+    }
+    vos_mem_copy(
+            pSession->PmkidCacheInfo[cache_idx].PMKID,
+            pmksa->PMKID, CSR_RSN_PMKID_SIZE);
+
+    if (pmksa->pmk_len)
+        vos_mem_copy(pSession->PmkidCacheInfo[cache_idx].pmk,
+                pmksa->pmk, pmksa->pmk_len);
+
+    pSession->PmkidCacheInfo[cache_idx].pmk_len = pmksa->pmk_len;
+
+    /* Increment the CSR local cache index */
+    if (cache_idx < (CSR_MAX_PMKID_ALLOWED - 1))
+        pSession->CurCacheIndex++;
+    else
+        pSession->CurCacheIndex = 0;
+
+    pSession->NumPmkidCache++;
+    if (pSession->NumPmkidCache > CSR_MAX_PMKID_ALLOWED)
+        pSession->NumPmkidCache = CSR_MAX_PMKID_ALLOWED;
+}
+
 eHalStatus csrRoamSetPMKIDCache( tpAniSirGlobal pMac, tANI_U32 sessionId,
                                  tPmkidCacheInfo *pPMKIDCache,
                                  tANI_U32 numItems,
@@ -12925,25 +12967,10 @@ eHalStatus csrRoamSetPMKIDCache( tpAniSirGlobal pMac, tANI_U32 sessionId,
                 pmksa = &pPMKIDCache[i];
 
                 /* Delete the entry if present */
-                csrRoamDelPMKIDfromCache(pMac,sessionId,pmksa->BSSID,FALSE);
+                csrRoamDelPMKIDfromCache(pMac,sessionId,pmksa,FALSE);
 
-                /* Add entry to the cache */
-                vos_mem_copy(
-                   pSession->PmkidCacheInfo[pSession->CurCacheIndex].BSSID,
-                   pmksa->BSSID, VOS_MAC_ADDR_SIZE);
-                vos_mem_copy(
-                   pSession->PmkidCacheInfo[pSession->CurCacheIndex].PMKID,
-                   pmksa->PMKID, CSR_RSN_PMKID_SIZE);
+                csr_update_pmk_cache(pSession, pmksa);
 
-                /* Increment the CSR local cache index */
-                if (pSession->CurCacheIndex < (CSR_MAX_PMKID_ALLOWED - 1))
-                    pSession->CurCacheIndex++;
-                else
-                    pSession->CurCacheIndex = 0;
-
-                pSession->NumPmkidCache++;
-                if(pSession->NumPmkidCache > CSR_MAX_PMKID_ALLOWED)
-                    pSession->NumPmkidCache = CSR_MAX_PMKID_ALLOWED;
             }
         }
     }
@@ -12952,9 +12979,9 @@ eHalStatus csrRoamSetPMKIDCache( tpAniSirGlobal pMac, tANI_U32 sessionId,
 
 eHalStatus csrRoamDelPMKIDfromCache( tpAniSirGlobal pMac, tANI_U32 sessionId,
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
-                                     const tANI_U8 *pBSSId,
+                                     tPmkidCacheInfo *pmksa,
 #else
-                                     tANI_U8 *pBSSId,
+                                     tPmkidCacheInfo *pmksa,
 #endif
                                      tANI_BOOLEAN flush_cache )
 {
@@ -12963,6 +12990,7 @@ eHalStatus csrRoamDelPMKIDfromCache( tpAniSirGlobal pMac, tANI_U32 sessionId,
     tANI_U32 Index;
     tANI_U32 CurIndex;
     tANI_U32 i;
+    tPmkidCacheInfo *cached_pmksa;
 
     if(!pSession)
     {
@@ -12978,20 +13006,28 @@ eHalStatus csrRoamDelPMKIDfromCache( tpAniSirGlobal pMac, tANI_U32 sessionId,
 
     if (!flush_cache) {
         for (Index = 0; Index < CSR_MAX_PMKID_ALLOWED; Index++) {
-            if (vos_mem_compare(pSession->PmkidCacheInfo[Index].BSSID,
-                pBSSId, VOS_MAC_ADDR_SIZE)) {
-                fMatchFound = 1;
+             cached_pmksa = &pSession->PmkidCacheInfo[Index];
+             if (((!cached_pmksa->ssid_len) &&
+                  vos_is_macaddr_equal((v_MACADDR_t *)cached_pmksa->BSSID,
+                                       (v_MACADDR_t *)pmksa->BSSID))) {
+                  fMatchFound = 1;
 
+             } else if ((!vos_mem_compare(cached_pmksa->ssid,
+                         pmksa->ssid, pmksa->ssid_len)) &&
+                         (!vos_mem_compare(cached_pmksa->cache_id,
+                         pmksa->cache_id, CACHE_ID_LEN)))
+                 fMatchFound = 1;
+
+            if(fMatchFound) {
                 /* Clear this - the matched entry */
-                vos_mem_zero(&pSession->PmkidCacheInfo[Index],
-                             sizeof(tPmkidCacheInfo));
+                vos_mem_zero(cached_pmksa, sizeof(tPmkidCacheInfo));
                 break;
             }
         }
 
         if (Index == CSR_MAX_PMKID_ALLOWED && !fMatchFound) {
-            smsLog(pMac, LOG1, FL("No such PMKSA entry exists "MAC_ADDRESS_STR),
-                   MAC_ADDR_ARRAY(pBSSId));
+            smsLog(pMac, LOG1, FL("No such PMKSA entry exists "));
+
         }
         else {
             /* Match Found */

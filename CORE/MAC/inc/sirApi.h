@@ -149,6 +149,8 @@ typedef tANI_U8 tSirVersionString[SIR_VERSION_STRING_LEN];
 #define PERIODIC_TX_PTRN_MAX_SIZE 1536
 #define MAXNUM_PERIODIC_TX_PTRNS 6
 
+/* Cache ID length */
+#define CACHE_ID_LEN 2
 
 #ifdef WLAN_FEATURE_EXTSCAN
 
