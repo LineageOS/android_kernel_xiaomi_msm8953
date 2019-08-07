@@ -2226,3 +2226,13 @@ void vos_dump_thread_stacks(int threadId)
    vos_dump_stack(TX_Thread);
    vos_dump_stack(RX_Thread);
 }
+
+int vos_get_gfp_flags(void)
+{
+   int flags = GFP_KERNEL;
+
+   if (in_interrupt() || in_atomic() || irqs_disabled())
+      flags = GFP_ATOMIC;
+
+   return flags;
+}
