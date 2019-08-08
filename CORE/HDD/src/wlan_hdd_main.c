@@ -307,7 +307,12 @@ static int __hdd_netdev_notifier_call(struct notifier_block * nb,
                                          unsigned long state,
                                          void *ndev)
 {
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0))
+   struct netdev_notifier_info *info = ndev;
+   struct net_device *dev = info->dev;
+#else
    struct net_device *dev = ndev;
+#endif
    hdd_adapter_t *pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
    hdd_context_t *pHddCtx;
 #ifdef WLAN_BTAMP_FEATURE
