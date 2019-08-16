@@ -1682,7 +1682,8 @@ static int hdd_get_cached_station_remote(hdd_context_t *hdd_ctx,
 			  MAC_ADDR_ARRAY(mac_addr.bytes));
 		return -EINVAL;
 	}
-	if (sap_ctx->aStaInfo[stainfo->ucSTAId].isUsed == TRUE) {
+	if (sap_ctx->aStaInfo[stainfo->ucSTAId].isUsed == TRUE &&
+		!sap_ctx->aStaInfo[stainfo->ucSTAId].isDeauthInProgress) {
 		VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
 			  "peer " MAC_ADDRESS_STR " is in connected state",
 			  MAC_ADDR_ARRAY(mac_addr.bytes));
