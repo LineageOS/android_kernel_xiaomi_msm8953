@@ -726,13 +726,22 @@ limProcessAuthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession pse
                    )
                 {
                     limLog(pMac, LOGE,
-                            FL("STA is already connected but received auth frame"
-                                "Send the Deauth and lim Delete Station Context"
-                                "(staId: %d, assocId: %d) "),
+                            FL("Auth frame received in mlm state: %d(staId: %d, assocId: %d)"),
+                            pStaDs->mlmStaContext.mlmState,
                             pStaDs->staIndex, assocId);
-                    limSendDeauthMgmtFrame(pMac, eSIR_MAC_UNSPEC_FAILURE_REASON,
-                            (tANI_U8 *) pHdr->sa, psessionEntry, FALSE);
-                    limTriggerSTAdeletion(pMac, pStaDs, psessionEntry);
+                    if (pStaDs->mlmStaContext.mlmState ==
+                        eLIM_MLM_LINK_ESTABLISHED_STATE) {
+                        limLog(pMac, LOGE,
+                               FL("STA is already connected but received auth frame"
+                                  "Send the Deauth and lim Delete Station Context"
+                                  "(staId: %d, assocId: %d) "),
+                               pStaDs->staIndex, assocId);
+                        limSendDeauthMgmtFrame(pMac,
+                                               eSIR_MAC_UNSPEC_FAILURE_REASON,
+                                               (tANI_U8 *) pHdr->sa,
+                                               psessionEntry, FALSE);
+                        limTriggerSTAdeletion(pMac, pStaDs, psessionEntry);
+                    }
                     goto free;
                 }
             }
