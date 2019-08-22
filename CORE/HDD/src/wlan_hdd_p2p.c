@@ -2547,6 +2547,7 @@ hdd_delete_adapter(hdd_context_t *hdd_ctx, hdd_adapter_t *adapter,
 {
 	wlan_hdd_release_intf_addr(hdd_ctx, adapter->macAddressCurrent.bytes);
 	hdd_stop_adapter(hdd_ctx, adapter, VOS_TRUE);
+	hdd_deinit_adapter(hdd_ctx, adapter, TRUE);
 	hdd_close_adapter(hdd_ctx, adapter, rtnl_held);
 }
 

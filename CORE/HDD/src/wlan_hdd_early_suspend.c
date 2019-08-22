@@ -1677,6 +1677,7 @@ void hdd_suspend_wlan(void)
            pAdapterNode = pNext;
            continue;
        }
+       dev_hold(pAdapter->dev);
        /* Avoid multiple enter/exit BMPS in this while loop using
         * hdd_enter_bmps flag
         */
@@ -1721,6 +1722,7 @@ void hdd_suspend_wlan(void)
                  __func__, ret);
        }
        status = hdd_get_next_adapter ( pHddCtx, pAdapterNode, &pNext );
+       dev_put(pAdapter->dev);
        pAdapterNode = pNext;
    }
 
