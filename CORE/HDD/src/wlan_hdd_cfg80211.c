@@ -19044,6 +19044,7 @@ static int __wlan_hdd_cfg80211_del_station(struct wiphy *wiphy,
     v_U8_t staId;
     v_CONTEXT_t pVosContext = NULL;
     ptSapContext pSapCtx = NULL;
+    hdd_hostapd_state_t *hostap_state;
 
     ENTER();
 
@@ -19068,6 +19069,7 @@ static int __wlan_hdd_cfg80211_del_station(struct wiphy *wiphy,
        || (WLAN_HDD_P2P_GO == pAdapter->device_mode)
        )
     {
+        hostap_state =  WLAN_HDD_GET_HOSTAP_STATE_PTR(pAdapter);
         pVosContext = ( WLAN_HDD_GET_CTX(pAdapter))->pvosContext;
         pSapCtx = VOS_GET_SAP_CB(pVosContext);
         if(pSapCtx == NULL){
@@ -19098,9 +19100,19 @@ static int __wlan_hdd_cfg80211_del_station(struct wiphy *wiphy,
                             MAC_ADDRESS_STR,
                             __func__,
                             MAC_ADDR_ARRAY(pDelStaParams->peerMacAddr));
+                    vos_event_reset(&hostap_state->sta_discon_event);
                     vos_status = hdd_softap_sta_deauth(pAdapter, pDelStaParams);
                     if (VOS_IS_STATUS_SUCCESS(vos_status))
+                    {
                         pSapCtx->aStaInfo[i].isDeauthInProgress = TRUE;
+                        vos_status =
+                            vos_wait_single_event(
+                                    &hostap_state->sta_discon_event,
+                                    WLAN_WAIT_TIME_DISCONNECT);
+                         if (!VOS_IS_STATUS_SUCCESS(vos_status))
+                                 hddLog(LOGE,"!!%s: ERROR: Deauth wait expired!!",
+                                        __func__);
+                    }
                 }
             }
         }
@@ -19135,6 +19147,7 @@ static int __wlan_hdd_cfg80211_del_station(struct wiphy *wiphy,
                                 __func__,
                                 MAC_ADDR_ARRAY(pDelStaParams->peerMacAddr));
 
+            vos_event_reset(&hostap_state->sta_discon_event);
             vos_status = hdd_softap_sta_deauth(pAdapter, pDelStaParams);
             if (!VOS_IS_STATUS_SUCCESS(vos_status))
             {
@@ -19146,7 +19159,11 @@ static int __wlan_hdd_cfg80211_del_station(struct wiphy *wiphy,
                                 MAC_ADDR_ARRAY(pDelStaParams->peerMacAddr));
                 return -ENOENT;
             }
-
+            vos_status =
+                 vos_wait_single_event(&hostap_state->sta_discon_event,
+                                       WLAN_WAIT_TIME_DISCONNECT);
+            if (!VOS_IS_STATUS_SUCCESS(vos_status))
+                hddLog(LOGE,"!!%s: ERROR: Deauth wait expired!!", __func__);
         }
     }
 

@@ -1497,6 +1497,8 @@ VOS_STATUS hdd_hostapd_SAPEventCB( tpSap_Event pSapEvent, v_PVOID_t usrDataForCa
             memcpy(wrqu.addr.sa_data, &pSapEvent->sapevt.sapStationDisassocCompleteEvent.staMac,
                    sizeof(v_MACADDR_t));
             hddLog(LOG1, " disassociated "MAC_ADDRESS_STR, MAC_ADDR_ARRAY(wrqu.addr.sa_data));
+
+            vos_status = vos_event_set(&pHostapdState->sta_discon_event);
             if (pSapEvent->sapevt.sapStationDisassocCompleteEvent.reason == eSAP_USR_INITATED_DISASSOC)
                 hddLog(LOG1," User initiated disassociation");
             else
@@ -5535,6 +5537,12 @@ VOS_STATUS hdd_init_ap_mode( hdd_adapter_t *pAdapter, bool re_init)
     {
          VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR, ("ERROR: Hostapd HDD vos event init failed!!"));
          return status;
+    }
+    status = vos_event_init(&phostapdBuf->sta_discon_event);
+    if (!VOS_IS_STATUS_SUCCESS(status))
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR, "ERROR: Hostapd HDD sta disassoc event init failed!!");
+        return status;
     }
 #ifdef DHCP_SERVER_OFFLOAD
     status = vos_event_init(&dhcp_status->vos_event);
