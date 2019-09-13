@@ -4996,6 +4996,12 @@ int hdd_set_csr_auth_type ( hdd_adapter_t  *pAdapter, eCsrAuthType RSNAuthType)
                                             eCSR_AUTH_TYPE_RSN_8021X_SHA256;
             } else
 #endif
+            if ((RSNAuthType == eCSR_AUTH_TYPE_SAE) &&
+                ((pWextState->authKeyMgmt & IW_AUTH_KEY_MGMT_802_1X)
+                 == IW_AUTH_KEY_MGMT_802_1X)) {
+                 /* SAE case */
+                 pRoamProfile->AuthType.authType[0] = eCSR_AUTH_TYPE_SAE;
+            } else
             if ((RSNAuthType == eCSR_AUTH_TYPE_OWE) &&
                 ((pWextState->authKeyMgmt & IW_AUTH_KEY_MGMT_802_1X)
                  == IW_AUTH_KEY_MGMT_802_1X)) {
