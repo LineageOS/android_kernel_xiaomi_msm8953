@@ -4746,9 +4746,25 @@ static int __wlan_hdd_cfg80211_extscan_get_valid_channels(struct wiphy *wiphy,
     int ret,len = 0;;
 
     ENTER();
+    ret = wlan_hdd_validate_context(pHddCtx);
+    if (ret)
+        return false;
 
-    if (!wlan_hdd_is_extscan_supported(pAdapter, pHddCtx))
-        return -EINVAL;
+    if (!pAdapter) {
+        hddLog(VOS_TRACE_LEVEL_DEBUG, FL("Invalid adapter"));
+        return false;
+    }
+
+    if (pAdapter->device_mode != WLAN_HDD_INFRA_STATION) {
+        hddLog(VOS_TRACE_LEVEL_DEBUG,
+               FL("ext scans only supported on STA ifaces"));
+        return false;
+    }
+
+    if (VOS_FTM_MODE == hdd_get_conparam()) {
+        hddLog(VOS_TRACE_LEVEL_DEBUG, FL("Command not allowed in FTM mode"));
+        return false;
+    }
 
     if (nla_parse(tb, QCA_WLAN_VENDOR_ATTR_EXTSCAN_SUBCMD_CONFIG_PARAM_MAX,
                   data, dataLen,
