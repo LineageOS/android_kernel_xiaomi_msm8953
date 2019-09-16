@@ -4919,9 +4919,9 @@ int hdd_set_csr_auth_type ( hdd_adapter_t  *pAdapter, eCsrAuthType RSNAuthType)
 
     pRoamProfile->AuthType.numEntries = 1;
     hddLog( LOG1,
-           "%s: authType = %d RSNAuthType %d wpa_versions %d",
+           "%s: authType = %d RSNAuthType %d wpa_versions %d key_mgmt : 0x%x",
            __func__, pHddStaCtx->conn_info.authType, RSNAuthType,
-           pWextState->wpaVersion);
+           pWextState->wpaVersion, pWextState->authKeyMgmt);
 
     switch( pHddStaCtx->conn_info.authType)
     {
@@ -5007,6 +5007,10 @@ int hdd_set_csr_auth_type ( hdd_adapter_t  *pAdapter, eCsrAuthType RSNAuthType)
                  == IW_AUTH_KEY_MGMT_802_1X)) {
                 /* OWE case */
                 pRoamProfile->AuthType.authType[0] = eCSR_AUTH_TYPE_OWE;
+            } else
+            if (RSNAuthType == eCSR_AUTH_TYPE_SAE) {
+               /* SAE with open authentication case */
+               pRoamProfile->AuthType.authType[0] = eCSR_AUTH_TYPE_SAE;
             } else
             if( (pWextState->authKeyMgmt & IW_AUTH_KEY_MGMT_802_1X)
                     == IW_AUTH_KEY_MGMT_802_1X) {
