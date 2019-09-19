@@ -6668,6 +6668,8 @@ eHalStatus csrProcessMacAddrSpoofCommand( tpAniSirGlobal pMac, tSmeCmd *pCommand
       // spoof mac address
       vos_mem_copy((tANI_U8 *)pMsg->macAddr,
            (tANI_U8 *)pCommand->u.macAddrSpoofCmd.macAddr, sizeof(tSirMacAddr));
+      vos_mem_copy((tANI_U8 *)pMac->roam.spoof_mac_addr,
+           (tANI_U8 *)pCommand->u.macAddrSpoofCmd.macAddr, sizeof(tSirMacAddr));
       pMsg->spoof_mac_oui =
        pal_cpu_to_be16(pCommand->u.macAddrSpoofCmd.spoof_mac_oui);
 

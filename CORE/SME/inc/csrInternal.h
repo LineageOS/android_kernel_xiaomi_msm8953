@@ -1076,6 +1076,7 @@ typedef struct tagCsrRoamStruct
     tANI_U32 deauthRspStatus;
     tANI_BOOLEAN pending_roam_disable;
     vos_spin_lock_t roam_state_lock;
+    tSirMacAddr spoof_mac_addr;
 }tCsrRoamStruct;
 
 
