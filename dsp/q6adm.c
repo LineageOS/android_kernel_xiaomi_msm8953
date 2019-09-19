@@ -1804,9 +1804,12 @@ static int32_t adm_callback(struct apr_client_data *data, void *priv)
 				pr_err(":err = 0x%x\n", payload[0]);
 			} else if (data->payload_size >=
 				   (2 * sizeof(uint32_t))) {
-				if (payload[1] >
+				if ((payload[1] >
 				    ((ADM_GET_TOPO_MODULE_LIST_LENGTH /
-				    sizeof(uint32_t)) - 1)) {
+				    sizeof(uint32_t)) - 1)) ||
+				((data->payload_size -
+					(2 *  sizeof(uint32_t))) <
+					(payload[1] * sizeof(uint32_t)))) {
 					pr_err("%s: ADM_CMDRSP_GET_PP_TOPO_MODULE_LIST",
 						 __func__);
 					pr_err(":size = %d\n", payload[1]);
@@ -1820,8 +1823,8 @@ static int32_t adm_callback(struct apr_client_data *data, void *priv)
 						adm_module_topo_list[idx+i] =
 							payload[1+i];
 						pr_debug("%s:payload[%d] = %x\n",
-							 __func__, (i+1),
-							 payload[1+i]);
+							__func__, (i+1),
+							payload[1+i]);
 					}
 				}
 			} else
