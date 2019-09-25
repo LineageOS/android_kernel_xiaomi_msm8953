@@ -26,6 +26,9 @@ ifeq ($(KERNEL_BUILD), 0)
 #Flag to enable SAE
     CONFIG_WLAN_FEATURE_SAE := y
 
+#Flag to enable OWE
+    CONFIG_WLAN_AKM_SUITE_OWE := y
+
 #Flag to enable Legacy Fast Roaming(LFR) Make Before Break
     CONFIG_PRIMA_WLAN_LFR_MBB := y
 
@@ -682,6 +685,10 @@ endif
 
 ifeq ($(CONFIG_WLAN_FEATURE_SAE),y)
 CDEFINES += -DWLAN_FEATURE_SAE
+endif
+
+ifeq ($(CONFIG_WLAN_AKM_SUITE_OWE),y)
+CDEFINES += -DWLAN_AKM_SUITE_OWE
 endif
 
 ifeq ($(CONFIG_PRIMA_WLAN_LFR_MBB),y)
