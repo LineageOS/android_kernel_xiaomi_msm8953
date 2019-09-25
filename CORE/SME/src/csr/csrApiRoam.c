@@ -12881,20 +12881,20 @@ static void csr_update_pmk_cache(tCsrRoamSession *pSession,
     uint16_t cache_idx = pSession->CurCacheIndex;
 
     /* Add entry to the cache */
+    pSession->PmkidCacheInfo[cache_idx].ssid_len = 0;
     if (!pmksa->ssid_len) {
-        vos_copy_macaddr(
-                (v_MACADDR_t *)pSession->PmkidCacheInfo[cache_idx].BSSID,
-                (v_MACADDR_t *)pmksa->BSSID);
-        pSession->PmkidCacheInfo[cache_idx].ssid_len = 0;
-    } else {
         vos_mem_copy(pSession->PmkidCacheInfo[cache_idx].ssid,
                 pmksa->ssid, pmksa->ssid_len);
         pSession->PmkidCacheInfo[cache_idx].ssid_len =
             pmksa->ssid_len;
-        vos_mem_copy(pSession->PmkidCacheInfo[cache_idx].cache_id,
-                pmksa->cache_id, CACHE_ID_LEN);
-
     }
+
+    vos_copy_macaddr(
+            (v_MACADDR_t *)pSession->PmkidCacheInfo[cache_idx].BSSID,
+            (v_MACADDR_t *)pmksa->BSSID);
+    vos_mem_copy(pSession->PmkidCacheInfo[cache_idx].cache_id,
+            pmksa->cache_id, CACHE_ID_LEN);
+
     vos_mem_copy(
             pSession->PmkidCacheInfo[cache_idx].PMKID,
             pmksa->PMKID, CSR_RSN_PMKID_SIZE);
@@ -13437,27 +13437,30 @@ static eHalStatus csrRoamStartWds( tpAniSirGlobal pMac, tANI_U32 sessionId, tCsr
  *
  * Return: None
  */
-static void csr_update_sae_config(tSirSmeJoinReq *csr_join_req,
-                                  tpAniSirGlobal mac, tCsrRoamSession *session)
+static bool csr_update_sae_config(tSirMacAddr bssid, tpAniSirGlobal mac,
+                                  tCsrRoamSession *session)
 {
     tPmkidCacheInfo pmkid_cache;
     uint32_t index;
+    bool sae_pmk_cached;
 
-    vos_mem_copy(pmkid_cache.BSSID, csr_join_req->bssDescription.bssId,
-                 VOS_MAC_ADDR_SIZE);
+    vos_mem_copy(pmkid_cache.BSSID, bssid, VOS_MAC_ADDR_SIZE);
 
-    csr_join_req->sae_pmk_cached =
+    sae_pmk_cached =
               csr_lookup_pmkid_using_bssid(mac, session, &pmkid_cache, &index);
 
     VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_DEBUG,
-              "pmk_cached %d for BSSID=" MAC_ADDRESS_STR,
-              csr_join_req->sae_pmk_cached,
-              MAC_ADDR_ARRAY(csr_join_req->bssDescription.bssId));
+              "pmk_cached %d for BSSID=" MAC_ADDRESS_STR, sae_pmk_cached,
+              MAC_ADDR_ARRAY(bssid));
+
+    return sae_pmk_cached;
 }
 #else
-static void csr_update_sae_config(tSirSmeJoinReq *csr_join_req,
-                                  tpAniSirGlobal mac, tCsrRoamSession *session)
-{ }
+static bool csr_update_sae_config(tSirMacAddr bssid, tpAniSirGlobal mac,
+                                  tCsrRoamSession *session)
+{
+    return false;
+}
 #endif
 
 ////////////////////Mail box
@@ -13658,6 +13661,8 @@ eHalStatus csrSendJoinReqMsg( tpAniSirGlobal pMac, tANI_U32 sessionId, tSirBssDe
         pBuf++;
         //Persona
         *pBuf = (tANI_U8)pProfile->csrPersona;
+        pBuf++;
+        *pBuf = csr_update_sae_config(pBssDescription->bssId, pMac, pSession);
         pBuf++;
         *pBuf = (tANI_U8)pProfile->bOSENAssociation;
         pBuf++;
@@ -14197,8 +14202,6 @@ eHalStatus csrSendJoinReqMsg( tpAniSirGlobal pMac, tANI_U32 sessionId, tSirBssDe
         //BssDesc
         csrPrepareJoinReassocReqBuffer( pMac, pBssDescription, pBuf,
                 (tANI_U8)pProfile->uapsd_mask);
-
-        csr_update_sae_config(pMsg, pMac, pSession);
 
         status = palSendMBMessage(pMac->hHdd, pMsg );
         /* Memory allocated to pMsg will get free'd in palSendMBMessage */
@@ -15787,7 +15790,7 @@ eHalStatus csrSendMBStartBssReqMsg( tpAniSirGlobal pMac, tANI_U32 sessionId, eCs
         //Persona
         *pBuf = (tANI_U8)pParam->bssPersona;
         pBuf++;
-        
+
         //txLdpcIniFeatureEnabled
         *pBuf = (tANI_U8)(tANI_U8)pMac->roam.configParam.txLdpcEnable;
         pBuf++;
