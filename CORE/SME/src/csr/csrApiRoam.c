@@ -17714,6 +17714,13 @@ eHalStatus csrRoamOffloadScan(tpAniSirGlobal pMac, tANI_U8 command, tANI_U8 reas
 
    currChannelListInfo = &pNeighborRoamInfo->roamChannelInfo.currentChannelListInfo;
 
+   pSession = CSR_GET_SESSION( pMac, sessionId );
+   if (!pSession) {
+       VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+                 "%s:pSession is null", __func__);
+       return eHAL_STATUS_FAILURE;
+   }
+
    if (0 == csrRoamIsRoamOffloadScanEnabled(pMac))
    {
       smsLog( pMac, LOGE,"isRoamOffloadScanEnabled not set");
@@ -17724,6 +17731,13 @@ eHalStatus csrRoamOffloadScan(tpAniSirGlobal pMac, tANI_U8 command, tANI_U8 reas
    {
         smsLog( pMac, LOGE,"Roam Scan Offload is already started");
         return eHAL_STATUS_FAILURE;
+   }
+
+   /* Roaming is not supported currently for SAE authentication */
+   if (pSession->pCurRoamProfile &&
+       CSR_IS_AUTH_TYPE_SAE(pSession->pCurRoamProfile->AuthType.authType[0])) {
+     smsLog(pMac, LOGE, "Roaming not suppprted for SAE connection");
+     return eHAL_STATUS_SUCCESS;
    }
 
    /*The Dynamic Config Items Update may happen even if the state is in INIT.
@@ -17765,13 +17779,6 @@ eHalStatus csrRoamOffloadScan(tpAniSirGlobal pMac, tANI_U8 command, tANI_U8 reas
       {
           VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
             "%s: Not able to find the sessionId for Roam Offload scan request", __func__);
-          return eHAL_STATUS_FAILURE;
-      }
-      pSession = CSR_GET_SESSION( pMac, sessionId );
-      if (NULL == pSession)
-      {
-          VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
-                 "%s:pSession is null", __func__);
           return eHAL_STATUS_FAILURE;
       }
       pBssDesc = pSession->pConnectBssDesc;
