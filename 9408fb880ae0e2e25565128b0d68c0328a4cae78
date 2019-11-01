@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3e6eca8a_05973b6c",
+        "filename": "arch/arm64/boot/dts/qcom/tissot/msm8953-tissot.dtsi",
+        "patchSetId": 6
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 19256
+      },
+      "writtenOn": "2019-11-01T22:41:03Z",
+      "side": 1,
+      "message": "Whitespace",
+      "revId": "9408fb880ae0e2e25565128b0d68c0328a4cae78",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef0897d0_695805ef",
+        "filename": "arch/arm64/boot/dts/qcom/tissot/msm8953-tissot.dtsi",
+        "patchSetId": 6
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 19256
+      },
+      "writtenOn": "2019-11-01T22:41:03Z",
+      "side": 1,
+      "message": "Same",
+      "revId": "9408fb880ae0e2e25565128b0d68c0328a4cae78",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6910d427_362c3c16",
+        "filename": "arch/arm64/boot/dts/qcom/tissot/msm8953-tissot.dtsi",
+        "patchSetId": 6
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 19256
+      },
+      "writtenOn": "2019-11-01T22:41:03Z",
+      "side": 1,
+      "message": "Same",
+      "revId": "9408fb880ae0e2e25565128b0d68c0328a4cae78",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    }
+  ]
+}
