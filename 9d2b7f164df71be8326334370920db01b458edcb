@@ -16,6 +16,24 @@
       "revId": "9d2b7f164df71be8326334370920db01b458edcb",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c148b559_6fe70434",
+        "filename": "arch/arm64/boot/dts/qcom/tiffany/msm8953-qrd-sku3-tiffany-overlay.dtsi",
+        "patchSetId": 4
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 24438
+      },
+      "writtenOn": "2019-11-01T22:07:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2e2ad78c_8e7a95f0",
+      "revId": "9d2b7f164df71be8326334370920db01b458edcb",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
     }
   ]
 }
