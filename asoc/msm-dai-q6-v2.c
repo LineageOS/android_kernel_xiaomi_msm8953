@@ -7576,7 +7576,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -7596,7 +7596,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -7616,7 +7616,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -7636,7 +7636,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -7656,7 +7656,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -7676,7 +7676,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -7696,7 +7696,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -7716,7 +7716,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -7736,7 +7736,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -7756,7 +7756,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -7776,7 +7776,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -7796,7 +7796,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -7816,7 +7816,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -7836,7 +7836,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -7856,7 +7856,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -7876,7 +7876,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -7896,7 +7896,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -7916,7 +7916,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -7936,7 +7936,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -7956,7 +7956,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -7976,7 +7976,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -7996,7 +7996,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8016,7 +8016,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8036,7 +8036,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8056,7 +8056,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8076,7 +8076,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8096,7 +8096,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8116,7 +8116,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8136,7 +8136,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8156,7 +8156,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8176,7 +8176,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8196,7 +8196,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8216,7 +8216,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8236,7 +8236,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8256,7 +8256,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8276,7 +8276,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8296,7 +8296,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8316,7 +8316,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8336,7 +8336,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8356,7 +8356,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8376,7 +8376,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8396,7 +8396,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8416,7 +8416,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8436,7 +8436,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8456,7 +8456,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8476,7 +8476,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8496,7 +8496,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8516,7 +8516,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8536,7 +8536,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8556,7 +8556,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8576,7 +8576,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8596,7 +8596,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8616,7 +8616,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8636,7 +8636,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8656,7 +8656,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8676,7 +8676,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8696,7 +8696,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8716,7 +8716,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8736,7 +8736,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8756,7 +8756,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8776,7 +8776,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8796,7 +8796,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8816,7 +8816,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8836,7 +8836,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8856,7 +8856,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8876,7 +8876,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8896,7 +8896,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8916,7 +8916,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8936,7 +8936,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8956,7 +8956,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8976,7 +8976,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -8996,7 +8996,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -9016,7 +9016,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -9036,7 +9036,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -9056,7 +9056,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -9076,7 +9076,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -9096,7 +9096,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -9116,7 +9116,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -9136,7 +9136,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
@@ -9156,7 +9156,7 @@ static struct snd_soc_dai_driver msm_dai_q6_tdm_dai[] = {
 				   SNDRV_PCM_FMTBIT_S24_LE |
 				   SNDRV_PCM_FMTBIT_S32_LE,
 			.channels_min = 1,
-			.channels_max = 8,
+			.channels_max = 16,
 			.rate_min = 8000,
 			.rate_max = 352800,
 		},
