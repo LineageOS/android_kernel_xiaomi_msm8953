@@ -8559,13 +8559,6 @@ __wlan_hdd_cfg80211_get_logger_supp_feature(struct wiphy *wiphy,
 	if (hdd_is_memdump_supported())
 		features |= WIFI_LOGGER_MEMORY_DUMP_SUPPORTED;
 
-	if (hdd_ctx->cfg_ini->wlanLoggingEnable &&
-	    hdd_ctx->cfg_ini->enableFatalEvent &&
-	    hdd_ctx->is_fatal_event_log_sup) {
-		features |= WIFI_LOGGER_PER_PACKET_TX_RX_STATUS_SUPPORTED;
-		features |= WIFI_LOGGER_CONNECT_EVENT_SUPPORTED;
-	}
-
 	reply_skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
 			sizeof(uint32_t) + NLA_HDRLEN + NLMSG_HDRLEN);
 	if (!reply_skb) {
