@@ -4226,6 +4226,8 @@ tANI_U8 csrConstructRSNIe( tHalHandle hHal, tANI_U32 sessionId, tCsrRoamProfile 
 
     smsLog(pMac, LOGW, "%s called...", __func__);
 
+    vos_mem_zero(&pmkid_cache, sizeof(pmkid_cache));
+
     do
     {
         if ( !csrIsProfileRSN( pProfile ) ) break;
