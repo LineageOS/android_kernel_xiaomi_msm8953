@@ -426,9 +426,6 @@ int hdd_validate_mcc_config(hdd_adapter_t *pAdapter, v_UINT_t staId,
 #ifdef WLAN_FEATURE_PACKET_FILTERING
 int wlan_hdd_set_filter(hdd_adapter_t *pAdapter, tpPacketFilterCfg pRequest);
 #endif
-static int get_fwr_memdump(struct net_device *,
-                            struct iw_request_info *,
-                            union iwreq_data *, char *);
 /**---------------------------------------------------------------------------
 
   \brief mem_alloc_copy_from_user_helper -
@@ -7590,13 +7587,6 @@ static int __iw_setnone_getnone(struct net_device *dev,
                      TRUE, TRUE);
             break;
         }
-        case WE_GET_FW_MEMDUMP:
-        {
-            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-                     "FW_MEM_DUMP requested ");
-            get_fwr_memdump(dev,info,wrqu,extra);
-            break;
-        }
         default:
         {
             hddLog(LOGE, "%s: unknown ioctl %d", __func__, sub_cmd);
@@ -10059,32 +10049,6 @@ static int iw_set_band_config(struct net_device *dev,
     vos_ssr_unprotect(__func__);
 
     return ret;
-}
-
-static int get_fwr_memdump(struct net_device *dev,
-                            struct iw_request_info *info,
-                            union iwreq_data *wrqu, char *extra)
-{
-    hdd_adapter_t *pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
-    hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
-    int ret;
-    ENTER();
-   // HddCtx sanity
-   ret = wlan_hdd_validate_context(pHddCtx);
-   if (0 != ret)
-   {
-      return ret;
-   }
-   if( !pHddCtx->cfg_ini->enableFwrMemDump ||
-      (FALSE == sme_IsFeatureSupportedByFW(MEMORY_DUMP_SUPPORTED)))
-   {
-      hddLog(VOS_TRACE_LEVEL_INFO, FL("FW dump Logging not supported"));
-      return -EINVAL;
-   }
-   ret = wlan_hdd_fw_mem_dump_req(pHddCtx);
-
-   EXIT();
-   return ret;
 }
 
 static int __iw_set_power_params_priv(struct net_device *dev,

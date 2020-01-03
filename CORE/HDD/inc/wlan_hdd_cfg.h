@@ -3008,11 +3008,6 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_OPTIMIZE_CA_EVENT_ENABLE     ( 1 )
 #define CFG_OPTIMIZE_CA_EVENT_DEFAULT    ( 0 )
 
-#define CFG_FWR_MEM_DUMP_NAME       "gEnableFwrMemDump"
-#define CFG_FWR_MEM_DUMP_MAX        ( 1 )
-#define CFG_FWR_MEM_DUMP_MIN        ( 0 )
-#define CFG_FWR_MEM_DUMP_DEF        ( 1 )
-
 #define CFG_ACTIVE_PASSIVE_CHAN_CONV_NAME "gActivePassiveChCon"
 #define CFG_ACTIVE_PASSIVE_CHAN_CONV_MIN  (0)
 #define CFG_ACTIVE_PASSIVE_CHAN_CONV_MAX  (1)
@@ -3837,7 +3832,6 @@ typedef struct
    v_U32_t                     linkFailTxCnt;
    v_BOOL_t                    ignorePeerHTopMode;
    v_U8_t                      gOptimizeCAevent;
-   v_BOOL_t                    enableFwrMemDump;
    v_U8_t                      gActivePassiveChCon;
    v_U32_t                     cfgExtScanConcMode;
    v_U16_t                     rps_mask;
