@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2020 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -12899,11 +12899,12 @@ static void csr_update_pmk_cache(tCsrRoamSession *pSession,
             pSession->PmkidCacheInfo[cache_idx].PMKID,
             pmksa->PMKID, CSR_RSN_PMKID_SIZE);
 
-    if (pmksa->pmk_len)
+    pSession->PmkidCacheInfo[cache_idx].pmk_len = 0;
+    if (pmksa->pmk_len && pmksa->pmk_len <= CSR_RSN_MAX_PMK_LEN) {
         vos_mem_copy(pSession->PmkidCacheInfo[cache_idx].pmk,
                 pmksa->pmk, pmksa->pmk_len);
-
-    pSession->PmkidCacheInfo[cache_idx].pmk_len = pmksa->pmk_len;
+        pSession->PmkidCacheInfo[cache_idx].pmk_len = pmksa->pmk_len;
+    }
 
     /* Increment the CSR local cache index */
     if (cache_idx < (CSR_MAX_PMKID_ALLOWED - 1))

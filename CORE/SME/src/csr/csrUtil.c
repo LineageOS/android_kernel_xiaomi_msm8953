@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017, 2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2017, 2019-2020 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -4095,39 +4095,6 @@ tANI_BOOLEAN csrIsRSNMatch( tHalHandle hHal, tCsrAuthList *pAuthType,
     return( fRSNMatch );
 }
 
-/**
- * csr_lookup_pmkid_using_ssid() - lookup pmkid using ssid and cache_id
- * @mac: pointer to mac
- * @session: sme session pointer
- * @pmk_cache: pointer to pmk cache
- * @index: index value needs to be seached
- *
- * Return: true if pmkid is found else false
- */
-static bool csr_lookup_pmkid_using_ssid(tpAniSirGlobal mac,
-                    tCsrRoamSession *session,
-                    tPmkidCacheInfo *pmk_cache,
-                    uint32_t *index)
-{
-    uint32_t i;
-    tPmkidCacheInfo *session_pmk;
-
-    for (i = 0; i < session->NumPmkidCache; i++) {
-        session_pmk = &session->PmkidCacheInfo[i];
-
-        if ((!vos_mem_compare(pmk_cache->ssid, session_pmk->ssid,
-                  pmk_cache->ssid_len)) &&
-            (!vos_mem_compare(session_pmk->cache_id,
-                  pmk_cache->cache_id, CACHE_ID_LEN))) {
-            /* match found */
-            *index = i;
-            return true;
-        }
-    }
-
-    return false;
-}
-
 bool csr_lookup_pmkid_using_bssid(tpAniSirGlobal mac,
                     tCsrRoamSession *session,
                     tPmkidCacheInfo *pmk_cache,
@@ -4150,7 +4117,7 @@ bool csr_lookup_pmkid_using_bssid(tpAniSirGlobal mac,
 }
 
 tANI_BOOLEAN csrLookupPMKID(tpAniSirGlobal pMac, tANI_U32 sessionId,
-                                tPmkidCacheInfo *pmk_cache)
+                            tPmkidCacheInfo *pmk_cache)
 
 {
     tANI_BOOLEAN fRC = FALSE, fMatchFound = FALSE;
@@ -4171,22 +4138,20 @@ tANI_BOOLEAN csrLookupPMKID(tpAniSirGlobal pMac, tANI_U32 sessionId,
         pSession->fIgnorePMKIDCache = FALSE;
         return fRC;
     }
-    
-   if (pmk_cache->ssid_len) {
-       /* Try to find based on cache_id and ssid first */
-       fMatchFound = csr_lookup_pmkid_using_ssid(pMac, pSession, pmk_cache,
-                                                 &Index);
-   }
 
     /* If not able to find using cache id or ssid_len is not present */
-    if (!fMatchFound)
-        fMatchFound = csr_lookup_pmkid_using_bssid(pMac, pSession, pmk_cache,
-                                                   &Index);
+    fMatchFound = csr_lookup_pmkid_using_bssid(pMac, pSession, pmk_cache,
+                                               &Index);
 
    if (!fMatchFound) {
        smsLog(pMac, LOG2, "No PMKID Match Found");
        return false;
+   }
 
+   if (pSession->PmkidCacheInfo[Index].pmk_len > CSR_RSN_MAX_PMK_LEN) {
+        smsLog(pMac, LOG2, "PMK length %d is invalid",
+               pSession->PmkidCacheInfo[Index].pmk_len);
+        return false;
    }
 
    vos_mem_copy(pmk_cache->PMKID, pSession->PmkidCacheInfo[Index].PMKID, CSR_RSN_PMKID_SIZE);

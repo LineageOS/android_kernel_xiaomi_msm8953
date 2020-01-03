@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2020 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -4649,6 +4649,7 @@ static tANI_S32 hdd_ProcessGENIE(hdd_adapter_t *pAdapter,
        flag to 0 */
     memset( &dot11WPAIE, 0 , sizeof(tDot11fIEWPA) );
     memset( &dot11RSNIE, 0 , sizeof(tDot11fIERSN) );
+    memset( PMKIDCache, 0 , sizeof(tPmkidCacheInfo) * 4);
 
     // Type check
     if ( gen_ie[0] ==  DOT11F_EID_RSN)
