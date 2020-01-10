@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017, 2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017, 2019-2020 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -2386,9 +2386,17 @@ limProcessActionFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,tpPESession ps
 {
     tANI_U8 *pBody = WDA_GET_RX_MPDU_DATA(pRxPacketInfo);
     tpSirMacActionFrameHdr pActionHdr = (tpSirMacActionFrameHdr) pBody;
-#ifdef WLAN_FEATURE_11W
+    tANI_U8 frameLen = WDA_GET_RX_PAYLOAD_LEN(pRxPacketInfo);
     tpSirMacMgmtHdr pHdr = WDA_GET_RX_MAC_HEADER(pRxPacketInfo);
 
+    if (frameLen < sizeof(*pActionHdr)) {
+	limLog(pMac, LOGE,
+	       FL("frame_len %d less than Action Frame Hdr size"),
+	        frameLen);
+	return;
+    }
+
+#ifdef WLAN_FEATURE_11W
     if (lim_is_robust_mgmt_action_frame(pActionHdr->category) &&
         limDropUnprotectedActionFrame(pMac, psessionEntry, pHdr,
                                       pActionHdr->category)) {
@@ -2555,9 +2563,7 @@ limProcessActionFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,tpPESession ps
             case SIR_MAC_WNM_NOTIF_REQUEST:
             case SIR_MAC_WNM_NOTIF_RESPONSE:
             {
-               tpSirMacMgmtHdr     pHdr;
                tANI_S8 rssi = WDA_GET_RX_RSSI_DB(pRxPacketInfo);
-               pHdr = WDA_GET_RX_MAC_HEADER(pRxPacketInfo);
                /* Forward to the SME to HDD to wpa_supplicant */
                limSendSmeMgmtFrameInd(pMac, psessionEntry->smeSessionId,
                                        pRxPacketInfo,
@@ -2605,10 +2611,13 @@ limProcessActionFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,tpPESession ps
         case SIR_MAC_ACTION_VENDOR_SPECIFIC_CATEGORY:
             {
               tpSirMacVendorSpecificFrameHdr pVendorSpecific = (tpSirMacVendorSpecificFrameHdr) pActionHdr;
-              tpSirMacMgmtHdr     pHdr;
               tANI_U8 Oui[] = { 0x00, 0x00, 0xf0 };
 
-              pHdr = WDA_GET_RX_MAC_HEADER(pRxPacketInfo);
+		if(frameLen < sizeof(*pVendorSpecific)) {
+			limLog(pMac, LOGE,
+			       FL("frame len %d less than Vendor Specific Hdr len"), frameLen);
+			break;
+		  }
 
               //Check if it is a vendor specific action frame.
               if ((eLIM_STA_ROLE == psessionEntry->limSystemRole) &&
@@ -2697,14 +2706,10 @@ limProcessActionFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,tpPESession ps
             {
               tpSirMacVendorSpecificPublicActionFrameHdr pPubAction = (tpSirMacVendorSpecificPublicActionFrameHdr) pActionHdr;
               tANI_U8 P2POui[] = { 0x50, 0x6F, 0x9A, 0x09 };
-	      tANI_U32 frameLen;
 
-	      frameLen = WDA_GET_RX_PAYLOAD_LEN(pRxPacketInfo);
-
-	      if (frameLen < sizeof(pActionHdr)) {
+	      if (frameLen < sizeof(*pActionHdr)) {
 			limLog(pMac, LOG1,
-				FL("Received action frame of invalid len %d"),
-				frameLen);
+				FL("Received action frame of invalid len %d"), frameLen);
 			break;
 	      }
 
@@ -2841,8 +2846,15 @@ limProcessActionFrameNoSession(tpAniSirGlobal pMac, tANI_U8 *pBd)
 {
    tANI_U8 *pBody = WDA_GET_RX_MPDU_DATA(pBd);
    tpSirMacVendorSpecificPublicActionFrameHdr pActionHdr = (tpSirMacVendorSpecificPublicActionFrameHdr) pBody;
+   tANI_U32 frameLen = WDA_GET_RX_PAYLOAD_LEN(pBd);
 
    limLog( pMac, LOG1, "Received a Action frame -- no session");
+
+   if (frameLen < sizeof(*pActionHdr)) {
+	limLog(pMac, LOGE,
+	      FL("Received action frame of invalid len %d"), frameLen);
+	return;
+   }
 
    switch ( pActionHdr->category )
    {
@@ -2851,16 +2863,6 @@ limProcessActionFrameNoSession(tpAniSirGlobal pMac, tANI_U8 *pBd)
             case SIR_MAC_ACTION_VENDOR_SPECIFIC:
               {
                 tANI_U8 P2POui[] = { 0x50, 0x6F, 0x9A, 0x09 };
-		tANI_U32 frameLen;
-
-		frameLen = WDA_GET_RX_PAYLOAD_LEN(pBd);
-
-		if (frameLen < sizeof(pActionHdr)) {
-			limLog(pMac, LOG1,
-				FL("Received action frame of invalid len %d"),
-				frameLen);
-			break;
-		}
 
                 //Check if it is a P2P public action frame.
                 if (vos_mem_compare(pActionHdr->Oui, P2POui, 4))
