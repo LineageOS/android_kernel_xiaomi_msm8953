@@ -2348,6 +2348,24 @@ static struct snd_soc_dai_link msm8952_dai[] = {
 		.ignore_pmdown_time = 1,
 		.id = MSM_FRONTEND_DAI_MULTIMEDIA19,
 	},
+	{/* hw:x,41 */
+		.name = "MSM8x16 Haptic Audio",
+		.stream_name = "MultiMedia30",
+		.cpu_dai_name   = "MultiMedia30",
+		.platform_name  = "msm-pcm-dsp.1",
+		.dynamic = 1,
+		.dpcm_playback = 1,
+		.async_ops = ASYNC_DPCM_SND_SOC_PREPARE |
+			 ASYNC_DPCM_SND_SOC_HW_PARAMS,
+		.codec_dai_name = "snd-soc-dummy-dai",
+		.codec_name = "snd-soc-dummy",
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+			 SND_SOC_DPCM_TRIGGER_POST},
+		.ignore_suspend = 1,
+		/* this dainlink has playback support */
+		.ignore_pmdown_time = 1,
+		.id = MSM_FRONTEND_DAI_MULTIMEDIA30,
+	},
 	/* Backend I2S DAI Links */
 	{
 		.name = LPASS_BE_PRI_MI2S_RX,

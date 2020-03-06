@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -654,6 +654,9 @@ static struct msm_pcm_routing_fdai_data
 	{{0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL} },
 	 {0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL} } },
 	/* MULTIMEDIA29 */
+	{{0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL} },
+	 {0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL} } },
+	/* MULTIMEDIA30 */
 	{{0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL} },
 	 {0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL} } },
 	/* VOIP */
@@ -5005,7 +5008,10 @@ static const struct snd_kcontrol_new primary_mi2s_rx_mixer_controls[] = {
 	MSM_BACKEND_DAI_PRI_MI2S_RX,
 	MSM_FRONTEND_DAI_MULTIMEDIA29, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
-
+	SOC_DOUBLE_EXT("MultiMedia30", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_PRI_MI2S_RX,
+	MSM_FRONTEND_DAI_MULTIMEDIA30, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
 };
 
 static const struct snd_kcontrol_new int0_mi2s_rx_mixer_controls[] = {
@@ -15124,6 +15130,7 @@ static const struct snd_soc_dapm_widget msm_qdsp6_widgets[] = {
 	SND_SOC_DAPM_AIF_IN("MM_DL15", "MultiMedia15 Playback", 0, 0, 0, 0),
 	SND_SOC_DAPM_AIF_IN("MM_DL16", "MultiMedia16 Playback", 0, 0, 0, 0),
 	SND_SOC_DAPM_AIF_IN("MM_DL20", "MultiMedia20 Playback", 0, 0, 0, 0),
+	SND_SOC_DAPM_AIF_IN("MM_DL30", "MultiMedia30 Playback", 0, 0, 0, 0),
 	SND_SOC_DAPM_AIF_IN("VOIP_DL", "VoIP Playback", 0, 0, 0, 0),
 	SND_SOC_DAPM_AIF_OUT("MM_UL1", "MultiMedia1 Capture", 0, 0, 0, 0),
 	SND_SOC_DAPM_AIF_OUT("MM_UL2", "MultiMedia2 Capture", 0, 0, 0, 0),
@@ -16391,6 +16398,7 @@ static const struct snd_soc_dapm_route intercon[] = {
 	{"PRI_RX Audio Mixer", "MultiMedia14", "MM_DL14"},
 	{"PRI_RX Audio Mixer", "MultiMedia15", "MM_DL15"},
 	{"PRI_RX Audio Mixer", "MultiMedia16", "MM_DL16"},
+	{"PRI_RX Audio Mixer", "MultiMedia30", "MM_DL30"},
 	{"PRI_I2S_RX", NULL, "PRI_RX Audio Mixer"},
 
 	{"SEC_RX Audio Mixer", "MultiMedia1", "MM_DL1"},
@@ -16724,6 +16732,7 @@ static const struct snd_soc_dapm_route intercon[] = {
 	{"PRI_MI2S_RX Audio Mixer", "MultiMedia14", "MM_DL14"},
 	{"PRI_MI2S_RX Audio Mixer", "MultiMedia15", "MM_DL15"},
 	{"PRI_MI2S_RX Audio Mixer", "MultiMedia16", "MM_DL16"},
+	{"PRI_MI2S_RX Audio Mixer", "MultiMedia30", "MM_DL30"},
 	{"PRI_MI2S_RX", NULL, "PRI_MI2S_RX Audio Mixer"},
 
 	{"INT0_MI2S_RX Audio Mixer", "MultiMedia1", "MM_DL1"},
