@@ -19842,6 +19842,12 @@ static void hdd_config_sched_scan_plan(tpSirPNOScanReq pno_req,
             request->scan_plans[i].iterations;
         pno_req->scanTimers.aTimerValues[i].uTimerValue =
             request->scan_plans[i].interval;
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                  "scan plan - %d, iterations = %d",
+                  i, request->scan_plans[i].iterations);
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                  "scan plan - %d, interval = %d",
+                  i, request->scan_plans[i].interval);
     }
 }
 #else
