@@ -704,7 +704,7 @@ rrmFillBeaconIes( tpAniSirGlobal pMac,
    *((tANI_U16*)pIes) = pBssDesc->capabilityInfo;
    *pNumIes+=sizeof(tANI_U16); pIes+=sizeof(tANI_U16);
 
-   while ( BcnNumIes > 0 )
+   while ( BcnNumIes >= 2 )
    {
       len = *(pBcnIes + 1); //element id + length.
       len += 2;
