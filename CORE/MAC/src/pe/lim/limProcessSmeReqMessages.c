@@ -2677,10 +2677,16 @@ __limProcessSmeDisassocReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
 		 * and lim state is eLIM_SME_WT_REASSOC_STATE. As the
 		 * FT session would have already created but is not cleaned.
 		 * This will prevent sending duplicate add bss request,
-		 * if we try to disconnect and connect to the same AP
+		 * if we try to disconnect and connect to the same AP.
+		 * As limFTCleanup delete pesession, send resp back to csr
+		 * from here.
 		 */
 		case eLIM_SME_WT_REASSOC_STATE:
+			limLog(pMac, LOG1, FL("Rcvd SME_DISASSOC_REQ while in "
+			      "limSmeState: %d "),psessionEntry->limSmeState);
 			limFTCleanup(pMac);
+			disassocTrigger = eLIM_HOST_DISASSOC;
+			goto sendDisassoc;
 			/* Fall through */
                 case eLIM_SME_ASSOCIATED_STATE:
                 case eLIM_SME_LINK_EST_STATE:
