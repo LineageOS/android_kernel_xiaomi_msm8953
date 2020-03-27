@@ -971,8 +971,6 @@ VosWDThread
         else
         {
           pWdContext->isFatalError = false;
-          pHddCtx->isLogpInProgress = FALSE;
-          vos_set_logp_in_progress(VOS_MODULE_ID_VOSS, FALSE);
         }
         atomic_set(&pHddCtx->isRestartInProgress, 0);
         pWdContext->resetInProgress = false;
