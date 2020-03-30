@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -72,6 +72,7 @@
 
 #define VOLTAGE_CONVERTER(value, min_value, step_size)\
 	((value - min_value)/step_size)
+#define APR_DEST_QDSP6 1
 
 enum {
 	BOOST_SWITCH = 0,
@@ -4058,8 +4059,13 @@ int msm_anlg_codec_info_create_codec_entry(struct snd_info_entry *codec_root,
 
 	sdm660_cdc_priv->audio_ssr_nb.notifier_call =
 				sdm660_cdc_notifier_service_cb;
-	ret = audio_notifier_register("pmic_analog_cdc",
+	if (apr_get_dest_id("ADSP") == APR_DEST_QDSP6)
+		ret = audio_notifier_register("pmic_analog_cdc",
 				      AUDIO_NOTIFIER_ADSP_DOMAIN,
+				      &sdm660_cdc_priv->audio_ssr_nb);
+	else
+		ret = audio_notifier_register("pmic_analog_cdc",
+				      AUDIO_NOTIFIER_MODEM_DOMAIN,
 				      &sdm660_cdc_priv->audio_ssr_nb);
 	if (ret < 0) {
 		pr_err("%s: Audio notifier register failed ret = %d\n",
