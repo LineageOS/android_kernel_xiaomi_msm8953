@@ -933,6 +933,34 @@ void sme_set_qpower(tpAniSirGlobal pMac, uint8_t enable)
 }
 
 /**
+ * smeProcessBlackListReq() - Update Black list APs
+ * @pMac - context handler
+ * @command: cmd param containing list of APs and count
+ *
+ * The function sends the list of black list to firmware received
+ * via driver vendor command
+ */
+static void smeProcessBlackListReq(tpAniSirGlobal pMac, tSmeCmd *pCommand)
+{
+    tSirMsgQ msgQ;
+    tSirRetStatus   retCode = eSIR_SUCCESS;
+
+    msgQ.type = WDA_BLACKLIST_REQ;
+    msgQ.reserved = 0;
+    msgQ.bodyptr = pCommand->u.RoamParams;
+    msgQ.bodyval = 0;
+
+    retCode = wdaPostCtrlMsg(pMac, &msgQ);
+    if (eSIR_SUCCESS != retCode) {
+        vos_mem_free(pCommand->u.RoamParams);
+        smsLog(pMac, LOGE,
+               FL("Posting WDA_BLACKLIST_REQ; to WDA failed, reason=%X"),
+               retCode);
+    } else {
+        smsLog(pMac, LOG1, FL("posted WDA_BLACKLIST_REQ command"));
+    }
+}
+/**
  * sme_set_vowifi_mode() - Set VOWIFI mode
  * @pMac - context handler
  * @enable - boolean value that determines the state
@@ -1413,6 +1441,18 @@ sme_process_cmd:
                             }
                             VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_INFO,
                                     "eSmeCommandNanReq processed");
+                            fContinue = eANI_BOOLEAN_TRUE;
+                            break;
+
+                        case eSmeCommandBlackList:
+                            csrLLUnlock(&pMac->sme.smeCmdActiveList);
+                            smeProcessBlackListReq(pMac, pCommand);
+                            if (csrLLRemoveEntry(&pMac->sme.smeCmdActiveList,
+                                &pCommand->Link, LL_ACCESS_LOCK)) {
+                                csrReleaseCommand(pMac, pCommand);
+                            }
+                            VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_INFO,
+                                    "eSmeCommandBlackList processed");
                             fContinue = eANI_BOOLEAN_TRUE;
                             break;
 
@@ -15424,3 +15464,46 @@ eHalStatus sme_handle_sae_msg(tHalHandle hal, uint8_t session_id,
 return hal_status;
 }
 #endif
+
+eHalStatus sme_UpdateBlacklist(tHalHandle hHal, uint8_t session_id,
+                               struct roam_ext_params *roam_params) {
+    tRoamParams *pRoamParams = NULL;
+    size_t data_len;
+    tSmeCmd *pCommand;
+    tpAniSirGlobal pMac = PMAC_STRUCT(hHal);
+
+    pCommand = csrGetCommandBuffer(pMac);
+    if (NULL == pCommand) {
+        VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+                FL("Failed to get command buffer for roam params"));
+        return eHAL_STATUS_RESOURCES;
+    }
+
+    data_len = sizeof(tRoamParams);
+    pRoamParams = vos_mem_malloc(data_len);
+
+    if (pRoamParams == NULL) {
+        VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+                FL("Memory allocation failure, size : %zu"), data_len);
+        csrReleaseCommand(pMac, pCommand);
+         return eHAL_STATUS_RESOURCES;
+    }
+
+    smsLog(pMac, LOG1, "Posting Roam command to csr queue");
+    vos_mem_zero(pRoamParams, data_len);
+    vos_mem_copy(pRoamParams, roam_params, data_len);
+
+    pCommand->command = eSmeCommandBlackList;
+    pCommand->sessionId = session_id;
+    pCommand->u.RoamParams = pRoamParams;
+
+    if (!HAL_STATUS_SUCCESS(csrQueueSmeCommand(pMac, pCommand, TRUE))) {
+        VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+                 FL("failed to post eSmeCommandBlackList command"));
+        csrReleaseCommand(pMac, pCommand);
+        vos_mem_free(pRoamParams);
+        return eHAL_STATUS_FAILURE;
+    }
+
+    return eHAL_STATUS_SUCCESS;
+}

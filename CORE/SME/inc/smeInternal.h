@@ -108,6 +108,7 @@ typedef enum eSmeCommandType
 #endif
     eSmeCommandRemainOnChannel,
     eSmeCommandNoAUpdate,
+    eSmeCommandBlackList,
 } eSmeCommandType;
 
 

@@ -4154,4 +4154,14 @@ struct roam_ext_params {
     v_MACADDR_t bssid_avoid_list[MAX_BSSID_AVOID_LIST];
 };
 
+/**
+ * sme_UpdateBlacklist() - Send blacklist bssid received from user space
+ * @hal: The handle returned by mac_open
+ * @session_id: session id
+ * @roam_ext_params: list of blacklist Bssid
+ *
+ * Return: HAL_STATUS
+ */
+eHalStatus sme_UpdateBlacklist(tHalHandle hHal, uint8_t session_id,
+                               struct roam_ext_params *roam_params);
 #endif //#if !defined( __SME_API_H )

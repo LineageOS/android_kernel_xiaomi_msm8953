@@ -6845,6 +6845,10 @@ static int hdd_set_blacklist_bssid(tHalHandle hHal,
 
     roam_params->num_bssid_avoid_list = i;
     hddLog(LOG1, FL("session  id %d "), session_id);
+    if (sme_UpdateBlacklist(hHal, session_id, roam_params) !=
+       eHAL_STATUS_SUCCESS) {
+       goto fail;
+    }
 
     return 0;
 fail:

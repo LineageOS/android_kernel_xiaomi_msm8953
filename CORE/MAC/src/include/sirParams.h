@@ -829,6 +829,7 @@ struct sir_mgmt_msg {
 #define SIR_HAL_VOWIFI_MODE                (SIR_HAL_ITC_MSG_TYPES_BEGIN + 306)
 #define SIR_HAL_QPOWER                     (SIR_HAL_ITC_MSG_TYPES_BEGIN + 307)
 
+#define SIR_HAL_BLACKLIST_REQ              (SIR_HAL_ITC_MSG_TYPES_BEGIN + 308)
 
 #define SIR_HAL_MSG_TYPES_END              (SIR_HAL_MSG_TYPES_BEGIN + 0x1FF)
 
