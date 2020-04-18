@@ -159,6 +159,9 @@ typedef enum {
    /*70 reserved for WIFI_DUAL_BAND_ENABLE */
    PROBE_RSP_TEMPLATE_VER1 = 71,
    STA_MONITOR_SCC = 72,
+#ifdef FEATURE_WLAN_LFR
+   BSSID_BLACKLIST = 73,
+#endif
    //MAX_FEATURE_SUPPORTED = 128
 } placeHolderInCapBitmap;
 
