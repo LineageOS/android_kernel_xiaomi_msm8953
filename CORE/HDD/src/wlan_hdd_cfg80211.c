@@ -6773,12 +6773,14 @@ wlan_hdd_set_roam_param_policy[MAX_ROAMING_PARAM + 1] = {
 /**
  * hdd_set_blacklist_bssid() - parse set blacklist bssid
  * @hHal:       HAL Handle
+ * @blacklist_timeout:   Per Bssid Blacklist timer
  * @tb:            list of attributes
  * @session_id:    session id
  *
  * Return: 0 on success; error number on failure
  */
 static int hdd_set_blacklist_bssid(tHalHandle hHal,
+                                   uint8_t blacklist_timeout,
                                    struct nlattr **tb,
                                    uint8_t session_id)
 {
@@ -6806,7 +6808,7 @@ static int hdd_set_blacklist_bssid(tHalHandle hHal,
         goto fail;
     }
 
-    roam_params->blacklist_timedout = 0;
+    roam_params->blacklist_timedout =  blacklist_timeout;
     hddLog(LOG1, FL("Num of blacklist BSSID (%d)"), count);
 
     i = 0;
@@ -6844,7 +6846,7 @@ static int hdd_set_blacklist_bssid(tHalHandle hHal,
                i, count);
 
     roam_params->num_bssid_avoid_list = i;
-    hddLog(LOG1, FL("session  id %d "), session_id);
+    hddLog(LOG1, FL("session  id %d timer %d"), session_id, blacklist_timeout);
     if (sme_UpdateBlacklist(hHal, session_id, roam_params) !=
        eHAL_STATUS_SUCCESS) {
        goto fail;
@@ -6882,6 +6884,7 @@ __wlan_hdd_cfg80211_set_ext_roam_params(struct wiphy *wiphy,
     uint32_t cmd_type, req_id;
     struct nlattr *tb_vendor[MAX_ROAMING_PARAM + 1];
     int ret = 0;
+    uint8_t blacklist_timeout = 0;
 
     ENTER();
 
@@ -6907,6 +6910,8 @@ __wlan_hdd_cfg80211_set_ext_roam_params(struct wiphy *wiphy,
         return -EINVAL;
     }
 
+    blacklist_timeout = hdd_ctx->cfg_ini->bssid_blacklist_timeout;
+
     cmd_type = nla_get_u32(tb_vendor[QCA_WLAN_VENDOR_ATTR_ROAMING_SUBCMD]);
     if (!tb_vendor[QCA_WLAN_VENDOR_ATTR_ROAMING_REQ_ID]) {
         hddLog(LOGE, FL("attr request id failed"));
@@ -6918,7 +6923,7 @@ __wlan_hdd_cfg80211_set_ext_roam_params(struct wiphy *wiphy,
     switch (cmd_type) {
     case QCA_WLAN_VENDOR_ROAMING_SUBCMD_SET_BLACKLIST_BSSID:
 
-         ret = hdd_set_blacklist_bssid(hHal,
+         ret = hdd_set_blacklist_bssid(hHal, blacklist_timeout,
                    tb_vendor, pAdapter->sessionId);
          if (ret)
              return ret;

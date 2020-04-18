@@ -1109,6 +1109,14 @@ REG_TABLE_ENTRY g_registry_table[] =
                  CFG_LFR_MAWC_FEATURE_ENABLED_MAX,
                  NotifyIsMAWCIniFeatureEnabled, 0 ),
 
+   /* flag to turn ON/OFF Motion assistance for Legacy Fast Roaming */
+   REG_VARIABLE( CFG_PER_BSSID_BLACKLIST_TIMEOUT_NAME, WLAN_PARAM_Integer,
+                 hdd_config_t, bssid_blacklist_timeout,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_PER_BSSID_BLACKLIST_TIMEOUT_DEFAULT,
+                 CFG_PER_BSSID_BLACKLIST_TIMEOUT_MIN,
+                 CFG_PER_BSSID_BLACKLIST_TIMEOUT_MAX ),
+
 #endif // FEATURE_WLAN_LFR
 
 #if  defined (WLAN_FEATURE_VOWIFI_11R) || defined (FEATURE_WLAN_ESE) || defined(FEATURE_WLAN_LFR)
