@@ -6057,6 +6057,17 @@ typedef struct
     wpt_uint8 request_data[1];
 } WDI_NanRequestType;
 
+/*---------------------------------------------------------------------------
+  WDI_BlackListReqType
+---------------------------------------------------------------------------*/
+#define MAX_BSSID_AVOID_LIST 16
+
+typedef struct
+{
+    wpt_uint8 blacklist_timedout;
+    wpt_uint8 num_bssid_avoid_list;
+    wpt_macAddr bssid_avoid_list[MAX_BSSID_AVOID_LIST];
+} WDI_BlackListReqType;
 
 /*---------------------------------------------------------------------------
   WDI_DelPeriodicTxPtrnParamsType
@@ -12277,6 +12288,23 @@ WDI_NanRequest
     void                         *usrData
 );
 
+/**
+ @brief WDI_BlackListReq
+        BlackList request
+
+ @param pwdiBlackListReq: data
+
+        usrData: user data will be passed back with the
+        callback
+
+ @return Result of the function call
+*/
+WDI_Status
+WDI_BlackListReq
+(
+    WDI_BlackListReqType          *pwdiBlackListReq,
+    void                         *usrData
+);
 /**
  @brief WDI_SetRtsCtsHTVhtInd
         Set RTS/CTS indication for diff modes.

@@ -505,6 +505,8 @@ typedef enum
   WDI_FW_ARP_STATS_REQ                           = 125,
   WDI_FW_GET_ARP_STATS_REQ                       = 126,
 
+  /* BLACKLIST Request */
+  WDI_BLACKLIST_REQ                              = 127,
   WDI_MAX_REQ,
 
   /*Send a suspend Indication down to HAL*/
@@ -893,6 +895,9 @@ typedef enum
   WDI_CAPTURE_GET_TSF_TSTAMP_RSP                 = 123,
   WDI_FW_ARP_STATS_RSP                           = 124,
   WDI_FW_GET_ARP_STATS_RSP                       = 125,
+
+  /* BLACKLIST Response */
+  WDI_BLACKLIST_RSP                              = 126,
   /*-------------------------------------------------------------------------
     Indications
      !! Keep these last in the enum if possible
@@ -6497,6 +6502,38 @@ WDI_ProcessNanEvent
 (
   WDI_ControlBlockType*  pWDICtx,
   WDI_EventInfoType*     pEventData
+);
+
+/**
+ @brief Process BlackList Request
+
+ @param  pWDICtx:         pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+WDI_Status
+WDI_ProcessBlackListReq
+(
+  WDI_ControlBlockType *pWDICtx,
+  WDI_EventInfoType    *pEventData
+);
+
+/**
+ @brief Process BlackList Response
+
+ @param  pWDICtx:         pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+WDI_Status
+WDI_ProcessBlackListResp
+(
+  WDI_ControlBlockType  *pWDICtx,
+  WDI_EventInfoType     *pEventData
 );
 
 
