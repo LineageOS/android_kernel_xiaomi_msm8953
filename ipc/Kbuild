@@ -192,6 +192,7 @@ $(shell $(HEADER_INSTALL_DIR)/headers_install.sh $(UAPI_OUT)/sound/ $(AUDIO_ROOT
 $(shell $(HEADER_INSTALL_DIR)/headers_install.sh $(UAPI_OUT)/sound/ $(AUDIO_ROOT)/include/uapi/sound/ msmcal-hwdep.h;)
 $(shell $(HEADER_INSTALL_DIR)/headers_install.sh $(UAPI_OUT)/sound/ $(AUDIO_ROOT)/include/uapi/sound/ voice_params.h;)
 $(shell $(HEADER_INSTALL_DIR)/headers_install.sh $(UAPI_OUT)/sound/ $(AUDIO_ROOT)/include/uapi/sound/ wcd-dsp-glink.h;)
+$(shell $(HEADER_INSTALL_DIR)/headers_install.sh $(UAPI_OUT)/sound/ $(AUDIO_ROOT)/include/uapi/sound/ voice_svc.h;)
 
 KBUILD_EXTRA_SYMBOLS +=$(OUT)/obj/vendor/qcom/opensource/audio-kernel/dsp/Module.symvers
 

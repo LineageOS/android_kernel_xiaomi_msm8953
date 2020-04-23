@@ -126,6 +126,11 @@ ifdef CONFIG_SND_SOC_MSM8909
 	MACHINE_INT_OBJS += msm8952.o
 endif
 
+# For MSM8909 only add voice svc driver
+ifdef CONFIG_SND_SOC_MSM8909
+	PLATFORM_OBJS += voice_svc.o
+endif
+
 # for SDM450 external codec sound card driver
 ifdef CONFIG_SND_SOC_EXT_CODEC_SDM450
 	MACHINE_EXT_OBJS += msm8952-slimbus.o
