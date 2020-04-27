@@ -6013,6 +6013,9 @@ typedef struct
   /* MAC Address for the adapter  */
   wpt_macAddr macAddr;
 
+  /* BSSID */
+  wpt_macAddr bss_address;
+
   wpt_uint8  ucPtrnId;           // Pattern ID
   wpt_uint16 ucPtrnSize;         // Pattern size
   wpt_uint32 usPtrnIntervalMs;   // In msec
