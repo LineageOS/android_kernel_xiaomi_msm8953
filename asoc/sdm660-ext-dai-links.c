@@ -1419,48 +1419,6 @@ static struct snd_soc_dai_link msm_ext_common_be_dai[] = {
 		.ignore_suspend = 1,
 	},
 	{
-		.name = LPASS_BE_PRI_TDM_TX_1,
-		.stream_name = "Primary TDM1 Capture",
-		.cpu_dai_name = "msm-dai-q6-tdm.36867",
-		.platform_name = "msm-pcm-routing",
-		.codec_name = "msm-stub-codec.1",
-		.codec_dai_name = "msm-stub-tx1",
-		.no_pcm = 1,
-		.dpcm_capture = 1,
-		.id = MSM_BACKEND_DAI_PRI_TDM_TX_1,
-		.be_hw_params_fixup = msm_tdm_be_hw_params_fixup,
-		.ops = &msm_tdm_be_ops,
-		.ignore_suspend = 1,
-	},
-	{
-		.name = LPASS_BE_PRI_TDM_TX_2,
-		.stream_name = "Primary TDM2 Capture",
-		.cpu_dai_name = "msm-dai-q6-tdm.36869",
-		.platform_name = "msm-pcm-routing",
-		.codec_name = "msm-stub-codec.1",
-		.codec_dai_name = "msm-stub-tx2",
-		.no_pcm = 1,
-		.dpcm_capture = 1,
-		.id = MSM_BACKEND_DAI_PRI_TDM_TX_2,
-		.be_hw_params_fixup = msm_tdm_be_hw_params_fixup,
-		.ops = &msm_tdm_be_ops,
-		.ignore_suspend = 1,
-	},
-	{
-		.name = LPASS_BE_PRI_TDM_TX_3,
-		.stream_name = "Primary TDM3 Capture",
-		.cpu_dai_name = "msm-dai-q6-tdm.36871",
-		.platform_name = "msm-pcm-routing",
-		.codec_name = "msm-stub-codec.1",
-		.codec_dai_name = "msm-stub-tx3",
-		.no_pcm = 1,
-		.dpcm_capture = 1,
-		.id = MSM_BACKEND_DAI_PRI_TDM_TX_3,
-		.be_hw_params_fixup = msm_tdm_be_hw_params_fixup,
-		.ops = &msm_tdm_be_ops,
-		.ignore_suspend = 1,
-	},
-	{
 		.name = LPASS_BE_SEC_TDM_RX_0,
 		.stream_name = "Secondary TDM0 Playback",
 		.cpu_dai_name = "msm-dai-q6-tdm.36880",
@@ -1578,6 +1536,93 @@ static struct snd_soc_dai_link msm_ext_common_be_dai[] = {
 	},
 };
 
+static struct snd_soc_dai_link msm_ext_tdm_tx_group_be_dai[] = {
+	{
+		.name = LPASS_BE_PRI_TDM_TX_1,
+		.stream_name = "Primary TDM1 Capture",
+		.cpu_dai_name = "msm-dai-q6-tdm.36867",
+		.platform_name = "msm-pcm-routing",
+		.codec_name = "msm-stub-codec.1",
+		.codec_dai_name = "msm-stub-tx",
+		.no_pcm = 1,
+		.dpcm_capture = 1,
+		.id = MSM_BACKEND_DAI_PRI_TDM_TX_1,
+		.be_hw_params_fixup = msm_tdm_be_hw_params_fixup,
+		.ops = &msm_tdm_be_ops,
+		.ignore_suspend = 1,
+	},
+	{
+		.name = LPASS_BE_PRI_TDM_TX_2,
+		.stream_name = "Primary TDM2 Capture",
+		.cpu_dai_name = "msm-dai-q6-tdm.36869",
+		.platform_name = "msm-pcm-routing",
+		.codec_name = "msm-stub-codec.1",
+		.codec_dai_name = "msm-stub-tx",
+		.no_pcm = 1,
+		.dpcm_capture = 1,
+		.id = MSM_BACKEND_DAI_PRI_TDM_TX_2,
+		.be_hw_params_fixup = msm_tdm_be_hw_params_fixup,
+		.ops = &msm_tdm_be_ops,
+		.ignore_suspend = 1,
+	},
+	{
+		.name = LPASS_BE_PRI_TDM_TX_3,
+		.stream_name = "Primary TDM3 Capture",
+		.cpu_dai_name = "msm-dai-q6-tdm.36871",
+		.platform_name = "msm-pcm-routing",
+		.codec_name = "msm-stub-codec.1",
+		.codec_dai_name = "msm-stub-tx",
+		.no_pcm = 1,
+		.dpcm_capture = 1,
+		.id = MSM_BACKEND_DAI_PRI_TDM_TX_3,
+		.be_hw_params_fixup = msm_tdm_be_hw_params_fixup,
+		.ops = &msm_tdm_be_ops,
+		.ignore_suspend = 1,
+	},
+	{
+		.name = LPASS_BE_TERT_TDM_TX_1,
+		.stream_name = "Tertiary TDM1 Capture",
+		.cpu_dai_name = "msm-dai-q6-tdm.36899",
+		.platform_name = "msm-pcm-routing",
+		.codec_name = "msm-stub-codec.1",
+		.codec_dai_name = "msm-stub-tx",
+		.no_pcm = 1,
+		.dpcm_capture = 1,
+		.id = MSM_BACKEND_DAI_TERT_TDM_TX_1,
+		.be_hw_params_fixup = msm_tdm_be_hw_params_fixup,
+		.ops = &msm_tdm_be_ops,
+		.ignore_suspend = 1,
+	},
+	{
+		.name = LPASS_BE_TERT_TDM_TX_2,
+		.stream_name = "Tertiary TDM2 Capture",
+		.cpu_dai_name = "msm-dai-q6-tdm.36901",
+		.platform_name = "msm-pcm-routing",
+		.codec_name = "msm-stub-codec.1",
+		.codec_dai_name = "msm-stub-tx",
+		.no_pcm = 1,
+		.dpcm_capture = 1,
+		.id = MSM_BACKEND_DAI_TERT_TDM_TX_2,
+		.be_hw_params_fixup = msm_tdm_be_hw_params_fixup,
+		.ops = &msm_tdm_be_ops,
+		.ignore_suspend = 1,
+	},
+	{
+		.name = LPASS_BE_TERT_TDM_TX_3,
+		.stream_name = "Tertiary TDM3 Capture",
+		.cpu_dai_name = "msm-dai-q6-tdm.36903",
+		.platform_name = "msm-pcm-routing",
+		.codec_name = "msm-stub-codec.1",
+		.codec_dai_name = "msm-stub-tx",
+		.no_pcm = 1,
+		.dpcm_capture = 1,
+		.id = MSM_BACKEND_DAI_TERT_TDM_TX_3,
+		.be_hw_params_fixup = msm_tdm_be_hw_params_fixup,
+		.ops = &msm_tdm_be_ops,
+		.ignore_suspend = 1,
+	},
+
+};
 static struct snd_soc_dai_link msm_mi2s_be_dai_links[] = {
 	{
 		.name = LPASS_BE_PRI_MI2S_RX,
@@ -1988,7 +2033,8 @@ ARRAY_SIZE(msm_mi2s_be_dai_links) +
 ARRAY_SIZE(msm_auxpcm_be_dai_links) +
 ARRAY_SIZE(msm_wcn_be_dai_links) +
 ARRAY_SIZE(ext_disp_be_dai_link) +
-ARRAY_SIZE(msm_afe_rxtx_lb_be_dai_link)];
+ARRAY_SIZE(msm_afe_rxtx_lb_be_dai_link) +
+ARRAY_SIZE(msm_ext_tdm_tx_group_be_dai)];
 
 /**
  * populate_snd_card_dailinks - prepares dailink array and initializes card.
@@ -2144,6 +2190,13 @@ struct snd_soc_card *populate_snd_card_dailinks(struct device *dev,
 				msm_afe_rxtx_lb_be_dai_link,
 				sizeof(msm_afe_rxtx_lb_be_dai_link));
 			len5 += ARRAY_SIZE(msm_afe_rxtx_lb_be_dai_link);
+		}
+		if (of_property_read_bool(dev->of_node, "qcom,tdm-tx-group-enable")) {
+			dev_dbg(dev, "%s(): TDM Tx group enable\n", __func__);
+			memcpy(msm_ext_tavil_dai_links + len5,
+				msm_ext_tdm_tx_group_be_dai,
+				sizeof(msm_ext_tdm_tx_group_be_dai));
+			len5 += ARRAY_SIZE(msm_ext_tdm_tx_group_be_dai);
 		}
 		msm_ext_dai_links = msm_ext_tavil_dai_links;
 	} else {
