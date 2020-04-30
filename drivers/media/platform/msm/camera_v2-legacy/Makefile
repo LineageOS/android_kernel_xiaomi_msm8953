@@ -1,0 +1,24 @@
+ccflags-y += -Idrivers/media/platform/msm/camera_v2-legacy
+ccflags-y += -Idrivers/media/platform/msm/camera_v2-legacy/sensor
+ccflags-y += -Idrivers/media/platform/msm/camera_v2-legacy/codecs
+ccflags-y += -Idrivers/media/platform/msm/camera_v2-legacy/isps
+ccflags-y += -Idrivers/media/platform/msm/camera_v2-legacy/pproc
+ccflags-y += -Idrivers/media/platform/msm/camera_v2-legacy/msm_vb2
+ccflags-y += -Idrivers/media/platform/msm/camera_v2-legacy/camera
+ccflags-y += -Idrivers/media/platform/msm/camera_v2-legacy/jpeg_10
+ccflags-y += -Idrivers/media/platform/msm/camera_v2-legacy/jpeg_dma
+ccflags-y += -Idrivers/media/platform/msm/camera_v2-legacy/fd
+ccflags-y += -Idrivers/media/platform/msm/camera_v2-legacy/common
+
+obj-$(CONFIG_MSMB_CAMERA) += common/
+obj-$(CONFIG_MSMB_CAMERA) += msm.o
+obj-$(CONFIG_MSMB_CAMERA) += camera/
+obj-$(CONFIG_MSMB_CAMERA) += msm_vb2/
+obj-$(CONFIG_MSMB_CAMERA) += sensor/
+obj-$(CONFIG_MSMB_CAMERA) += pproc/
+obj-$(CONFIG_MSMB_CAMERA) += isp/
+obj-$(CONFIG_MSMB_CAMERA) += ispif/
+obj-$(CONFIG_MSMB_JPEG) += jpeg_10/
+obj-$(CONFIG_MSM_JPEGDMA) += jpeg_dma/
+obj-$(CONFIG_MSMB_CAMERA) += msm_buf_mgr/
+obj-$(CONFIG_MSM_FD) += fd/

@@ -39,6 +39,12 @@ menuconfig MSMB_CAMERA
       adds support for the camera driver stack including sensor, isp
       and postprocessing drivers.
 
+config MSMB_CAMERA_LEGACY
+    bool "QTI MSM camera and video capture 2.0 (legacy version)"
+    depends on MSMB_CAMERA
+    help
+      Say Y here to use legacy QTI msm camera and video capture 2.0.
+
 config MSMB_CAMERA_DEBUG
     bool "QTI MSM camera 2.0 debugging with printk"
     depends on MSMB_CAMERA
@@ -48,7 +54,12 @@ config MSMB_CAMERA_DEBUG
 
 
 if MSMB_CAMERA
+if !MSMB_CAMERA_LEGACY
 source "drivers/media/platform/msm/camera_v2/Kconfig"
+endif # !MSMB_CAMERA_LEGACY
+if MSMB_CAMERA_LEGACY
+source "drivers/media/platform/msm/camera_v2-legacy/Kconfig"
+endif # MSMB_CAMERA_LEGACY
 endif # MSMB_CAMERA
 
 menuconfig SPECTRA2_CAMERA
