@@ -26,7 +26,11 @@
 #include <linux/wait.h>
 #include <linux/sched.h>
 #if IS_ENABLED(CONFIG_MSM_AVTIMER)
+#ifndef CONFIG_MSMB_CAMERA_LEGACY
 #include <media/msmb_isp.h>
+#else
+#include <media/msmb_isp-legacy.h>
+#endif
 #endif
 #include <ipc/apr.h>
 #include <dsp/q6core.h>
