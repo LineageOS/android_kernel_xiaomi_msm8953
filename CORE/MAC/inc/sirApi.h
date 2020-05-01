@@ -4858,6 +4858,9 @@ typedef struct sSirAddPeriodicTxPtrn
     /* MAC Address for the adapter */
     tSirMacAddr macAddress;
 
+     /* BSSID of the connection */
+     tSirMacAddr bss_address;
+
     tANI_U8  ucPtrnId;           // Pattern ID
     tANI_U16 ucPtrnSize;         // Pattern size
     tANI_U32 usPtrnIntervalMs;   // In msec

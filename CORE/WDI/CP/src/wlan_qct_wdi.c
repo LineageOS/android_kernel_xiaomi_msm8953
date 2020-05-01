@@ -12811,7 +12811,7 @@ WDI_ProcessAddPeriodicTxPtrnInd
   wpt_uint8                      selfStaIdx          = 0;
   wpt_uint8                    ucCurrentBSSSesIdx;
   WDI_BSSSessionType*          pBSSSes             = NULL;
-  wpt_macAddr                  dst_addr;
+  wpt_macAddr                  bss_address;
 
   /*-------------------------------------------------------------------------
      Sanity check
@@ -12855,12 +12855,12 @@ WDI_ProcessAddPeriodicTxPtrnInd
     return WDI_STATUS_E_FAILURE;
   }
 
-  vos_mem_copy(dst_addr,
-               &pAddPeriodicTxPtrnParams->wdiAddPeriodicTxPtrnParams.ucPattern[0],
+  vos_mem_copy(bss_address,
+               &pAddPeriodicTxPtrnParams->wdiAddPeriodicTxPtrnParams.bss_address,
                VOS_MAC_ADDR_SIZE);
 
   ucCurrentBSSSesIdx = WDI_FindAssocSession( pWDICtx,
-                                dst_addr,
+                                bss_address,
                                 &pBSSSes);
   if ( NULL == pBSSSes )
   {
@@ -12868,7 +12868,7 @@ WDI_ProcessAddPeriodicTxPtrnInd
               "%s: Association sequence for this BSS does not exist. macBSSID "
               MAC_ADDRESS_STR,
               __func__,
-             MAC_ADDR_ARRAY(dst_addr));
+             MAC_ADDR_ARRAY(bss_address));
     wpalMemoryFree(pSendBuffer);
     return WDI_STATUS_E_NOT_ALLOWED;
   }

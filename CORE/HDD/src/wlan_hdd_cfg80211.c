@@ -7444,7 +7444,13 @@ wlan_hdd_add_tx_ptrn(hdd_adapter_t *adapter, hdd_context_t *hdd_ctx,
     uint8_t pattern_id = 0;
     v_MACADDR_t dst_addr;
     uint16_t eth_type = htons(ETH_P_IP);
+    hdd_station_ctx_t *hdd_sta_ctx = WLAN_HDD_GET_STATION_CTX_PTR(adapter);
 
+    if (!hdd_sta_ctx)
+    {
+        hddLog(LOGE, FL("Invalid station context"));
+        return -EINVAL;
+    }
     if (!hdd_connIsConnected(WLAN_HDD_GET_STATION_CTX_PTR(adapter)))
     {
         hddLog(LOGE, FL("Not in Connected state!"));
@@ -7503,6 +7509,9 @@ wlan_hdd_add_tx_ptrn(hdd_adapter_t *adapter, hdd_context_t *hdd_ctx,
             FL("input src mac address and connected ap bssid are different"));
         goto fail;
     }
+
+    vos_mem_copy(add_req->bss_address, hdd_sta_ctx->conn_info.bssId,
+                 VOS_MAC_ADDR_SIZE);
 
     if (!tb[PARAM_DST_MAC_ADDR])
     {
