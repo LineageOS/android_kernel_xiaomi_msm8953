@@ -6923,10 +6923,15 @@ __wlan_hdd_cfg80211_set_ext_roam_params(struct wiphy *wiphy,
     switch (cmd_type) {
     case QCA_WLAN_VENDOR_ROAMING_SUBCMD_SET_BLACKLIST_BSSID:
 
-         ret = hdd_set_blacklist_bssid(hHal, blacklist_timeout,
-                   tb_vendor, pAdapter->sessionId);
-         if (ret)
-             return ret;
+         if (blacklist_timeout) {
+             ret = hdd_set_blacklist_bssid(hHal, blacklist_timeout,
+                       tb_vendor, pAdapter->sessionId);
+             if (ret)
+                 return ret;
+         } else {
+             hddLog(LOGE, FL("Timeout is Zero, Bssid Blacklist Not Supported "));
+             ret = -EINVAL;
+         }
          break;
     default:
          break;
