@@ -45,45 +45,6 @@ static struct snd_soc_dai_driver msm_stub_dais[] = {
 				    SNDRV_PCM_FMTBIT_S32_LE),
 		},
 	},
-	{
-		.name = "msm-stub-tx1",
-		.capture = { /* Support maximum range */
-			.stream_name = "Record1",
-			.channels_min = 1,
-			.channels_max = 16,
-			.rates = SNDRV_PCM_RATE_8000_48000,
-			.formats = (SNDRV_PCM_FMTBIT_S16_LE |
-				    SNDRV_PCM_FMTBIT_S24_LE |
-				    SNDRV_PCM_FMTBIT_S24_3LE |
-				    SNDRV_PCM_FMTBIT_S32_LE),
-		},
-	},
-	{
-		.name = "msm-stub-tx2",
-		.capture = { /* Support maximum range */
-			.stream_name = "Record2",
-			.channels_min = 1,
-			.channels_max = 16,
-			.rates = SNDRV_PCM_RATE_8000_48000,
-			.formats = (SNDRV_PCM_FMTBIT_S16_LE |
-				    SNDRV_PCM_FMTBIT_S24_LE |
-				    SNDRV_PCM_FMTBIT_S24_3LE |
-				    SNDRV_PCM_FMTBIT_S32_LE),
-		},
-	},
-	{
-		.name = "msm-stub-tx3",
-		.capture = { /* Support maximum range */
-			.stream_name = "Record3",
-			.channels_min = 1,
-			.channels_max = 16,
-			.rates = SNDRV_PCM_RATE_8000_48000,
-			.formats = (SNDRV_PCM_FMTBIT_S16_LE |
-				    SNDRV_PCM_FMTBIT_S24_LE |
-				    SNDRV_PCM_FMTBIT_S24_3LE |
-				    SNDRV_PCM_FMTBIT_S32_LE),
-		},
-	},
 };
 
 static struct snd_soc_codec_driver soc_msm_stub = {};
