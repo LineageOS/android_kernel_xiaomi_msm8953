@@ -2349,6 +2349,18 @@ hdd_wlan_nla_put_u64(struct sk_buff *skb, int attrtype, u64 value)
 }
 #endif
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 12, 0))
+static inline void hdd_dev_setup_destructor(struct net_device *dev)
+{
+   dev->destructor = free_netdev;
+}
+#else
+static inline void hdd_dev_setup_destructor(struct net_device *dev)
+{
+   dev->needs_free_netdev = true;
+}
+#endif /* KERNEL_VERSION(4, 12, 0) */
+
 /*
  * hdd_parse_disable_chn_cmd() - Parse the channel list received
  * in command.

@@ -9165,7 +9165,7 @@ static hdd_adapter_t* hdd_alloc_station_adapter( hdd_context_t *pHddCtx, tSirMac
 
       hdd_set_station_ops( pAdapter->dev );
 
-      pWlanDev->destructor = free_netdev;
+      hdd_dev_setup_destructor(pWlanDev);
       pWlanDev->ieee80211_ptr = &pAdapter->wdev ;
       pAdapter->wdev.wiphy = pHddCtx->wiphy;  
       pAdapter->wdev.netdev =  pWlanDev;
