@@ -12926,14 +12926,24 @@ done:
  * FUNCTION: wlan_hdd_cfg80211_change_iface
  * wrapper function to protect the actual implementation from SSR.
  */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
+int wlan_hdd_cfg80211_change_iface(struct wiphy *wiphy,
+                                   struct net_device *ndev,
+                                   enum nl80211_iftype type,
+                                   struct vif_params *params)
+#else
 int wlan_hdd_cfg80211_change_iface( struct wiphy *wiphy,
                                     struct net_device *ndev,
                                     enum nl80211_iftype type,
                                     u32 *flags,
                                     struct vif_params *params
                                   )
+#endif
 {
     int ret;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
+    u32 *flags = NULL;
+#endif
 
     vos_ssr_protect(__func__);
     ret = __wlan_hdd_cfg80211_change_iface(wiphy, ndev, type, flags, params);
