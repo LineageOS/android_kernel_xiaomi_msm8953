@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017, 2020 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -6795,7 +6795,6 @@ typedef void  (*WDI_StartScanRspCb)(WDI_StartScanRspParamsType*  wdiParams,
 typedef void  (*WDI_EndScanRspCb)(WDI_Status   wdiStatus,
                                   void*        pUserData);
 
-
 /*---------------------------------------------------------------------------
    WDI_StartRspCb
  
@@ -12341,6 +12340,14 @@ WDI_Status WDI_set_vowifi_mode_ind(wpt_boolean enable);
  */
 WDI_Status WDI_set_qpower(uint8_t enable);
 
+/*
+ * WDI_set_low_power_mode_req() - Set OLPC (low power) mode request
+ *
+ * @enable - boolean value that determins the state
+ *
+ * Return: success if the value is sent
+ */
+WDI_Status WDI_set_low_power_mode_req(wpt_boolean enable);
 
 WDI_Status
 WDI_FWLoggingDXEdoneInd

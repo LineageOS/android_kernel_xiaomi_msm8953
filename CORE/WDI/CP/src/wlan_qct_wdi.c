@@ -549,6 +549,8 @@ WDI_ReqProcFuncType  pfnReqProcTbl[WDI_MAX_UMAC_IND] =
   WDI_ProcessGetArpStatsReq,          /* WDI_FW_GET_ARP_STATS_REQ */
 
   WDI_ProcessBlackListReq,            /* WDI_BLACKLIST_REQ*/
+  WDI_process_low_power_request,      /* WDI_SET_LOW_POWER_REQ */
+
   /*-------------------------------------------------------------------------
     Indications
   -------------------------------------------------------------------------*/
@@ -902,6 +904,7 @@ WDI_RspProcFuncType  pfnRspProcTbl[WDI_MAX_RESP] =
    /* ARP Debug Stats*/
    WDI_ProcessSetArpStatsResp,          /* WDI_FW_ARP_STATS_RSP */
    WDI_ProcessGetArpStatsResp,          /* WDI_FW_GET_ARP_STATS_RSP */
+   WDI_low_power_rsp_callback,          /* WDI_SET_LOW_POWER_RSP */
 
    WDI_ProcessBlackListResp,              /* WDI_BLACKLIST_RSP */
   /*---------------------------------------------------------------------
@@ -1015,8 +1018,6 @@ WDI_RspProcFuncType  pfnRspProcTbl[WDI_MAX_RESP] =
   NULL,
 #endif
 };
-
-
 /*---------------------------------------------------------------------------
   WLAN DAL Global Control Block
  ---------------------------------------------------------------------------*/
@@ -1815,6 +1816,7 @@ static char *WDI_getRespMsgString(wpt_uint16 wdiRespMsgId)
 #endif /* DHCP_SERVER_OFFLOAD */
     CASE_RETURN_STRING (WDI_CAPTURE_GET_TSF_TSTAMP_RSP);
     CASE_RETURN_STRING (WDI_BLACKLIST_RSP);
+    CASE_RETURN_STRING (WDI_SET_LOW_POWER_RSP);
     default:
         return "Unknown WDI MessageId";
   }
@@ -9115,6 +9117,67 @@ WDI_process_qpower_request(WDI_ControlBlockType* pWDICtx,
   return (wdiStatus != WDI_STATUS_SUCCESS) ? wdiStatus:WDI_STATUS_SUCCESS_SYNC;
 }
 
+
+WDI_Status
+WDI_process_low_power_request(WDI_ControlBlockType* pWDICtx,
+                                                WDI_EventInfoType* pEventData)
+{
+  wpt_uint8* pSendBuffer = NULL;
+  wpt_uint16 usDataOffset = 0;
+  wpt_uint16 usSendSize = 0;
+  wpt_boolean *enable;
+  tHalPowerControlModeChangeReqMsg hal_low_power_msg;
+
+
+  /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+  WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
+               "%s", __func__);
+
+  /*-------------------------------------------------------------------------
+    Sanity check
+  -------------------------------------------------------------------------*/
+  if (( NULL == pEventData ) || ( NULL == pEventData->pEventData ) ) {
+      WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_FATAL,
+             "%s: Invalid parameters", __func__);
+      WDI_ASSERT(0);
+      return WDI_STATUS_E_FAILURE;
+  }
+  enable = (wpt_boolean*)pEventData->pEventData;
+
+  /*-----------------------------------------------------------------------
+    Get message buffer
+  -----------------------------------------------------------------------*/
+  if (( WDI_STATUS_SUCCESS != WDI_GetMessageBuffer( pWDICtx,
+                                     WDI_SET_LOW_POWER_REQ,
+                                      sizeof(tHalPowerControlModeChangeReqParams),
+                          &pSendBuffer, &usDataOffset, &usSendSize))||
+       ( usSendSize < (usDataOffset + sizeof(tHalPowerControlModeChangeReqParams) )))
+  {
+      WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_FATAL,
+              "Unable to get send buffer in RTS CTS ind %pK ",
+               pEventData);
+      WDI_ASSERT(0);
+      return WDI_STATUS_E_FAILURE;
+  }
+
+  hal_low_power_msg.pwrCtrlModeChangeReqParams.enable = *enable;
+
+  wpalMemoryCopy( pSendBuffer+usDataOffset,
+                  &hal_low_power_msg.pwrCtrlModeChangeReqParams,
+                  sizeof(hal_low_power_msg.pwrCtrlModeChangeReqParams));
+
+  pWDICtx->pReqStatusUserData = NULL;
+  pWDICtx->pfncRspCB = NULL;
+
+  /*-------------------------------------------------------------------------
+    Send OLPC mode Request to HAL
+  -------------------------------------------------------------------------*/
+
+  return WDI_SendMsg(pWDICtx, pSendBuffer, usSendSize,
+             NULL, NULL, WDI_SET_LOW_POWER_RSP);
+}
+
 /**
  @brief Process End Scan Request function (called when Main FSM
         allows it)
@@ -11603,6 +11666,36 @@ WDI_ProcessUpdateEDCAParamsReq
                        wdiUpdateEDCARspCb, pEventData->pUserData,
                        WDI_UPD_EDCA_PRMS_RESP);
 }/*WDI_ProcessUpdateEDCAParamsReq*/
+
+
+/**
+ * WDI_set_low_power_mode_req() - Set OLPC (low power) mode request
+ *
+ * @enable - boolean value that determins the state
+ *
+ * Return value: status whether the post is successful or not
+ */
+WDI_Status WDI_set_low_power_mode_req(wpt_boolean enable)
+{
+    WDI_EventInfoType wdiEventData;
+
+    if (eWLAN_PAL_FALSE == gWDIInitialized )
+    {
+        WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                 "WDI API call before module is initialized - Fail request");
+        return WDI_STATUS_E_NOT_ALLOWED;
+    }
+
+    wdiEventData.wdiRequest      = WDI_SET_LOW_POWER_REQ;
+    wdiEventData.pEventData      = (void *) &enable;
+    wdiEventData.uEventDataSize  = sizeof(wpt_boolean);
+    wdiEventData.pCBfnc          = NULL;
+    wdiEventData.pUserData       = NULL;
+
+    return WDI_PostMainEvent(&gWDICb, WDI_REQUEST_EVENT, &wdiEventData);
+}
+
+
 
 /**
  * WDI_set_vowifi_mode_ind() - Set VOWIFI mode request
@@ -17318,6 +17411,43 @@ WDI_ProcessCloseRsp
   WDI_ASSERT(0);
   return WDI_STATUS_SUCCESS;
 }/*WDI_ProcessCloseRsp*/
+
+/*
+ * WDI_low_power_rsp_callback() -  The callback function for the response of
+ *                                 OLPCMODE driver command
+ *
+ * @wdi_ctx: pointer to the HAL DAL context
+ * @event_data: pointer to the event information structure
+ *
+ * The function will be called when the firmware sends status of the OLPCMODE
+ * command sent by driver
+ *
+ * Return: status success on receiving valid response
+ */
+WDI_Status WDI_low_power_rsp_callback(WDI_ControlBlockType* pWDICtx,
+                                      WDI_EventInfoType* pEventData)
+{
+   tHalPowerControlModeChangeRspMsg low_power_rsp;
+
+   VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
+                                          "<------ %s " ,__func__);
+   if(NULL == pEventData || NULL == pEventData->pEventData)
+   {
+      VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_ERROR,
+              "%s: Received NULL", __func__);
+      VOS_ASSERT(0) ;
+      return WDI_STATUS_E_FAILURE;
+   }
+
+   wpalMemoryCopy(&low_power_rsp.pwrCtrlModeChangeRspParams,
+                  pEventData->pEventData,
+         sizeof(low_power_rsp.pwrCtrlModeChangeRspParams));
+
+   VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_INFO,
+            "OLPC status -> %lu" ,
+            (unsigned long)(low_power_rsp.pwrCtrlModeChangeRspParams.status));
+   return WDI_STATUS_SUCCESS;
+}
 
 
 /*============================================================================
@@ -25346,6 +25476,8 @@ WDI_2_HAL_REQ_TYPE
        return WLAN_HAL_VOWIFI_IND;
     case WDI_SET_QPOWER:
        return WLAN_HAL_QPOWER_ENABLE_BY_HOST_IND;
+  case WDI_SET_LOW_POWER_REQ:
+       return WLAN_HAL_POWER_CONTROL_MODE_CHANGE_REQ;
   case WDI_MON_START_REQ:
        return WLAN_HAL_ENABLE_MONITOR_MODE_REQ;
   case WDI_MON_STOP_REQ:
@@ -25795,6 +25927,8 @@ case WLAN_HAL_DEL_STA_SELF_RSP:
        return WDI_FW_ARP_STATS_RSP;
   case WLAN_HAL_FW_GET_ARP_STATS_RSP:
        return WDI_FW_GET_ARP_STATS_RSP;
+  case WLAN_HAL_POWER_CONTROL_MODE_CHANGE_RSP:
+       return WDI_SET_LOW_POWER_RSP;
   default:
     return eDRIVER_TYPE_MAX;
   }

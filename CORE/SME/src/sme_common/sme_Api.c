@@ -991,6 +991,37 @@ void sme_set_vowifi_mode(tpAniSirGlobal pMac, bool enable)
     }
 }
 
+/*
+ * sme_set_olpc_mode() - Set OLPC (low power)
+ * @pMac - context handler
+ * @enable - boolean value that determines the state
+ *
+ * The function sends the low power mode to firmware received
+ * via driver command
+ */
+void sme_set_olpc_mode(tpAniSirGlobal pMac, bool enable)
+{
+    tSirMsgQ msgQ;
+    tSirRetStatus retCode = eSIR_SUCCESS;
+
+    vos_mem_zero(&msgQ, sizeof(tSirMsgQ));
+    msgQ.type = WDA_LOW_POWER_MODE;
+    msgQ.reserved = 0;
+    msgQ.bodyval = enable;
+
+    retCode = wdaPostCtrlMsg(pMac, &msgQ);
+    if(eSIR_SUCCESS != retCode)
+    {
+        smsLog(pMac, LOGE,
+           FL("Posting WDA_LOW_POWER_MODE to WDA failed, reason=%X"),
+           retCode);
+    }
+    else
+    {
+        smsLog(pMac, LOG1, FL("posted WDA_LOW_POWER_MODE command"));
+    }
+}
+
 tANI_BOOLEAN smeProcessCommand( tpAniSirGlobal pMac )
 {
     tANI_BOOLEAN fContinue = eANI_BOOLEAN_FALSE;

@@ -233,6 +233,7 @@ sme_SetLinkLayerStatsIndCB
 
 void sme_set_vowifi_mode(tpAniSirGlobal pMac, bool enable);
 void sme_set_qpower(tpAniSirGlobal pMac, uint8_t enable);
+void sme_set_olpc_mode(tpAniSirGlobal pMac, bool enable);
 
 #ifdef WLAN_FEATURE_EXTSCAN
 /* ---------------------------------------------------------------------------
