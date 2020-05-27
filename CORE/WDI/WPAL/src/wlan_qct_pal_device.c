@@ -64,7 +64,9 @@
 #include <mach/msm_smsm.h>
 #else
 #include <linux/version.h>
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
+#include <linux/soc/qcom/smem_state.h>
+#else
 #include <soc/qcom/smsm.h>
 #endif
 #endif
@@ -111,6 +113,13 @@ typedef struct {
 
 static wcnss_env  gEnv;
 static wcnss_env *gpEnv = NULL;
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
+struct smem_state {
+	struct qcom_smem_state *tx_enable_state;
+	unsigned tx_enable_state_bit;
+} g_smem_state;
+#endif
 
 #define WPAL_READ_REGISTER_RATELIMIT_INTERVAL 20*HZ
 #define WPAL_READ_REGISTER_RATELIMIT_BURST    1
@@ -814,10 +823,24 @@ wpt_status wpalNotifySmsm
    wpt_uint32                            setSt
 )
 {
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0))
    int rc;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
+   struct device *dev = (struct device *)gContext.devHandle;
 
+   g_smem_state.tx_enable_state = qcom_smem_state_get(dev, "tx-enable",
+					&g_smem_state.tx_enable_state_bit);
+   if (IS_ERR(g_smem_state.tx_enable_state)) {
+      WPAL_TRACE(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                 "%s: qcom_smem_state_get failed", __func__);
+
+      return eWLAN_PAL_STATUS_E_FAILURE;
+   }
+
+   rc =  qcom_smem_state_update_bits(g_smem_state.tx_enable_state,
+                                     clrSt, setSt);
+#else
    rc = smsm_change_state(SMSM_APPS_STATE, clrSt, setSt);
+#endif
    if(0 != rc) 
    {
       WPAL_TRACE(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
@@ -825,7 +848,6 @@ wpt_status wpalNotifySmsm
                  __func__);
       return eWLAN_PAL_STATUS_E_FAILURE;
    }
-#endif
    return eWLAN_PAL_STATUS_SUCCESS;
 }
 

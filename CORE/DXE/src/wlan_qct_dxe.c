@@ -4826,7 +4826,8 @@ void *WLANDXE_Open
     * Init State is
     *    Clear TX Enable
     *    RING EMPTY STATE */
-   smsmInitState = wpalNotifySmsm(WPAL_SMSM_WLAN_TX_ENABLE,
+   smsmInitState = wpalNotifySmsm(WPAL_SMSM_WLAN_TX_ENABLE |
+                                  WPAL_SMSM_WLAN_TX_RINGS_EMPTY,
                                   WPAL_SMSM_WLAN_TX_RINGS_EMPTY);
    if(0 != smsmInitState)
    {
