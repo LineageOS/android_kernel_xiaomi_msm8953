@@ -888,13 +888,7 @@ static int hdd_parse_setrmcactionperiod_command(tANI_U8 *pValue,
  */
 void hdd_set_olpc_mode(tHalHandle hHal, bool low_power)
 {
-    tpAniSirGlobal pMac = PMAC_STRUCT(hHal);
-    if (!pMac) {
-	    hddLog(LOGE, "pMac is NULL");
-	    return;
-    }
-
-    sme_set_olpc_mode(pMac, low_power);
+    sme_update_olpc_mode(hHal, low_power);
 }
 
 
