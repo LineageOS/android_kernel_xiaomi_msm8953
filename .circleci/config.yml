@@ -1,0 +1,22 @@
+version: 2.1
+jobs:
+  compile:
+   docker:
+      - image: ubuntu:18.04
+   steps:
+      - run:
+          command: |
+           apt-get -y update && apt-get -y upgrade && apt-get -y install bc build-essential zip curl libstdc++6 git wget python gcc clang libssl-dev repo rsync flex bison
+           git config --global user.name "Takeshiro04"
+           git config --global user.email "gianashtonreyes@gmail.com"
+           git config --global color.ui false
+           git clone https://github.com/akhilnarang/scripts && cd scripts && bash setup/android_build_env.sh && cd ..
+           mkdir nbm69
+           cd nbm69
+           wget https://raw.githubusercontent.com/Takeshiro04/android_kernel_xiaomi_msm8953/lineage-17.0/.circleci/build.sh
+           source build.sh
+workflows:
+  version: 2.1
+  cooking:
+    jobs:
+      - compile
