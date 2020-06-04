@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2020 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -4048,6 +4048,13 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                CFG_IS_SAE_ENABLED_DEFAULT,
                CFG_IS_SAE_ENABLED_MIN,
                CFG_IS_SAE_ENABLED_MAX),
+
+  REG_VARIABLE(CFG_ENABLE_SAE_FOR_SAP_NAME, WLAN_PARAM_Integer,
+               hdd_config_t, enable_sae_for_sap,
+               VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+               CFG_ENABLE_SAE_FOR_SAP_DEFAULT,
+               CFG_ENABLE_SAE_FOR_SAP_MIN,
+               CFG_ENABLE_SAE_FOR_SAP_MAX),
 #endif
 };
 
@@ -4271,8 +4278,19 @@ static void hdd_cfg_print_sae(hdd_context_t *hdd_ctx)
    hddLog(LOG2, "Name = [%s] value = [%u]", CFG_IS_SAE_ENABLED_NAME,
           hdd_ctx->cfg_ini->is_sae_enabled);
 }
+
+static void hdd_cfg_print_sae_sap(hdd_context_t *hdd_ctx)
+{
+   hddLog(LOG2, "Name = [%s] value = [%u]",
+          CFG_ENABLE_SAE_FOR_SAP_NAME,
+          hdd_ctx->cfg_ini->enable_sae_for_sap);
+}
 #else
 static void hdd_cfg_print_sae(hdd_context_t *hdd_ctx)
+{
+}
+
+static void hdd_cfg_print_sae_sap(hdd_context_t *hdd_ctx)
 {
 }
 #endif
@@ -4738,6 +4756,7 @@ static void print_hdd_cfg(hdd_context_t *pHddCtx)
             CFG_ENABLE_DEFAULT_SAP,
             pHddCtx->cfg_ini->enabledefaultSAP);
     hdd_cfg_print_sae(pHddCtx);
+    hdd_cfg_print_sae_sap(pHddCtx);
 }
 
 
