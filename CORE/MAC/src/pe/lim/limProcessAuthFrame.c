@@ -115,20 +115,25 @@ static void lim_process_sae_auth_frame(tpAniSirGlobal mac_ctx,
                                        tpPESession pe_session)
 {
     tpSirMacMgmtHdr mac_hdr;
+    enum rxmgmt_flags rx_flags = RXMGMT_FLAG_NONE;
 
     mac_hdr = WDA_GET_RX_MAC_HEADER(rx_pkt_info);
 
     limLog(mac_ctx, LOG1, FL("Received SAE Auth frame type %d subtype %d"),
            mac_hdr->fc.type, mac_hdr->fc.subType);
 
-    if (pe_session->limMlmState != eLIM_MLM_WT_SAE_AUTH_STATE)
+    if (LIM_IS_STA_ROLE(pe_session) &&
+        pe_session->limMlmState != eLIM_MLM_WT_SAE_AUTH_STATE)
         limLog(mac_ctx, LOGE,
                FL("received SAE auth response in unexpected state %x"),
                pe_session->limMlmState);
 
+    if(LIM_IS_AP_ROLE(pe_session))
+        rx_flags = RXMGMT_FLAG_EXTERNAL_AUTH;
+
     limSendSmeMgmtFrameInd(mac_ctx, pe_session->peSessionId,
                            rx_pkt_info, pe_session,
-                           WDA_GET_RX_RSSI_DB(rx_pkt_info));
+                           WDA_GET_RX_RSSI_DB(rx_pkt_info), rx_flags);
 }
 #else
 static void lim_process_sae_auth_frame(tpAniSirGlobal mac_ctx,

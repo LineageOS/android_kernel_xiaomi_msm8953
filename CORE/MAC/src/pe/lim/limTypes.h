@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017, 2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017, 2019-2020 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1072,7 +1072,8 @@ limChangeChannelWithCallback(tpAniSirGlobal pMac, tANI_U8 newChannel,
 void limSendSmeMgmtFrameInd(
                     tpAniSirGlobal pMac, tANI_U16 sessionId,
                     tANI_U8 *pRxPacketInfo,
-                    tpPESession psessionEntry, tANI_S8 rxRssi);
+                    tpPESession psessionEntry, tANI_S8 rxRssi,
+                    enum rxmgmt_flags rx_flags);
 void limProcessRemainOnChnTimeout(tpAniSirGlobal pMac);
 void limProcessInsertSingleShotNOATimeout(tpAniSirGlobal pMac);
 void limConvertActiveChannelToPassiveChannel(tpAniSirGlobal pMac);
