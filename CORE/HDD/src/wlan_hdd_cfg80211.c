@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2020 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -19845,25 +19845,29 @@ static int
 __wlan_hdd_cfg80211_external_auth(struct wiphy *wiphy, struct net_device *dev,
                                   struct cfg80211_external_auth_params *params)
 {
-   hdd_context_t *hdd_ctx = wiphy_priv(wiphy);
-   hdd_adapter_t *adapter = WLAN_HDD_GET_PRIV_PTR(dev);
-   int ret;
+    hdd_context_t *hdd_ctx = wiphy_priv(wiphy);
+    hdd_adapter_t *adapter = WLAN_HDD_GET_PRIV_PTR(dev);
+    int ret;
+    tSirMacAddr peer_mac_addr;
 
-   if (hdd_get_conparam() == VOS_FTM_MODE) {
-       hddLog(VOS_TRACE_LEVEL_ERROR, FL("Command not allowed in FTM mode"));
-       return -EPERM;
-   }
+    if (hdd_get_conparam() == VOS_FTM_MODE) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, FL("Command not allowed in FTM mode"));
+        return -EPERM;
+    }
 
-   ret = wlan_hdd_validate_context(hdd_ctx);
-   if (ret)
-       return ret;
+    ret = wlan_hdd_validate_context(hdd_ctx);
+    if (ret)
+        return ret;
 
-   hddLog(VOS_TRACE_LEVEL_DEBUG, FL("external_auth status: %d"),
-          params->status);
+    hddLog(VOS_TRACE_LEVEL_DEBUG,
+            FL("external_auth status: %d peer mac: " MAC_ADDRESS_STR),
+            params->status, MAC_ADDR_ARRAY(params->bssid));
+    vos_mem_copy(peer_mac_addr, params->bssid, VOS_MAC_ADDR_SIZE);
 
-   sme_handle_sae_msg(hdd_ctx->hHal, adapter->sessionId, params->status);
+    sme_handle_sae_msg(hdd_ctx->hHal, adapter->sessionId, params->status,
+                        peer_mac_addr);
 
-   return ret;
+    return ret;
 }
 
 /**
