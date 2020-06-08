@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2018, 2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -53,7 +53,6 @@
 #define CONFIG_MSM_CDC_PINCTRL 1
 #define CONFIG_SND_SOC_MSM_STUB 1
 #define CONFIG_WCD_DSP_GLINK 1
-#define CONFIG_MSM_AVTIMER 1
 #define CONFIG_SND_SOC_EXT_CODEC 1
 #define CONFIG_SND_SOC_INT_CODEC 1
 #define CONFIG_SND_SOC_CPE 1
