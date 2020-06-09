@@ -4000,7 +4000,7 @@ void limProcessSmeDelBssRsp(
   void
 __limProcessSmeAssocCnfNew(tpAniSirGlobal pMac, tANI_U32 msgType, tANI_U32 *pMsgBuf)
 {
-    tSirSmeAssocCnf    assocCnf;
+    tSirSmeAssocCnf    assocCnf = {0};
     tpDphHashNode      pStaDs = NULL;
     tpPESession        psessionEntry= NULL;
     tANI_U8            sessionId; 
@@ -4094,6 +4094,8 @@ __limProcessSmeAssocCnfNew(tpAniSirGlobal pMac, tANI_U32 msgType, tANI_U32 *pMsg
     else
     {
         tSirMacStatusCodes mac_status_code = eSIR_MAC_UNSPEC_FAILURE_STATUS;
+        uint8_t add_pre_auth_context = true;
+
         // SME_ASSOC_CNF status is non-success, so STA is not allowed to be associated
         /*Since the HAL sta entry is created for denied STA we need to remove this HAL entry.So to do that set updateContext to 1*/
         if(!pStaDs->mlmStaContext.updateContext)
@@ -4105,9 +4107,15 @@ __limProcessSmeAssocCnfNew(tpAniSirGlobal pMac, tANI_U32 msgType, tANI_U32 *pMsg
         if (assocCnf.mac_status_code)
             mac_status_code = assocCnf.mac_status_code;
 
+        if (assocCnf.mac_status_code == eSIR_MAC_INVALID_PMKID ||
+            assocCnf.mac_status_code ==
+            eSIR_MAC_AUTH_ALGO_NOT_SUPPORTED_STATUS)
+            add_pre_auth_context = false;
+
         limRejectAssociation(pMac, pStaDs->staAddr,
                              pStaDs->mlmStaContext.subType,
-                             true, pStaDs->mlmStaContext.authType,
+                             add_pre_auth_context,
+                             pStaDs->mlmStaContext.authType,
                              pStaDs->assocId, true,
                              mac_status_code, psessionEntry);
     }
