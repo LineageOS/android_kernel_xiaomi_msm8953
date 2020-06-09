@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017, 2020 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1240,6 +1240,7 @@ limFillAssocIndParams(tpAniSirGlobal pMac, tpLimMlmAssocInd pAssocInd,
         pSirSmeAssocInd->HTCaps = pAssocInd->HTCaps;
     if (pAssocInd->VHTCaps.present)
         pSirSmeAssocInd->VHTCaps = pAssocInd->VHTCaps;
+    pSirSmeAssocInd->is_sae_authenticated = pAssocInd->is_sae_authenticated;
 } /*** end limAssocIndSerDes() ***/
 
 

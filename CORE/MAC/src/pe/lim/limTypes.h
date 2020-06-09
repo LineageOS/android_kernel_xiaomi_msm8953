@@ -278,6 +278,7 @@ typedef struct sLimMlmAssocInd
     tSirMacHTChannelWidth ch_width;
     tDot11fIEHTCaps HTCaps;
     tDot11fIEVHTCaps VHTCaps;
+    bool                 is_sae_authenticated;
 } tLimMlmAssocInd, *tpLimMlmAssocInd;
 
 typedef struct sLimMlmReassocReq

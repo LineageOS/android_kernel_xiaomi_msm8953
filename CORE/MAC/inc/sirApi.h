@@ -1264,6 +1264,7 @@ typedef struct sSirSmeAssocInd
     tANI_U32             assocReqLength;
     tANI_U8*             assocReqPtr;
     uint32_t             rate_flags;
+    bool                 is_sae_authenticated;
     tSirSmeChanInfo      chan_info;
     tSirMacHTChannelWidth ch_width;
     tDot11fIEHTCaps HTCaps;
@@ -1283,6 +1284,7 @@ typedef struct sSirSmeAssocCnf
     tANI_U16             aid;
     tSirMacAddr          alternateBssId;
     tANI_U8              alternateChannelId;
+    tSirMacStatusCodes   mac_status_code;
 } tSirSmeAssocCnf, *tpSirSmeAssocCnf;
 
 /// Definition for Reassociation indication from peer
