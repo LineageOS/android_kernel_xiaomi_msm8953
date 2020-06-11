@@ -1537,6 +1537,7 @@ int wlan_logging_sock_activate_svc(int log_fe_to_console, int num_buf,
 					dev_kfree_skb(pkt_stats_buffers[j].skb);
 				}
 			spin_lock_irqsave(&gwlan_logging.spin_lock, irq_flag);
+			gwlan_logging.pkt_stat_num_buf = 0;
 			vos_mem_free(pkt_stats_buffers);
 			pkt_stats_buffers = NULL;
 			spin_unlock_irqrestore(&gwlan_logging.spin_lock, irq_flag);
@@ -1665,7 +1666,7 @@ int wlan_logging_sock_deactivate_svc(void)
 	/* free allocated skb */
 	for (i = 0; i < gwlan_logging.pkt_stat_num_buf; i++)
 	{
-		if (pkt_stats_buffers[i].skb)
+		if (pkt_stats_buffers && pkt_stats_buffers[i].skb)
 			dev_kfree_skb(pkt_stats_buffers[i].skb);
 	}
 	if(pkt_stats_buffers)
