@@ -890,7 +890,7 @@ typedef enum
 #define CFG_PER_BSSID_BLACKLIST_TIMEOUT_NAME               "gBssidBlacklistTimeOut"
 #define CFG_PER_BSSID_BLACKLIST_TIMEOUT_MIN                (0)
 #define CFG_PER_BSSID_BLACKLIST_TIMEOUT_MAX                (240) //Max timeout
-#define CFG_PER_BSSID_BLACKLIST_TIMEOUT_DEFAULT            (10)
+#define CFG_PER_BSSID_BLACKLIST_TIMEOUT_DEFAULT            (0)
 #endif // FEATURE_WLAN_LFR
 
 #if  defined (WLAN_FEATURE_VOWIFI_11R) || defined (FEATURE_WLAN_ESE) || defined(FEATURE_WLAN_LFR)
