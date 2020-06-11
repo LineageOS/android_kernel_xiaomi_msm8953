@@ -975,6 +975,7 @@ eHalStatus csrRoamCopyConnectProfile(tpAniSirGlobal pMac, tANI_U32 sessionId, tC
                     pProfile->pBssDesc = NULL;
                 }
                 pProfile->AuthType = pSession->connectedProfile.AuthType;
+                pProfile->akm_list = pSession->connectedProfile.akm_list;
                 pProfile->EncryptionType = pSession->connectedProfile.EncryptionType;
                 pProfile->mcEncryptionType = pSession->connectedProfile.mcEncryptionType;
                 pProfile->BSSType = pSession->connectedProfile.BSSType;
@@ -6714,6 +6715,7 @@ eHalStatus csrRoamCopyProfile(tpAniSirGlobal pMac, tCsrRoamProfile *pDstProfile,
                          pSrcProfile->ChannelInfo.numOfChannels);
         }
         pDstProfile->AuthType = pSrcProfile->AuthType;
+        pDstProfile->akm_list = pSrcProfile->akm_list;
         pDstProfile->EncryptionType = pSrcProfile->EncryptionType;
         pDstProfile->mcEncryptionType = pSrcProfile->mcEncryptionType;
         pDstProfile->negotiatedUCEncryptionType = pSrcProfile->negotiatedUCEncryptionType;
@@ -6856,6 +6858,7 @@ eHalStatus csrRoamCopyConnectedProfile(tpAniSirGlobal pMac, tANI_U32 sessionId, 
         pDstProfile->AuthType.numEntries = 1;
         pDstProfile->AuthType.authType[0] = pSrcProfile->AuthType;
         pDstProfile->negotiatedAuthType = pSrcProfile->AuthType;
+        pDstProfile->akm_list = pSrcProfile->akm_list;
         pDstProfile->EncryptionType.numEntries = 1;
         pDstProfile->EncryptionType.encryptionType[0] = pSrcProfile->EncryptionType;
         pDstProfile->negotiatedUCEncryptionType = pSrcProfile->EncryptionType;
@@ -7815,6 +7818,7 @@ eHalStatus csrRoamSaveConnectedInfomation(tpAniSirGlobal pMac, tANI_U32 sessionI
     vos_mem_set(&pSession->connectedProfile, sizeof(tCsrRoamConnectedProfile), 0);
     pConnectProfile->AuthType = pProfile->negotiatedAuthType;
         pConnectProfile->AuthInfo = pProfile->AuthType;
+    pConnectProfile->akm_list = pProfile->akm_list;
     pConnectProfile->CBMode = pProfile->CBMode;  //*** this may not be valid
     pConnectProfile->EncryptionType = pProfile->negotiatedUCEncryptionType;
         pConnectProfile->EncryptionInfo = pProfile->EncryptionType;
@@ -10168,6 +10172,63 @@ static bool csr_is_sae_peer_allowed(tpAniSirGlobal mac,
     return is_allowed;
 }
 
+static eCsrAuthType csr_translate_akm_type(enum ani_akm_type akm_type)
+{
+    eCsrAuthType csr_akm_type;
+
+    switch (akm_type)
+    {
+        case ANI_AKM_TYPE_NONE:
+                csr_akm_type = eCSR_AUTH_TYPE_NONE;
+                break;
+#ifdef WLAN_FEATURE_SAE
+        case ANI_AKM_TYPE_SAE:
+                csr_akm_type = eCSR_AUTH_TYPE_SAE;
+                break;
+#endif
+        case ANI_AKM_TYPE_WPA:
+                csr_akm_type = eCSR_AUTH_TYPE_WPA;
+                break;
+        case ANI_AKM_TYPE_WPA_PSK:
+                csr_akm_type = eCSR_AUTH_TYPE_WPA_PSK;
+                break;
+        case ANI_AKM_TYPE_RSN:
+                csr_akm_type = eCSR_AUTH_TYPE_RSN;
+                break;
+        case ANI_AKM_TYPE_RSN_PSK:
+                csr_akm_type = eCSR_AUTH_TYPE_RSN_PSK;
+                break;
+#if defined WLAN_FEATURE_VOWIFI_11R
+        case ANI_AKM_TYPE_FT_RSN:
+                csr_akm_type = eCSR_AUTH_TYPE_FT_RSN;
+                break;
+        case ANI_AKM_TYPE_FT_RSN_PSK:
+                csr_akm_type = eCSR_AUTH_TYPE_FT_RSN_PSK;
+                break;
+#endif
+#ifdef FEATURE_WLAN_ESE
+        case ANI_AKM_TYPE_CCKM:
+                csr_akm_type = eCSR_AUTH_TYPE_CCKM_RSN;
+                break;
+#endif
+#ifdef WLAN_FEATURE_11W
+        case ANI_AKM_TYPE_RSN_PSK_SHA256:
+                csr_akm_type = eCSR_AUTH_TYPE_RSN_PSK_SHA256;
+                break;
+        case ANI_AKM_TYPE_RSN_8021X_SHA256:
+                csr_akm_type = eCSR_AUTH_TYPE_RSN_8021X_SHA256;
+                break;
+#endif
+        case ANI_AKM_TYPE_OWE:
+                csr_akm_type = eCSR_AUTH_TYPE_OWE;
+                break;
+        default:
+                csr_akm_type = eCSR_AUTH_TYPE_UNKNOWN;
+        }
+
+        return csr_akm_type;
+}
+
 void csrRoamCheckForLinkStatusChange( tpAniSirGlobal pMac, tSirSmeRsp *pSirMsg )
 {
     tSirSmeAssocInd *pAssocInd;
@@ -10189,6 +10250,8 @@ void csrRoamCheckForLinkStatusChange( tpAniSirGlobal pMac, tSirSmeRsp *pSirMsg )
     tpSirSmeSwitchChannelInd pSwitchChnInd;
     tSmeMaxAssocInd *pSmeMaxAssocInd;
     tSirMacStatusCodes mac_status_code = eSIR_MAC_SUCCESS_STATUS;
+    eCsrAuthType csr_akm_type;
+
     vos_mem_set(&roamInfo, sizeof(roamInfo), 0);
 
 
@@ -10216,6 +10279,7 @@ void csrRoamCheckForLinkStatusChange( tpAniSirGlobal pMac, tSirSmeRsp *pSirMsg )
 
                 pRoamInfo = &roamInfo;
 
+                csr_akm_type = csr_translate_akm_type(pAssocInd->akm_type);
                 // Required for indicating the frames to upper layer
                 pRoamInfo->assocReqLength = pAssocInd->assocReqLength;
                 pRoamInfo->assocReqPtr = pAssocInd->assocReqPtr;

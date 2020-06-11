@@ -253,6 +253,7 @@ typedef struct sLimMlmAssocInd
     tSirMacAddr          peerMacAddr;
     tANI_U16                  aid;
     tAniAuthType         authType;
+    enum ani_akm_type    akm_type;
     tAniSSID             ssId;
     tSirRSNie            rsnIE;
     tSirAddie            addIE; // additional IE received from the peer, which possibly includes WSC IE and/or P2P IE.

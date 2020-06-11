@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013, 2016-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2013, 2016-2018, 2020 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1445,6 +1445,7 @@ sapconvertToCsrProfile(tsap_Config_t *pconfig_params, eCsrRoamBssType bssType, t
 
     profile->AuthType.numEntries = 1;
     profile->AuthType.authType[0] = eCSR_AUTH_TYPE_OPEN_SYSTEM;
+    profile->akm_list = pconfig_params->akm_list;
 
     //Always set the Encryption Type
     profile->EncryptionType.numEntries = 1;

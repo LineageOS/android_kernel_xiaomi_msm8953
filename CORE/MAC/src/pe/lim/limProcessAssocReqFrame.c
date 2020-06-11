@@ -274,6 +274,7 @@ limProcessAssocReqFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,
     tPmfSaQueryTimerId timerId;
     tANI_U32 retryInterval;
 #endif
+    enum ani_akm_type akm_type = ANI_AKM_TYPE_NONE;
 
     limGetPhyMode(pMac, &phyMode, psessionEntry);
 
@@ -853,6 +854,9 @@ limProcessAssocReqFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,
                     goto error;
                     
                 }
+                akm_type = lim_translate_rsn_oui_to_akm_type(
+                                    Dot11fIERSN.akm_suite[0]);
+
             } /* end - if(pAssocReq->rsnPresent) */
             if((!pAssocReq->rsnPresent) && pAssocReq->wpaPresent)
             {
@@ -904,6 +908,9 @@ limProcessAssocReqFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,
 
                     goto error;
                 }/* end - if(pAssocReq->wpa.length) */
+                akm_type = lim_translate_rsn_oui_to_akm_type(
+                                        Dot11fIEWPA.auth_suites[0]);
+
             } /* end - if(pAssocReq->wpaPresent) */
         } /* end of if(psessionEntry->pLimStartBssReq->privacy 
             && psessionEntry->pLimStartBssReq->rsnIE->length) */
@@ -1660,6 +1667,7 @@ void limSendMlmAssocInd(tpAniSirGlobal pMac, tpDphHashNode pStaDs, tpPESession p
                      (tANI_U8 *)&(pAssocReq->ssId), pAssocReq->ssId.length + 1);
         pMlmAssocInd->sessionId = psessionEntry->peSessionId;
         pMlmAssocInd->authType =  pStaDs->mlmStaContext.authType;
+        pMlmAssocInd->akm_type =  pStaDs->mlmStaContext.akm_type;
  
         pMlmAssocInd->capabilityInfo = pAssocReq->capabilityInfo;
 
