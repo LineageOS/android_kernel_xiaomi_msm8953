@@ -817,6 +817,7 @@ sapSignalHDDevent
             break;
 
         case eSAP_STA_ASSOC_EVENT:
+        case eSAP_STA_REASSOC_EVENT:
         {
             tSap_StationAssocReassocCompleteEvent *event =
                      &sapApAppEvent.sapevt.sapStationAssocReassocCompleteEvent;
@@ -840,20 +841,19 @@ sapSignalHDDevent
                          pCsrRoamInfo->peerMac,sizeof(tSirMacAddr));
             event->staId = pCsrRoamInfo->staId ;
             event->statusCode = pCsrRoamInfo->statusCode;
-            event->iesLen = pCsrRoamInfo->rsnIELen;
-            vos_mem_copy(event->ies, pCsrRoamInfo->prsnIE,
-                        pCsrRoamInfo->rsnIELen);
 
-            if(pCsrRoamInfo->addIELen)
-            {
-                v_U8_t  len = event->iesLen;
-                event->iesLen += pCsrRoamInfo->addIELen;
-                vos_mem_copy(&event->ies[len], pCsrRoamInfo->paddIE,
-                            pCsrRoamInfo->addIELen);
+            if (pCsrRoamInfo->assocReqLength < ASSOC_REQ_IE_OFFSET) {
+                VOS_TRACE(VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH,
+                            FL("Invalid assoc request length:%d"),
+                            pCsrRoamInfo->assocReqLength);
+                return VOS_STATUS_E_FAILURE;
             }
+            event->iesLen = (pCsrRoamInfo->assocReqLength -
+                                    ASSOC_REQ_IE_OFFSET);
+            event->ies = (pCsrRoamInfo->assocReqPtr +
+                                    ASSOC_REQ_IE_OFFSET);
 
             event->rate_flags = pCsrRoamInfo->maxRateFlags;
-
             event->wmmEnabled = pCsrRoamInfo->wmmEnabledSta;
             event->status = (eSapStatus )context;
             event->ch_width = pCsrRoamInfo->ch_width;

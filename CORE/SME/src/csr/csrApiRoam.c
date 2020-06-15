@@ -9182,6 +9182,8 @@ void csrRoamJoinedStateMsgProcessor( tpAniSirGlobal pMac, void *pMsgBuf )
             if(!pSession)
             {
                 smsLog(pMac, LOGE, FL("  session %d not found "), sessionId);
+                if (pUpperLayerAssocCnf->ies)
+                    vos_mem_free(pUpperLayerAssocCnf->ies);
                 return;
             }
             
@@ -9213,6 +9215,14 @@ void csrRoamJoinedStateMsgProcessor( tpAniSirGlobal pMac, void *pMsgBuf )
 
             if(CSR_IS_INFRA_AP(pRoamInfo->u.pConnectedProfile) )
             {
+
+                if (pUpperLayerAssocCnf->ies_len > 0) {
+                    pRoamInfo->assocReqLength =
+                        pUpperLayerAssocCnf->ies_len;
+                    pRoamInfo->assocReqPtr =
+                        pUpperLayerAssocCnf->ies;
+                }
+
                 pMac->roam.roamSession[sessionId].connectState = eCSR_ASSOC_STATE_TYPE_INFRA_CONNECTED;
                 pRoamInfo->fReassocReq = pUpperLayerAssocCnf->reassocReq;
                 status = csrRoamCallCallback(pMac, sessionId, pRoamInfo, 0, eCSR_ROAM_INFRA_IND, eCSR_ROAM_RESULT_INFRA_ASSOCIATION_CNF);
@@ -9224,6 +9234,8 @@ void csrRoamJoinedStateMsgProcessor( tpAniSirGlobal pMac, void *pMsgBuf )
                 status = csrRoamCallCallback(pMac, sessionId, pRoamInfo, 0, eCSR_ROAM_WDS_IND, eCSR_ROAM_RESULT_WDS_ASSOCIATION_IND);//Sta
             }
 
+            if (pUpperLayerAssocCnf->ies)
+                vos_mem_free(pUpperLayerAssocCnf->ies);
         }
         break;
        default:
@@ -15743,6 +15755,20 @@ eHalStatus csrSendAssocIndToUpperLayerCnfMsg(   tpAniSirGlobal pMac,
     if (pAssocInd->VHTCaps.present) {
         pBuf = (tANI_U8 *)&pMsg->VHTCaps;
         vos_mem_copy(pBuf, &pAssocInd->VHTCaps, sizeof(pMsg->VHTCaps));
+    }
+
+    if (pAssocInd->assocReqPtr) {
+        if (pAssocInd->assocReqLength < MAX_ASSOC_REQ_IE_LEN) {
+            pMsg->ies = vos_mem_malloc(pAssocInd->assocReqLength);
+            if (!pMsg->ies) {
+                vos_mem_free(pMsg);
+                return eHAL_STATUS_FAILED_ALLOC;
+            }
+            pMsg->ies_len = pAssocInd->assocReqLength;
+            vos_mem_copy(pMsg->ies, pAssocInd->assocReqPtr, pMsg->ies_len);
+        } else {
+            smsLog(pMac, LOGE, FL("Assoc Ie length is too long"));
+        }
     }
 
         msgQ.type = eWNI_SME_UPPER_LAYER_ASSOC_CNF;

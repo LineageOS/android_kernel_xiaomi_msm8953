@@ -1403,6 +1403,8 @@ typedef struct sSirSmeAssocIndToUpperLayerCnf
     tSirMacHTChannelWidth ch_width;
     tDot11fIEHTCaps HTCaps;
     tDot11fIEVHTCaps VHTCaps;
+    uint32_t             ies_len;
+    uint8_t              *ies;
 } tSirSmeAssocIndToUpperLayerCnf, *tpSirSmeAssocIndToUpperLayerCnf;
 
 typedef struct tagCsrSummaryStatsInfo
