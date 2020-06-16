@@ -57,6 +57,9 @@
 
 
 #include "vos_types.h"
+
+#define RSN_CAP_MFP_ENABLED     0x80
+
 /**
  * limConvertSupportedChannels
  *
@@ -230,6 +233,37 @@ static void lim_defer_sme_indication(tpAniSirGlobal mac_ctx,
     sta_pre_auth_ctx->assoc_req.assoc_req_copied = assoc_req_copied;
     sta_pre_auth_ctx->assoc_req.sta_ds = sta_ds;
 }
+
+/**
+  * lim_check_sae_pmf_cap() - check pmf capability for SAE STA
+  * @session: pointer to pe session entry
+  * @rsn: pointer to RSN
+  *
+  * This function checks if SAE STA is pmf capable when SAE SAP is pmf
+  * capable. Reject with eSIR_MAC_ROBUST_MGMT_FRAMES_POLICY_VIOLATION
+  * if SAE STA is pmf disable.
+  *
+  * Return: mac_status_code
+  */
+#ifdef WLAN_FEATURE_SAE
+static enum eSirMacStatusCodes lim_check_sae_pmf_cap(tpPESession session,
+                                                    tDot11fIERSN *rsn)
+{
+    enum eSirMacStatusCodes status = eSIR_MAC_SUCCESS_STATUS;
+
+    if (session->pLimStartBssReq->pmfCapable &&
+        (rsn->RSN_Cap[0] & RSN_CAP_MFP_ENABLED) == 0)
+            status = eSIR_MAC_ROBUST_MGMT_FRAMES_POLICY_VIOLATION_STATUS;
+
+    return status;
+}
+#else
+static enum eSirMacStatusCodes lim_check_sae_pmf_cap(tpPESession session,
+                                                    tDot11fIERSN *rsn)
+{
+    return eSIR_MAC_SUCCESS_STATUS;
+}
+#endif
 
 /**---------------------------------------------------------------
 \fn     limProcessAssocReqFrame
