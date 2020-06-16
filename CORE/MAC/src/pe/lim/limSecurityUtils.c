@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2015, 2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2015, 2017, 2020 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -383,11 +383,20 @@ void
 limReleasePreAuthNode(tpAniSirGlobal pMac, tpLimPreAuthNode pAuthNode)
 {
     pAuthNode->fFree = 1;
+    if (pAuthNode->authType == eSIR_AUTH_TYPE_SAE &&
+        pAuthNode->assoc_req.present) {
+            tpSirAssocReq assoc =
+                    (tpSirAssocReq)pAuthNode->assoc_req.assoc_req;
+
+            if (assoc->assocReqFrameLength)
+                vos_mem_free(assoc->assocReqFrame);
+            vos_mem_free(assoc);
+            pAuthNode->assoc_req.present = false;
+    }
     MTRACE(macTrace(pMac, TRACE_CODE_TIMER_DEACTIVATE, NO_SESSION, eLIM_PRE_AUTH_CLEANUP_TIMER));
-    tx_timer_deactivate(&pAuthNode->timer);                
+            tx_timer_deactivate(&pAuthNode->timer);
     pMac->lim.gLimNumPreAuthContexts--;
 } /*** end limReleasePreAuthNode() ***/
-
 
 /**
  * limDeletePreAuthNode

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013, 2017-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2013, 2017-2018, 2020 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -152,6 +152,84 @@ limConvertSupportedChannels(tpAniSirGlobal pMac,
         pMlmAssocInd->supportedChannels.numChnl);)
 }
 
+void lim_process_assoc_cleanup(tpAniSirGlobal pMac, tpPESession psessionEntry,
+                               tpSirAssocReq pAssocReq, tpDphHashNode pStaDs,
+                               bool assoc_req_copied)
+{
+    tpSirAssocReq    pTempAssocReq;
+
+    if (pAssocReq != NULL) {
+        if (pAssocReq->assocReqFrame) {
+                vos_mem_free(pAssocReq->assocReqFrame);
+                pAssocReq->assocReqFrame = NULL;
+                pAssocReq->assocReqFrameLength = 0;
+        }
+        vos_mem_free(pAssocReq);
+        if (assoc_req_copied && pStaDs && psessionEntry->parsedAssocReq)
+                /* to avoid double free */
+                psessionEntry->parsedAssocReq[pStaDs->assocId] = NULL;
+    }
+
+        /* If it is not duplicate Assoc request then only free the memory */
+        if ((pStaDs != NULL) &&
+            (pStaDs->mlmStaContext.mlmState != eLIM_MLM_WT_ADD_STA_RSP_STATE)) {
+                if (psessionEntry->parsedAssocReq != NULL) {
+                        pTempAssocReq =
+                                psessionEntry->parsedAssocReq[pStaDs->assocId];
+                        if (pTempAssocReq != NULL) {
+                                if (pTempAssocReq->assocReqFrame) {
+                                        vos_mem_free(
+                                                pTempAssocReq->assocReqFrame);
+                                        pTempAssocReq->assocReqFrame = NULL;
+                                        pTempAssocReq->assocReqFrameLength = 0;
+                                }
+                                vos_mem_free(pTempAssocReq);
+                                psessionEntry->parsedAssocReq[pStaDs->assocId] =
+                                                                            NULL;
+                        }
+               }
+        }
+}
+
+/**
+ * lim_defer_sme_indication() - Defer assoc indication to SME
+ * @mac_ctx: Pointer to Global MAC structure
+ * @session: pe session entry
+ * @sub_type: Indicates whether it is Association Request(=0) or Reassociation
+ *	      Request(=1) frame
+ * @hdr: A pointer to the MAC header
+ * @assoc_req: pointer to ASSOC/REASSOC Request frame
+ * @pmf_connection: flag indicating pmf connection
+ * @assoc_req_copied: boolean to indicate if assoc req was copied to tmp above
+ *
+ * Defer Initialization of PE data structures and wait for an external event.
+ * lim_send_assoc_ind_to_sme() will be called to initialize PE data structures
+ * when the expected event is received.
+ *
+ * @Return: void
+ */
+static void lim_defer_sme_indication(tpAniSirGlobal mac_ctx,
+                                    tpPESession session,
+                                    uint8_t sub_type,
+                                    tpSirMacMgmtHdr hdr,
+                                    tpSirAssocReq assoc_req,
+                                    bool pmf_connection,
+                                    bool assoc_req_copied,
+                                    tpDphHashNode sta_ds)
+{
+    struct tLimPreAuthNode  *sta_pre_auth_ctx;
+
+    /* Extract pre-auth context for the STA, if any. */
+    sta_pre_auth_ctx = limSearchPreAuthList(mac_ctx, hdr->sa);
+    sta_pre_auth_ctx->assoc_req.present = true;
+    sta_pre_auth_ctx->assoc_req.sub_type = sub_type;
+    vos_mem_copy(&sta_pre_auth_ctx->assoc_req.hdr, hdr,
+                    sizeof(tSirMacMgmtHdr));
+    sta_pre_auth_ctx->assoc_req.assoc_req = assoc_req;
+    sta_pre_auth_ctx->assoc_req.pmf_connection = pmf_connection;
+    sta_pre_auth_ctx->assoc_req.assoc_req_copied = assoc_req_copied;
+    sta_pre_auth_ctx->assoc_req.sta_ds = sta_ds;
+}
 
 /**---------------------------------------------------------------
 \fn     limProcessAssocReqFrame
