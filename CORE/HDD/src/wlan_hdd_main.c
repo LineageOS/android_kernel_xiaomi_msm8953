@@ -3614,14 +3614,7 @@ static inline void hdd_assign_reassoc_handoff(tCsrHandoffRequest *handoffInfo)
 }
 #endif
 
-/**
- * wlan_hdd_free_cache_channels() - Free the cache channels list
- * @hdd_ctx: Pointer to HDD context
- *
- * Return: None
- */
-
-static void wlan_hdd_free_cache_channels(hdd_context_t *hdd_ctx)
+void wlan_hdd_free_cache_channels(hdd_context_t *hdd_ctx)
 {
 	if(!hdd_ctx || !hdd_ctx->original_channels)
 		return;
@@ -3729,13 +3722,11 @@ int hdd_parse_disable_chan_cmd(hdd_adapter_t *adapter, tANI_U8 *ptr)
 	       __func__, tempInt);
 
 	if (!tempInt) {
-		if (!wlan_hdd_restore_channels(hdd_ctx)) {
-			/*
-			 * Free the cache channels only when the command is
-			 * received with num channels as 0
-			 */
-			wlan_hdd_free_cache_channels(hdd_ctx);
-		}
+		/*
+		 * Restore and Free the cache channels when the command is
+		 * received with num channels as 0
+		 */
+		wlan_hdd_restore_channels(hdd_ctx);
 		return 0;
 	}
 
