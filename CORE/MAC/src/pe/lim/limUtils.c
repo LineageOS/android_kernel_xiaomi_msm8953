@@ -1119,6 +1119,13 @@ limCleanupMlm(tpAniSirGlobal pMac)
         tx_timer_delete(&pMac->lim.limTimers.gLimFTPreAuthRspTimer);
 #endif
 
+#ifdef WLAN_FEATURE_LFR_MBB
+        tx_timer_deactivate(&pMac->lim.limTimers.glim_pre_auth_mbb_rsp_timer);
+        tx_timer_delete(&pMac->lim.limTimers.glim_pre_auth_mbb_rsp_timer);
+
+        tx_timer_deactivate(&pMac->lim.limTimers.glim_reassoc_mbb_rsp_timer);
+        tx_timer_delete(&pMac->lim.limTimers.glim_reassoc_mbb_rsp_timer);
+#endif
 
 #if defined(FEATURE_WLAN_ESE) && !defined(FEATURE_WLAN_ESE_UPLOAD)
         // Deactivate and delete TSM
