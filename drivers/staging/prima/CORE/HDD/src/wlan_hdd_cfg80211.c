@@ -5632,7 +5632,8 @@ static int __wlan_hdd_cfg80211_set_spoofed_mac_oui(struct wiphy *wiphy,
             pHddCtx->spoofMacAddr.isEnabled = FALSE;
     }
 
-    schedule_delayed_work(&pHddCtx->spoof_mac_addr_work,
+    queue_delayed_work(system_freezable_power_efficient_wq,
+                          &pHddCtx->spoof_mac_addr_work,
                           msecs_to_jiffies(MAC_ADDR_SPOOFING_DEFER_INTERVAL));
 
     EXIT();
@@ -15321,7 +15322,8 @@ allow_suspend:
         /* Generate new random mac addr for next scan */
         hddLog(VOS_TRACE_LEVEL_INFO, "scan completed - generate new spoof mac addr");
 
-        schedule_delayed_work(&pHddCtx->spoof_mac_addr_work,
+        queue_delayed_work(system_freezable_power_efficient_wq,
+                           &pHddCtx->spoof_mac_addr_work,
                            msecs_to_jiffies(MAC_ADDR_SPOOFING_DEFER_INTERVAL));
     }
 
