@@ -530,6 +530,53 @@ void wcts_state_open(WCTS_ControlBlockType* wcts_cb)
    /* serialize this event */
    wpalPostCtrlMsg(WDI_GET_PAL_CTX(), palMsg);
 }
+
+int WCTS_driver_state_process(void *priv, enum wcnss_driver_state state)
+{
+	WCTS_ControlBlockType* wcts_cb = (WCTS_ControlBlockType*) priv;
+	wpt_msg *pal_msg;
+
+	switch (state) {
+	case WCNSS_SMD_OPEN:
+		WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
+			   "%s: received WCNSS_SMD_OPEN from SMD", __func__);
+		/* If the prev state was 'remote closed' then it is a Riva 'restart',
+		 * subsystem restart re-init
+		 */
+		if (WCTS_STATE_REM_CLOSED == wcts_cb->wctsState) {
+			WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
+				   "%s: received WCNSS_SMD_OPEN in WCTS_STATE_REM_CLOSED state",
+				   __func__);
+			/* call subsystem restart re-init function */
+			wpalDriverReInit();
+			return 0;
+		}
+		gWdiSmdStats.smd_event_open++;
+		pal_msg = &wcts_cb->wctsOpenMsg;
+		break;
+	case WCNSS_SMD_CLOSE:
+		WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
+			   "%s: received WCNSS_SMD_CLOSE from SMD", __func__);
+		/* SMD channel was closed from the remote side,
+		 * this would happen only when Riva crashed and SMD is
+		 * closing the channel on behalf of Riva */
+		vos_spin_lock_acquire(&wcts_cb->wctsStateLock);
+		wcts_cb->wctsState = WCTS_STATE_REM_CLOSED;
+		WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
+			   "%s: received WCNSS_SMD_CLOSE WLAN driver going down now",
+			   __func__);
+		vos_spin_lock_release(&wcts_cb->wctsStateLock);
+
+		/* subsystem restart: shutdown */
+		wpalDriverShutdown();
+		gWdiSmdStats.smd_event_close++;
+		return 0;
+	}
+
+	/* serialize this event */
+	wpalPostCtrlMsg(WDI_GET_PAL_CTX(), pal_msg);
+	return 0;
+}
 #else
 void
 WCTS_NotifyCallback
@@ -867,6 +914,7 @@ WCTS_CloseTransport
    }
 #else
    wcnss_close_channel(pWCTSCb->wctsChannel);
+   wlan_unregister_driver();
 #endif
 
    /* channel has (hopefully) been closed */

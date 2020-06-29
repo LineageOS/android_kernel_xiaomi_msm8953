@@ -346,5 +346,16 @@ void WCTS_NotifyCallback( void *data, unsigned event);
  */
 int WCTS_smd_resp_process(struct rpmsg_device *rpdev,
 			  void *buf, int len, void *priv, u32 addr);
+
+enum wcnss_driver_state;
+/**
+ * WCTS_driver_state_process() - Callback to process driver state info
+ *
+ * @priv: The user-supplied data provided in wcnss_register_driver()
+ * @state: driver state
+ *
+ * @return status
+ */
+int WCTS_driver_state_process(void *priv, enum wcnss_driver_state state);
 #endif
 #endif /* #ifndef WLAN_QCT_WDI_CTS_H */

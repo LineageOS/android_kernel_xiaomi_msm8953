@@ -3960,6 +3960,11 @@ v_BOOL_t vos_check_monitor_state(void)
 }
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
+struct wcnss_driver_ops driver_ops = {
+	.name = "WLAN_CTRL",
+	.driver_state = WCTS_driver_state_process
+};
+
 VOS_STATUS vos_smd_open(const char *szname, WCTS_ControlBlockType* wcts_cb)
 {
 	wcts_cb->wctsChannel = wcnss_open_channel(szname,
@@ -3973,7 +3978,14 @@ VOS_STATUS vos_smd_open(const char *szname, WCTS_ControlBlockType* wcts_cb)
 
 	wcts_state_open(wcts_cb);
 
+	wcnss_register_driver(&driver_ops, wcts_cb);
+
 	return VOS_STATUS_SUCCESS;
+}
+
+void wlan_unregister_driver(void )
+{
+	wcnss_unregister_driver(&driver_ops);
 }
 #else
 VOS_STATUS vos_smd_open(const char *szname, WCTS_ControlBlockType* wcts_cb)

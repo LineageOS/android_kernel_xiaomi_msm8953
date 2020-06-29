@@ -610,4 +610,6 @@ VOS_STATUS vos_smd_open(const char *szname, WCTS_ControlBlockType* wcts_cb);
  * Return: None
  */
 void wcts_state_open(WCTS_ControlBlockType* wcts_cb);
+
+void wlan_unregister_driver(void);
 #endif // if !defined __VOS_NVITEM_H
