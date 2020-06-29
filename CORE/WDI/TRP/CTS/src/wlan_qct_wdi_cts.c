@@ -520,17 +520,6 @@ int WCTS_smd_resp_process(struct rpmsg_device *rpdev,
 	return 0;
 }
 
-void wcts_state_open(WCTS_ControlBlockType* wcts_cb)
-{
-    wpt_msg                 *palMsg;
-
-   gWdiSmdStats.smd_event_open++;
-   palMsg = &wcts_cb->wctsOpenMsg;
-
-   /* serialize this event */
-   wpalPostCtrlMsg(WDI_GET_PAL_CTX(), palMsg);
-}
-
 int WCTS_driver_state_process(void *priv, enum wcnss_driver_state state)
 {
 	WCTS_ControlBlockType* wcts_cb = (WCTS_ControlBlockType*) priv;
@@ -746,7 +735,11 @@ WCTS_OpenTransport
            WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_FATAL,
                    "WCTS_OpenTransport: Invalid magic.");
            return NULL;
-       }   
+       }
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
+	/* Need to open smd channel in case of SSR in rpmsg */
+	smdstatus = vos_smd_open(szName, pWCTSCb);
+#endif
        pWCTSCb->wctsState = WCTS_STATE_OPEN;
 
        pWCTSCb->wctsNotifyCB((WCTS_HandleType)pWCTSCb,
@@ -834,7 +827,14 @@ WCTS_OpenTransport
 }/*WCTS_OpenTransport*/
 
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
+void wcts_close_channel(WCTS_HandleType wcts_handle)
+{
+	WCTS_ControlBlockType* wcts_cb = (WCTS_ControlBlockType*) wcts_handle;
 
+	wcnss_close_channel(wcts_cb->wctsChannel);
+}
+#endif
 /**
  @brief    This function is used by the DAL Core to close the
            Control Transport when its services are no longer
@@ -913,7 +913,7 @@ WCTS_CloseTransport
       msleep(50);
    }
 #else
-   wcnss_close_channel(pWCTSCb->wctsChannel);
+   wcts_close_channel(wctsHandle);
    wlan_unregister_driver();
 #endif
 

@@ -603,13 +603,5 @@ void vos_reset_recovery_reason(void);
  */
 VOS_STATUS vos_smd_open(const char *szname, WCTS_ControlBlockType* wcts_cb);
 
-/**
- * wcts_state_open - open WCTS state, equivalent to SMD_EVENT_OPEN event
- * wcts_cb: WCTS control block
- *
- * Return: None
- */
-void wcts_state_open(WCTS_ControlBlockType* wcts_cb);
-
 void wlan_unregister_driver(void);
 #endif // if !defined __VOS_NVITEM_H

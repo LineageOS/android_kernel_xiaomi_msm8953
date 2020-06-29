@@ -3976,8 +3976,6 @@ VOS_STATUS vos_smd_open(const char *szname, WCTS_ControlBlockType* wcts_cb)
 		return VOS_STATUS_E_INVAL;
 	}
 
-	wcts_state_open(wcts_cb);
-
 	wcnss_register_driver(&driver_ops, wcts_cb);
 
 	return VOS_STATUS_SUCCESS;

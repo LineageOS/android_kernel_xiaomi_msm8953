@@ -357,5 +357,13 @@ enum wcnss_driver_state;
  * @return status
  */
 int WCTS_driver_state_process(void *priv, enum wcnss_driver_state state);
+
+/**
+ * wcts_close_channel() - api to close the smd channel
+ * @wctsHandle: transport handle
+ *
+ * @return none
+ */
+void wcts_close_channel(WCTS_HandleType wctsHandle);
 #endif
 #endif /* #ifndef WLAN_QCT_WDI_CTS_H */
