@@ -63,7 +63,10 @@
 #ifdef EXISTS_MSM_SMSM
 #include <mach/msm_smsm.h>
 #else
+#include <linux/version.h>
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0))
 #include <soc/qcom/smsm.h>
+#endif
 #endif
 #include "wlan_qct_pal_api.h"
 #include "wlan_qct_pal_device.h"
@@ -811,7 +814,9 @@ wpt_status wpalNotifySmsm
    wpt_uint32                            setSt
 )
 {
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0))
    int rc;
+
    rc = smsm_change_state(SMSM_APPS_STATE, clrSt, setSt);
    if(0 != rc) 
    {
@@ -820,6 +825,7 @@ wpt_status wpalNotifySmsm
                  __func__);
       return eWLAN_PAL_STATUS_E_FAILURE;
    }
+#endif
    return eWLAN_PAL_STATUS_SUCCESS;
 }
 
