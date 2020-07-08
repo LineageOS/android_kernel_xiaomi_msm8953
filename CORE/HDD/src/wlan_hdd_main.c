@@ -11063,16 +11063,19 @@ VOS_STATUS hdd_reset_all_adapters( hdd_context_t *pHddCtx )
       if (pAdapter->device_mode == WLAN_HDD_MONITOR)
           pAdapter->sessionCtx.monitor.state = MON_MODE_STOP;
 
-      hdd_deinit_tx_rx(pAdapter);
+      if (test_bit(DEVICE_IFACE_OPENED, &pAdapterNode->pAdapter->event_flags))
+          hdd_deinit_tx_rx(pAdapter);
 
       if(pAdapter->device_mode == WLAN_HDD_IBSS )
          hdd_ibss_deinit_tx_rx(pAdapter);
 
-      status = hdd_sta_id_hash_detach(pAdapter);
-      if (status != VOS_STATUS_SUCCESS)
-          hddLog(VOS_TRACE_LEVEL_ERROR,
-                 FL("sta id hash detach failed for session id %d"),
-                 pAdapter->sessionId);
+      if (test_bit(DEVICE_IFACE_OPENED, &pAdapterNode->pAdapter->event_flags)) {
+         status = hdd_sta_id_hash_detach(pAdapter);
+         if (status != VOS_STATUS_SUCCESS)
+             hddLog(VOS_TRACE_LEVEL_ERROR,
+                    FL("sta id hash detach failed for session id %d"),
+                    pAdapter->sessionId);
+         }
 
       wlan_hdd_decr_active_session(pHddCtx, pAdapter->device_mode);
 
