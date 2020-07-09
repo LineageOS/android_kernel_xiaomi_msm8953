@@ -210,6 +210,7 @@ typedef struct tagSmeCmd
         struct csr_set_tx_max_pwr_per_band set_tx_max_pwr_per_band;
         tpSirUpdateChanList chan_list;
         tpRoamParams RoamParams;
+        bool olpc_mode_enable;
     }u;
 }tSmeCmd;
 
