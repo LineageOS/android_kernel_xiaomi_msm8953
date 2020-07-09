@@ -727,7 +727,7 @@ eHalStatus sme_RrmIssueScanReq( tpAniSirGlobal pMac )
    {
        tCsrScanRequest scanRequest;
        v_U32_t scanId = 0;
-       tANI_U32 sessionId;
+       tANI_U32 sessionId = 0;
 #if defined WLAN_VOWIFI_DEBUG
    smsLog( pMac, LOGE, "Issue scan request " );
 #endif
@@ -790,7 +790,13 @@ eHalStatus sme_RrmIssueScanReq( tpAniSirGlobal pMac )
        /* set requestType to full scan */
        scanRequest.requestType = eCSR_SCAN_REQUEST_FULL_SCAN;
 
-       csrRoamGetSessionIdFromBSSID( pMac, (tCsrBssid*)pSmeRrmContext->sessionBssId, &sessionId );
+       status = csrRoamGetSessionIdFromBSSID(pMac,
+                        (tCsrBssid*)pSmeRrmContext->sessionBssId, &sessionId );
+       if (!HAL_STATUS_SUCCESS(status)) {
+           smsLog( pMac, LOGE, FL("sessionId not found for Offload scan req"));
+           return status;
+       }
+
        status = sme_ScanRequest( pMac, (tANI_U8)sessionId, &scanRequest, &scanId, &sme_RrmScanRequestCallback, NULL );
 
        if ( pSmeRrmContext->ssId.length )
