@@ -106,7 +106,11 @@ else
 endif # ANDROID_BUILD_TOP
 else
 ifneq ($(ANDROID_BUILD_TOP),)
+ifeq ($(TARGET_PRODUCT),sdm429w)
     WLAN_BLD_DIR := $(ANDROID_BUILD_TOP)/device/qcom/sdm429w/common/opensource/wlan
+else
+    WLAN_BLD_DIR := $(ANDROID_BUILD_TOP)/vendor/qcom/opensource/wlan
+endif #TARGET_PRODUCT
 else
     WLAN_BLD_DIR := $(BOARD_OPENSOURCE_DIR)/wlan
 endif # ANDROID_BUILD_TOP
