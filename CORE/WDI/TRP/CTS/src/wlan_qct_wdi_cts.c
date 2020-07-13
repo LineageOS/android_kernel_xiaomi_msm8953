@@ -256,6 +256,7 @@ WCTS_PALReadCallback
       buffer = msg->buffer;
       packet_size = msg->buf_len;
       bytes_read = msg->buf_len;
+      wpalMemoryFree(msg);
 #else
       /* check the length of the next packet */
       packet_size = smd_cur_packet_size(pWCTSCb->wctsChannel);
