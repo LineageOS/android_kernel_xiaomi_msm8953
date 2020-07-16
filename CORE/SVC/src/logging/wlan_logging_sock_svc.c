@@ -1512,8 +1512,8 @@ int wlan_logging_sock_activate_svc(int log_fe_to_console, int num_buf,
 	{
 		pr_info("%s: Initalizing Pkt stats pkt_stats_buff = %d\n",
 			__func__, pkt_stats_buff);
-		pkt_stats_buffers = (struct pkt_stats_msg *) kzalloc(
-			 pkt_stats_buff * sizeof(struct pkt_stats_msg), GFP_KERNEL);
+		pkt_stats_buffers = (struct pkt_stats_msg *) vos_mem_malloc(
+			 pkt_stats_buff * sizeof(struct pkt_stats_msg));
 		if (!pkt_stats_buffers) {
 			pr_err("%s: Could not allocate memory for Pkt stats\n", __func__);
 			failure = TRUE;
