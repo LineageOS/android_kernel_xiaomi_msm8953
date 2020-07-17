@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2015, 2017-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2015, 2017-2018, 2020 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -627,9 +627,10 @@ limProcessAuthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession pse
 
             goto free;
         } // else if (wlan_cfgGetInt(CFG_PRIVACY_OPTION_IMPLEMENTED))
-    } else if ((auth_alg ==
-        eSIR_AUTH_TYPE_SAE) && (LIM_IS_STA_ROLE(psessionEntry))) {
-        lim_process_sae_auth_frame(pMac, pRxPacketInfo, psessionEntry);
+    } else if (auth_alg == eSIR_AUTH_TYPE_SAE) {
+         if (LIM_IS_STA_ROLE(psessionEntry) ||
+             LIM_IS_AP_ROLE(psessionEntry))
+                lim_process_sae_auth_frame(pMac, pRxPacketInfo, psessionEntry);
         goto free;
     } // if (fc.wep)
     else
