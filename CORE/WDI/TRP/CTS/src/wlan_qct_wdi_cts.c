@@ -242,16 +242,16 @@ WCTS_PALReadCallback
    /* iterate until no more packets are available */
    while (1) {
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
-      spin_lock_bh(&pWCTSCb->wctsDataMsg.data_queue_lock);
+      spin_lock(&pWCTSCb->wctsDataMsg.data_queue_lock);
       if (list_empty(&pWCTSCb->wctsDataMsg.data_queue)) {
-	      spin_unlock_bh(&pWCTSCb->wctsDataMsg.data_queue_lock);
+	      spin_unlock(&pWCTSCb->wctsDataMsg.data_queue_lock);
 	      return;
       }
 
       msg = list_first_entry(&pWCTSCb->wctsDataMsg.data_queue,
                              struct data_msg, list);
       list_del(&msg->list);
-      spin_unlock_bh(&pWCTSCb->wctsDataMsg.data_queue_lock);
+      spin_unlock(&pWCTSCb->wctsDataMsg.data_queue_lock);
 
       buffer = msg->buffer;
       packet_size = msg->buf_len;
@@ -512,9 +512,9 @@ int WCTS_smd_resp_process(struct rpmsg_device *rpdev,
 
 	vos_mem_copy(msg->buffer, data, msg->buf_len);
 
-	spin_lock_bh(&wcts_cb->wctsDataMsg.data_queue_lock);
+	spin_lock(&wcts_cb->wctsDataMsg.data_queue_lock);
 	list_add_tail(&msg->list, &wcts_cb->wctsDataMsg.data_queue);
-	spin_unlock_bh(&wcts_cb->wctsDataMsg.data_queue_lock);
+	spin_unlock(&wcts_cb->wctsDataMsg.data_queue_lock);
 
 	wpalPostCtrlMsg(WDI_GET_PAL_CTX(), &wcts_cb->wctsDataMsg);
 
