@@ -492,6 +492,14 @@ int WCTS_smd_resp_process(struct rpmsg_device *rpdev,
 	WCTS_ControlBlockType* wcts_cb = (WCTS_ControlBlockType*) priv;
 	struct data_msg *msg;
 
+	if (WCTS_STATE_REM_CLOSED == wcts_cb->wctsState) {
+		WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+			"%s: received SMD data when wcts state is closed ",
+			__func__);
+		/* we should not be getting any data now */
+		return 0;
+	}
+
 	gWdiSmdStats.smd_event_data++;
 
 	msg = wpalMemoryAllocate(sizeof(*msg));
