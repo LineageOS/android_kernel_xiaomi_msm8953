@@ -8068,13 +8068,13 @@ int __hdd_open(struct net_device *dev)
    VOS_STATUS status;
    v_BOOL_t in_standby = TRUE;
 
-   if (NULL == pAdapter) 
+   if (NULL == pAdapter)
    {
       VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_FATAL,
          "%s: pAdapter is Null", __func__);
       return -ENODEV;
    }
-   
+
    pHddCtx = (hdd_context_t*)pAdapter->pHddCtx;
    MTRACE(vos_trace(VOS_MODULE_ID_HDD, TRACE_CODE_HDD_OPEN_REQUEST,
                     pAdapter->sessionId, pAdapter->device_mode));
@@ -8084,6 +8084,7 @@ int __hdd_open(struct net_device *dev)
          "%s: HDD context is Null", __func__);
       return -ENODEV;
    }
+
 
    if (test_bit(DEVICE_IFACE_OPENED, &pAdapter->event_flags)) {
           hddLog(VOS_TRACE_LEVEL_DEBUG, "%s: session already opened for the adapter",
@@ -8191,6 +8192,11 @@ int __hdd_mon_open (struct net_device *dev)
    }
 
    set_bit(DEVICE_IFACE_OPENED, &pAdapter->event_flags);
+
+   /* Action frame registered in one adapter which will
+    * applicable to all interfaces
+    */
+    wlan_hdd_cfg80211_register_frames(pAdapter);
 
    return 0;
 }
@@ -9356,6 +9362,10 @@ VOS_STATUS hdd_init_station_mode( hdd_adapter_t *pAdapter )
    }
 
    set_bit(WMM_INIT_DONE, &pAdapter->event_flags);
+   /* Action frame registered in one adapter which will
+    * applicable to all interfaces
+    */
+    wlan_hdd_cfg80211_register_frames(pAdapter);
 
    return VOS_STATUS_SUCCESS;
 
@@ -10396,6 +10406,7 @@ VOS_STATUS hdd_stop_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter,
 
    ENTER();
 
+   wlan_hdd_cfg80211_deregister_frames(pAdapter);
    pScanInfo =  &pHddCtx->scan_info;
    switch(pAdapter->device_mode)
    {
@@ -14336,11 +14347,6 @@ int hdd_wlan_startup(struct device *dev )
        wlan_logging_set_log_level();
 
    hdd_register_mcast_bcast_filter(pHddCtx);
-
-   /* Action frame registered in one adapter which will
-    * applicable to all interfaces
-    */
-   wlan_hdd_cfg80211_register_frames(pAdapter);
 
    mutex_init(&pHddCtx->sap_lock);
    mutex_init(&pHddCtx->roc_lock);
