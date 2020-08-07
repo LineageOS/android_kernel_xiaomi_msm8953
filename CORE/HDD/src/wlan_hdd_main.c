@@ -10554,6 +10554,11 @@ VOS_STATUS hdd_stop_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter,
           /* Delete all associated STAs before stopping AP */
           if (test_bit(SOFTAP_BSS_STARTED, &pAdapter->event_flags))
                hdd_del_all_sta(pAdapter);
+
+          /* Flush the PMKID cache in CSR */
+          if (eHAL_STATUS_SUCCESS != sme_RoamDelPMKIDfromCache(pHddCtx->hHal,
+                                               pAdapter->sessionId, NULL, TRUE))
+               hddLog(VOS_TRACE_LEVEL_ERROR, FL("Cannot flush PMKIDCache"));
           /* Fall through */
       case WLAN_HDD_P2P_GO:
 
