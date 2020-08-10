@@ -707,6 +707,7 @@ typedef struct sLimSpecMgmtInfo
         
     tANI_BOOLEAN       fRadarDetCurOperChan; /* Radar detected in cur oper chan on AP */
     tANI_BOOLEAN       fRadarIntrConfigured; /* Whether radar interrupt has been configured */
+    tANI_BOOLEAN       dfs_channel_csa; /* whether received channel switch to DFS channel */
 }tLimSpecMgmtInfo, *tpLimSpecMgmtInfo;
 
 #ifdef FEATURE_WLAN_TDLS

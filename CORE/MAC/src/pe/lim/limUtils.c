@@ -7032,8 +7032,13 @@ limRestorePreChannelSwitchState(tpAniSirGlobal pMac, tpPESession psessionEntry)
     /* Channel switch should be ready for the next time */
     psessionEntry->gLimSpecMgmt.dot11hChanSwState = eLIM_11H_CHANSW_INIT;
 
-    /* Restore the frame transmission, all the time. */
-    limFrameTransmissionControl(pMac, eLIM_TX_ALL, eLIM_RESUME_TX);
+    /* Restore the frame transmission, if switched channel is NON-DFS.
+     * Else tx should be resumed after receiving first beacon on DFS channel
+     */
+    if(!limIsconnectedOnDFSChannel(psessionEntry->currentOperChannel))
+        limFrameTransmissionControl(pMac, eLIM_TX_ALL, eLIM_RESUME_TX);
+    else
+        psessionEntry->gLimSpecMgmt.dfs_channel_csa = true;
 
     /* Free to enter BMPS */
     limSendSmePostChannelSwitchInd(pMac);
