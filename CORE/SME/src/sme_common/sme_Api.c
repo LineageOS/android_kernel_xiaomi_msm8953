@@ -14402,7 +14402,7 @@ tANI_BOOLEAN sme_handleSetFccChannel(tHalHandle hHal, tANI_U8 fcc_constraint,
             pMac->scan.defer_update_channel_list = true;
         } else {
             /* update the channel list to the firmware */
-            csrUpdateFCCChannelList(pMac);
+            csrUpdateChannelList(pMac);
         }
     }
 
