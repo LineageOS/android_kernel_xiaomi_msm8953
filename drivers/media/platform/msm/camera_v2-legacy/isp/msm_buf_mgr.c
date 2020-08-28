@@ -757,6 +757,62 @@ static int msm_isp_update_put_buf_cnt(struct msm_isp_buf_mgr *buf_mgr,
 	return rc;
 }
 
+static int msm_isp_buf_err(struct msm_isp_buf_mgr *buf_mgr,
+	uint32_t bufq_handle, uint32_t buf_index,
+	struct timeval *tv, uint32_t frame_id, uint32_t output_format)
+{
+	int rc = 0;
+	unsigned long flags;
+	struct msm_isp_bufq *bufq = NULL;
+	struct msm_isp_buffer *buf_info = NULL;
+	enum msm_isp_buffer_state state;
+
+	bufq = msm_isp_get_bufq(buf_mgr, bufq_handle);
+	if (!bufq) {
+		pr_err("Invalid bufq\n");
+		return -EINVAL;
+	}
+
+	buf_info = msm_isp_get_buf_ptr(buf_mgr, bufq_handle, buf_index);
+	if (!buf_info) {
+		pr_err("%s: buf not found\n", __func__);
+		return -EINVAL;
+	}
+
+	spin_lock_irqsave(&bufq->bufq_lock, flags);
+	state = buf_info->state;
+
+	if (MSM_ISP_BUFFER_SRC_HAL == BUF_SRC(bufq->stream_id)) {
+		if (state == MSM_ISP_BUFFER_STATE_DEQUEUED) {
+			buf_info->state = MSM_ISP_BUFFER_STATE_DISPATCHED;
+			spin_unlock_irqrestore(&bufq->bufq_lock, flags);
+			buf_mgr->vb2_ops->buf_error(buf_info->vb2_v4l2_buf,
+				bufq->session_id, bufq->stream_id,
+				frame_id, tv, output_format);
+		} else {
+			spin_unlock_irqrestore(&bufq->bufq_lock, flags);
+		}
+		goto done;
+	}
+
+	/*
+	 * For native buffer put the diverted buffer back to queue since caller
+	 * is not going to send it to CPP, this is error case like
+	 * drop_frame/empty_buffer
+	 */
+	if (state == MSM_ISP_BUFFER_STATE_DIVERTED) {
+		buf_info->state = MSM_ISP_BUFFER_STATE_PREPARED;
+		rc = msm_isp_put_buf_unsafe(buf_mgr, buf_info->bufq_handle,
+			buf_info->buf_idx);
+		if (rc < 0)
+			pr_err("%s: Buf put failed\n", __func__);
+	}
+	spin_unlock_irqrestore(&bufq->bufq_lock, flags);
+done:
+	return rc;
+}
+
+
 static int msm_isp_buf_done(struct msm_isp_buf_mgr *buf_mgr,
 	uint32_t bufq_handle, uint32_t buf_index,
 	struct timeval *tv, uint32_t frame_id, uint32_t output_format)
@@ -1469,6 +1525,7 @@ static struct msm_isp_buf_ops isp_buf_ops = {
 	.buf_mgr_debug = msm_isp_buf_mgr_debug,
 	.get_bufq = msm_isp_get_bufq,
 	.update_put_buf_cnt = msm_isp_update_put_buf_cnt,
+	.buf_err = msm_isp_buf_err,
 };
 
 int msm_isp_create_isp_buf_mgr(

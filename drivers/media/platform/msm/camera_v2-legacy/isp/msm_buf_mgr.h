@@ -177,6 +177,9 @@ struct msm_isp_buf_ops {
 	int (*update_put_buf_cnt)(struct msm_isp_buf_mgr *buf_mgr,
 	uint32_t id, uint32_t bufq_handle, int32_t buf_index,
 	struct timeval *tv, uint32_t frame_id, uint32_t pingpong_bit);
+	int (*buf_err)(struct msm_isp_buf_mgr *buf_mgr,
+	uint32_t bufq_handle, uint32_t buf_index,
+	struct timeval *tv, uint32_t frame_id, uint32_t output_format);
 };
 
 struct msm_isp_buf_mgr {
