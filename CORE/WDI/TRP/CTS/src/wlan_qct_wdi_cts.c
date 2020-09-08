@@ -495,6 +495,12 @@ int WCTS_smd_resp_process(struct rpmsg_device *rpdev,
 	WCTS_ControlBlockType* wcts_cb = (WCTS_ControlBlockType*) priv;
 	struct data_msg *msg;
 
+	if (WCTS_CB_MAGIC != wcts_cb->wctsMagic) {
+		WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+			   "%s: Received smd data in invalid state", __func__);
+		return 0;
+	}
+
 	if (WCTS_STATE_REM_CLOSED == wcts_cb->wctsState) {
 		WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
 			"%s: received SMD data when wcts state is closed ",
