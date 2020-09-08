@@ -515,6 +515,7 @@ int WCTS_smd_resp_process(struct rpmsg_device *rpdev,
 	msg->buf_len = len;
 	msg->buffer = wpalMemoryAllocate(len);
 	if (!msg->buffer) {
+		wpalMemoryFree(msg);
 		WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
 			   "WCTS_smd_resp_process: Memory allocation failure");
 		WPAL_ASSERT(0);
