@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2020 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -15470,7 +15470,8 @@ eHalStatus sme_send_mgmt_tx(tHalHandle hal, uint8_t session_id,
 
 #ifdef WLAN_FEATURE_SAE
 eHalStatus sme_handle_sae_msg(tHalHandle hal, uint8_t session_id,
-                              uint8_t sae_status)
+                              uint8_t sae_status,
+                              tSirMacAddr peer_mac_addr)
 {
     eHalStatus hal_status = eHAL_STATUS_SUCCESS;
     tpAniSirGlobal mac = PMAC_STRUCT(hal);
@@ -15490,11 +15491,17 @@ eHalStatus sme_handle_sae_msg(tHalHandle hal, uint8_t session_id,
             sae_msg->length = sizeof(*sae_msg);
             sae_msg->session_id = session_id;
             sae_msg->sae_status = sae_status;
+            vos_mem_copy(sae_msg->peer_mac_addr,
+                         peer_mac_addr,
+                         VOS_MAC_ADDR_SIZE);
             vos_message.bodyptr = sae_msg;
             vos_message.type =  eWNI_SME_SEND_SAE_MSG;
             VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_DEBUG,
-                      "SAE: sae_status %d session_id %d", sae_msg->sae_status,
-                      sae_msg->session_id);
+                    "SAE: sae_status %d session_id %d Peer: "
+                    MAC_ADDRESS_STR,
+                    sae_msg->sae_status,
+                    sae_msg->session_id,
+                    MAC_ADDR_ARRAY(sae_msg->peer_mac_addr));
 
             vos_status = vos_mq_post_message(VOS_MQ_ID_PE, &vos_message);
             if (!VOS_IS_STATUS_SUCCESS(vos_status)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017, 2020 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1200,6 +1200,8 @@ limFillAssocIndParams(tpAniSirGlobal pMac, tpLimMlmAssocInd pAssocInd,
     //pSirSmeAssocInd->staId = psessionEntry->staId;
     // Fill in authType
     pSirSmeAssocInd->authType = pAssocInd->authType;
+    /* Fill in rsn_akm_type */
+    pSirSmeAssocInd->akm_type = pAssocInd->akm_type;
     // Fill in ssId
     vos_mem_copy((tANI_U8*)&pSirSmeAssocInd->ssId,
                  (tANI_U8 *) &(pAssocInd->ssId), pAssocInd->ssId.length + 1);
@@ -1240,6 +1242,7 @@ limFillAssocIndParams(tpAniSirGlobal pMac, tpLimMlmAssocInd pAssocInd,
         pSirSmeAssocInd->HTCaps = pAssocInd->HTCaps;
     if (pAssocInd->VHTCaps.present)
         pSirSmeAssocInd->VHTCaps = pAssocInd->VHTCaps;
+    pSirSmeAssocInd->is_sae_authenticated = pAssocInd->is_sae_authenticated;
 } /*** end limAssocIndSerDes() ***/
 
 

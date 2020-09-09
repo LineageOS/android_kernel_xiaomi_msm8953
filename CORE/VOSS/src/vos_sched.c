@@ -60,6 +60,7 @@
 #include <linux/spinlock.h>
 #include <linux/kthread.h>
 #include <linux/wcnss_wlan.h>
+#include "wlan_qct_pal_device.h"
 
 /*---------------------------------------------------------------------------
  * Preprocessor Definitions and Constants
@@ -2036,6 +2037,9 @@ VOS_STATUS vos_watchdog_wlan_shutdown(void)
            "%s: Invalid HDD Context", __func__);
        return VOS_STATUS_E_FAILURE;
     }
+
+    wpalUnRegisterInterrupt(DXE_INTERRUPT_RX_READY);
+    wpalUnRegisterInterrupt(DXE_INTERRUPT_TX_COMPLE);
 
     /* Take the lock here */
     spin_lock(&gpVosWatchdogContext->wdLock);

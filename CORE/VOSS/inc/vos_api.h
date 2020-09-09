@@ -75,6 +75,7 @@
 #include <vos_timer.h>
 #include <vos_pack_align.h>
 #include <asm/arch_timer.h>
+#include <wlan_qct_wdi_cts.h>
 
 /**
  * enum userspace_log_level - Log level at userspace
@@ -592,4 +593,15 @@ void vos_get_recovery_reason(enum vos_hang_reason *reason);
  * Return: None
  */
 void vos_reset_recovery_reason(void);
+
+/**
+ * vos_smd_open - open smd channel
+ * @szname: channel name
+ * @wcts_cb: WCTS control block
+ *
+ * Return: VOS_STATUS
+ */
+VOS_STATUS vos_smd_open(const char *szname, WCTS_ControlBlockType* wcts_cb);
+
+void wlan_unregister_driver(void);
 #endif // if !defined __VOS_NVITEM_H

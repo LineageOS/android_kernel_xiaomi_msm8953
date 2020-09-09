@@ -2793,6 +2793,7 @@ WDI_Shutdown
 
       WDI_ASSERT(0);
    }
+
    if ( closeTransport )
    {
       /* Close control transport, called from module unload */
@@ -2800,6 +2801,11 @@ WDI_Shutdown
    }
    else
    {
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
+      /* Need to close SMD channel in case of SSR also when rpmsg is used */
+      wcts_close_channel(gWDICb.wctsHandle);
+#endif
       /* Riva is crashed then SMD is already closed so cleaning all 
          the pending messages in the transport queue  */
       WCTS_ClearPendingQueue(gWDICb.wctsHandle);

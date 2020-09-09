@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017, 2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2017, 2019-2020 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -351,6 +351,31 @@ typedef struct sLimMlmOemDataRsp
 } tLimMlmOemDataRsp, *tpLimMlmOemDataRsp;
 #endif
 
+/* Forward declarations */
+struct sSirAssocReq;
+struct sDphHashNode;
+
+/* struct lim_assoc_data - Assoc data to be cached to defer association
+ *                         indication to SME
+ * @present: Indicates whether assoc data is present or not
+ * @sub_type: Indicates whether it is Association Request(=0) or Reassociation
+ *            Request(=1) frame
+ * @hdr: MAC header
+ * @assoc_req: pointer to parsed ASSOC/REASSOC Request frame
+ * @pmf_connection: flag indicating pmf connection
+ * @assoc_req_copied: boolean to indicate if assoc req was copied to tmp above
+ * @sta_ds: station dph entry
+ */
+struct lim_assoc_data {
+    bool present;
+    uint8_t sub_type;
+    tSirMacMgmtHdr hdr;
+    struct sSirAssocReq *assoc_req;
+    bool pmf_connection;
+    bool assoc_req_copied;
+    struct sDphHashNode *sta_ds;
+};
+
 // Pre-authentication structure definition
 typedef struct tLimPreAuthNode
 {
@@ -367,6 +392,10 @@ typedef struct tLimPreAuthNode
     TX_TIMER            timer;
     tANI_U16            seqNo;
     v_TIME_t            timestamp;
+    /* keeping copy of association request received, this is
+     * to defer the association request processing
+     */
+    struct lim_assoc_data assoc_req;
 }tLimPreAuthNode, *tpLimPreAuthNode;
 
 // Pre-authentication table definition
@@ -380,7 +409,8 @@ typedef struct tLimPreAuthTable
 typedef struct sLimMlmStaContext
 {
     tLimMlmStates           mlmState;
-    tAniAuthType            authType;
+    tAniAuthType            authType; /* auth algo in auth frame */
+    enum ani_akm_type       akm_type; /* akm in rsn/wpa ie */
     tANI_U16                listenInterval;
     tSirMacCapabilityInfo   capabilityInfo;
     tSirMacPropRateSet      propRateSet;
@@ -677,6 +707,7 @@ typedef struct sLimSpecMgmtInfo
         
     tANI_BOOLEAN       fRadarDetCurOperChan; /* Radar detected in cur oper chan on AP */
     tANI_BOOLEAN       fRadarIntrConfigured; /* Whether radar interrupt has been configured */
+    tANI_BOOLEAN       dfs_channel_csa; /* whether received channel switch to DFS channel */
 }tLimSpecMgmtInfo, *tpLimSpecMgmtInfo;
 
 #ifdef FEATURE_WLAN_TDLS

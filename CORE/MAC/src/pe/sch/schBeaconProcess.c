@@ -383,6 +383,11 @@ static void __schBeaconProcessForSession( tpAniSirGlobal      pMac,
            goto fail;
         }
 
+        if (psessionEntry->gLimSpecMgmt.dfs_channel_csa) {
+           limFrameTransmissionControl(pMac, eLIM_TX_ALL, eLIM_RESUME_TX);
+           psessionEntry->gLimSpecMgmt.dfs_channel_csa = false;
+        }
+
         if(RF_CHAN_14 >= psessionEntry->currentOperChannel)
         {
             if (psessionEntry->force_24ghz_in_ht20)

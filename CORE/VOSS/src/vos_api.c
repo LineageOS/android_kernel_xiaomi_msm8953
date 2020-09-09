@@ -84,6 +84,7 @@
 #include "bap_hdd_main.h"
 #endif //WLAN_BTAMP_FEATURE
 #include "wlan_qct_wdi_cts.h"
+#include "wlan_qct_pal_sync.h"
 
 /*---------------------------------------------------------------------------
  * Preprocessor Definitions and Constants
@@ -3957,3 +3958,71 @@ v_BOOL_t vos_check_monitor_state(void)
 
 	return wlan_hdd_check_monitor_state(hdd_ctx);
 }
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
+struct wcnss_driver_ops driver_ops = {
+	.name = "WLAN_CTRL",
+	.driver_state = WCTS_driver_state_process
+};
+
+VOS_STATUS vos_smd_open(const char *szname, WCTS_ControlBlockType* wcts_cb)
+{
+	wcts_cb->wctsChannel = wcnss_open_channel(szname,
+						  WCTS_smd_resp_process,
+						  wcts_cb);
+	if (IS_ERR(wcts_cb->wctsChannel)) {
+		VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+			  "%s: wcnss_open_channel failed", __func__);
+		return VOS_STATUS_E_INVAL;
+	}
+
+	wcnss_register_driver(&driver_ops, wcts_cb);
+
+	return VOS_STATUS_SUCCESS;
+}
+
+void wlan_unregister_driver(void )
+{
+	wcnss_unregister_driver(&driver_ops);
+}
+#else
+VOS_STATUS vos_smd_open(const char *szname, WCTS_ControlBlockType* wcts_cb)
+{
+	int status;
+	wpt_status wpt_status;
+
+	wpalEventReset(&wcts_cb->wctsEvent);
+
+	status = smd_named_open_on_edge(szname,
+					   SMD_APPS_WCNSS,
+					   &wcts_cb->wctsChannel,
+					   wcts_cb,
+					   WCTS_NotifyCallback);
+	if (status) {
+		VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+			  "%s: smd_named_open_on_edge failed with status %d",
+			  __func__, status);
+
+		return VOS_STATUS_E_FAILURE;
+	}
+
+	/* wait for the channel to be fully opened before we proceed */
+	wpt_status = wpalEventWait(&wcts_cb->wctsEvent, WCTS_SMD_OPEN_TIMEOUT);
+	if (eWLAN_PAL_STATUS_SUCCESS != wpt_status) {
+		VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+				"%s: failed to receive SMD_EVENT_OPEN",
+				__func__);
+
+		/* since we opened one end of the channel, close it */
+		status = smd_close(wcts_cb->wctsChannel);
+		if (status)
+			VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+				  "%s: smd_close failed with status %d",
+				  __func__, status);
+
+		return VOS_STATUS_E_FAILURE;
+	}
+
+	return VOS_STATUS_SUCCESS;
+}
+#endif

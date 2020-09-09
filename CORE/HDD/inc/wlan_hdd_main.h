@@ -2392,4 +2392,19 @@ int hdd_get_disable_ch_list(hdd_context_t *hdd_ctx, tANI_U8 *buf,
  */
 bool hdd_is_cli_iface_up(hdd_context_t *hdd_ctx);
 
+/**
+ * wlan_hdd_free_cache_channels() - Free the cache channels list
+ * @hdd_ctx: Pointer to HDD context
+ *
+ * Return: None
+ */
+void wlan_hdd_free_cache_channels(hdd_context_t *hdd_ctx);
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
+static inline void hdd_fill_last_rx(hdd_adapter_t *adapter)
+{
+}
+#else
+void hdd_fill_last_rx(hdd_adapter_t *adapter);
+#endif
 #endif    // end #if !defined( WLAN_HDD_MAIN_H )

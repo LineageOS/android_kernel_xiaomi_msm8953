@@ -383,6 +383,11 @@ void peDeleteSession(tpAniSirGlobal pMac, tpPESession psessionEntry)
            psessionEntry->operMode, psessionEntry->bssIdx,
            MAC_ADDR_ARRAY(psessionEntry->bssId));
 
+    if (psessionEntry->gLimSpecMgmt.dfs_channel_csa) {
+        limFrameTransmissionControl(pMac, eLIM_TX_ALL, eLIM_RESUME_TX);
+       psessionEntry->gLimSpecMgmt.dfs_channel_csa = false;
+    }
+
     for (n = 0; n < pMac->lim.maxStation; n++)
     {
         timer_ptr = &pMac->lim.limTimers.gpLimCnfWaitTimer[n];
