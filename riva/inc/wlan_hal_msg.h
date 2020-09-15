@@ -635,6 +635,8 @@ typedef enum
    WLAN_HAL_QPOWER_ENABLE_BY_HOST_IND        = 361,
    WLAN_HAL_BLACK_LIST_SSID_REQ              = 362,
    WLAN_HAL_BLACK_LIST_SSID_RSP              = 363,
+   WLAN_HAL_HOST_SW_PTA_COEX_PARAMS_REQ      = 364,
+   WLAN_HAL_HOST_SW_PTA_COEX_PARAMS_RSP      = 365,
 
    WLAN_HAL_MSG_MAX = WLAN_HAL_MSG_TYPE_MAX_ENUM_SIZE
 }tHalHostMsgType;
@@ -9771,4 +9773,32 @@ typedef PACKED_PRE struct PACKED_POST
 #else
 #endif
 
+#ifdef FEATURE_WLAN_SW_PTA
+/**
+ * enum hal_sw_pta_param_type - Type of sw pta coex param
+ * @WDI_SCO_STATUS: Enable/Disable SCO
+ * @WDI_NUD_STATUS: Enable/Disable NUD
+ * @WDI_BT_STATUS: Enable/Disable BT
+ */
+/* Copied from sirApi.h to avoid compile error */
+enum hal_sw_pta_param_type {
+	HAL_SW_PTA_SCO_STATUS = 0,
+	HAL_SW_PTA_NUD_STATUS = 1,
+	HAL_SW_PTA_BT_STATUS = 2,
+	HAL_SW_PTA_MAX = WLAN_HAL_MAX_ENUM_SIZE
+};
+
+#define HAL_SW_PTA_COEX_PARAMS_MAX_LEN 32
+/**
+ * hal_sw_pta_req - SW PTA coex params request
+ * @param_type: sw pta coex param type
+ * @length: sw pta coex params value length
+ * @value: sw pta coex params value
+ */
+typedef PACKED_PRE struct PACKED_POST {
+	enum hal_sw_pta_param_type param_type;
+	uint8_t length;
+	uint8_t value[HAL_SW_PTA_COEX_PARAMS_MAX_LEN];
+} tHalSwPTAReq, *tpHalSwPTAReq;
+#endif
 #endif /* _WLAN_HAL_MSG_H_ */
