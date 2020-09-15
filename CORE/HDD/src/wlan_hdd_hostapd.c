@@ -1114,7 +1114,7 @@ static VOS_STATUS hdd_chan_change_notify(hdd_adapter_t *hostapd_adapter,
    sme_GetConfigParam(hal, &sme_config);
    if (oper_chan <= 14)
        cb_mode = sme_get_cb_phy_mode_from_cb_ini_mode(
-                    sme_config.csrConfig.channelBondingMode24GHz);
+                    sme_config.csrConfig.channelBondingAPMode24GHz);
    else
        cb_mode = sme_get_cb_phy_mode_from_cb_ini_mode(
                     sme_config.csrConfig.channelBondingMode5GHz);
