@@ -404,6 +404,9 @@ enum eWniMsgTypes
     eWNI_SME_TRIGGER_SAE,
     eWNI_SME_SEND_MGMT_FRAME_TX,
     eWNI_SME_SEND_SAE_MSG,
+#ifdef FEATURE_WLAN_SW_PTA
+    eWNI_SME_SW_PTA_RESP,
+#endif
     eWNI_SME_MSG_TYPES_END
 };
 
