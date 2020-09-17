@@ -149,6 +149,9 @@ enum {
     TRACE_CODE_SME_RX_HDD_SEND_MGMT_TX,
     TRACE_CODE_SME_TX_HDD_CAP_TSF_REQ,
     TRACE_CODE_SME_TX_HDD_GET_TSF_REQ,
+#ifdef FEATURE_WLAN_SW_PTA
+    TRACE_CODE_SME_TX_HDD_TEARDOWN_LINK_WITH_AP,
+#endif
     TRACE_CODE_SME_DEL_STA_BA_SESSION_REQ,
     /* New trace commands to be added before this comment not at the end */
     /* Trace codes for SME commands */

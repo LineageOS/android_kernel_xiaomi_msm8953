@@ -1572,6 +1572,10 @@ struct hdd_cache_channels {
 	struct hdd_cache_channel_info *channel_info;
 };
 
+#ifdef FEATURE_WLAN_SW_PTA
+#define WLAN_WAIT_TIME_SW_PTA 1000
+#endif
+
 struct hdd_context_s
 {
    /** Global VOS context  */
@@ -1791,6 +1795,7 @@ struct hdd_context_s
 
     v_BOOL_t btCoexModeSet;
     v_BOOL_t isPnoEnable;
+    bool     is_sco_enabled;
     macAddrSpoof_t spoofMacAddr;
     /* flag to decide if driver need to scan DFS channels or not */
     v_BOOL_t  disable_dfs_flag;
@@ -1863,6 +1868,9 @@ struct hdd_context_s
     struct hdd_cache_channels *original_channels;
     struct mutex cache_channel_lock;
     bool force_rsne_override;
+#ifdef FEATURE_WLAN_SW_PTA
+    struct completion sw_pta_comp;
+#endif
 };
 
 /* Use to notify the TDLS or BTCOEX is mode enable */
