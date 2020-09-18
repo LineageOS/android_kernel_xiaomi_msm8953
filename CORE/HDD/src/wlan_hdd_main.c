@@ -10536,6 +10536,136 @@ void hdd_restore_roaming(hdd_context_t *hdd_ctx)
 					CFG_LFR_FEATURE_ENABLED_MAX);
 }
 
+/**
+ * hdd_update_chandef() - Function to update channel width and center freq
+ * @chandef: cfg80211 chan def
+ * @cb_mode: chan offset
+ *
+ * This function will be called to update channel width and center freq
+ *
+ * Return: None
+ */
+static void
+hdd_update_chandef(struct cfg80211_chan_def *chandef,
+                   ePhyChanBondState cb_mode)
+{
+   uint8_t  center_chan, chan;
+
+   if (cb_mode <= PHY_DOUBLE_CHANNEL_HIGH_PRIMARY)
+       return;
+
+   chan = vos_freq_to_chan(chandef->chan->center_freq);
+   chandef->width = NL80211_CHAN_WIDTH_80;
+   switch (cb_mode) {
+   case PHY_QUADRUPLE_CHANNEL_20MHZ_LOW_40MHZ_CENTERED:
+   case PHY_QUADRUPLE_CHANNEL_20MHZ_HIGH_40MHZ_LOW:
+        center_chan = chan + 2;
+        break;
+   case PHY_QUADRUPLE_CHANNEL_20MHZ_LOW_40MHZ_LOW:
+        center_chan = chan + 6;
+        break;
+   case PHY_QUADRUPLE_CHANNEL_20MHZ_LOW_40MHZ_HIGH:
+   case PHY_QUADRUPLE_CHANNEL_20MHZ_HIGH_40MHZ_CENTERED:
+        center_chan = chan - 2;
+        break;
+   case PHY_QUADRUPLE_CHANNEL_20MHZ_HIGH_40MHZ_HIGH:
+        center_chan = chan - 6;
+        break;
+   default:
+        center_chan = chan;
+        break;
+   }
+
+   chandef->center_freq1 = vos_chan_to_freq(center_chan);
+}
+
+VOS_STATUS hdd_chan_change_notify(hdd_adapter_t *adapter,
+   struct net_device *dev, uint8_t oper_chan, eCsrPhyMode phy_mode)
+{
+   struct ieee80211_channel *chan;
+   struct cfg80211_chan_def chandef;
+   enum nl80211_channel_type channel_type;
+   ePhyChanBondState cb_mode;
+   uint32_t freq;
+   tHalHandle  hal = WLAN_HDD_GET_HAL_CTX(adapter);
+   tSmeConfigParams sme_config;
+
+   if (!hal) {
+       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                 "%s: hal is NULL", __func__);
+       return VOS_STATUS_E_FAILURE;
+   }
+
+   freq = vos_chan_to_freq(oper_chan);
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,14,0))
+   chan = ieee80211_get_channel(adapter->wdev.wiphy, freq);
+#else
+   chan = __ieee80211_get_channel(adapter->wdev.wiphy, freq);
+#endif
+
+   if (!chan) {
+       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "%s: Invalid input frequency for channel conversion", __func__);
+       return VOS_STATUS_E_FAILURE;
+   }
+
+   sme_GetConfigParam(hal, &sme_config);
+   if (oper_chan <= 14)
+       cb_mode = sme_get_cb_phy_mode_from_cb_ini_mode(
+                    sme_config.csrConfig.channelBondingMode24GHz);
+   else
+       cb_mode = sme_get_cb_phy_mode_from_cb_ini_mode(
+                    sme_config.csrConfig.channelBondingMode5GHz);
+
+   switch (phy_mode) {
+   case eCSR_DOT11_MODE_11n:
+   case eCSR_DOT11_MODE_11n_ONLY:
+   case eCSR_DOT11_MODE_11ac:
+   case eCSR_DOT11_MODE_11ac_ONLY:
+        switch (cb_mode) {
+        case PHY_SINGLE_CHANNEL_CENTERED:
+             channel_type = NL80211_CHAN_HT20;
+             break;
+        case PHY_QUADRUPLE_CHANNEL_20MHZ_HIGH_40MHZ_LOW:
+        case PHY_QUADRUPLE_CHANNEL_20MHZ_HIGH_40MHZ_CENTERED:
+        case PHY_QUADRUPLE_CHANNEL_20MHZ_HIGH_40MHZ_HIGH:
+        case PHY_DOUBLE_CHANNEL_HIGH_PRIMARY:
+             channel_type = NL80211_CHAN_HT40MINUS;
+             break;
+        case PHY_QUADRUPLE_CHANNEL_20MHZ_LOW_40MHZ_LOW:
+        case PHY_QUADRUPLE_CHANNEL_20MHZ_LOW_40MHZ_CENTERED:
+        case PHY_QUADRUPLE_CHANNEL_20MHZ_LOW_40MHZ_HIGH:
+        case PHY_DOUBLE_CHANNEL_LOW_PRIMARY:
+             channel_type = NL80211_CHAN_HT40PLUS;
+             break;
+        default:
+             channel_type = NL80211_CHAN_HT20;
+             break;
+        }
+        break;
+   default:
+        channel_type = NL80211_CHAN_NO_HT;
+        break;
+   }
+
+   cfg80211_chandef_create(&chandef, chan, channel_type);
+   if ((phy_mode == eCSR_DOT11_MODE_11ac) ||
+       (phy_mode == eCSR_DOT11_MODE_11ac_ONLY))
+        hdd_update_chandef(&chandef, cb_mode);
+
+   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+             "%s: phy_mode %d cb_mode %d chann_type %d oper_chan %d width %d freq_1 %d",
+             __func__, phy_mode, cb_mode, channel_type, oper_chan,
+             chandef.width, chandef.center_freq1);
+
+
+   cfg80211_ch_switch_notify(dev, &chandef);
+
+   return VOS_STATUS_SUCCESS;
+}
+
+
 VOS_STATUS hdd_stop_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter,
                              const v_BOOL_t bCloseSession )
 {

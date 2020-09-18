@@ -2314,6 +2314,24 @@ void hdd_disable_roaming(hdd_context_t *hdd_ctx);
  */
 void hdd_restore_roaming(hdd_context_t *hdd_ctx);
 
+/**
+ * hdd_chan_change_notify() - Function to notify about channel change
+ * @adapter: pointer to adapter
+ * @dev: Net device structure
+ * @oper_chan: New operating channel
+ * @phy_mode: phy mode
+ *
+ * This function is used to notify hostapd/supplicant about the channel change
+ *
+ * Return: Success on intimating userspace
+ *
+ */
+VOS_STATUS hdd_chan_change_notify(hdd_adapter_t *adapter,
+        struct net_device *dev,
+        uint8_t oper_chan,
+        eCsrPhyMode phy_mode);
+
+
 int wlan_hdd_check_and_stop_mon(hdd_adapter_t *sta_adapter, bool wait);
 
 /**

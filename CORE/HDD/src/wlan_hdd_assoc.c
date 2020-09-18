@@ -4414,6 +4414,7 @@ eHalStatus hdd_smeRoamCallback( void *pContext, tCsrRoamInfo *pRoamInfo, tANI_U3
        case eCSR_ROAM_STA_CHANNEL_SWITCH:
          {
              hdd_adapter_t *pHostapdAdapter = NULL;
+             eCsrPhyMode phy_mode = 0;
              pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
              pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
 
@@ -4427,6 +4428,24 @@ eHalStatus hdd_smeRoamCallback( void *pContext, tCsrRoamInfo *pRoamInfo, tANI_U3
 
              pHddStaCtx->conn_info.operationChannel =
                  pRoamInfo->chan_info.chan_id;
+
+             if(pRoamInfo->pProfile) {
+                 phy_mode = pRoamInfo->pProfile->phyMode;
+             }
+
+             status = hdd_chan_change_notify(pAdapter,
+                                             pAdapter->dev,
+                                             pRoamInfo->chan_info.chan_id,
+                                             phy_mode);
+
+             if(status != VOS_STATUS_SUCCESS) {
+                 hddLog(VOS_TRACE_LEVEL_ERROR,
+                        "%s: hdd_chan_change_notify failed", __func__);
+             }
+
+             hddLog(VOS_TRACE_LEVEL_ERROR,
+                    "%s: Channel switch event updated to upper layer to %d",
+                    __func__, pRoamInfo->chan_info.chan_id);
 
              pHostapdAdapter = hdd_get_adapter(pHddCtx, WLAN_HDD_SOFTAP);
              if (pHostapdAdapter &&
