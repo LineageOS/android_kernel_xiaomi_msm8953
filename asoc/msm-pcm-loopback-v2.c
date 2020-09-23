@@ -511,13 +511,15 @@ static int msm_pcm_volume_ctl_put(struct snd_kcontrol *kcontrol,
 		goto exit;
 	}
 	mutex_lock(&loopback_session_lock);
-	prtd = substream->runtime->private_data;
-	if (!prtd) {
-		rc = -ENODEV;
-		mutex_unlock(&loopback_session_lock);
-		goto exit;
+	if (substream->ref_count > 0) {
+		prtd = substream->runtime->private_data;
+		if (!prtd) {
+			rc = -ENODEV;
+			mutex_unlock(&loopback_session_lock);
+			goto exit;
+		}
+		rc = pcm_loopback_set_volume(prtd, volume);
 	}
-	rc = pcm_loopback_set_volume(prtd, volume);
 	mutex_unlock(&loopback_session_lock);
 
 exit:
@@ -550,13 +552,15 @@ static int msm_pcm_volume_ctl_get(struct snd_kcontrol *kcontrol,
 		goto exit;
 	}
 	mutex_lock(&loopback_session_lock);
-	prtd = substream->runtime->private_data;
-	if (!prtd) {
-		rc = -ENODEV;
-		mutex_unlock(&loopback_session_lock);
-		goto exit;
+	if (substream->ref_count > 0) {
+		prtd = substream->runtime->private_data;
+		if (!prtd) {
+			rc = -ENODEV;
+			mutex_unlock(&loopback_session_lock);
+			goto exit;
+		}
+		ucontrol->value.integer.value[0] = prtd->volume;
 	}
-	ucontrol->value.integer.value[0] = prtd->volume;
 	mutex_unlock(&loopback_session_lock);
 exit:
 	return rc;
