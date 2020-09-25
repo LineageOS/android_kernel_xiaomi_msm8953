@@ -2038,8 +2038,10 @@ VOS_STATUS vos_watchdog_wlan_shutdown(void)
        return VOS_STATUS_E_FAILURE;
     }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,14,0))
     wpalUnRegisterInterrupt(DXE_INTERRUPT_RX_READY);
     wpalUnRegisterInterrupt(DXE_INTERRUPT_TX_COMPLE);
+#endif
 
     /* Take the lock here */
     spin_lock(&gpVosWatchdogContext->wdLock);
