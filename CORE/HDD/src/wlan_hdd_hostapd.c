@@ -223,20 +223,25 @@ int __hdd_hostapd_open (struct net_device *dev)
        }
    }
 
-   status = hdd_init_ap_mode( pAdapter, false);
-   if( VOS_STATUS_SUCCESS != status ) {
-          hddLog(VOS_TRACE_LEVEL_ERROR, "%s: Failed to create session for station mode",
-                 __func__);
-          return -EINVAL;
+   if (!test_bit(SME_SESSION_OPENED, &pAdapter->event_flags)) {
+	   status = hdd_init_ap_mode( pAdapter, false);
+	   if( VOS_STATUS_SUCCESS != status ) {
+		   hddLog(VOS_TRACE_LEVEL_ERROR,
+			  "%s: Failed to create session for station mode",
+			  __func__);
+		   return -EINVAL;
+	   }
+	   set_bit(DEVICE_IFACE_OPENED, &pAdapter->event_flags);
+
+	   //Turn ON carrier state
+	   netif_carrier_on(dev);
+	   //Enable all Tx queues
+	   hddLog(VOS_TRACE_LEVEL_INFO, FL("Enabling queues"));
+	   netif_tx_start_all_queues(dev);
+   } else {
+	   hddLog(VOS_TRACE_LEVEL_DEBUG,
+		  "%s: session already exist for AP mode", __func__);
    }
-
-   set_bit(DEVICE_IFACE_OPENED, &pAdapter->event_flags);
-
-   //Turn ON carrier state
-   netif_carrier_on(dev);
-   //Enable all Tx queues
-   hddLog(VOS_TRACE_LEVEL_INFO, FL("Enabling queues"));
-   netif_tx_start_all_queues(dev);
 
    EXIT();
    return 0;

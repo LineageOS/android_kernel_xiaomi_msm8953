@@ -8264,11 +8264,17 @@ int __hdd_open(struct net_device *dev)
        }
    }
 
-   status = hdd_init_station_mode( pAdapter );
-   if( VOS_STATUS_SUCCESS != status ) {
-          hddLog(VOS_TRACE_LEVEL_ERROR, "%s: Failed to create session for station mode",
-                 __func__);
-          return -EINVAL;
+   if (!test_bit(SME_SESSION_OPENED, &pAdapter->event_flags)) {
+	   status = hdd_init_station_mode( pAdapter );
+	   if( VOS_STATUS_SUCCESS != status ) {
+		   hddLog(VOS_TRACE_LEVEL_ERROR,
+			  "%s: Failed to create session for station mode",
+			  __func__);
+		   return -EINVAL;
+	   }
+   } else {
+	   hddLog(VOS_TRACE_LEVEL_DEBUG,
+		  "%s: session already exist for station mode", __func__);
    }
 
    hdd_sysfs_bt_profile_create(pHddCtx);
