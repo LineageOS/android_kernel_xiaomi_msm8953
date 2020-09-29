@@ -253,8 +253,8 @@ WCTS_PALReadCallback
 
       msg = list_first_entry(&pWCTSCb->wctsDataMsg.data_queue,
                              struct data_msg, list);
-      spin_unlock_irqrestore(&pWCTSCb->wctsDataMsg.data_queue_lock, flags);
       list_del(&msg->list);
+      spin_unlock_irqrestore(&pWCTSCb->wctsDataMsg.data_queue_lock, flags);
 
       buffer = msg->buffer;
       packet_size = msg->buf_len;
