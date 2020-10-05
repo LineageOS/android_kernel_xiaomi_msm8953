@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -667,6 +667,17 @@ static int msm_pcm_volume_ctl_get(struct snd_kcontrol *kcontrol,
 	struct msm_audio *prtd;
 
 	pr_debug("%s\n", __func__);
+	if (!vol) {
+		pr_err("%s: vol is NULL\n", __func__);
+		return -ENODEV;
+	}
+
+	if (!vol->pcm) {
+		pr_err("%s: vol->pcm is NULL\n", __func__);
+		return -ENODEV;
+	}
+
+	substream = vol->pcm->streams[vol->stream].substream;
 	if (!substream) {
 		pr_err("%s substream not found\n", __func__);
 		return -ENODEV;
@@ -685,9 +696,11 @@ static int msm_pcm_volume_ctl_get(struct snd_kcontrol *kcontrol,
 		return -ENODEV;
 	}
 	mutex_lock(&pdata->lock);
-	prtd = substream->runtime->private_data;
-	if (prtd)
-		ucontrol->value.integer.value[0] = prtd->volume;
+	if (substream->ref_count > 0) {
+		prtd = substream->runtime->private_data;
+		if (prtd)
+			ucontrol->value.integer.value[0] = prtd->volume;
+	}
 	mutex_unlock(&pdata->lock);
 	return 0;
 }
@@ -698,12 +711,23 @@ static int msm_pcm_volume_ctl_put(struct snd_kcontrol *kcontrol,
 	int rc = 0;
 	struct snd_pcm_volume *vol = snd_kcontrol_chip(kcontrol);
 	struct msm_plat_data *pdata = NULL;
-	struct snd_pcm_substream *substream =
-		vol->pcm->streams[vol->stream].substream;
+	struct snd_pcm_substream *substream = NULL;
 	struct snd_soc_pcm_runtime *soc_prtd = NULL;
 	struct msm_audio *prtd;
 	int volume = ucontrol->value.integer.value[0];
 
+	pr_debug("%s\n", __func__);
+	if (!vol) {
+		pr_err("%s: vol is NULL\n", __func__);
+		return -ENODEV;
+	}
+
+	if (!vol->pcm) {
+		pr_err("%s: vol->pcm is NULL\n", __func__);
+		return -ENODEV;
+	}
+
+	substream = vol->pcm->streams[SNDRV_PCM_STREAM_PLAYBACK].substream;
 	pr_debug("%s: volume : 0x%x\n", __func__, volume);
 	if (!substream) {
 		pr_err("%s substream not found\n", __func__);
@@ -723,10 +747,12 @@ static int msm_pcm_volume_ctl_put(struct snd_kcontrol *kcontrol,
 		return -ENODEV;
 	}
 	mutex_lock(&pdata->lock);
-	prtd = substream->runtime->private_data;
-	if (prtd) {
-		rc = msm_pcm_set_volume(prtd, volume);
-		prtd->volume = volume;
+	if (substream->ref_count > 0) {
+		prtd = substream->runtime->private_data;
+		if (prtd) {
+			rc = msm_pcm_set_volume(prtd, volume);
+			prtd->volume = volume;
+		}
 	}
 	mutex_unlock(&pdata->lock);
 	return rc;
