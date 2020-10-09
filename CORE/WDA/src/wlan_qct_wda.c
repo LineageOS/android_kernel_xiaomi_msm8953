@@ -20434,8 +20434,6 @@ void WDA_PERRoamTriggerScanReqCallback(WDI_Status status, void* pUserData)
 void WDA_PERRoamOffloadScanReqCallback(WDI_Status status, void* pUserData)
 {
    tWDA_ReqParams *pWdaParams = (tWDA_ReqParams *)pUserData;
-   vos_msg_t vosMsg;
-   wpt_uint8 reason = 0;
 
    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
                                           "<------ %s " ,__func__);
@@ -20451,18 +20449,9 @@ void WDA_PERRoamOffloadScanReqCallback(WDI_Status status, void* pUserData)
        vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
 
    vos_mem_free(pWdaParams) ;
-   vosMsg.type = eWNI_SME_ROAM_SCAN_OFFLOAD_RSP;
-   vosMsg.bodyptr = NULL;
    if (WDI_STATUS_SUCCESS != status)
-      reason = 0;
-
-   vosMsg.bodyval = reason;
-   if (VOS_STATUS_SUCCESS !=
-       vos_mq_post_message(VOS_MQ_ID_SME, (vos_msg_t*)&vosMsg)) {
-      /* free the mem and return */
-      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
-                 "%s: Failed to post the rsp to UMAC", __func__);
-   }
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+	       "%s: wdi_status %d", __func__, status);
 
    return ;
 }
