@@ -832,6 +832,10 @@ struct sir_mgmt_msg {
 
 #define SIR_HAL_BLACKLIST_REQ              (SIR_HAL_ITC_MSG_TYPES_BEGIN + 308)
 
+#ifdef FEATURE_WLAN_SW_PTA
+#define SIR_HAL_SW_PTA_REQ                (SIR_HAL_ITC_MSG_TYPES_BEGIN + 309)
+#endif
+
 #define SIR_HAL_MSG_TYPES_END              (SIR_HAL_MSG_TYPES_BEGIN + 0x1FF)
 
 // CFG message types
