@@ -15804,6 +15804,19 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
     }
     mutex_unlock(&pHddCtx->tmInfo.tmOperationLock);
 
+    /**
+     * If sw pta is enabled, scan should not allowed.
+     * Returning error makes framework to trigger scan continuously
+     * for every second, so indicating framework that scan is aborted
+     * and return success.
+     */
+    if (pHddCtx->cfg_ini->is_sw_pta_enabled && pHddCtx->is_sco_enabled) {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                  FL("BT SCO operation in progress"));
+        hdd_cfg80211_scan_done(pAdapter, request, true);
+        return 0;
+    }
+
     /* Check if scan is allowed at this point of time.
      */
     if (TRUE == pHddCtx->btCoexModeSet)
@@ -16322,6 +16335,14 @@ int wlan_hdd_cfg80211_connect_start( hdd_adapter_t  *pAdapter,
         return -EINVAL;
     }
 
+    /**
+     * If sw pta is enabled, new connections should not allowed.
+     */
+    if (pHddCtx->cfg_ini->is_sw_pta_enabled && pHddCtx->is_sco_enabled) {
+        hddLog(VOS_TRACE_LEVEL_ERROR, "%s: BT SCO operation in progress",
+               __func__);
+        return -EINVAL;
+    }
 
     pRoamProfile = &pWextState->roamProfile;
 
@@ -20076,6 +20097,15 @@ void hdd_cfg80211_sched_scan_done_callback(void *callbackContext,
         return ;
     }
     spin_unlock(&pHddCtx->schedScan_lock);
+
+    /**
+     * If sw pta is enabled, scan results should not send to framework.
+     */
+    if (pHddCtx->cfg_ini->is_sw_pta_enabled && pHddCtx->is_sco_enabled) {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                  FL("BT SCO operation in progress"));
+        return;
+    }
 
     ret = wlan_hdd_cfg80211_update_bss(pHddCtx->wiphy, pAdapter);
 

@@ -15506,6 +15506,40 @@ static eHalStatus sme_prepare_mgmt_tx(tHalHandle hal, uint8_t session_id,
     return status;
 }
 
+#ifdef FEATURE_WLAN_SW_PTA
+eHalStatus sme_teardown_link_with_ap(tpAniSirGlobal mac, uint8_t session_id)
+{
+	eHalStatus status = eHAL_STATUS_SUCCESS;
+	struct sir_teardown_link *msg;
+	vos_msg_t vos_message = {0};
+	VOS_STATUS vos_status;
+
+	MTRACE(vos_trace(VOS_MODULE_ID_SME,
+	       TRACE_CODE_SME_TX_HDD_TEARDOWN_LINK_WITH_AP, session_id, 0));
+
+	status = sme_AcquireGlobalLock(&mac->sme);
+	if (HAL_STATUS_SUCCESS(status)) {
+		msg = vos_mem_malloc(sizeof(*msg));
+		if (!msg) {
+			status = eHAL_STATUS_FAILED_ALLOC;
+		} else {
+			msg->type = eWNI_SME_TEARDOWN_LINK_WITH_AP;
+			msg->session_id = session_id;
+			vos_message.bodyptr = msg;
+			vos_message.type =  eWNI_SME_TEARDOWN_LINK_WITH_AP;
+			vos_status = vos_mq_post_message(VOS_MQ_ID_PE,
+							 &vos_message);
+			if (!VOS_IS_STATUS_SUCCESS(vos_status)) {
+				vos_mem_free(msg);
+				status = eHAL_STATUS_FAILURE;
+			}
+		}
+		sme_ReleaseGlobalLock(&mac->sme);
+	}
+	return status;
+}
+#endif
+
 eHalStatus sme_send_mgmt_tx(tHalHandle hal, uint8_t session_id,
                             const uint8_t *buf, uint32_t len)
 {

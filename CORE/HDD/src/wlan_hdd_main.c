@@ -3922,9 +3922,15 @@ static void hdd_sysfs_bt_profile_create(hdd_context_t* hdd_ctx)
 		return;
 	}
 
-	if(sysfs_create_file(driver_kobject, &bt_profile_attribute.attr))
+	if (sysfs_create_file(driver_kobject, &bt_profile_attribute.attr)) {
 		hddLog(VOS_TRACE_LEVEL_ERROR,
 		       "%s:Failed to create BT profile sysfs entry", __func__);
+		kobject_put(driver_kobject);
+		driver_kobject = NULL;
+		return;
+	}
+
+	init_completion(&hdd_ctx->sw_pta_comp);
 }
 
 static void hdd_sysfs_bt_profile_destroy(hdd_context_t* hdd_ctx)
@@ -3932,8 +3938,10 @@ static void hdd_sysfs_bt_profile_destroy(hdd_context_t* hdd_ctx)
 	if(!hdd_ctx->cfg_ini->is_sw_pta_enabled)
 		return;
 
-	sysfs_remove_file(driver_kobject, &bt_profile_attribute.attr);
+	complete(&hdd_ctx->sw_pta_comp);
+
 	if (driver_kobject) {
+		sysfs_remove_file(driver_kobject, &bt_profile_attribute.attr);
 		kobject_put(driver_kobject);
 		driver_kobject = NULL;
 	}
@@ -3963,6 +3971,146 @@ static int hdd_sysfs_validate_and_copy_buf(char *dest_buf, size_t dest_buf_size,
 	return 0;
 }
 
+static void hdd_sco_resp_callback(uint8_t sco_status)
+{
+	hdd_context_t *hdd_ctx = NULL;
+	v_CONTEXT_t vos_ctx = NULL;
+
+	vos_ctx = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+	if (!vos_ctx) {
+		hddLog(VOS_TRACE_LEVEL_FATAL,
+		       "%s: Global VOS context is Null", __func__);
+		return;
+	}
+
+	/* Get the HDD context. */
+	hdd_ctx = (hdd_context_t*)vos_get_context(VOS_MODULE_ID_HDD, vos_ctx);
+	if (!hdd_ctx) {
+		hddLog(VOS_TRACE_LEVEL_FATAL,
+		       "%s: HDD context is Null",__func__);
+		return;
+	}
+
+	hddLog(VOS_TRACE_LEVEL_DEBUG, "%s: Response status %d",
+	       __func__, sco_status);
+
+	if (sco_status) {
+		hddLog(VOS_TRACE_LEVEL_FATAL, "%s: Invalid sco status %d",
+		       __func__, sco_status);
+		return;
+	}
+
+	complete(&hdd_ctx->sw_pta_comp);
+}
+
+static ssize_t __hdd_process_bt_sco_profile(hdd_context_t *hdd_ctx,
+					    char *profile_mode)
+{
+	tpAniSirGlobal mac_ctx = PMAC_STRUCT(hdd_ctx->hHal);
+	hdd_station_ctx_t *hdd_sta_ctx;
+	eConnectionState conn_state;
+	hdd_adapter_t *adapter;
+	eHalStatus hal_status;
+	bool sco_status;
+	int rc;
+
+	if (!mac_ctx) {
+		hddLog(VOS_TRACE_LEVEL_ERROR, "%s: mac_ctx got NULL", __func__);
+		return -EINVAL;
+	}
+
+	if (!strcmp(profile_mode, "ENABLE")) {
+		if (hdd_ctx->is_sco_enabled) {
+			hddLog(VOS_TRACE_LEVEL_ERROR, "%s: BT SCO is already enabled",
+			       __func__);
+			return 0;
+		}
+		sco_status = true;
+	} else if (!strcmp(profile_mode, "DISABLE")) {
+		if (!hdd_ctx->is_sco_enabled) {
+			hddLog(VOS_TRACE_LEVEL_ERROR, "%s: BT SCO is already disabled",
+			       __func__);
+			return 0;
+		}
+		sco_status = false;
+	} else {
+		hddLog(VOS_TRACE_LEVEL_ERROR, "%s: Invalid profile mode %s",
+		       __func__, profile_mode);
+		return -EINVAL;
+	}
+
+	INIT_COMPLETION(hdd_ctx->sw_pta_comp);
+
+	hal_status = sme_sco_req(hdd_ctx->hHal,
+				 hdd_sco_resp_callback,
+				 adapter->sessionId, sco_status);
+	if (!HAL_STATUS_SUCCESS(hal_status)) {
+		hddLog(VOS_TRACE_LEVEL_ERROR,
+		       "%s: Error sending sme sco indication request",
+		       __func__);
+		return -EINVAL;
+	}
+
+	rc = wait_for_completion_timeout(&hdd_ctx->sw_pta_comp,
+			msecs_to_jiffies(WLAN_WAIT_TIME_SW_PTA));
+	if (!rc) {
+		hddLog(VOS_TRACE_LEVEL_ERROR,
+		       FL("Target response timed out for sw_pta_comp"));
+		return -EINVAL;
+	}
+
+	if (!strcmp(profile_mode, "DISABLE")) {
+		hdd_ctx->is_sco_enabled = false;
+		mac_ctx->isCoexScoIndSet = 0;
+		return 0;
+	}
+
+	adapter = hdd_get_adapter(hdd_ctx, WLAN_HDD_INFRA_STATION);
+	if (!adapter) {
+		hddLog(VOS_TRACE_LEVEL_ERROR,
+		       "%s: No station adapter to enable bt sco", __func__);
+		return -EINVAL;
+	}
+
+	hdd_sta_ctx = WLAN_HDD_GET_STATION_CTX_PTR(adapter);
+	if (!hdd_sta_ctx) {
+		hddLog(VOS_TRACE_LEVEL_ERROR,
+		       "%s: No station context to enable bt sco", __func__);
+		return -EINVAL;
+	}
+
+	if (wlan_hdd_scan_abort(adapter)) {
+		hddLog(VOS_TRACE_LEVEL_ERROR, "%s: Error aborting scan request",
+		       __func__);
+		return -EINVAL;
+	}
+
+	hdd_ctx->is_sco_enabled = true;
+	mac_ctx->isCoexScoIndSet = 1;
+
+	conn_state = hdd_sta_ctx->conn_info.connState;
+	if (eConnectionState_Connecting == conn_state ||
+	    smeNeighborMiddleOfRoaming(hdd_sta_ctx) ||
+	    (eConnectionState_Associated == conn_state &&
+	      sme_is_sta_key_exchange_in_progress(hdd_ctx->hHal,
+						  adapter->sessionId)))
+		sme_abortConnection(hdd_ctx->hHal,
+				    adapter->sessionId);
+
+	if (hdd_connIsConnected(hdd_sta_ctx)) {
+		hal_status = sme_teardown_link_with_ap(mac_ctx,
+						       adapter->sessionId);
+		if (!HAL_STATUS_SUCCESS(hal_status)) {
+			hddLog(VOS_TRACE_LEVEL_ERROR,
+			       "%s: Error while Teardown link wih AP",
+			       __func__);
+			return -EINVAL;
+		}
+	}
+
+	return 0;
+}
+
 static ssize_t __hdd_sysfs_bt_profile_ind_cmd_store(hdd_context_t *hdd_ctx,
 						    const char *buf,
 						    size_t count)
@@ -3973,8 +4121,11 @@ static ssize_t __hdd_sysfs_bt_profile_ind_cmd_store(hdd_context_t *hdd_ctx,
 
 	ENTER();
 
-	if (wlan_hdd_validate_context(hdd_ctx))
+	if (wlan_hdd_validate_context(hdd_ctx)) {
+		if (hdd_ctx && hdd_ctx->isLogpInProgress)
+			return -EAGAIN;
 		return -EINVAL;
+	}
 
 	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
 					      buf, count);
@@ -4001,7 +4152,12 @@ static ssize_t __hdd_sysfs_bt_profile_ind_cmd_store(hdd_context_t *hdd_ctx,
 	hddLog(VOS_TRACE_LEVEL_INFO, "%s:profile = %s, profile_mode = %s",
 	       __func__, profile, profile_mode);
 
+	if (!strcmp(profile, "BT_PROFILE_SCO"))
+		if (__hdd_process_bt_sco_profile(hdd_ctx, profile_mode))
+			return -EINVAL;
+
 	EXIT();
+
 	return count;
 }
 
