@@ -214,9 +214,6 @@ static VOS_STATUS hdd_parse_ese_beacon_req(tANI_U8 *pValue,
 //wait time for beacon miss rate.
 #define BCN_MISS_RATE_TIME 500
 
-//max size for BT profile indication cmd
-#define MAX_USER_COMMAND_SIZE_BT_PROFILE_IND_CMD 24
-
 /*
  * Android DRIVER command structures
  */
@@ -250,19 +247,6 @@ static int hdd_ParseIBSSTXFailEventParams(tANI_U8 *pValue,
 static int hdd_ParseUserParams(tANI_U8 *pValue, tANI_U8 **ppArg);
 
 #endif /* WLAN_FEATURE_RMC */
-
-#ifdef FEATURE_WLAN_SW_PTA
-/* BT profile sysfile entry obj */
-static struct kobject *driver_kobject;
-static ssize_t hdd_sysfs_bt_profile_ind_cmd_store(struct kobject *kobj,
-                                                  struct kobj_attribute *attr,
-                                                  const char *buf,
-                                                  size_t count);
-static struct kobj_attribute bt_profile_attribute =
-    __ATTR(bt_profile, 0220, NULL,
-           hdd_sysfs_bt_profile_ind_cmd_store);
-#endif
-
 void wlan_hdd_restart_timer_cb(v_PVOID_t usrDataForCallback);
 void hdd_set_wlan_suspend_mode(bool suspend);
 void hdd_set_vowifi_mode(hdd_context_t *hdd_ctx, bool enable);
@@ -3909,68 +3893,6 @@ int hdd_get_disable_ch_list(hdd_context_t *hdd_ctx, tANI_U8 *buf,
 }
 
 #ifdef FEATURE_WLAN_SW_PTA
-static void hdd_sysfs_bt_profile_create(hdd_context_t* hdd_ctx)
-{
-	if(!hdd_ctx->cfg_ini->is_sw_pta_enabled)
-		return;
-
-	driver_kobject = kobject_create_and_add(WLAN_MODULE_NAME, kernel_kobj);
-	if (!driver_kobject) {
-		hddLog(VOS_TRACE_LEVEL_ERROR,
-		       "%s:could not allocate driver kobject",
-		       __func__);
-		return;
-	}
-
-	if (sysfs_create_file(driver_kobject, &bt_profile_attribute.attr)) {
-		hddLog(VOS_TRACE_LEVEL_ERROR,
-		       "%s:Failed to create BT profile sysfs entry", __func__);
-		kobject_put(driver_kobject);
-		driver_kobject = NULL;
-		return;
-	}
-
-	init_completion(&hdd_ctx->sw_pta_comp);
-}
-
-static void hdd_sysfs_bt_profile_destroy(hdd_context_t* hdd_ctx)
-{
-	if(!hdd_ctx->cfg_ini->is_sw_pta_enabled)
-		return;
-
-	complete(&hdd_ctx->sw_pta_comp);
-
-	if (driver_kobject) {
-		sysfs_remove_file(driver_kobject, &bt_profile_attribute.attr);
-		kobject_put(driver_kobject);
-		driver_kobject = NULL;
-	}
-}
-
-static int hdd_sysfs_validate_and_copy_buf(char *dest_buf, size_t dest_buf_size,
-					   char const *source_buf,
-					   size_t source_buf_size)
-{
-	if (source_buf_size > (dest_buf_size - 1)) {
-		hddLog(VOS_TRACE_LEVEL_ERROR,
-		       "%s:Command length is larger than %zu bytes",
-			   __func__, dest_buf_size);
-		return -EINVAL;
-	}
-
-	/* sysfs already provides kernel space buffer so copy from user
-	 * is not needed. Doing this extra copy operation just to ensure
-	 * the local buf is properly null-terminated.
-	 */
-	strlcpy(dest_buf, source_buf, dest_buf_size);
-
-	/* default 'echo' cmd takes new line character to here */
-	if (dest_buf[source_buf_size - 1] == '\n')
-		dest_buf[source_buf_size - 1] = '\0';
-
-	return 0;
-}
-
 static void hdd_sco_resp_callback(uint8_t sco_status)
 {
 	hdd_context_t *hdd_ctx = NULL;
@@ -4109,87 +4031,6 @@ static ssize_t __hdd_process_bt_sco_profile(hdd_context_t *hdd_ctx,
 	}
 
 	return 0;
-}
-
-static ssize_t __hdd_sysfs_bt_profile_ind_cmd_store(hdd_context_t *hdd_ctx,
-						    const char *buf,
-						    size_t count)
-{
-	char buf_local[MAX_USER_COMMAND_SIZE_BT_PROFILE_IND_CMD + 1];
-	char *sptr, *token, *profile, *profile_mode;
-	int ret;
-
-	ENTER();
-
-	if (wlan_hdd_validate_context(hdd_ctx)) {
-		if (hdd_ctx && hdd_ctx->isLogpInProgress)
-			return -EAGAIN;
-		return -EINVAL;
-	}
-
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
-	if (ret)
-		return -EINVAL;
-
-	sptr = buf_local;
-	/* Get BT profile */
-	token = strsep(&sptr, " ");
-
-	if (!token)
-		return -EINVAL;
-	profile = token;
-
-	token = NULL;
-	/* Get BT profile mode */
-	token = strsep(&sptr, " ");
-
-	if (!token)
-		return -EINVAL;
-
-	profile_mode = token;
-
-	hddLog(VOS_TRACE_LEVEL_INFO, "%s:profile = %s, profile_mode = %s",
-	       __func__, profile, profile_mode);
-
-	if (!strcmp(profile, "BT_PROFILE_SCO"))
-		if (__hdd_process_bt_sco_profile(hdd_ctx, profile_mode))
-			return -EINVAL;
-
-	EXIT();
-
-	return count;
-}
-
-static ssize_t hdd_sysfs_bt_profile_ind_cmd_store(struct kobject *kobj,
-						  struct kobj_attribute *attr,
-						  const char *buf,
-						  size_t count)
-{
-	hdd_context_t *pHddCtx = NULL;
-	ssize_t err_size = 0;
-
-	pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD,
-			vos_get_global_context(VOS_MODULE_ID_HDD, NULL));
-
-	if (!pHddCtx) {
-		hddLog(VOS_TRACE_LEVEL_FATAL, "HDD Context is NULL");
-		return -EINVAL;
-	}
-
-	err_size = __hdd_sysfs_bt_profile_ind_cmd_store(pHddCtx, buf, count);
-
-	return err_size;
-}
-#else
-static inline
-void hdd_sysfs_bt_profile_create(hdd_context_t* pHddCtx)
-{
-}
-
-static inline
-void hdd_sysfs_bt_profile_destroy(hdd_context_t* pHddCtx)
-{
 }
 #endif
 
@@ -8433,8 +8274,6 @@ int __hdd_open(struct net_device *dev)
 		  "%s: session already exist for station mode", __func__);
    }
 
-   hdd_sysfs_bt_profile_create(pHddCtx);
-
    set_bit(DEVICE_IFACE_OPENED, &pAdapter->event_flags);
    if (hdd_connIsConnected(WLAN_HDD_GET_STATION_CTX_PTR(pAdapter))) 
    {
@@ -8611,8 +8450,6 @@ int __hdd_stop (struct net_device *dev)
         */
        wlan_hdd_stop_mon(pHddCtx, true);
    }
-
-   hdd_sysfs_bt_profile_destroy(pHddCtx);
 
    hddLog(VOS_TRACE_LEVEL_INFO, "%s: Disabling OS Tx queues", __func__);
 
