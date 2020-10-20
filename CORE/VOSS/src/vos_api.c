@@ -3962,7 +3962,8 @@ v_BOOL_t vos_check_monitor_state(void)
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
 struct wcnss_driver_ops driver_ops = {
 	.name = "WLAN_CTRL",
-	.driver_state = WCTS_driver_state_process
+	.driver_state = WCTS_driver_state_process,
+	.bt_profile_state = WCTS_bt_profile_state_process
 };
 
 VOS_STATUS vos_smd_open(const char *szname, WCTS_ControlBlockType* wcts_cb)

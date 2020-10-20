@@ -585,6 +585,14 @@ int WCTS_driver_state_process(void *priv, enum wcnss_driver_state state)
 	wpalPostCtrlMsg(WDI_GET_PAL_CTX(), pal_msg);
 	return 0;
 }
+
+int WCTS_bt_profile_state_process(void *priv, struct bt_profile_state *state)
+{
+	WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+		   "%s: Received bt_profile state update %s", __func__,
+		   state->bt_enabled ? "ENABLED" : "DISABLED");
+	return 0;
+}
 #else
 void
 WCTS_NotifyCallback
