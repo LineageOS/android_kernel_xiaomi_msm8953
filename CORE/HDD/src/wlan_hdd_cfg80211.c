@@ -620,6 +620,13 @@ static const struct nla_policy wlan_hdd_tm_policy[WLAN_HDD_TM_ATTR_MAX + 1] =
 };
 #endif /* WLAN_NL80211_TESTMODE */
 
+#ifdef FEATURE_WLAN_SW_PTA
+bool hdd_is_sw_pta_enabled(hdd_context_t *hdd_ctx)
+{
+	return hdd_ctx->cfg_ini->is_sw_pta_enabled;
+}
+#endif
+
 #ifdef FEATURE_WLAN_CH_AVOID
 /*
  * FUNCTION: wlan_hdd_send_avoid_freq_event
@@ -15810,7 +15817,7 @@ int __wlan_hdd_cfg80211_scan( struct wiphy *wiphy,
      * for every second, so indicating framework that scan is aborted
      * and return success.
      */
-    if (pHddCtx->cfg_ini->is_sw_pta_enabled && pHddCtx->is_sco_enabled) {
+    if (hdd_is_sw_pta_enabled(pHddCtx) && pHddCtx->is_sco_enabled) {
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                   FL("BT SCO operation in progress"));
         hdd_cfg80211_scan_done(pAdapter, request, true);
@@ -16338,7 +16345,7 @@ int wlan_hdd_cfg80211_connect_start( hdd_adapter_t  *pAdapter,
     /**
      * If sw pta is enabled, new connections should not allowed.
      */
-    if (pHddCtx->cfg_ini->is_sw_pta_enabled && pHddCtx->is_sco_enabled) {
+    if (hdd_is_sw_pta_enabled(pHddCtx) && pHddCtx->is_sco_enabled) {
         hddLog(VOS_TRACE_LEVEL_ERROR, "%s: BT SCO operation in progress",
                __func__);
         return -EINVAL;
@@ -20101,7 +20108,7 @@ void hdd_cfg80211_sched_scan_done_callback(void *callbackContext,
     /**
      * If sw pta is enabled, scan results should not send to framework.
      */
-    if (pHddCtx->cfg_ini->is_sw_pta_enabled && pHddCtx->is_sco_enabled) {
+    if (hdd_is_sw_pta_enabled(pHddCtx) && pHddCtx->is_sco_enabled) {
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                   FL("BT SCO operation in progress"));
         return;

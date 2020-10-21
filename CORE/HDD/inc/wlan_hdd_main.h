@@ -2433,4 +2433,30 @@ static inline void hdd_fill_last_rx(hdd_adapter_t *adapter)
 #else
 void hdd_fill_last_rx(hdd_adapter_t *adapter);
 #endif
+
+#ifdef FEATURE_WLAN_SW_PTA
+/**
+ * hdd_process_bt_sco_profile - process BT SCO profile
+ * @hdd_ctx: pointer to HDD context
+ * @bt_enabled: status of BT
+ * @bt_sco: status of SCO
+ *
+ * Return: 0 on success, error on failure
+ */
+int hdd_process_bt_sco_profile(hdd_context_t *hdd_ctx,
+			       bool bt_enabled, bool bt_sco);
+
+/**
+ * hdd_is_sw_pta_enabled - is sw pta enabled
+ * @hdd_ctx: pointer to HDD context
+ *
+ * Return: bool
+ */
+bool hdd_is_sw_pta_enabled(hdd_context_t *hdd_ctx);
+#else
+static inline bool hdd_is_sw_pta_enabled(hdd_context_t *hdd_ctx)
+{
+	return 0;
+}
+#endif
 #endif    // end #if !defined( WLAN_HDD_MAIN_H )

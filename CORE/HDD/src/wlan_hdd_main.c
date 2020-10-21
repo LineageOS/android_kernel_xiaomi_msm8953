@@ -3909,7 +3909,7 @@ static void hdd_sco_resp_callback(uint8_t sco_status)
 	hdd_ctx = (hdd_context_t*)vos_get_context(VOS_MODULE_ID_HDD, vos_ctx);
 	if (!hdd_ctx) {
 		hddLog(VOS_TRACE_LEVEL_FATAL,
-		       "%s: HDD context is Null",__func__);
+		       "%s: HDD context is Null", __func__);
 		return;
 	}
 
@@ -3925,8 +3925,8 @@ static void hdd_sco_resp_callback(uint8_t sco_status)
 	complete(&hdd_ctx->sw_pta_comp);
 }
 
-static ssize_t __hdd_process_bt_sco_profile(hdd_context_t *hdd_ctx,
-					    char *profile_mode)
+int hdd_process_bt_sco_profile(hdd_context_t *hdd_ctx,
+			       bool bt_enabled, bool bt_sco)
 {
 	tpAniSirGlobal mac_ctx = PMAC_STRUCT(hdd_ctx->hHal);
 	hdd_station_ctx_t *hdd_sta_ctx;
@@ -3941,24 +3941,20 @@ static ssize_t __hdd_process_bt_sco_profile(hdd_context_t *hdd_ctx,
 		return -EINVAL;
 	}
 
-	if (!strcmp(profile_mode, "ENABLE")) {
+	if (bt_sco) {
 		if (hdd_ctx->is_sco_enabled) {
-			hddLog(VOS_TRACE_LEVEL_ERROR, "%s: BT SCO is already enabled",
-			       __func__);
+			hddLog(VOS_TRACE_LEVEL_ERROR,
+			       "%s: BT SCO is already enabled", __func__);
 			return 0;
 		}
 		sco_status = true;
-	} else if (!strcmp(profile_mode, "DISABLE")) {
+	} else {
 		if (!hdd_ctx->is_sco_enabled) {
-			hddLog(VOS_TRACE_LEVEL_ERROR, "%s: BT SCO is already disabled",
-			       __func__);
+			hddLog(VOS_TRACE_LEVEL_ERROR,
+			       "%s: BT SCO is already disabled", __func__);
 			return 0;
 		}
 		sco_status = false;
-	} else {
-		hddLog(VOS_TRACE_LEVEL_ERROR, "%s: Invalid profile mode %s",
-		       __func__, profile_mode);
-		return -EINVAL;
 	}
 
 	INIT_COMPLETION(hdd_ctx->sw_pta_comp);
@@ -3981,7 +3977,7 @@ static ssize_t __hdd_process_bt_sco_profile(hdd_context_t *hdd_ctx,
 		return -EINVAL;
 	}
 
-	if (!strcmp(profile_mode, "DISABLE")) {
+	if (!bt_sco) {
 		hdd_ctx->is_sco_enabled = false;
 		mac_ctx->isCoexScoIndSet = 0;
 		return 0;
@@ -4031,6 +4027,23 @@ static ssize_t __hdd_process_bt_sco_profile(hdd_context_t *hdd_ctx,
 	}
 
 	return 0;
+}
+
+static void hdd_init_sw_pta(hdd_context_t *hdd_ctx)
+{
+	init_completion(&hdd_ctx->sw_pta_comp);
+}
+
+static void hdd_deinit_sw_pta(hdd_context_t *hdd_ctx)
+{
+	complete(&hdd_ctx->sw_pta_comp);
+}
+#else
+static void hdd_init_sw_pta(hdd_context_t *hdd_ctx)
+{
+}
+static void hdd_deinit_sw_pta(hdd_context_t *hdd_ctx)
+{
 }
 #endif
 
@@ -12632,6 +12645,7 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
       wlan_hdd_ftm_close(pHddCtx);
       goto free_hdd_ctx;
    }
+   hdd_deinit_sw_pta(pHddCtx);
 
    /* DeRegister with platform driver as client for Suspend/Resume */
    vosStatus = hddDeregisterPmOps(pHddCtx);
@@ -14752,6 +14766,8 @@ int hdd_wlan_startup(struct device *dev )
    hdd_assoc_registerFwdEapolCB(pVosContext);
 
    mutex_init(&pHddCtx->cache_channel_lock);
+
+   hdd_init_sw_pta(pHddCtx);
    goto success;
 
 err_open_cesium_nl_sock:
