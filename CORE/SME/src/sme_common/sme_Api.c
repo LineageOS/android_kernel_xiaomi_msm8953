@@ -15745,4 +15745,12 @@ eHalStatus sme_sco_req(tHalHandle hal,
 	return sme_sw_pta_req(hal, resp_callback, session_id,
 			      SCO_STATUS, sizeof(req_status), &req_status);
 }
+
+eHalStatus sme_bt_req(tHalHandle hal,
+		      void (*resp_callback)(uint8_t resp_status),
+		      uint8_t session_id, uint8_t req_status)
+{
+	return sme_sw_pta_req(hal, resp_callback, session_id,
+			      BT_STATUS, sizeof(req_status), &req_status);
+}
 #endif /* FEATURE_WLAN_SW_PTA */

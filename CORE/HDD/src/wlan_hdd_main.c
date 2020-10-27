@@ -3929,6 +3929,7 @@ int hdd_process_bt_sco_profile(hdd_context_t *hdd_ctx,
 			       bool bt_enabled, bool bt_sco)
 {
 	tpAniSirGlobal mac_ctx = PMAC_STRUCT(hdd_ctx->hHal);
+	uint8_t no_of_states_changed = 0;
 	hdd_station_ctx_t *hdd_sta_ctx;
 	eConnectionState conn_state;
 	hdd_adapter_t *adapter;
@@ -3939,6 +3940,49 @@ int hdd_process_bt_sco_profile(hdd_context_t *hdd_ctx,
 	if (!mac_ctx) {
 		hddLog(VOS_TRACE_LEVEL_ERROR, "%s: mac_ctx got NULL", __func__);
 		return -EINVAL;
+	}
+
+	/**
+	 * At a time only one status can be changed compared to
+	 * previous command (BT_ENABLED/SCO)
+	 * If no.of states changed is greater than one it is
+	 * an invalid command.
+	 */
+	if (bt_enabled != hdd_ctx->is_bt_enabled)
+		no_of_states_changed++;
+
+	if (bt_sco != hdd_ctx->is_sco_enabled)
+		no_of_states_changed++;
+
+	if (no_of_states_changed > 1) {
+		hddLog(VOS_TRACE_LEVEL_ERROR, "%s: Multiple states changed",
+		       __func__);
+		return -EINVAL;
+	}
+
+	INIT_COMPLETION(hdd_ctx->sw_pta_comp);
+
+	if (bt_enabled != hdd_ctx->is_bt_enabled) {
+		hal_status = sme_bt_req(hdd_ctx->hHal,
+					hdd_sco_resp_callback,
+					adapter->sessionId, bt_enabled);
+		if (!HAL_STATUS_SUCCESS(hal_status)) {
+			hddLog(VOS_TRACE_LEVEL_ERROR,
+			       "%s: Error sending sme sco indication request",
+			       __func__);
+			return -EINVAL;
+		}
+
+		rc = wait_for_completion_timeout(&hdd_ctx->sw_pta_comp,
+				msecs_to_jiffies(WLAN_WAIT_TIME_SW_PTA));
+		if (!rc) {
+			hddLog(VOS_TRACE_LEVEL_ERROR,
+			       FL("Target response timed out for sw_pta_comp"));
+			return -EINVAL;
+		}
+
+		hdd_ctx->is_bt_enabled = bt_enabled;
+		return 0;
 	}
 
 	if (bt_sco) {
@@ -3956,8 +4000,6 @@ int hdd_process_bt_sco_profile(hdd_context_t *hdd_ctx,
 		}
 		sco_status = false;
 	}
-
-	INIT_COMPLETION(hdd_ctx->sw_pta_comp);
 
 	hal_status = sme_sco_req(hdd_ctx->hHal,
 				 hdd_sco_resp_callback,
