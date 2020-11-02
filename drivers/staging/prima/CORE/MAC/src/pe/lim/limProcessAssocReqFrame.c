@@ -238,6 +238,7 @@ static void lim_defer_sme_indication(tpAniSirGlobal mac_ctx,
   * lim_check_sae_pmf_cap() - check pmf capability for SAE STA
   * @session: pointer to pe session entry
   * @rsn: pointer to RSN
+  * @akm_type: AKM type
   *
   * This function checks if SAE STA is pmf capable when SAE SAP is pmf
   * capable. Reject with eSIR_MAC_ROBUST_MGMT_FRAMES_POLICY_VIOLATION
@@ -247,23 +248,28 @@ static void lim_defer_sme_indication(tpAniSirGlobal mac_ctx,
   */
 #ifdef WLAN_FEATURE_SAE
 static enum eSirMacStatusCodes lim_check_sae_pmf_cap(tpPESession session,
-                                                    tDot11fIERSN *rsn)
+                                                    tDot11fIERSN *rsn,
+						    enum ani_akm_type akm_type)
 {
     enum eSirMacStatusCodes status = eSIR_MAC_SUCCESS_STATUS;
 
     if (session->pLimStartBssReq->pmfCapable &&
-        (rsn->RSN_Cap[0] & RSN_CAP_MFP_ENABLED) == 0)
+        (rsn->RSN_Cap[0] & RSN_CAP_MFP_ENABLED) == 0 &&
+	akm_type == ANI_AKM_TYPE_SAE)
             status = eSIR_MAC_ROBUST_MGMT_FRAMES_POLICY_VIOLATION_STATUS;
 
     return status;
 }
 #else
 static enum eSirMacStatusCodes lim_check_sae_pmf_cap(tpPESession session,
-                                                    tDot11fIERSN *rsn)
+                                                    tDot11fIERSN *rsn,
+						    enum ani_akm_type akm_type)
 {
     return eSIR_MAC_SUCCESS_STATUS;
 }
 #endif
+
+unsigned int *akm_type;
 
 bool lim_send_assoc_ind_to_sme(tpAniSirGlobal pMac,
                             tpPESession psessionEntry,
@@ -1550,9 +1556,8 @@ limProcessAssocReqFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,
                 akm_type = lim_translate_rsn_oui_to_akm_type(
                                     Dot11fIERSN.akm_suite[0]);
 
-                if (akm_type == ANI_AKM_TYPE_SAE) {
-                    if (eSIR_SUCCESS != (status =
-                        lim_check_sae_pmf_cap(psessionEntry, &Dot11fIERSN))) {
+		status = lim_check_sae_pmf_cap(psessionEntry, &Dot11fIERSN, akm_type);
+                    if (eSIR_SUCCESS != status ) {
                         /* Reject pmf disable SAE STA */
                         limLog(pMac, LOGW, FL("Rejecting Re/Assoc req from STA:"
                                 MAC_ADDRESS_STR), MAC_ADDR_ARRAY(pHdr->sa));
@@ -1563,7 +1568,6 @@ limProcessAssocReqFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo,
                                     pHdr->sa,
                                     subType, 0,psessionEntry, NULL);
                         goto error;
-                    }
                 }
 
             } /* end - if(pAssocReq->rsnPresent) */
