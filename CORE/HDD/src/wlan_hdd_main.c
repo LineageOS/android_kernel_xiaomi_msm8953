@@ -8223,10 +8223,10 @@ int __hdd_open(struct net_device *dev)
    pHddCtx = (hdd_context_t*)pAdapter->pHddCtx;
    MTRACE(vos_trace(VOS_MODULE_ID_HDD, TRACE_CODE_HDD_OPEN_REQUEST,
                     pAdapter->sessionId, pAdapter->device_mode));
-   if (NULL == pHddCtx)
+   if (wlan_hdd_validate_context(pHddCtx))
    {
       VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_FATAL,
-         "%s: HDD context is Null", __func__);
+         "%s: HDD context is Invalid", __func__);
       return -ENODEV;
    }
 
