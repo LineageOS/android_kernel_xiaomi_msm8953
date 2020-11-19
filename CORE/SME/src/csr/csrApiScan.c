@@ -4218,31 +4218,6 @@ void csrApplyChannelPowerCountryInfo( tpAniSirGlobal pMac, tCsrChannel *pChannel
     csrSetCfgCountryCode(pMac, countryCode);
 }
 
-void csrUpdateFCCChannelList(tpAniSirGlobal pMac)
-{
-    tCsrChannel ChannelList;
-    tANI_U8 chnlIndx = 0;
-    int i;
-
-    for ( i = 0; i < pMac->scan.base20MHzChannels.numChannels; i++ )
-    {
-        if (pMac->scan.fcc_constraint &&
-            ((pMac->scan.base20MHzChannels.channelList[i] == 12) ||
-            (pMac->scan.base20MHzChannels.channelList[i] == 13)))
-        {
-                    VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_INFO,
-                        FL("removing channel %d"),
-                        pMac->scan.base20MHzChannels.channelList[i]);
-            continue;
-        }
-        ChannelList.channelList[chnlIndx] =
-        pMac->scan.base20MHzChannels.channelList[i];
-        chnlIndx++;
-    }
-    csrSetCfgValidChannelList(pMac, ChannelList.channelList, chnlIndx);
-    csrScanFilterResults(pMac);
-}
-
 void csrResetCountryInformation( tpAniSirGlobal pMac, tANI_BOOLEAN fForce, tANI_BOOLEAN updateRiva )
 {
     if( fForce || (csrIs11dSupported( pMac ) && (!pMac->scan.f11dInfoReset)))

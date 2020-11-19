@@ -3317,6 +3317,11 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_ENABLE_SAE_FOR_SAP_MIN     (0)
 #define CFG_ENABLE_SAE_FOR_SAP_MAX     (1)
 
+#define CFG_SW_PTA_ENABLE_NAME         "sw_pta_enable"
+#define CFG_SW_PTA_ENABLE_DEFAULT      (0)
+#define CFG_SW_PTA_ENABLE_MIN          (0)
+#define CFG_SW_PTA_ENABLE_MAX          (1)
+
 /*--------------------------------------------------------------------------- 
   Type declarations
   -------------------------------------------------------------------------*/ 
@@ -3939,6 +3944,9 @@ typedef struct
 #endif
 #ifdef FEATURE_WLAN_LFR
    uint8_t                     bssid_blacklist_timeout;
+#endif
+#ifdef FEATURE_WLAN_SW_PTA
+   bool                        is_sw_pta_enabled;
 #endif
 } hdd_config_t;
 

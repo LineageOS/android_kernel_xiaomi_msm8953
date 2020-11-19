@@ -16795,6 +16795,110 @@ wda_get_mdns_stats_req(tWDA_CbContext *wda_handle,
 }
 #endif /* MDNS_OFFLOAD */
 
+#ifdef FEATURE_WLAN_SW_PTA
+/**
+ * WDA_sw_pta_resp_cb() - WDA callback api to get sw pta resp status
+ * @status: SW PTA response status
+ * @user_data: user data
+ *
+ * Retrun: None
+ */
+static void WDA_sw_pta_resp_cb(uint8_t status, void *user_data)
+{
+	tWDA_ReqParams *wda_params = (tWDA_ReqParams *)user_data;
+	vos_msg_t msg;
+
+	VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+		  "<------ %s", __func__);
+
+	if (!wda_params) {
+		VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+			  "%s: wda_params received NULL", __func__);
+		VOS_ASSERT(0);
+		return;
+	}
+
+	if (!wda_params->wdaMsgParam) {
+		VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+			  "%s: wda_params->wdaMsgParam is NULL", __func__);
+		VOS_ASSERT(0);
+		vos_mem_free(wda_params->wdaWdiApiMsgParam);
+		vos_mem_free(wda_params);
+		return;
+	}
+
+	/* VOS message wrapper */
+	msg.type = eWNI_SME_SW_PTA_RESP;
+	msg.bodyptr = NULL;
+	msg.bodyval = status;
+
+	if (vos_mq_post_message(VOS_MQ_ID_SME, (vos_msg_t *)&msg) !=
+	    VOS_STATUS_SUCCESS) {
+		VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+			  "%s: Failed to post message to SME", __func__);
+	}
+
+	vos_mem_free(wda_params->wdaWdiApiMsgParam);
+	vos_mem_free(wda_params->wdaMsgParam);
+	vos_mem_free(wda_params);
+	VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+		  "EXIT <------ %s ", __func__);
+}
+
+/* WDA_process_sw_pta_req - Process sw pta request
+ * @wda: wda handle
+ * @sw_pta_req: sw pta coex params request
+ *
+ * Return: VOS_STATUS
+ */
+static VOS_STATUS
+WDA_process_sw_pta_req(tWDA_CbContext *wda,
+		       struct sir_sw_pta_req *sw_pta_req)
+{
+	struct wdi_sw_pta_req *wdi_sw_pta_req;
+	tWDA_ReqParams *wda_params;
+	WDI_Status wdi_status;
+
+	VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO, FL("Enter"));
+
+	wdi_sw_pta_req = (struct wdi_sw_pta_req *)
+		vos_mem_malloc(sizeof(tWDA_ReqParams));
+	if (!wdi_sw_pta_req) {
+		VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+			  "%s: VOS MEM Alloc Failure", __func__);
+		vos_mem_free(sw_pta_req);
+		return VOS_STATUS_E_NOMEM;
+	}
+
+	wda_params = (tWDA_ReqParams *)vos_mem_malloc(sizeof(tWDA_ReqParams));
+	if (!wda_params) {
+		VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+			  "%s: VOS MEM Alloc Failure", __func__);
+		vos_mem_free(wdi_sw_pta_req);
+		vos_mem_free(sw_pta_req);
+	}
+
+	memcpy(wdi_sw_pta_req, sw_pta_req, sizeof(*sw_pta_req));
+
+	/* Store Params pass it to WDI */
+	wda_params->wdaWdiApiMsgParam = (void *)wdi_sw_pta_req;
+	wda_params->pWdaContext = wda;
+	/* Store param pointer as passed in by caller */
+	wda_params->wdaMsgParam = sw_pta_req;
+
+	wdi_status = WDI_sw_pta_req(WDA_sw_pta_resp_cb, wdi_sw_pta_req,
+				    wda_params);
+	if (IS_WDI_STATUS_FAILURE(wdi_status)) {
+		VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
+			  FL("Error in WDA sw pta request"));
+		vos_mem_free(wdi_sw_pta_req);
+		vos_mem_free(sw_pta_req);
+	}
+
+	return CONVERT_WDI2VOS_STATUS(wdi_status);
+}
+#endif
+
 /*
  * FUNCTION: WDA_McProcessMsg
  * Trigger DAL-AL to start CFG download 
@@ -17870,6 +17974,13 @@ VOS_STATUS WDA_McProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t *pMsg )
          WDA_ProcessGetARPStatsReq(pWDA, (getArpStatsParams *)pMsg->bodyptr);
          break;
       }
+#ifdef FEATURE_WLAN_SW_PTA
+      case WDA_SW_PTA_REQ:
+      {
+         WDA_process_sw_pta_req(pWDA, (struct sir_sw_pta_req *)pMsg->bodyptr);
+         break;
+      }
+#endif
       default:
       {
          VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
@@ -20434,8 +20545,6 @@ void WDA_PERRoamTriggerScanReqCallback(WDI_Status status, void* pUserData)
 void WDA_PERRoamOffloadScanReqCallback(WDI_Status status, void* pUserData)
 {
    tWDA_ReqParams *pWdaParams = (tWDA_ReqParams *)pUserData;
-   vos_msg_t vosMsg;
-   wpt_uint8 reason = 0;
 
    VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
                                           "<------ %s " ,__func__);
@@ -20451,18 +20560,9 @@ void WDA_PERRoamOffloadScanReqCallback(WDI_Status status, void* pUserData)
        vos_mem_free(pWdaParams->wdaWdiApiMsgParam);
 
    vos_mem_free(pWdaParams) ;
-   vosMsg.type = eWNI_SME_ROAM_SCAN_OFFLOAD_RSP;
-   vosMsg.bodyptr = NULL;
    if (WDI_STATUS_SUCCESS != status)
-      reason = 0;
-
-   vosMsg.bodyval = reason;
-   if (VOS_STATUS_SUCCESS !=
-       vos_mq_post_message(VOS_MQ_ID_SME, (vos_msg_t*)&vosMsg)) {
-      /* free the mem and return */
-      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_INFO,
-                 "%s: Failed to post the rsp to UMAC", __func__);
-   }
+      VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
+	       "%s: wdi_status %d", __func__, status);
 
    return ;
 }

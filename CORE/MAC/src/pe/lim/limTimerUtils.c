@@ -587,7 +587,8 @@ limCreateTimers(tpAniSirGlobal pMac)
         limLog(pMac, LOGP, FL("AllocateMemory failed!"));
         goto err_timer;
     }
-
+    memset(pMac->lim.gLimPreAuthTimerTable.pTable,
+               0, cfgValue*sizeof(tLimPreAuthNode));
     limInitPreAuthTimerTable(pMac, &pMac->lim.gLimPreAuthTimerTable);
     PELOG1(limLog(pMac, LOG1, FL("alloc and init table for preAuth timers"));)
 

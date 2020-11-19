@@ -112,6 +112,9 @@
 static tANI_BOOLEAN bRoamScanOffloadStarted = VOS_FALSE;
 #endif
 
+#define MAX_PWR_FCC_CHAN_12 8
+#define MAX_PWR_FCC_CHAN_13 2
+
 #define LE_READ_4(p) \
         ((uint32_t)\
         ((((const uint8_t *)(p))[0]) |\
@@ -660,6 +663,21 @@ eHalStatus csrUpdateChannelList(tpAniSirGlobal pMac)
         pChanList->chanParam[num_channel].pwr =
           cfgGetRegulatoryMaxTransmitPower(pMac,
                                            pScan->defaultPowerTable[i].chanId);
+        if (pMac->scan.fcc_constraint)
+        {
+            if (pChanList->chanParam[num_channel].chanId == 12)
+            {
+                pChanList->chanParam[num_channel].pwr = MAX_PWR_FCC_CHAN_12;
+                smsLog(pMac, LOG1,
+                      "fcc_constraint is set, txpower for channel 12 is 8db ");
+            }
+            if (pChanList->chanParam[num_channel].chanId == 13)
+            {
+                pChanList->chanParam[num_channel].pwr = MAX_PWR_FCC_CHAN_13;
+                smsLog(pMac, LOG1,
+                      "fcc_constraint is set, txpower for channel 13 is 2db ");
+            }
+        }
 
         if (!pChanList->chanParam[num_channel].pwr)
         {

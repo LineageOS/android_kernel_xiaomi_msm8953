@@ -214,6 +214,9 @@ static VOS_STATUS hdd_parse_ese_beacon_req(tANI_U8 *pValue,
 //wait time for beacon miss rate.
 #define BCN_MISS_RATE_TIME 500
 
+//max size for BT profile indication cmd
+#define MAX_USER_COMMAND_SIZE_BT_PROFILE_IND_CMD 24
+
 /*
  * Android DRIVER command structures
  */
@@ -247,6 +250,19 @@ static int hdd_ParseIBSSTXFailEventParams(tANI_U8 *pValue,
 static int hdd_ParseUserParams(tANI_U8 *pValue, tANI_U8 **ppArg);
 
 #endif /* WLAN_FEATURE_RMC */
+
+#ifdef FEATURE_WLAN_SW_PTA
+/* BT profile sysfile entry obj */
+static struct kobject *driver_kobject;
+static ssize_t hdd_sysfs_bt_profile_ind_cmd_store(struct kobject *kobj,
+                                                  struct kobj_attribute *attr,
+                                                  const char *buf,
+                                                  size_t count);
+static struct kobj_attribute bt_profile_attribute =
+    __ATTR(bt_profile, 0220, NULL,
+           hdd_sysfs_bt_profile_ind_cmd_store);
+#endif
+
 void wlan_hdd_restart_timer_cb(v_PVOID_t usrDataForCallback);
 void hdd_set_wlan_suspend_mode(bool suspend);
 void hdd_set_vowifi_mode(hdd_context_t *hdd_ctx, bool enable);
@@ -3891,6 +3907,135 @@ int hdd_get_disable_ch_list(hdd_context_t *hdd_ctx, tANI_U8 *buf,
 
 	return len;
 }
+
+#ifdef FEATURE_WLAN_SW_PTA
+static void hdd_sysfs_bt_profile_create(hdd_context_t* hdd_ctx)
+{
+	if(!hdd_ctx->cfg_ini->is_sw_pta_enabled)
+		return;
+
+	driver_kobject = kobject_create_and_add(WLAN_MODULE_NAME, kernel_kobj);
+	if (!driver_kobject) {
+		hddLog(VOS_TRACE_LEVEL_ERROR,
+		       "%s:could not allocate driver kobject",
+		       __func__);
+		return;
+	}
+
+	if(sysfs_create_file(driver_kobject, &bt_profile_attribute.attr))
+		hddLog(VOS_TRACE_LEVEL_ERROR,
+		       "%s:Failed to create BT profile sysfs entry", __func__);
+}
+
+static void hdd_sysfs_bt_profile_destroy(hdd_context_t* hdd_ctx)
+{
+	if(!hdd_ctx->cfg_ini->is_sw_pta_enabled)
+		return;
+
+	sysfs_remove_file(driver_kobject, &bt_profile_attribute.attr);
+	if (driver_kobject) {
+		kobject_put(driver_kobject);
+		driver_kobject = NULL;
+	}
+}
+
+static int hdd_sysfs_validate_and_copy_buf(char *dest_buf, size_t dest_buf_size,
+					   char const *source_buf,
+					   size_t source_buf_size)
+{
+	if (source_buf_size > (dest_buf_size - 1)) {
+		hddLog(VOS_TRACE_LEVEL_ERROR,
+		       "%s:Command length is larger than %zu bytes",
+			   __func__, dest_buf_size);
+		return -EINVAL;
+	}
+
+	/* sysfs already provides kernel space buffer so copy from user
+	 * is not needed. Doing this extra copy operation just to ensure
+	 * the local buf is properly null-terminated.
+	 */
+	strlcpy(dest_buf, source_buf, dest_buf_size);
+
+	/* default 'echo' cmd takes new line character to here */
+	if (dest_buf[source_buf_size - 1] == '\n')
+		dest_buf[source_buf_size - 1] = '\0';
+
+	return 0;
+}
+
+static ssize_t __hdd_sysfs_bt_profile_ind_cmd_store(hdd_context_t *hdd_ctx,
+						    const char *buf,
+						    size_t count)
+{
+	char buf_local[MAX_USER_COMMAND_SIZE_BT_PROFILE_IND_CMD + 1];
+	char *sptr, *token, *profile, *profile_mode;
+	int ret;
+
+	ENTER();
+
+	if (wlan_hdd_validate_context(hdd_ctx))
+		return -EINVAL;
+
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
+					      buf, count);
+	if (ret)
+		return -EINVAL;
+
+	sptr = buf_local;
+	/* Get BT profile */
+	token = strsep(&sptr, " ");
+
+	if (!token)
+		return -EINVAL;
+	profile = token;
+
+	token = NULL;
+	/* Get BT profile mode */
+	token = strsep(&sptr, " ");
+
+	if (!token)
+		return -EINVAL;
+
+	profile_mode = token;
+
+	hddLog(VOS_TRACE_LEVEL_INFO, "%s:profile = %s, profile_mode = %s",
+	       __func__, profile, profile_mode);
+
+	EXIT();
+	return count;
+}
+
+static ssize_t hdd_sysfs_bt_profile_ind_cmd_store(struct kobject *kobj,
+						  struct kobj_attribute *attr,
+						  const char *buf,
+						  size_t count)
+{
+	hdd_context_t *pHddCtx = NULL;
+	ssize_t err_size = 0;
+
+	pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD,
+			vos_get_global_context(VOS_MODULE_ID_HDD, NULL));
+
+	if (!pHddCtx) {
+		hddLog(VOS_TRACE_LEVEL_FATAL, "HDD Context is NULL");
+		return -EINVAL;
+	}
+
+	err_size = __hdd_sysfs_bt_profile_ind_cmd_store(pHddCtx, buf, count);
+
+	return err_size;
+}
+#else
+static inline
+void hdd_sysfs_bt_profile_create(hdd_context_t* pHddCtx)
+{
+}
+
+static inline
+void hdd_sysfs_bt_profile_destroy(hdd_context_t* pHddCtx)
+{
+}
+#endif
 
 static int hdd_driver_command(hdd_adapter_t *pAdapter,
                               hdd_priv_data_t *ppriv_data)
@@ -8119,12 +8264,20 @@ int __hdd_open(struct net_device *dev)
        }
    }
 
-   status = hdd_init_station_mode( pAdapter );
-   if( VOS_STATUS_SUCCESS != status ) {
-          hddLog(VOS_TRACE_LEVEL_ERROR, "%s: Failed to create session for station mode",
-                 __func__);
-          return -EINVAL;
+   if (!test_bit(SME_SESSION_OPENED, &pAdapter->event_flags)) {
+	   status = hdd_init_station_mode( pAdapter );
+	   if( VOS_STATUS_SUCCESS != status ) {
+		   hddLog(VOS_TRACE_LEVEL_ERROR,
+			  "%s: Failed to create session for station mode",
+			  __func__);
+		   return -EINVAL;
+	   }
+   } else {
+	   hddLog(VOS_TRACE_LEVEL_DEBUG,
+		  "%s: session already exist for station mode", __func__);
    }
+
+   hdd_sysfs_bt_profile_create(pHddCtx);
 
    set_bit(DEVICE_IFACE_OPENED, &pAdapter->event_flags);
    if (hdd_connIsConnected(WLAN_HDD_GET_STATION_CTX_PTR(pAdapter))) 
@@ -8302,6 +8455,8 @@ int __hdd_stop (struct net_device *dev)
         */
        wlan_hdd_stop_mon(pHddCtx, true);
    }
+
+   hdd_sysfs_bt_profile_destroy(pHddCtx);
 
    hddLog(VOS_TRACE_LEVEL_INFO, "%s: Disabling OS Tx queues", __func__);
 
@@ -10386,6 +10541,136 @@ void hdd_restore_roaming(hdd_context_t *hdd_ctx)
 	sme_UpdateIsFastRoamIniFeatureEnabled(hdd_ctx->hHal,
 					CFG_LFR_FEATURE_ENABLED_MAX);
 }
+
+/**
+ * hdd_update_chandef() - Function to update channel width and center freq
+ * @chandef: cfg80211 chan def
+ * @cb_mode: chan offset
+ *
+ * This function will be called to update channel width and center freq
+ *
+ * Return: None
+ */
+static void
+hdd_update_chandef(struct cfg80211_chan_def *chandef,
+                   ePhyChanBondState cb_mode)
+{
+   uint8_t  center_chan, chan;
+
+   if (cb_mode <= PHY_DOUBLE_CHANNEL_HIGH_PRIMARY)
+       return;
+
+   chan = vos_freq_to_chan(chandef->chan->center_freq);
+   chandef->width = NL80211_CHAN_WIDTH_80;
+   switch (cb_mode) {
+   case PHY_QUADRUPLE_CHANNEL_20MHZ_LOW_40MHZ_CENTERED:
+   case PHY_QUADRUPLE_CHANNEL_20MHZ_HIGH_40MHZ_LOW:
+        center_chan = chan + 2;
+        break;
+   case PHY_QUADRUPLE_CHANNEL_20MHZ_LOW_40MHZ_LOW:
+        center_chan = chan + 6;
+        break;
+   case PHY_QUADRUPLE_CHANNEL_20MHZ_LOW_40MHZ_HIGH:
+   case PHY_QUADRUPLE_CHANNEL_20MHZ_HIGH_40MHZ_CENTERED:
+        center_chan = chan - 2;
+        break;
+   case PHY_QUADRUPLE_CHANNEL_20MHZ_HIGH_40MHZ_HIGH:
+        center_chan = chan - 6;
+        break;
+   default:
+        center_chan = chan;
+        break;
+   }
+
+   chandef->center_freq1 = vos_chan_to_freq(center_chan);
+}
+
+VOS_STATUS hdd_chan_change_notify(hdd_adapter_t *adapter,
+   struct net_device *dev, uint8_t oper_chan, eCsrPhyMode phy_mode)
+{
+   struct ieee80211_channel *chan;
+   struct cfg80211_chan_def chandef;
+   enum nl80211_channel_type channel_type;
+   ePhyChanBondState cb_mode;
+   uint32_t freq;
+   tHalHandle  hal = WLAN_HDD_GET_HAL_CTX(adapter);
+   tSmeConfigParams sme_config;
+
+   if (!hal) {
+       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                 "%s: hal is NULL", __func__);
+       return VOS_STATUS_E_FAILURE;
+   }
+
+   freq = vos_chan_to_freq(oper_chan);
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,14,0))
+   chan = ieee80211_get_channel(adapter->wdev.wiphy, freq);
+#else
+   chan = __ieee80211_get_channel(adapter->wdev.wiphy, freq);
+#endif
+
+   if (!chan) {
+       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "%s: Invalid input frequency for channel conversion", __func__);
+       return VOS_STATUS_E_FAILURE;
+   }
+
+   sme_GetConfigParam(hal, &sme_config);
+   if (oper_chan <= 14)
+       cb_mode = sme_get_cb_phy_mode_from_cb_ini_mode(
+                    sme_config.csrConfig.channelBondingMode24GHz);
+   else
+       cb_mode = sme_get_cb_phy_mode_from_cb_ini_mode(
+                    sme_config.csrConfig.channelBondingMode5GHz);
+
+   switch (phy_mode) {
+   case eCSR_DOT11_MODE_11n:
+   case eCSR_DOT11_MODE_11n_ONLY:
+   case eCSR_DOT11_MODE_11ac:
+   case eCSR_DOT11_MODE_11ac_ONLY:
+        switch (cb_mode) {
+        case PHY_SINGLE_CHANNEL_CENTERED:
+             channel_type = NL80211_CHAN_HT20;
+             break;
+        case PHY_QUADRUPLE_CHANNEL_20MHZ_HIGH_40MHZ_LOW:
+        case PHY_QUADRUPLE_CHANNEL_20MHZ_HIGH_40MHZ_CENTERED:
+        case PHY_QUADRUPLE_CHANNEL_20MHZ_HIGH_40MHZ_HIGH:
+        case PHY_DOUBLE_CHANNEL_HIGH_PRIMARY:
+             channel_type = NL80211_CHAN_HT40MINUS;
+             break;
+        case PHY_QUADRUPLE_CHANNEL_20MHZ_LOW_40MHZ_LOW:
+        case PHY_QUADRUPLE_CHANNEL_20MHZ_LOW_40MHZ_CENTERED:
+        case PHY_QUADRUPLE_CHANNEL_20MHZ_LOW_40MHZ_HIGH:
+        case PHY_DOUBLE_CHANNEL_LOW_PRIMARY:
+             channel_type = NL80211_CHAN_HT40PLUS;
+             break;
+        default:
+             channel_type = NL80211_CHAN_HT20;
+             break;
+        }
+        break;
+   default:
+        channel_type = NL80211_CHAN_NO_HT;
+        break;
+   }
+
+   cfg80211_chandef_create(&chandef, chan, channel_type);
+   if ((phy_mode == eCSR_DOT11_MODE_11ac) ||
+       (phy_mode == eCSR_DOT11_MODE_11ac_ONLY))
+        hdd_update_chandef(&chandef, cb_mode);
+
+   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+             "%s: phy_mode %d cb_mode %d chann_type %d oper_chan %d width %d freq_1 %d",
+             __func__, phy_mode, cb_mode, channel_type, oper_chan,
+             chandef.width, chandef.center_freq1);
+
+
+   cfg80211_ch_switch_notify(dev, &chandef);
+
+   return VOS_STATUS_SUCCESS;
+}
+
 
 VOS_STATUS hdd_stop_adapter( hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter,
                              const v_BOOL_t bCloseSession )

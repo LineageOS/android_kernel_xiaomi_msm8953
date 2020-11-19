@@ -4178,4 +4178,34 @@ eHalStatus sme_UpdateBlacklist(tHalHandle hHal, uint8_t session_id,
  */
 eHalStatus sme_update_olpc_mode(tHalHandle hHal, bool enable);
 
+#ifdef FEATURE_WLAN_SW_PTA
+/**
+ * sme_sw_pta_req() - Send sw pta coex params request to sme
+ * @hal: The handle returned by mac_open
+ * @resp_callback: callback to indicate sw pta response to hdd
+ * @session_id: session id
+ * @type: sw pta coex param type
+ * @length: length of sw pta coex param value
+ * @value: sw pta coex params value
+ *
+ * Return: HAL_STATUS
+ */
+eHalStatus sme_sw_pta_req(tHalHandle hal,
+			  void (*resp_callback)(uint8_t resp_status),
+			  uint8_t session_id, enum sir_sw_pta_param_type type,
+			  uint8_t length, uint8_t *value);
+
+/**
+ * sme_sco_req() - Send sco request status to sme
+ * @hal: The handle returned by mac_open
+ * @resp_callback: callback to indicate sco response to hdd
+ * @session_id: session id
+ * @req_status: sco request status
+ *
+ * Return: HAL_STATUS
+ */
+eHalStatus sme_sco_req(tHalHandle hal,
+		       void (*resp_callback)(uint8_t resp_status),
+		       uint8_t session_id, uint8_t req_status);
+#endif /* FEATURE_WLAN_SW_PTA */
 #endif //#if !defined( __SME_API_H )
