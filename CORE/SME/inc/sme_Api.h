@@ -4128,6 +4128,17 @@ VOS_STATUS sme_process_msg_callback(tHalHandle hal, vos_msg_t *msg);
 eHalStatus sme_send_mgmt_tx(tHalHandle hal, uint8_t session_id,
                                 const uint8_t *buf, uint32_t len);
 
+#ifdef FEATURE_WLAN_SW_PTA
+/**
+ * sme_teardown_link_with_ap() - indicates teardown link with AP
+ * @mac: mac context
+ * @session_id: session id
+ *
+ * Return: eHalStatus
+ */
+eHalStatus sme_teardown_link_with_ap(tpAniSirGlobal mac, uint8_t session_id);
+#endif
+
 #ifdef WLAN_FEATURE_SAE
 /**
  * sme_handle_sae_msg() - Sends SAE message received from supplicant
@@ -4205,6 +4216,19 @@ eHalStatus sme_sw_pta_req(tHalHandle hal,
  * Return: HAL_STATUS
  */
 eHalStatus sme_sco_req(tHalHandle hal,
+		       void (*resp_callback)(uint8_t resp_status),
+		       uint8_t session_id, uint8_t req_status);
+
+/**
+ * sme_bt_req() - Send bt status to sme
+ * @hal: The handle returned by mac_open
+ * @resp_callback: callback to indicate sco response to hdd
+ * @session_id: session id
+ * @req_status: sco request status
+ *
+ * Return: HAL_STATUS
+ */
+eHalStatus sme_bt_req(tHalHandle hal,
 		       void (*resp_callback)(uint8_t resp_status),
 		       uint8_t session_id, uint8_t req_status);
 #endif /* FEATURE_WLAN_SW_PTA */

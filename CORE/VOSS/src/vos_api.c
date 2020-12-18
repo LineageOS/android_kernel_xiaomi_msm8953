@@ -3962,7 +3962,8 @@ v_BOOL_t vos_check_monitor_state(void)
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
 struct wcnss_driver_ops driver_ops = {
 	.name = "WLAN_CTRL",
-	.driver_state = WCTS_driver_state_process
+	.driver_state = WCTS_driver_state_process,
+	.bt_profile_state = WCTS_bt_profile_state_process
 };
 
 VOS_STATUS vos_smd_open(const char *szname, WCTS_ControlBlockType* wcts_cb)
@@ -3985,6 +3986,42 @@ void wlan_unregister_driver(void )
 {
 	wcnss_unregister_driver(&driver_ops);
 }
+
+#ifdef FEATURE_WLAN_SW_PTA
+int vos_process_bt_profile(bool bt_enabled, bool ble,
+			   bool a2dp, bool bt_sco)
+{
+	v_CONTEXT_t vos_ctx = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+	hdd_context_t *hdd_ctx;
+	int ret;
+
+	if (!vos_ctx) {
+		VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+			  "%s: Global VOS context is Null", __func__);
+		return -EINVAL;
+	}
+
+	hdd_ctx = vos_get_context(VOS_MODULE_ID_HDD, vos_ctx);
+	if (wlan_hdd_validate_context(hdd_ctx)) {
+		if (hdd_ctx && hdd_ctx->isLogpInProgress)
+			return -EAGAIN;
+		return -EINVAL;
+	}
+
+	if (!hdd_ctx->cfg_ini->is_sw_pta_enabled) {
+		VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+			  "%s: sw pta is not enabled", __func__);
+		return -EINVAL;
+	}
+
+	ret = hdd_process_bt_sco_profile(hdd_ctx, bt_enabled, bt_sco);
+	if (ret)
+		VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+			  "%s: Unable to process bt sco profile", __func__);
+
+	return ret;
+}
+#endif
 #else
 VOS_STATUS vos_smd_open(const char *szname, WCTS_ControlBlockType* wcts_cb)
 {

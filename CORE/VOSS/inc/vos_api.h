@@ -604,4 +604,25 @@ void vos_reset_recovery_reason(void);
 VOS_STATUS vos_smd_open(const char *szname, WCTS_ControlBlockType* wcts_cb);
 
 void wlan_unregister_driver(void);
+
+#ifdef FEATURE_WLAN_SW_PTA
+/**
+ * vos_process_bt_profile - process BT profile
+ * @bt_enabled: status of BT
+ * @ble: status of BLE
+ * @a2dp: stautus of A2DP
+ * @bt_sco: status of SCO
+ *
+ * Return: 0 on success and error on failure
+ */
+int vos_process_bt_profile(bool bt_enabled, bool ble,
+			   bool a2dp, bool bt_sco);
+#else
+static inline int
+vos_process_bt_profile(bool bt_enabled, bool ble,
+		       bool a2dp, bool bt_sco)
+{
+	return -ENOTSUPP;
+}
+#endif /* FEATURE_WLAN_SW_PTA */
 #endif // if !defined __VOS_NVITEM_H

@@ -1572,6 +1572,10 @@ struct hdd_cache_channels {
 	struct hdd_cache_channel_info *channel_info;
 };
 
+#ifdef FEATURE_WLAN_SW_PTA
+#define WLAN_WAIT_TIME_SW_PTA 1000
+#endif
+
 struct hdd_context_s
 {
    /** Global VOS context  */
@@ -1791,6 +1795,8 @@ struct hdd_context_s
 
     v_BOOL_t btCoexModeSet;
     v_BOOL_t isPnoEnable;
+    bool     is_sco_enabled;
+    bool     is_bt_enabled;
     macAddrSpoof_t spoofMacAddr;
     /* flag to decide if driver need to scan DFS channels or not */
     v_BOOL_t  disable_dfs_flag;
@@ -1863,6 +1869,9 @@ struct hdd_context_s
     struct hdd_cache_channels *original_channels;
     struct mutex cache_channel_lock;
     bool force_rsne_override;
+#ifdef FEATURE_WLAN_SW_PTA
+    struct completion sw_pta_comp;
+#endif
 };
 
 /* Use to notify the TDLS or BTCOEX is mode enable */
@@ -2424,5 +2433,31 @@ static inline void hdd_fill_last_rx(hdd_adapter_t *adapter)
 }
 #else
 void hdd_fill_last_rx(hdd_adapter_t *adapter);
+#endif
+
+#ifdef FEATURE_WLAN_SW_PTA
+/**
+ * hdd_process_bt_sco_profile - process BT SCO profile
+ * @hdd_ctx: pointer to HDD context
+ * @bt_enabled: status of BT
+ * @bt_sco: status of SCO
+ *
+ * Return: 0 on success, error on failure
+ */
+int hdd_process_bt_sco_profile(hdd_context_t *hdd_ctx,
+			       bool bt_enabled, bool bt_sco);
+
+/**
+ * hdd_is_sw_pta_enabled - is sw pta enabled
+ * @hdd_ctx: pointer to HDD context
+ *
+ * Return: bool
+ */
+bool hdd_is_sw_pta_enabled(hdd_context_t *hdd_ctx);
+#else
+static inline bool hdd_is_sw_pta_enabled(hdd_context_t *hdd_ctx)
+{
+	return 0;
+}
 #endif
 #endif    // end #if !defined( WLAN_HDD_MAIN_H )

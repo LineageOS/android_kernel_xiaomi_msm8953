@@ -358,6 +358,17 @@ enum wcnss_driver_state;
  */
 int WCTS_driver_state_process(void *priv, enum wcnss_driver_state state);
 
+struct bt_profile_state;
+/**
+ * WCTS_bt_profile_state_process() - Callback to process bt state info
+ *
+ * @priv: The user-supplied data provided in wcnss_register_driver()
+ * @state: bt state
+ *
+ * @return status
+ */
+int WCTS_bt_profile_state_process(void *priv, struct bt_profile_state *state);
+
 /**
  * wcts_close_channel() - api to close the smd channel
  * @wctsHandle: transport handle
