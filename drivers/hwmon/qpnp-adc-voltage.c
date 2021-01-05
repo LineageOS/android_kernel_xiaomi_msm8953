@@ -3051,7 +3051,7 @@ static int qpnp_vadc_remove(struct platform_device *pdev)
 	return 0;
 }
 
-static int qpnp_vadc_suspend_noirq(struct device *dev)
+static int qpnp_vadc_suspend_noirq_base(struct device *dev, int pmsafe)
 {
 	struct qpnp_vadc_chip *vadc = dev_get_drvdata(dev);
 	u8 status = 0;
@@ -3060,17 +3060,22 @@ static int qpnp_vadc_suspend_noirq(struct device *dev)
 	if (((status & QPNP_VADC_STATUS1_OP_MODE_MASK) >>
 		QPNP_VADC_OP_MODE_SHIFT) == QPNP_VADC_MEAS_INT_MODE) {
 		pr_debug("Meas interval in progress\n");
-	} else if (vadc->vadc_poll_eoc) {
+	} else if (vadc->vadc_poll_eoc && !pmsafe) {
 		status &= QPNP_VADC_STATUS1_REQ_STS_EOC_MASK;
 		pr_debug("vadc conversion status=%d\n", status);
 		if (status != QPNP_VADC_STATUS1_EOC) {
-			pr_err(
-				"Aborting suspend, adc conversion requested while suspending\n");
+			pr_err("Aborting suspend, adc conversion requested while suspending\n");
+			pr_err("vadc conversion status=%d\n", status);
 			return -EBUSY;
 		}
 	}
 
 	return 0;
+}
+
+static int qpnp_vadc_suspend_noirq(struct device *dev)
+{
+	return qpnp_vadc_suspend_noirq_base(dev, 0);
 }
 
 static const struct dev_pm_ops qpnp_vadc_pm_ops = {
