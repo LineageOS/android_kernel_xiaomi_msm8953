@@ -1543,6 +1543,10 @@ restore_flag:
 static void f2fs_enable_checkpoint(struct f2fs_sb_info *sbi)
 {
 	mutex_lock(&sbi->gc_mutex);
+
+	/* we should flush all the data to keep data consistency */
+	sync_inodes_sb(sbi->sb);
+
 	f2fs_dirty_to_prefree(sbi);
 
 	clear_sbi_flag(sbi, SBI_CP_DISABLED);
