@@ -116,13 +116,13 @@
 			alloc-ranges = <0 0x00000000 0 0xffffffff>;
 			reusable;
 			alignment = <0 0x400000>;
-			size = <0 0x400000>;
+			size = <0 0x800000>;
 		};
 
 		adsp_mem: adsp_region@0 {
 			compatible = "shared-dma-pool";
 			reusable;
-			size = <0 0x400000>;
+			size = <0 0x800000>;
 		};
 
 		dfps_data_mem: dfps_data_mem@90000000 {
