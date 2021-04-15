@@ -115,13 +115,15 @@ static int check_symbol_range(const char *sym, unsigned long long addr,
 static int read_symbol(FILE *in, struct sym_entry *s)
 {
 	char str[500];
+	char buf[LINE_MAX];
 	char *sym, stype;
 	int rc;
 
-	rc = fscanf(in, "%llx %c %499s\n", &s->addr, &stype, str);
-	if (rc != 3) {
-		if (rc != EOF && fgets(str, 500, in) == NULL)
-			fprintf(stderr, "Read error or end of file.\n");
+	if (fgets(buf, sizeof(buf), in) == NULL) {
+		return -1;
+	}
+	rc = sscanf(buf, "%llx %c %499s\n", &s->addr, &stype, str);
+	if (rc < 3) {
 		return -1;
 	}
 	if (strlen(str) > KSYM_NAME_LEN) {
@@ -152,14 +154,13 @@ static int read_symbol(FILE *in, struct sym_entry *s)
 			return -1;
 
 	}
-	else if (toupper(stype) == 'U' ||
-		 is_arm_mapping_symbol(sym))
+	else if (toupper(stype) == 'U')
 		return -1;
 	/* exclude also MIPS ELF local symbols ($L123 instead of .L123) */
 	else if (str[0] == '$')
 		return -1;
 	/* exclude debugging symbols */
-	else if (stype == 'N')
+	else if (toupper(stype) == 'N')
 		return -1;
 	/* exclude s390 kasan local symbols */
 	else if (!strncmp(sym, ".LASANPC", 8))
@@ -181,7 +182,8 @@ static int read_symbol(FILE *in, struct sym_entry *s)
 
 	/* Record if we've found __per_cpu_start/end. */
 	check_symbol_range(sym, s->addr, &percpu_range, 1);
-
+	if (toupper(stype) == 'W' && strstr(sym, ".c") != NULL)
+		return -1;
 	return 0;
 }
 
