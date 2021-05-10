@@ -107,12 +107,14 @@ struct gf_ioc_chip_info {
 #define NETLINK_TEST 25
 
 
+#ifdef ENABLE_PINCTRL
 static const char * const pctl_names[] = {
 
 	"goodixfp_reset_reset",
 	"goodixfp_reset_active",
 	"goodixfp_irq_active",
 };
+#endif
 
 struct gf_dev {
 	dev_t devt;
@@ -125,8 +127,10 @@ struct gf_dev {
 	struct clk *core_clk;
 	struct clk *iface_clk;
 
+#ifdef ENABLE_PINCTRL
 	struct pinctrl *fingerprint_pinctrl;
 	struct pinctrl_state *pinctrl_state[ARRAY_SIZE(pctl_names)];
+#endif
 
 	struct input_dev *input;
 	/* buffer is NULL unless this device is open (users > 0) */
