@@ -1309,6 +1309,11 @@ enum qca_wlan_vendor_attr_extscan_results
      * to indicate number of results.
      */
 
+    /* u8 value representing the time slicing duty cycle percentage.
+     * Possible values are 0-100.
+     */
+    QCA_WLAN_VENDOR_ATTR_LL_STATS_IFACE_INFO_TS_DUTY_CYCLE = 87,
+
     /* keep last */
     QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_AFTER_LAST,
     QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_MAX =

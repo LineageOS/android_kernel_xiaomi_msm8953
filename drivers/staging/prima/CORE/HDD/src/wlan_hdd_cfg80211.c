@@ -2036,7 +2036,10 @@ static v_BOOL_t put_wifi_interface_info(tpSirWifiInterfaceInfo stats,
                     WNI_CFG_COUNTRY_CODE_LEN, stats->apCountryStr) ||
             nla_put(vendor_event,
                     QCA_WLAN_VENDOR_ATTR_LL_STATS_IFACE_INFO_COUNTRY_STR,
-                    WNI_CFG_COUNTRY_CODE_LEN, stats->countryStr)
+                    WNI_CFG_COUNTRY_CODE_LEN, stats->countryStr) ||
+            nla_put_u32(vendor_event,
+                    QCA_WLAN_VENDOR_ATTR_LL_STATS_IFACE_INFO_TS_DUTY_CYCLE,
+                    stats->time_slice_duty_cycle)
       )
     {
         hddLog(VOS_TRACE_LEVEL_ERROR,
@@ -2321,6 +2324,9 @@ static v_BOOL_t hdd_get_interface_info(hdd_adapter_t *pAdapter,
 
     vos_mem_copy(pInfo->apCountryStr,
         pMac->scan.countryCodeCurrent, WNI_CFG_COUNTRY_CODE_LEN);
+
+    /* Copy time slicing duty cycle */
+    pInfo->time_slice_duty_cycle = 100;
 
     return TRUE;
 }

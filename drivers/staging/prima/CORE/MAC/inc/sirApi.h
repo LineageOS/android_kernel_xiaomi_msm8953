@@ -5296,6 +5296,7 @@ typedef PACKED_PRE struct PACKED_POST
     tANI_U8                  apCountryStr[WNI_CFG_COUNTRY_CODE_LEN];
     // country string for this association
     tANI_U8                  countryStr[WNI_CFG_COUNTRY_CODE_LEN];
+    tANI_U8                  time_slice_duty_cycle;
 } tSirWifiInterfaceInfo, *tpSirWifiInterfaceInfo;
 
 /* channel information */
