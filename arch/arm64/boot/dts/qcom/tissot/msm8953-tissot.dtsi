@@ -18,17 +18,9 @@
 / {
 	firmware: firmware {
 		android {
+			/delete-node/ fstab;
 			/delete-node/ vbmeta;
-			fstab {
-				vendor {
-					status = "disable";
-				};
-				system {
-					fsmgr_flags = "wait,slotselect";
-					status = "disable";
-				};
-			};
-		};
+                };
 	};
 
 	reserved-memory {
