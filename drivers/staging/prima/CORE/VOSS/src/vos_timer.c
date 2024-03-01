@@ -1016,7 +1016,7 @@ void vos_wdthread_init_timer_work(void *callbackptr)
  * Flush watchdog thread timer work structure.
  * return - void
  */
-void vos_wdthread_flush_timer_work()
+void vos_wdthread_flush_timer_work(void)
 {
    pVosContextType context;
 

@@ -3290,7 +3290,7 @@ v_U8_t vos_freq_to_chan(v_U32_t freq)
 }
 
 /* function to tell about if Default country is Non-Zero */
-v_BOOL_t vos_is_nv_country_non_zero()
+v_BOOL_t vos_is_nv_country_non_zero(void)
 {
     v_BOOL_t  status = VOS_FALSE;
     if (!(pnvEFSTable->halnv.tables.defaultCountryTable.countryCode[0] == '0' &&

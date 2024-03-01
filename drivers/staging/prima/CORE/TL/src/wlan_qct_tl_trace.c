@@ -72,7 +72,7 @@ void tlTraceDump(void *pMac, tpvosTraceRecord pRecord, v_U16_t recIndex)
                        pRecord->data));
 }
 
-void tlTraceInit()
+void tlTraceInit(void)
 {
    vosTraceRegister(VOS_MODULE_ID_TL, (tpvosTraceCb)&tlTraceDump);
 }

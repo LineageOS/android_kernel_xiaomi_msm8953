@@ -131,7 +131,7 @@ void hddTraceDump(void *pMac, tpvosTraceRecord pRecord, tANI_U16 recIndex)
     }
 }
 
-void hddTraceInit()
+void hddTraceInit(void)
 {
     vosTraceRegister(VOS_MODULE_ID_HDD, (tpvosTraceCb)&hddTraceDump);
 }
@@ -193,7 +193,7 @@ static void hdd_state_info_dump(void)
  * hdd_register_debug_callback() - registration function for hdd layer
  * to print hdd state information
  */
-void hdd_register_debug_callback()
+void hdd_register_debug_callback(void)
 {
     vos_register_debug_callback(VOS_MODULE_ID_HDD, &hdd_state_info_dump);
 }

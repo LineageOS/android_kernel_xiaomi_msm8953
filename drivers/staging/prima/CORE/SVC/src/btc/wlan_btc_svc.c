@@ -225,7 +225,7 @@ int btc_activate_service(void *pAdapter)
 
   \return - none
   --------------------------------------------------------------------------*/
-void btc_deactivate_service()
+void btc_deactivate_service(void)
 {
    //unregister the msg handler for msgs addressed to ANI_NL_MSG_BTC
    nl_srv_unregister(WLAN_NL_MSG_BTC, btc_msg_callback);

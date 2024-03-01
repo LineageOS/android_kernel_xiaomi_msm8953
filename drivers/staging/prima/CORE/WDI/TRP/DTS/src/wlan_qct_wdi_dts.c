@@ -1413,7 +1413,7 @@ void WDTS_ChannelDebug(wpt_boolean displaySnapshot, wpt_uint8 debugFlags)
  * Return Value: NONE
  *
  */
-void WDTS_ChannelKickDxe()
+void WDTS_ChannelKickDxe(void)
 {
    gTransportDriver.kickDxe();
    return;

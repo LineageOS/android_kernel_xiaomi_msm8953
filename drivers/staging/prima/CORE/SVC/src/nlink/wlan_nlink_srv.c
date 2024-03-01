@@ -404,7 +404,7 @@ void nl_srv_nl_close_indication
  * Return: Return -EPERM if the service is not initialized
  *
  */
-int nl_srv_is_initialized()
+int nl_srv_is_initialized(void)
 {
    if (nl_srv_sock)
        return 0;
